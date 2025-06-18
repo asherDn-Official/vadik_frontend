@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Components Layer - All components organized together */
+@layer components {
+  /* Sidebar Components */
+  .sidebar-icon {
+    @apply flex items-center gap-2 px-[3rem] py-[1rem] text-white hover:bg-opacity-25 hover:bg-white transition-all text-[18px];
+  }
+
+  .sidebar-active {
+    @apply bg-gradient-to-r from-[#CB376D] to-[#A72962];
+  }
+
+  /* Dashboard Components */
+  .dashboard-card {
+    @apply bg-white p-6 rounded-lg shadow-sm;
+  }
+
+  /* Tab Components */
+  .tab-button {
+    @apply px-4 py-3 text-center text-[18px] text-[#797994] font-[400] rounded-lg transition-colors mb-2;
+  }
+
+  .tab-button-active {
+    @apply bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white pr-9 pl-9 pb-2 pt-2; /* Replaced accent-600 with indigo-600 */
+  }
+
+  /* Profile Components */
+  .profile-info-item {
+    @apply flex items-center gap-3 p-3 border border-gray-100 rounded-[14px];
+  }
+
+  /* Form Components */
+  .form-input {
+    @apply w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent mt-8 text-[#313166];
+  }
+
+  .form-label {
+    @apply block text-[18px] font-medium text-[#313166] mb-1;
+  }
+
+  .form-hint {
+    @apply text-xs text-gray-500 mt-1;
+  }
+
+  /* Button Components */
+  /* .btn-primary {
+    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-md transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50;
+  } */
+
+  /* Step Components */
+  .step-container {
+    @apply bg-white w-full;
+  }
+
+  .step-header {
+    @apply text-2xl font-bold text-[#313166] mb-2;
+  }
+
+  .step-description {
+    @apply text-[20px] font-[400] text-[#31316699] mb-6;
+  }
+
+  /* Auth Components */
+  .login-bg {
+    background: url("../public/assets/bg-login.png") no-repeat center center;
+    background-size: cover;
+    min-height: 100vh;
+  }
+
+  /* Progress Components */
+  .progress-connector {
+    height: 2px;
+    background: linear-gradient(to right, #ffc107 50%, #e5e7eb 50%);
+    background-size: 200% 100%;
+    transition: all 0.5s ease;
+  }
+
+  .progress-connector-0 {
+    background-position: 100% 0;
+  }
+
+  .progress-connector-33 {
+    background-position: 66% 0;
+  }
+
+  .progress-connector-66 {
+    background-position: 33% 0;
+  }
+
+  .progress-connector-100 {
+    background-position: 0% 0;
+  }
+
+  /* Registration Components */
+  .register-header {
+    @apply bg-rose-600 rounded-lg p-6 text-white; /* Replaced #cc3366 with rose-600 */
+  }
+}
