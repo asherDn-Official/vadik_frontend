@@ -27,7 +27,7 @@ function Sidebar() {
 
       <nav className="flex-1 py-4">
         <NavLink
-          to="/"
+          to="/dashboard"
           className={`sidebar-icon ${isActive("/") ? "sidebar-active" : ""}`}
         >
           {/* <FaHome size={20} /> */}

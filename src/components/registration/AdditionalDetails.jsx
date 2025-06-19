@@ -1,10 +1,15 @@
 import { useState, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+
 const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
   const [errors, setErrors] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -73,6 +78,11 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError("");
+
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
 
     try {
       // Create FormData object
@@ -81,24 +91,23 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
       // Append all the form fields to the FormData
       data.append("firstName", formData.firstName);
       data.append("lastName", formData.lastName);
-      data.append("phone", formData.mobile); // Note: phone is mapped to mobile in your object
+      data.append("phone", formData.mobile);
       data.append("email", formData.email);
-      data.append("gender", formData.gender || "Male"); // Adding default gender if not in formData
+      data.append("gender", formData.gender || "Male");
       data.append("storeName", formData.storeName);
       data.append("storeType", formData.storeType);
       data.append("storeAddress", formData.storeAddress);
       data.append("city", formData.city);
       data.append("pincode", formData.pincode);
       if (formData.logo) {
-        // photo is mapped to logo in your object
         data.append("photo", formData.logo);
       }
       data.append("gstNumber", formData.gstNumber);
-      data.append("numberOfStaffs", formData.staffCount); // staffCount is mapped to numberOfStaffs
-      data.append("shopContactNumber", formData.contactNumber); // contactNumber is mapped to shopContactNumber
+      data.append("numberOfStaffs", formData.staffCount);
+      data.append("shopContactNumber", formData.contactNumber);
       data.append("ownerName", formData.ownerName);
+      data.append("numberOfCustomers", formData.customerCount || "1-10");
 
-      // Make the POST request
       const response = await axios.post(
         "http://localhost:5000/retailer/register",
         data,
@@ -110,10 +119,21 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
       );
 
       console.log("Registration successful:", response.data);
-      // Handle successful registration (redirect, show message, etc.)
+      // Navigate to completion page with success state
+      navigate("/completion", {
+        state: {
+          success: true,
+          data: response.data,
+        },
+      });
     } catch (error) {
       console.error("Registration failed:", error);
-      // Handle error (show error message, etc.)
+      setSubmitError(
+        error.response?.data?.message ||
+          "Registration failed. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -133,10 +153,17 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
         Complete your Store profile to finish setup.
       </p>
 
+      {submitError && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+          {submitError}
+        </div>
+      )}
+
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-2 gap-10"
       >
+        {/* File upload section */}
         <div className="md:col-span-2">
           <label className="form-label mb-7">
             Upload Store Logo or Photo (optional)
@@ -196,6 +223,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
           </div>
         </div>
 
+        {/* Staff count */}
         <div>
           <label htmlFor="staffCount" className="form-label">
             Number of Staff
@@ -219,6 +247,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
           </select>
         </div>
 
+        {/* Customer count */}
         <div>
           <label htmlFor="customerCount" className="form-label">
             Number of Customers
@@ -242,6 +271,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
           </select>
         </div>
 
+        {/* Contact number */}
         <div>
           <label htmlFor="contactNumber" className="form-label">
             Store Contact Number
@@ -265,6 +295,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
           )}
         </div>
 
+        {/* Owner name */}
         <div>
           <label htmlFor="ownerName" className="form-label">
             Owner Name
@@ -286,6 +317,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
           )}
         </div>
 
+        {/* GST number */}
         <div className="md:col-span-2">
           <label htmlFor="gstNumber" className="form-label">
             GST Number (optional)
@@ -304,12 +336,42 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
           />
         </div>
 
+        {/* Submit button */}
         <div className="md:col-span-2 flex justify-center mt-6">
           <button
             type="submit"
-            className="min-w-[150px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962]"
+            className={`min-w-[150px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962] ${
+              isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+            }`}
+            disabled={isSubmitting}
           >
-            Register
+            {isSubmitting ? (
+              <span className="flex items-center justify-center">
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Registering...
+              </span>
+            ) : (
+              "Register"
+            )}
           </button>
         </div>
       </form>
