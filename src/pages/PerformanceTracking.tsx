@@ -121,39 +121,41 @@ const mockData = {
 
 const PerformanceTracking = () => {
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-[500] text-[#313166] mb-6">
-        Performance Tracking
-      </h1>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1
+          className="text-2xl font-semibold mb-6"
+          style={{ color: "#313166" }}
+        >
+          Performance Tracking
+        </h1>
 
-      {/* Top Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {mockData.metrics.map((metric, index) => (
-          <MetricCard
-            key={index}
-            value={metric.value}
-            subtitle={metric.subtitle}
-            icon={metric.icon}
-            iconColor={metric.iconColor}
-            bgColor={metric.bgColor}
-          />
-        ))}
-      </div>
-
-      {/* Campaigns Table and Conversion Rate */}
-
-      <div className="grid grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
-        <div className="lg:col-span-2">
-          <CampaignTable campaigns={mockData.campaigns} />
+        {/* Top Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {mockData.metrics.map((metric, index) => (
+            <MetricCard
+              key={index}
+              value={metric.value}
+              subtitle={metric.subtitle}
+              icon={metric.icon}
+              iconColor={metric.iconColor}
+              bgColor={metric.bgColor}
+            />
+          ))}
         </div>
-        <div>
-          <ConversionChart percentage={mockData.conversionRate} />
-        </div>
-      </div>
 
-      {/* Revenue Growth and CLV Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
-        <div className="lg:col-span-2">
+        {/* Second Row - 70% Campaigns Table + 30% Conversion Rate */}
+        <div className="grid grid-cols-10 gap-6 mt-6">
+          <div className="col-span-7">
+            <CampaignTable campaigns={mockData.campaigns} />
+          </div>
+          <div className="col-span-3">
+            <ConversionChart percentage={mockData.conversionRate} />
+          </div>
+        </div>
+
+        {/* Revenue Growth Chart - Full Width */}
+        <div className="mt-6">
           <RevenueChart
             data={mockData.revenueData}
             totalRevenue={mockData.revenue.total}
@@ -162,34 +164,31 @@ const PerformanceTracking = () => {
             yearChange={mockData.revenue.yearChange}
           />
         </div>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Customer Lifetime Value (CLV)
-          </h3>
-          <div className="space-y-4">
-            <CLVCard
-              amount="25,000.00.00"
-              subtitle="Current Business / year"
-              bgColor="bg-orange-500"
-              textColor="text-white"
-            />
-            <CLVCard
-              amount="50,000.00.00"
-              subtitle="Future Business / year"
-              bgColor="bg-green-500"
-              textColor="text-white"
-            />
-          </div>
-        </div>
-      </div>
 
-      {/* Customer Table and Cart Value */}
-      <div className="grid grid-cols-2 lg:grid-cols-2 gap-6">
-        <div className="lg:col-span-2">
-          <CustomerTable customers={mockData.customers} />
+        {/* CLV Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <CLVCard
+            amount="25,000.00.00"
+            subtitle="Current Business / year"
+            bgColor="bg-orange-500"
+            textColor="text-white"
+          />
+          <CLVCard
+            amount="50,000.00.00"
+            subtitle="Future Business / year"
+            bgColor="bg-green-500"
+            textColor="text-white"
+          />
         </div>
-        <div>
-          <CartValueCards data={mockData.cartValue} />
+
+        {/* Bottom Row - Full Width Grid */}
+        <div className="grid grid-cols-10 gap-6 mt-6">
+          <div className="col-span-7">
+            <CartValueCards data={mockData.cartValue} />
+          </div>
+          <div className="col-span-3 space-y-6">
+            <CustomerTable customers={mockData.customers} />
+          </div>
         </div>
       </div>
     </div>
