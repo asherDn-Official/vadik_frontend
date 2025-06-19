@@ -122,7 +122,7 @@ const mockData = {
 const PerformanceTracking = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
+      <h1 className="text-2xl font-[500] text-[#313166] mb-6">
         Performance Tracking
       </h1>
 
@@ -141,6 +141,7 @@ const PerformanceTracking = () => {
       </div>
 
       {/* Campaigns Table and Conversion Rate */}
+
       <div className="grid grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
         <div className="lg:col-span-2">
           <CampaignTable campaigns={mockData.campaigns} />

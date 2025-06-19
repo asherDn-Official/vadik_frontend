@@ -5,7 +5,7 @@ function Layout() {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="flex-1 bg-[#f4f5f9]">
+      <main className="flex-1 bg-[#F4F5F9]">
         <Outlet />
       </main>
     </div>
