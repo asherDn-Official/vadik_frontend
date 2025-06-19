@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   LineChart,
   Line,
@@ -6,6 +7,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
+import { BarChart3, List } from "lucide-react";
 
 const CustomerDetails = ({
   customer,
@@ -17,10 +19,13 @@ const CustomerDetails = ({
   onCancel,
   onSave,
   onInputChange,
-  onTogglePurchaseView,
-  showPurchaseList,
 }) => {
+  const [showPurchaseList, setShowPurchaseList] = useState(false);
   const tabs = ["Advanced Details", "Advanced Privacy", "Referral"];
+
+  const onTogglePurchaseView = () => {
+    setShowPurchaseList(!showPurchaseList);
+  };
 
   const DetailItem = ({ iconSrc, label, value, field, isEditable = true }) => (
     <div
@@ -50,7 +55,7 @@ const CustomerDetails = ({
 
   const PrivacyItem = ({ iconSrc, label, value, field, isEditable = true }) => (
     <div className="flex items-center p-4 border-b border-gray-100">
-      <div className="w-12 h-12  rounded-full flex items-center justify-center mr-4">
+      <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
         <img src={iconSrc} alt={label} className="w-12 h-12" />
       </div>
       <div className="flex-1">
@@ -138,11 +143,11 @@ const CustomerDetails = ({
                     />
                   </div>
                 </div>
-                <div className="ml-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                <div className="ml-14">
+                  <h2 className="text-[18px] font-semibold text-[#313166] mb-6">
                     Basic Details
                   </h2>
-                  <div className="grid grid-cols-3 gap-x-8 gap-y-6">
+                  <div className="grid grid-cols-3 gap-x-20 gap-y-6">
                     <div>
                       <p className="text-sm text-gray-500 mb-2">Name</p>
                       {isEditing ? (
@@ -269,7 +274,7 @@ const CustomerDetails = ({
                     className={`py-3 px-6 border-b-2 font-medium rounded-[10px] text-sm ${
                       activeTab === tab
                         ? "bg-[#EC396F1A] text-[#EC396F]"
-                        : "border-transparent  hover:text-[#EC396F] hover:bg-[#EC396F1A]"
+                        : "border-transparent hover:text-[#EC396F] hover:bg-[#EC396F1A]"
                     }`}
                   >
                     {tab}
@@ -377,89 +382,94 @@ const CustomerDetails = ({
               )}
 
               {activeTab === "Advanced Privacy" && (
-                <div className="space-y-0">
-                  <PrivacyItem
-                    iconSrc="../assets/sms-icon.png"
-                    label="Communication Channel"
-                    value={customer.advancedPrivacy.communicationChannel}
-                    field="communicationChannel"
-                  />
-                  <PrivacyItem
-                    iconSrc="../assets/offer-icon.png"
-                    label="Types of Communication Required"
-                    value={customer.advancedPrivacy.communicationTypes}
-                    field="communicationTypes"
-                  />
-                  <PrivacyItem
-                    iconSrc="../assets/privacy-note-icon.png"
-                    label="Privacy Note"
-                    value={customer.advancedPrivacy.privacyNote}
-                    field="privacyNote"
-                  />
-                  <div className="flex items-center p-4 border-b border-gray-100">
-                    <div className="w-12 h-12  rounded-full flex items-center justify-center mr-4">
-                      <img
-                        src="../assets/score-icon.png"
-                        alt="Satisfaction Score"
-                        className="w-12 h-12"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-500 mb-1">
-                        Satisfaction Score
-                      </p>
-                      <div className="flex items-center">
-                        {renderStars(
-                          customer.advancedPrivacy.satisfactionScore
-                        )}
+                <div className="bg-white">
+                  <div className="space-y-0 mb-5">
+                    <PrivacyItem
+                      iconSrc="../assets/sms-icon.png"
+                      label="Communication Channel"
+                      value={customer.advancedPrivacy.communicationChannel}
+                      field="communicationChannel"
+                    />
+                    <PrivacyItem
+                      iconSrc="../assets/offer-icon.png"
+                      label="Types of Communication Required"
+                      value={customer.advancedPrivacy.communicationTypes}
+                      field="communicationTypes"
+                    />
+                    <PrivacyItem
+                      iconSrc="../assets/privacy-note-icon.png"
+                      label="Privacy Note"
+                      value={customer.advancedPrivacy.privacyNote}
+                      field="privacyNote"
+                    />
+                    <div className="flex items-center p-4 border-b border-gray-100">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
+                        <img
+                          src="../assets/score-icon.png"
+                          alt="Satisfaction Score"
+                          className="w-12 h-12"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-500 mb-1">
+                          Satisfaction Score
+                        </p>
+                        <div className="flex items-center">
+                          {renderStars(
+                            customer.advancedPrivacy.satisfactionScore
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <PrivacyItem
+                      iconSrc="../assets/e-score-icon.png"
+                      label="Engagement Score"
+                      value={customer.advancedPrivacy.engagementScore}
+                      field="engagementScore"
+                    />
+                    <PrivacyItem
+                      iconSrc="../assets/label-icon.png"
+                      label="Opt In/Opt out"
+                      value={customer.advancedPrivacy.optInOut}
+                      field="optInOut"
+                    />
+                    <PrivacyItem
+                      iconSrc="../assets/loyalty-icon.png"
+                      label="Loyalty Points"
+                      value={customer.advancedPrivacy.loyaltyPoints}
+                      field="loyaltyPoints"
+                    />
                   </div>
-                  <PrivacyItem
-                    iconSrc="../assets/e-score-icon.png"
-                    label="Engagement Score"
-                    value={customer.advancedPrivacy.engagementScore}
-                    field="engagementScore"
-                  />
-                  <PrivacyItem
-                    iconSrc="../assets/label-icon.png"
-                    label="Opt In/Opt out"
-                    value={customer.advancedPrivacy.optInOut}
-                    field="optInOut"
-                  />
-                  <PrivacyItem
-                    iconSrc="../assets/loyalty-icon.png"
-                    label="Loyalty Points"
-                    value={customer.advancedPrivacy.loyaltyPoints}
-                    field="loyaltyPoints"
-                  />
-
                   {/* Purchase History Section */}
-                  <div className="p-6 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-4">
+                  <div className="bg-white border border-gray-100 rounded-[14px] p-6">
+                    <div className="flex items-center justify-between mb-6">
                       <h3 className="text-lg font-medium text-gray-900">
                         Purchase History
                       </h3>
                       <div className="flex space-x-2">
                         <button
                           onClick={onTogglePurchaseView}
-                          className="p-2 bg-gray-100 rounded hover:bg-gray-200"
+                          className={`p-2 rounded hover:bg-gray-200 ${
+                            !showPurchaseList ? "bg-gray-200" : "bg-gray-100"
+                          }`}
+                          title="Chart View"
                         >
-                          <img
-                            src={
-                              showPurchaseList
-                                ? "https://cdn.jsdelivr.net/gh/lucide-icons/lucide@latest/icons/bar-chart.svg"
-                                : "https://cdn.jsdelivr.net/gh/lucide-icons/lucide@latest/icons/list.svg"
-                            }
-                            className="w-5 h-5"
-                            alt="Toggle view"
-                          />
+                          <BarChart3 className="w-5 h-5 text-gray-600" />
+                        </button>
+                        <button
+                          onClick={onTogglePurchaseView}
+                          className={`p-2 rounded hover:bg-gray-200 ${
+                            showPurchaseList ? "bg-gray-200" : "bg-gray-100"
+                          }`}
+                          title="List View"
+                        >
+                          <List className="w-5 h-5 text-gray-600" />
                         </button>
                       </div>
                     </div>
 
-                    {!showPurchaseList && (
-                      <div className="mb-6 h-64">
+                    {!showPurchaseList ? (
+                      <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={customer.chartData}>
                             <CartesianGrid strokeDasharray="3 3" />
@@ -484,9 +494,7 @@ const CustomerDetails = ({
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
-                    )}
-
-                    {showPurchaseList && (
+                    ) : (
                       <div className="space-y-3">
                         {customer.purchaseHistory
                           .slice(0, customer.showAllPurchases ? undefined : 5)
@@ -509,14 +517,7 @@ const CustomerDetails = ({
                             </div>
                           ))}
                         {customer.purchaseHistory.length > 5 && (
-                          <button
-                            onClick={() =>
-                              onToggleShowAllPurchases(
-                                !customer.showAllPurchases
-                              )
-                            }
-                            className="text-pink-600 text-sm font-medium hover:text-pink-700"
-                          >
+                          <button className="text-pink-600 text-sm font-medium hover:text-pink-700">
                             {customer.showAllPurchases
                               ? "Show Less"
                               : "See More"}
