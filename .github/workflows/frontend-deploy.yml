@@ -11,25 +11,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name:  Checkout Code
         uses: actions/checkout@v3
 
-      - name: Install Dependencies
+      - name:  Install Dependencies
         run: npm ci
 
-      - name: Build React App
+      - name:  Build React App
         run: npm run build
 
-      - name: Upload Build to EC2
+      - name:  Clean old dist on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            rm -rf /home/ec2-user/vadik_frontend/dist/*
+
+      - name:  Upload Build to EC2
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "dist/*"
+          source: "dist/**"
           target: "/home/ec2-user/vadik_frontend/dist"
 
-      - name: Restart Nginx
+      - name:  Restart Nginx
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
