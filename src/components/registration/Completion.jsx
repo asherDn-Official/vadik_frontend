@@ -2,41 +2,34 @@ import { Link } from "react-router-dom";
 
 const Completion = ({ formData }) => {
   return (
-    <div className="step-container text-center">
-      <div className="flex justify-center mb-6">
-        <div className="w-24 h-24 rounded-full  flex items-center justify-center">
-          {/* <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-12 w-12 text-green-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-white">
+      <div className="w-full max-w-md mx-auto  rounded-xl  overflow-hidden p-8 text-center">
+        <div className="flex justify-center mb-6">
+          <div className="w-24 h-24  flex items-center justify-center">
+            {/* For the crown icon, you should import it properly or use a public URL */}
+            <img
+              src="../assets/crown-icon.png" // Make sure this path is correct or use an absolute URL
+              alt="Success crown icon"
+              className="w-20 h-20 object-contain"
             />
-          </svg> */}
-          <img src="../assets/crown-icon.png" alt="" />
+          </div>
         </div>
-      </div>
 
-      <h2 className="text-[20px] font-bold mb-4 text-[#EC396F]">
-        You're Successfully a Vadik Al Member!
-      </h2>
-      <p className="text-[18px] text-[#313166] mb-8 max-w-md mx-auto">
-        Let's make today productive!
-      </p>
+        <h2 className="text-2xl font-bold mb-4 text-[#EC396F]">
+          You're Successfully a Vadik Al Member!
+        </h2>
+        <p className="text-lg text-[#313166] mb-8">
+          Let's make today productive!
+        </p>
 
-      <div className="flex justify-center">
-        <Link
-          to="/dashboard"
-          className="min-w-[200px] px-6 py-3 bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-[10px] transition-all duration-200 ease-in-out"
-        >
-          Lets go!
-        </Link>
+        <div className="w-full flex justify-center">
+          <Link
+            to="/dashboard"
+            className="min-w-[200px] px-6 py-3 bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-[10px] hover:opacity-90 transition-opacity duration-200 text-center"
+          >
+            Let's go!
+          </Link>
+        </div>
       </div>
     </div>
   );
