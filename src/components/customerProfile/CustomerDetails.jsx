@@ -120,7 +120,7 @@ const CustomerDetails = ({
                   <img
                     src={customer.profileImage}
                     alt={customer.name}
-                    className="w-24 h-24 rounded-lg object-cover"
+                    className="w-[152px] h-[182px] rounded-lg object-cover"
                   />
                   <div
                     className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ${
@@ -266,10 +266,10 @@ const CustomerDetails = ({
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`py-4 px-1 border-b-2 font-medium rounded-[10px] text-sm ${
+                    className={`py-3 px-6 border-b-2 font-medium rounded-[10px] text-sm ${
                       activeTab === tab
                         ? "bg-[#EC396F1A] text-[#EC396F]"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        : "border-transparent  hover:text-[#EC396F] hover:bg-[#EC396F1A]"
                     }`}
                   >
                     {tab}
