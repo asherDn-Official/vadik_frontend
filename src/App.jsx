@@ -12,6 +12,7 @@ import Completion from "./components/registration/Completion";
 import IntegrationPage from "./pages/IntegrationPage";
 import KYCPage from "./pages/kyc";
 import SettingsPage from "./pages/SettingsPage";
+import PerformanceTracking from "./pages/PerformanceTracking";
 
 function App() {
   const [formData, setFormData] = useState({
@@ -64,7 +65,8 @@ function App() {
           <Route
             path="customeropportunities"
             element={<CustomerOpportunities />}
-          />
+          />{" "}
+          <Route path="/performance" element={<PerformanceTracking />} />
           <Route path="integration" element={<IntegrationPage />} />
           <Route path="kyc" element={<KYCPage />} />
           <Route path="settings" element={<SettingsPage />} />
