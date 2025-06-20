@@ -1,193 +1,95 @@
 import React from "react";
-import { User, MessageSquare, MousePointer, MessageCircle } from "lucide-react";
 import MetricCard from "../components/PerformanceTracking/MetricCard";
 import CampaignTable from "../components/PerformanceTracking/CampaignTable";
 import ConversionChart from "../components/PerformanceTracking/ConversionChart";
 import RevenueChart from "../components/PerformanceTracking/RevenueChart";
+import CartValueCards from "../components/PerformanceTracking/CartValueCards";
 import CLVCard from "../components/PerformanceTracking/CLVCard";
 import CustomerTable from "../components/PerformanceTracking/CustomerTable";
-import CartValueCards from "../components/PerformanceTracking/CartValueCards";
+import { Users, MessageSquare, Mouse, MessageCircle } from "lucide-react";
 
-// Mock API data - in real app, this would come from actual API calls
-const mockData = {
-  metrics: [
-    {
-      value: "53%",
-      subtitle: "Interaction Rate",
-      icon: User,
-      iconColor: "text-pink-600",
-      bgColor: "bg-pink-100",
-    },
-    {
-      value: "537",
-      subtitle: "WhatsApp Opened",
-      icon: MessageSquare,
-      iconColor: "text-green-600",
-      bgColor: "bg-green-100",
-    },
-    {
-      value: "220",
-      subtitle: "Click Rate",
-      icon: MousePointer,
-      iconColor: "text-orange-600",
-      bgColor: "bg-orange-100",
-    },
-    {
-      value: "124",
-      subtitle: "Responded",
-      icon: MessageCircle,
-      iconColor: "text-purple-600",
-      bgColor: "bg-purple-100",
-    },
-  ],
-  campaigns: [
-    {
-      name: "Spin the Wheel",
-      customers: 100,
-      openRate: 74,
-      clickRate: 62,
-      responded: 30,
-    },
-    {
-      name: "Quiz",
-      customers: 120,
-      openRate: 82,
-      clickRate: 68,
-      responded: 24,
-    },
-    {
-      name: "Scratch Card",
-      customers: 50,
-      openRate: 38,
-      clickRate: 24,
-      responded: 12,
-    },
-  ],
-  conversionRate: 40,
-  revenueData: [
-    { month: "Jan", value: 10 },
-    { month: "Feb", value: 25 },
-    { month: "Mar", value: 15 },
-    { month: "Apr", value: 35 },
-    { month: "May", value: 45 },
-    { month: "Jun", value: 30 },
-    { month: "Jul", value: 50 },
-    { month: "Aug", value: 25 },
-    { month: "Sep", value: 55 },
-    { month: "Oct", value: 35 },
-    { month: "Nov", value: 60 },
-    { month: "Dec", value: 45 },
-  ],
-  revenue: {
-    total: "$ 58,000.00",
-    yesterdayChange: 20,
-    monthChange: -20,
-    yearChange: 20,
-  },
-  customers: [
-    {
-      name: "Srinivasan",
-      currentValue: "₹24,600.00",
-      futureValue: "₹80,000.00",
-    },
-    { name: "Chandru", currentValue: "₹24,600.00", futureValue: "₹80,000.00" },
-    {
-      name: "Srinivasan",
-      currentValue: "₹24,600.00",
-      futureValue: "₹80,000.00",
-    },
-    { name: "Chandru", currentValue: "₹24,600.00", futureValue: "₹80,000.00" },
-    {
-      name: "Srinivasan",
-      currentValue: "₹24,600.00",
-      futureValue: "₹80,000.00",
-    },
-    { name: "Chandru", currentValue: "₹24,600.00", futureValue: "₹80,000.00" },
-    {
-      name: "Srinivasan",
-      currentValue: "₹24,600.00",
-      futureValue: "₹80,000.00",
-    },
-  ],
-  cartValue: {
-    customerPercentage: 53,
-    totalCustomers: 537,
-    revenue: 537,
-    avgTurnover: 220,
-    avgTurnoverPerDay: 220,
-    avgTurnoverPerCustomer: 124,
-  },
-};
-
-const PerformanceTracking = () => {
+const PerformanceTracking: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <h1
-          className="text-2xl font-semibold mb-6"
-          style={{ color: "#313166" }}
-        >
-          Performance Tracking
-        </h1>
-
-        {/* Top Metric Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {mockData.metrics.map((metric, index) => (
-            <MetricCard
-              key={index}
-              value={metric.value}
-              subtitle={metric.subtitle}
-              icon={metric.icon}
-              iconColor={metric.iconColor}
-              bgColor={metric.bgColor}
-            />
-          ))}
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Performance Tracking
+          </h1>
         </div>
 
-        {/* Second Row - 70% Campaigns Table + 30% Conversion Rate */}
-        <div className="grid grid-cols-10 gap-6 mt-6">
-          <div className="col-span-7">
-            <CampaignTable campaigns={mockData.campaigns} />
-          </div>
-          <div className="col-span-3">
-            <ConversionChart percentage={mockData.conversionRate} />
-          </div>
-        </div>
-
-        {/* Revenue Growth Chart - Full Width */}
-        <div className="mt-6">
-          <RevenueChart
-            data={mockData.revenueData}
-            totalRevenue={mockData.revenue.total}
-            yesterdayChange={mockData.revenue.yesterdayChange}
-            monthChange={mockData.revenue.monthChange}
-            yearChange={mockData.revenue.yearChange}
+        {/* Top Row - 4 Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard
+            icon={Users}
+            value="53%"
+            label="Interaction Rate"
+            iconColor="text-pink-600"
+          />
+          <MetricCard
+            icon={MessageSquare}
+            value="537"
+            label="WhatsApp Opened"
+            iconColor="text-green-600"
+          />
+          <MetricCard
+            icon={Mouse}
+            value="220"
+            label="Click Rate"
+            iconColor="text-orange-600"
+          />
+          <MetricCard
+            icon={MessageCircle}
+            value="124"
+            label="Responded"
+            iconColor="text-blue-600"
           />
         </div>
 
-        {/* CLV Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <CLVCard
-            amount="25,000.00.00"
-            subtitle="Current Business / year"
-            bgColor="bg-orange-500"
-            textColor="text-white"
-          />
-          <CLVCard
-            amount="50,000.00.00"
-            subtitle="Future Business / year"
-            bgColor="bg-green-500"
-            textColor="text-white"
-          />
+        {/* Second Row - Campaign Table & Conversion Chart */}
+        <div className="grid grid-cols-2 lg:grid-cols-10 gap-6">
+          {/* <div className="lg:col-span-7"> */}
+          <CampaignTable />
+          {/* </div> */}
+          {/* <div className="lg:col-span-3"> */}
+          <ConversionChart />
+          {/* </div> */}
         </div>
 
-        {/* Bottom Row - Full Width Grid */}
-        <div className="grid grid-cols-10 gap-6 mt-6">
-          <div className="col-span-7">
-            <CartValueCards data={mockData.cartValue} />
+        {/* Third Row - Revenue Growth & Cart Value | CLV Section */}
+        <div className="grid grid-cols-2 lg:grid-cols-2 gap-6">
+          {/* Left Column */}
+          <div className="space-y-6">
+            <RevenueChart />
+            <CartValueCards />
           </div>
-          <div className="col-span-3 space-y-6">
-            <CustomerTable customers={mockData.customers} />
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* CLV Cards */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Customer Lifetime Value (CLV)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CLVCard
+                  title="Current Business"
+                  amount="25,000,00.00"
+                  subtitle="Current Business / year"
+                  bgColor="bg-orange-500"
+                />
+                <CLVCard
+                  title="Future Business"
+                  amount="50,000,00.00"
+                  subtitle="Future Business / year"
+                  bgColor="bg-green-500"
+                />
+              </div>
+            </div>
+
+            {/* Customer Table */}
+            <CustomerTable />
           </div>
         </div>
       </div>

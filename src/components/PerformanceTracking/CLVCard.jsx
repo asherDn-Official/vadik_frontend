@@ -1,15 +1,13 @@
 import React from "react";
-import { CreditCard } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 
-const CLVCard = ({ amount, subtitle, bgColor, textColor }) => {
+const CLVCard = ({ title, amount, subtitle, bgColor }) => {
   return (
-    <div className={`${bgColor} rounded-xl p-6 ${textColor} shadow-lg`}>
-      <div className="flex items-center space-x-3 mb-3">
-        <div className="p-2 bg-white bg-opacity-20 rounded-lg">
-          <CreditCard size={20} />
-        </div>
+    <div className={`${bgColor} rounded-lg p-6 text-white`}>
+      <div className="flex items-center space-x-2 mb-4">
+        <MessageSquare className="w-5 h-5" />
       </div>
-      <div className="text-xl font-bold mb-1">{amount}</div>
+      <div className="text-2xl font-bold mb-1">{amount}</div>
       <div className="text-sm opacity-90">{subtitle}</div>
     </div>
   );

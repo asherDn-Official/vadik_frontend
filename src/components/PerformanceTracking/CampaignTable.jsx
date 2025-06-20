@@ -1,48 +1,60 @@
 import React from "react";
 
-const CampaignTable = ({ campaigns }) => {
+const campaignData = [
+  {
+    name: "Spin the Wheel",
+    customers: 100,
+    openRate: 74,
+    clickRate: 62,
+    responded: 30,
+  },
+  { name: "Quiz", customers: 120, openRate: 82, clickRate: 68, responded: 24 },
+  {
+    name: "Scratch Card",
+    customers: 50,
+    openRate: 38,
+    clickRate: 24,
+    responded: 12,
+  },
+];
+
+const CampaignTable = () => {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Campaigns</h3>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th className="text-left py-3 px-4 font-medium text-gray-600">
                 Campaigns
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+              <th className="text-left py-3 px-4 font-medium text-gray-600">
                 No. of Customers
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+              <th className="text-left py-3 px-4 font-medium text-gray-600">
                 Open Rate
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+              <th className="text-left py-3 px-4 font-medium text-gray-600">
                 Click Rate
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+              <th className="text-left py-3 px-4 font-medium text-gray-600">
                 Responded
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
-            {campaigns.map((campaign, index) => (
-              <tr
-                key={index}
-                className="hover:bg-gray-50 transition-colors duration-150"
-              >
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  {campaign.name}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
+          <tbody>
+            {campaignData.map((campaign, index) => (
+              <tr key={index} className="border-b border-gray-100">
+                <td className="py-4 px-4 text-gray-900">{campaign.name}</td>
+                <td className="py-4 px-4 text-gray-700">
                   {campaign.customers}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {campaign.openRate}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
+                <td className="py-4 px-4 text-gray-700">{campaign.openRate}</td>
+                <td className="py-4 px-4 text-gray-700">
                   {campaign.clickRate}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
+                <td className="py-4 px-4 text-gray-700">
                   {campaign.responded}
                 </td>
               </tr>

@@ -1,87 +1,63 @@
-import React, { useState } from "react";
-import { User, IndianRupee, TrendingUp, Users, Calendar } from "lucide-react";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import React from "react";
+import { Users, DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
+import { Calendar } from "lucide-react";
 
-const CartValueCards = ({ data }) => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-
-  const cards = [
+const CartValueCards = () => {
+  const cardData = [
     {
-      icon: User,
-      value: `${data.customerPercentage}%`,
-      subtitle: "No. of Customer",
-      bgColor: "bg-pink-100",
+      icon: Users,
+      value: "53%",
+      label: "No. of Customer",
+      bgColor: "bg-pink-50",
       iconColor: "text-pink-600",
     },
     {
-      icon: IndianRupee,
-      value: data.revenue,
-      subtitle: "Last Month Turn Over",
-      bgColor: "bg-green-100",
+      icon: DollarSign,
+      value: "537",
+      label: "Last Month Turn Over",
+      bgColor: "bg-green-50",
       iconColor: "text-green-600",
     },
     {
-      icon: TrendingUp,
-      value: data.avgTurnover,
-      subtitle: "Avg Turnover per Day",
-      bgColor: "bg-orange-100",
+      icon: ShoppingCart,
+      value: "220",
+      label: "Avg Turnover per Day",
+      bgColor: "bg-orange-50",
       iconColor: "text-orange-600",
     },
     {
-      icon: Users,
-      value: data.avgTurnoverPerCustomer,
-      subtitle: "Avg Turnover / Customer",
-      bgColor: "bg-purple-100",
+      icon: TrendingUp,
+      value: "124",
+      label: "Avg Turnover / Customer",
+      bgColor: "bg-purple-50",
       iconColor: "text-purple-600",
     },
   ];
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+      <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-gray-900">Cart Value</h3>
-        <div className="relative">
-          <button
-            onClick={() => setShowDatePicker(!showDatePicker)}
-            className="flex items-center space-x-2 text-sm text-gray-600 border border-gray-300 px-3 py-2 rounded-lg hover:bg-gray-50"
-          >
-            <span>Today</span>
-            <Calendar size={14} />
-          </button>
-          {showDatePicker && (
-            <div className="absolute right-0 top-full mt-2 z-10">
-              <DatePicker
-                selected={selectedDate}
-                onChange={(date) => {
-                  setSelectedDate(date || new Date());
-                  setShowDatePicker(false);
-                }}
-                inline
-              />
-            </div>
-          )}
+        <div className="flex items-center space-x-2 text-sm text-gray-600">
+          <Calendar className="w-4 h-4" />
+          <span>Today</span>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {cards.map((card, index) => {
+        {cardData.map((card, index) => {
           const Icon = card.icon;
           return (
-            <div
-              key={index}
-              className={`${card.bgColor} rounded-xl p-4 hover:shadow-md transition-all duration-300`}
-            >
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="p-2 bg-white bg-opacity-50 rounded-lg">
-                  <Icon size={18} className={card.iconColor} />
+            <div key={index} className={`${card.bgColor} rounded-lg p-4`}>
+              <div className="flex items-center space-x-3">
+                <Icon className={`w-5 h-5 ${card.iconColor}`} />
+                <div>
+                  <div className="text-xl font-bold text-gray-900">
+                    {card.value}
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1">{card.label}</div>
                 </div>
-                <span className="text-xl font-bold text-gray-900">
-                  {card.value}
-                </span>
               </div>
-              <p className="text-sm text-gray-600">{card.subtitle}</p>
             </div>
           );
         })}
