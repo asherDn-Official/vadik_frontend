@@ -22,25 +22,29 @@ const PerformanceTracking: React.FC = () => {
         {/* Top Row - 4 Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <MetricCard
-            icon={Users}
+            // icon={Users}
+            icon="../assets/per-1.png" // Path to your PNG file
             value="53%"
             label="Interaction Rate"
             iconColor="text-pink-600"
           />
           <MetricCard
-            icon={MessageSquare}
+            // icon={MessageSquare}
+            icon="../assets/per-2.png" // Path to your PNG file
             value="537"
             label="WhatsApp Opened"
             iconColor="text-green-600"
           />
           <MetricCard
-            icon={Mouse}
+            // icon={Mouse}
+            icon="../assets/per-3.png" // Path to your PNG file
             value="220"
             label="Click Rate"
             iconColor="text-orange-600"
           />
           <MetricCard
-            icon={MessageCircle}
+            // icon={MessageCircle}
+            icon="../assets/per-4.png" // Path to your PNG file
             value="124"
             label="Responded"
             iconColor="text-blue-600"
@@ -68,7 +72,7 @@ const PerformanceTracking: React.FC = () => {
           {/* Right Column */}
           <div className="space-y-6">
             {/* CLV Cards */}
-            <div>
+            <div className="bg-white p-6 rounded-[10px]">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Customer Lifetime Value (CLV)
               </h3>
@@ -77,13 +81,13 @@ const PerformanceTracking: React.FC = () => {
                   title="Current Business"
                   amount="25,000,00.00"
                   subtitle="Current Business / year"
-                  bgColor="bg-orange-500"
+                  bgColor="#FF961D" // Orange
                 />
                 <CLVCard
                   title="Future Business"
                   amount="50,000,00.00"
                   subtitle="Future Business / year"
-                  bgColor="bg-green-500"
+                  bgColor="#48C471" // Green
                 />
               </div>
             </div>

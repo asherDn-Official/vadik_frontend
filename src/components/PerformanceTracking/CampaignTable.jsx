@@ -21,7 +21,7 @@ const campaignData = [
 const CampaignTable = () => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Campaigns</h3>
+      {/* <h3 className="text-lg font-semibold text-gray-900 mb-4">Campaigns</h3> */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
