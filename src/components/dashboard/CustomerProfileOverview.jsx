@@ -1,67 +1,78 @@
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import React from 'react';
+import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip);
 
 function CustomerProfileOverview() {
+  const active = 394;
+  const inactive = 156;
+  const total = active + inactive;
+
   const data = {
     datasets: [
       {
-        data: [720, 156],
-        backgroundColor: ['#312e81', '#db2777'],
-        borderWidth: 0,
+        data: [active, inactive],
+        backgroundColor: ['#db2777', '#313166'], // pink & dark blue
+        borderColor: '#fff',
+        borderWidth: 6,
+        cutout: '75%',
+        borderRadius: 30,
+        circumference: 360,
+        rotation: -90,
       },
     ],
   };
-  
+
   const options = {
-    cutout: '70%',
+    responsive: true,
+    maintainAspectRatio: false,
     plugins: {
+      tooltip: {
+        enabled: false,
+      },
       legend: {
         display: false,
       },
     },
-    maintainAspectRatio: false,
   };
-  
+
   return (
-    <div className="dashboard-card h-full">
-      <h2 className="text-lg font-semibold text-gray-800 mb-6">Customer Profile Overview</h2>
-      
-      <div className="relative h-52">
+    <div className="bg-white p-4 rounded-xl shadow-md  h-[287px] flex flex-col justify-between">
+      {/* Title */}
+      <h2 className="text-center text-lg font-semibold text-[#313166]">
+        Customer Profile Overview
+      </h2>
+
+      {/* Chart container */}
+      <div className="relative w-[160px] h-[160px] mx-auto">
         <Doughnut data={data} options={options} />
-        
-        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none">
-          <div className="flex gap-2 items-center">
-            <div className="flex flex-col items-center">
-              <div className="flex items-center gap-1">
-                <span className="font-bold text-lg">156</span>
-                <span className="text-xl">→</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none">
-          <div className="flex gap-2 items-center">
-            <div className="flex flex-col items-center mt-16 ml-16">
-              <div className="flex items-center gap-1">
-                <span className="font-bold text-lg">720</span>
-                <span className="text-xl">←</span>
-              </div>
-            </div>
-          </div>
+
+        {/* Center text */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-4xl font-extrabold text-[#313166]">{total}</span>
+          <span className="text-xs font-medium text-[#313166]">Total Customers</span>
         </div>
       </div>
-      
-      <div className="flex justify-around mt-4">
-        <div className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-full bg-navbg"></span>
-          <span className="text-sm text-gray-600">Total Customers</span>
+
+      {/* Legend */}
+      <div className="flex justify-around items-end mt-2">
+        {/* Active */}
+        <div className="flex flex-col items-center">
+          <span className="text-xl font-bold text-[#313166]">{active}</span>
+          <div className="flex items-center gap-1 mt-1">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#db2777]"></span>
+            <span className="text-xs text-[#313166]">Active Customers</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-full bg-accent-600"></span>
-          <span className="text-sm text-gray-600">Active Customers</span>
+
+        {/* Inactive */}
+        <div className="flex flex-col items-center">
+          <span className="text-xl font-bold text-[#313166]">{inactive}</span>
+          <div className="flex items-center gap-1 mt-1">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#313166]"></span>
+            <span className="text-xs text-[#313166]">Inactive Customers</span>
+          </div>
         </div>
       </div>
     </div>

@@ -49,8 +49,7 @@ function Dashboard() {
             <ChurnRate />
           </div>
           
-          <div className="col-span-12 md:col-span-8">
-            <div className="dashboard-card h-full">
+          <div className="col-span-1 md:col-span-8">
               <CustomerEngagementScore />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
@@ -65,7 +64,6 @@ function Dashboard() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 
