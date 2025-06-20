@@ -25,6 +25,8 @@ const CustomerDetails = ({
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
   const [birthdayMessage, setBirthdayMessage] = useState("");
   const [recipientNumber, setRecipientNumber] = useState("");
+  const [messageType, setMessageType] = useState("birthday");
+
 
 
   const DetailItem = ({ icon, label, value, field, isEditable = true }) => (
@@ -369,7 +371,7 @@ const CustomerDetails = ({
   <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
     <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
       <h3 className="text-lg font-semibold mb-4 text-[#2e2d5f]">
-        Send Birthday Message
+        Send WhatsApp Message
       </h3>
 
       {/* 👤 Mobile Number input */}
@@ -381,6 +383,16 @@ const CustomerDetails = ({
         className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
       />
 
+      {/* ✨ Message Type Selector */}
+      <select
+        value={messageType}
+        onChange={(e) => setMessageType(e.target.value)}
+        className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
+      >
+        <option value="birthday">🎂 Birthday</option>
+        <option value="holiday">🎉 Holiday</option>
+      </select>
+
       <div className="mt-4 flex justify-end space-x-2">
         <button
           onClick={() => setShowBirthdayPopup(false)}
@@ -390,11 +402,11 @@ const CustomerDetails = ({
         </button>
         <button
           onClick={() => {
-            // Call WhatsApp API
             fetch("https://graph.facebook.com/v22.0/685786047947355/messages", {
               method: "POST",
               headers: {
-                Authorization: "Bearer EAAJo9kmHxq0BOzG654sbIcUlZApXWbQZBzXMnhQv7bWFcUCNL2HIibsnz23YZA5zJMAgkgaBidPAktFINZAZCyoGZBcyWZAVLY0OduqDiWcuVPOBn5MSP4ghaUHsN4odsx1Pj24VRb70t4Fy0K94Vm7ZBl5jdPVU1JkQd8krzP7M5h87wZBhaOWSdvsZAuptW5hX3Cfx4J9uElnVit04y6P0fG5nrMS4l0S3QGT5wwRwCIRUX78gZDZD",
+                Authorization:
+                  "Bearer EAAJo9kmHxq0BOzG654sbIcUlZApXWbQZBzXMnhQv7bWFcUCNL2HIibsnz23YZA5zJMAgkgaBidPAktFINZAZCyoGZBcyWZAVLY0OduqDiWcuVPOBn5MSP4ghaUHsN4odsx1Pj24VRb70t4Fy0K94Vm7ZBl5jdPVU1JkQd8krzP7M5h87wZBhaOWSdvsZAuptW5hX3Cfx4J9uElnVit04y6P0fG5nrMS4l0S3QGT5wwRwCIRUX78gZDZD",
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
@@ -402,7 +414,7 @@ const CustomerDetails = ({
                 to: recipientNumber,
                 type: "template",
                 template: {
-                  name: "birthday",
+                  name: messageType,
                   language: { code: "en" },
                 },
               }),
@@ -428,8 +440,6 @@ const CustomerDetails = ({
     </div>
   </div>
 )}
-
-
               </div>
             )}
 
