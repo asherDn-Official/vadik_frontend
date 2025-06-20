@@ -132,6 +132,13 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
         error.response?.data?.message ||
           "Registration failed. Please try again."
       );
+      // Navigate to completion page with failure state
+      navigate("/completion", {
+        state: {
+          success: false,
+          error: error.response?.data?.message || "Registration failed",
+        },
+      });
     } finally {
       setIsSubmitting(false);
     }
