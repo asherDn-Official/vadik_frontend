@@ -222,7 +222,7 @@ export const customers = [
   {
     id: 121,
     name: "Karthik Raja",
-    mobileNumber: "+91 95554 51518",
+    mobileNumber: "+91 70105 23550",
     gender: "Male",
     source: "Walk In",
     profession: "IT",
