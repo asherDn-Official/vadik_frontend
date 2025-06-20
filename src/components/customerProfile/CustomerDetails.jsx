@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import {
   LineChart,
   Line,
@@ -21,6 +22,11 @@ const CustomerDetails = ({
   showPurchaseList,
 }) => {
   const tabs = ["Advanced Details", "Advanced Privacy", "Referral"];
+
+  const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
+  const [birthdayMessage, setBirthdayMessage] = useState("");
+  const [recipientNumber, setRecipientNumber] = useState("");
+  const [messageType, setMessageType] = useState("birthday");
 
   const DetailItem = ({ iconSrc, label, value, field, isEditable = true }) => (
     <div
@@ -331,12 +337,14 @@ const CustomerDetails = ({
                     value={customer.advancedDetails.favouriteBrand}
                     field="favouriteBrand"
                   />
-                  <DetailItem
-                    iconSrc="../assets/Birthday-icon.png"
-                    label="Birthday"
-                    value={customer.advancedDetails.birthday}
-                    field="birthday"
-                  />
+                  <div onClick={() => setShowBirthdayPopup(true)} className="cursor-pointer">
+                    <DetailItem
+                      iconSrc="../assets/Birthday-icon.png"
+                      label="Birthday"
+                      value={customer.advancedDetails.birthday}
+                      field="birthday"
+                    />
+                  </div>
                   <DetailItem
                     iconSrc="../assets/Fitness-icon.png"
                     label="Life Style"
@@ -373,6 +381,79 @@ const CustomerDetails = ({
                     value={customer.advancedDetails.customerLabel}
                     field="customerLabel"
                   />
+                  {showBirthdayPopup && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+                      <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
+                        <h3 className="text-lg font-semibold mb-4 text-[#2e2d5f]">
+                          Send WhatsApp Message
+                        </h3>
+
+                        {/* 👤 Mobile Number input */}
+                        <input
+                          type="tel"
+                          placeholder="Enter mobile number (e.g. 919XXXXXXXXX)"
+                          value={recipientNumber}
+                          onChange={(e) => setRecipientNumber(e.target.value)}
+                          className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
+                        />
+
+                        {/* ✨ Message Type Selector */}
+                        <select
+                          value={messageType}
+                          onChange={(e) => setMessageType(e.target.value)}
+                          className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
+                        >
+                          <option value="birthday">🎂 Birthday</option>
+                          <option value="holiday">🎉 Holiday</option>
+                        </select>
+
+                        <div className="mt-4 flex justify-end space-x-2">
+                          <button
+                            onClick={() => setShowBirthdayPopup(false)}
+                            className="px-4 py-1.5 text-sm rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => {
+                              fetch("https://graph.facebook.com/v22.0/685786047947355/messages", {
+                                method: "POST",
+                                headers: {
+                                  Authorization:
+                                    "Bearer EAAJo9kmHxq0BOZB9wZCtMLOsXResmMgPuDF1JPVhCZC5uqGjaOTAZCEcnZBVHuI3xZCwSsIf3p1CxeYlVHWRkm5w9qFIkZADf5AmMVAJJymjj3pi5mJGzZBeYoqqQfTdFA5YEoCqwEH0i6BFRwXSZBpwQu2C2PUqLZCTdQkzCCxOeXUkBt2ZBpQUO3fLMAEEfVw4z6fZAQhLQUeRwrW4CO9P16uB21ni8PHnREGOEjtZC192MVW8xcQZDZD",
+                                  "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({
+                                  messaging_product: "whatsapp",
+                                  to: recipientNumber,
+                                  type: "template",
+                                  template: {
+                                    name: messageType,
+                                    language: { code: "en" },
+                                  },
+                                }),
+                              })
+                                .then((res) => res.json())
+                                .then((json) => {
+                                  console.log("✅ Message sent", json);
+                                  setShowBirthdayPopup(false);
+                                  setRecipientNumber("");
+                                })
+                                .catch((err) => {
+                                  console.error("❌ Send failed", err);
+                                });
+                            }}
+                            className={`px-4 py-1.5 text-sm rounded bg-[#2e2d5f] text-white hover:bg-[#24244a] ${
+                              !recipientNumber ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                            disabled={!recipientNumber}
+                          >
+                            Send
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
