@@ -120,7 +120,7 @@ const CustomerDetails = ({
                   <img
                     src={customer.profileImage}
                     alt={customer.name}
-                    className="w-24 h-24 rounded-lg object-cover"
+                    className="w-[152px] h-[182px] rounded-lg object-cover"
                   />
                   <div
                     className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ${
@@ -138,11 +138,11 @@ const CustomerDetails = ({
                     />
                   </div>
                 </div>
-                <div className="ml-6">
+                <div className="ml-14">
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">
                     Basic Details
                   </h2>
-                  <div className="grid grid-cols-3 gap-x-8 gap-y-6">
+                  <div className="grid grid-cols-3 gap-x-16 gap-y-6">
                     <div>
                       <p className="text-sm text-gray-500 mb-2">Name</p>
                       {isEditing ? (
