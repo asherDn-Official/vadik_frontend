@@ -14,35 +14,42 @@ jobs:
       - name: 🛒 Checkout Code
         uses: actions/checkout@v3
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4 # Use a modern Node.js version
+        with:
+          node-version: '20'
+
       - name: 📦 Install Dependencies
         run: npm ci
 
       - name: 🛠 Build React App
-        run: npm run build
+        run: npm npm run build # Assuming this builds into a 'dist' folder
 
-      - name: 🧹 Clean old dist on EC2
+      # No need for separate Clean and Upload actions if using rsync --delete
+      # Instead, we'll use a single rsync command within an SSH action
+
+      - name: 🚀 Deploy to EC2 with rsync and Restart Nginx
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            rm -rf /home/ec2-user/vadik_frontend/dist/*
+            # Define source and target paths on the runner and EC2
+            LOCAL_BUILD_DIR="./dist/" # Important: Trailing slash for rsync to copy contents
+            REMOTE_APP_DIR="/home/ec2-user/vadik_frontend/dist" # No trailing slash for remote target base
 
-      - name: 📤 Upload Build to EC2
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          source: "dist/*"     # ✅ Only contents of dist, not the folder
-          target: "/home/ec2-user/vadik_frontend/dist"
+            # Ensure the remote target directory exists
+            sudo mkdir -p "${REMOTE_APP_DIR}"
+            sudo chown -R ${{ secrets.EC2_USER }}:nginx "${REMOTE_APP_DIR}" # Adjust group if not 'nginx'
+            sudo chmod -R 755 "${REMOTE_APP_DIR}"
 
-      - name: 🔁 Restart Nginx
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            sudo systemctl restart nginx
+            # Use rsync to synchronize files
+            # -a: archive mode (preserves permissions, ownership, timestamps)
+            # -v: verbose
+            # -z: compress file data during transfer
+            # --delete: deletes extraneous files from dest dir (keeps remote clean)
+            rsync -avz --delete "$LOCAL_BUILD_DIR" ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:"$REMOTE_APP_DIR"
+
+            # Restart Nginx gracefully
+            sudo systemctl reload nginx
