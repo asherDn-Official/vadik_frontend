@@ -14,6 +14,7 @@ import KYCPage from "./pages/kyc";
 import SettingsPage from "./pages/SettingsPage";
 import PerformanceTracking from "./pages/PerformanceTracking";
 import CustomerPersonalisation from "./pages/CustomerPersonalisation";
+import CustomerOpportunities from "./pages/CustomerOpportunities";
 
 function App() {
   const [formData, setFormData] = useState({
@@ -63,7 +64,11 @@ function App() {
             path="/customer-profile/:customerId"
             element={<CustomerProfile />}
           />
-          <Route path="Personalisation" element={<CustomerPersonalisation />} />{" "}
+          <Route path="personalisation" element={<CustomerPersonalisation />} />{" "}
+          <Route
+            path="customeropportunities"
+            element={<CustomerOpportunities />}
+          />
           <Route path="/performance" element={<PerformanceTracking />} />
           <Route path="integration" element={<IntegrationPage />} />
           <Route path="kyc" element={<KYCPage />} />

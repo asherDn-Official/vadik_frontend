@@ -1,0 +1,58 @@
+import React from "react";
+import { Edit, Trash2 } from "lucide-react";
+
+const QuizList = ({ campaigns, onEdit, onDelete }) => {
+  return (
+    <div className="space-y-4">
+      {campaigns.map((campaign) => (
+        <div
+          key={campaign.id}
+          className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-md transition-shadow"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                  <span className="text-pink-500 text-xs font-bold">?</span>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-800">
+                  {campaign.title}
+                </h3>
+                <p className="text-gray-600">
+                  No Of Questions : {campaign.questions}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => onEdit(campaign)}
+                className="p-2 text-gray-500 hover:text-pink-600 hover:bg-pink-50 rounded-lg transition-colors"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => onDelete(campaign.id)}
+                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {campaigns.length === 0 && (
+        <div className="text-center py-12 text-gray-500">
+          <p>
+            No quiz campaigns created yet. Click "Create Quiz" to get started.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default QuizList;
