@@ -4,7 +4,7 @@ import CustomerList from "./pages/CustomerList";
 // import CustomerProfile from "./pages/CustomerProfile";
 import CustomerProfile from "./components/customerProfile/CustomerProfile";
 import Layout from "./components/common/Layout";
-import CustomerOpportunities from "./pages/CustomerOpportunities";
+// import CustomerOpportunities from "./pages/CustomerOpportunities";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import { useState } from "react";
@@ -13,6 +13,7 @@ import IntegrationPage from "./pages/IntegrationPage";
 import KYCPage from "./pages/kyc";
 import SettingsPage from "./pages/SettingsPage";
 import PerformanceTracking from "./pages/PerformanceTracking";
+import CustomerPersonalisation from "./pages/CustomerPersonalisation";
 
 function App() {
   const [formData, setFormData] = useState({
@@ -62,10 +63,7 @@ function App() {
             path="/customer-profile/:customerId"
             element={<CustomerProfile />}
           />
-          <Route
-            path="customeropportunities"
-            element={<CustomerOpportunities />}
-          />{" "}
+          <Route path="Personalisation" element={<CustomerPersonalisation />} />{" "}
           <Route path="/performance" element={<PerformanceTracking />} />
           <Route path="integration" element={<IntegrationPage />} />
           <Route path="kyc" element={<KYCPage />} />

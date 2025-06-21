@@ -47,9 +47,9 @@ function Sidebar() {
         </NavLink>
 
         <NavLink
-          to="/customeropportunities"
+          to="/Personalisation"
           className={`sidebar-icon ${
-            isActive("/customeropportunities") ? "sidebar-active" : ""
+            isActive("/Personalisation") ? "sidebar-active" : ""
           }`}
         >
           {/* <FaLightbulb size={20} /> */}
@@ -58,9 +58,9 @@ function Sidebar() {
         </NavLink>
 
         <NavLink
-          to="/personalization"
+          to="/Opportunities"
           className={`sidebar-icon ${
-            isActive("/personalization") ? "sidebar-active" : ""
+            isActive("/Opportunities") ? "sidebar-active" : ""
           }`}
         >
           {/* <FaUsersCog size={20} /> */}
