@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
-    emailOrPhone: "",
+    email: "", // Changed from emailOrPhone to match API
     password: "",
     rememberMe: false,
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -16,13 +19,48 @@ const Login = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // In a real app, this would handle authentication
-    console.log("Login attempt with:", credentials);
+    setLoading(true);
+    setError(null);
 
-    // For demo purposes, redirect to register page
-    window.location.href = "/register";
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/auth/retailerLogin",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: credentials.email,
+            password: credentials.password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // Login successful
+      console.log("Login successful:", data);
+
+      // Store token or user data if needed
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      // Redirect to dashboard or appropriate page
+      navigate("/dashboard"); // Change this to your desired route
+    } catch (err) {
+      setError(err.message || "An error occurred during login");
+      console.error("Login error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,14 +70,20 @@ const Login = () => {
           Sign in to your account
         </h1>
 
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/80 text-white rounded-md">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <input
-              type="text"
-              name="emailOrPhone"
-              value={credentials.emailOrPhone}
+              type="email" // Changed to email to match API
+              name="email" // Changed from emailOrPhone to match API
+              value={credentials.email}
               onChange={handleChange}
-              placeholder="Enter Email address or Phone Number"
+              placeholder="Enter Email address"
               className="w-full px-4 py-3 rounded-md bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
               required
             />
@@ -79,11 +123,23 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white font-medium py-3 px-4 rounded-md transition duration-200 ease-in-out"
+            disabled={loading}
+            className={`w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white font-medium py-3 px-4 rounded-md transition duration-200 ease-in-out ${
+              loading ? "opacity-70 cursor-not-allowed" : ""
+            }`}
           >
-            Sign In
+            {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
+
+        <div className="mt-6 text-center text-sm">
+          <p>
+            Don't have an account?{" "}
+            <Link to="/register" className="font-medium hover:underline">
+              Register here
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
