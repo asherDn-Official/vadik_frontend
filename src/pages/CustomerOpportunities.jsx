@@ -157,7 +157,7 @@ const CustomerOpportunities = () => {
           <h1 className="text-2xl font-bold text-slate-800 mb-2">
             Customer Opportunities
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 ">
             This smart chatbot suggests the right offers to the right customers
             <br />
             at the right time using intelligent triggers.
@@ -168,21 +168,21 @@ const CustomerOpportunities = () => {
         <div className="flex justify-center mt-8 space-x-8">
           <button
             onClick={() => setActiveTab("engagement")}
-            className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${
+            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${
               activeTab === "engagement"
                 ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
             }`}
           >
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg flex justify-center">
               {/* <div className="w-4 h-4 bg-white rounded"></div> */}
               <img src="../assets/cus-1.png" alt="" />
             </div>
             <div>
-              <div className="font-semibold text-slate-800">
+              <div className="font-semibold text-slate-800 text-start">
                 Personalization engagement
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-500 text-start">
                 Birthday and anniversary-based personalized offers.
               </div>
             </div>
@@ -190,7 +190,7 @@ const CustomerOpportunities = () => {
 
           <button
             onClick={() => setActiveTab("campaign")}
-            className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${
+            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${
               activeTab === "campaign"
                 ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
@@ -200,10 +200,10 @@ const CustomerOpportunities = () => {
               <img src="../assets/cus-2.png" alt="" />
             </div>
             <div>
-              <div className="font-semibold text-slate-800">
+              <div className="font-semibold text-slate-800 text-start">
                 Personalization Campaign
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-500 text-start">
                 Festival and region-specific campaign suggestions.
               </div>
             </div>
@@ -211,7 +211,7 @@ const CustomerOpportunities = () => {
 
           <button
             onClick={() => setActiveTab("customer-recommendation")}
-            className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${
+            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${
               activeTab === "customer-recommendation"
                 ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
@@ -221,10 +221,10 @@ const CustomerOpportunities = () => {
               <img src="../assets/cus-3.png" alt="" />
             </div>
             <div>
-              <div className="font-semibold text-slate-800">
+              <div className="font-semibold text-slate-800 text-start">
                 Customer Recommendation
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-500 text-start">
                 Product suggestions based on behavior and stock.
               </div>
             </div>
@@ -232,7 +232,7 @@ const CustomerOpportunities = () => {
 
           <button
             onClick={() => setActiveTab("store-recommendation")}
-            className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${
+            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${
               activeTab === "store-recommendation"
                 ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
@@ -242,10 +242,10 @@ const CustomerOpportunities = () => {
               <img src="../assets/cus-4.png" alt="" />
             </div>
             <div>
-              <div className="font-semibold text-slate-800">
+              <div className="font-semibold text-slate-800 text-start">
                 Store recommendation
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-500 text-start">
                 Retailer Stock Management Suggestion
               </div>
             </div>

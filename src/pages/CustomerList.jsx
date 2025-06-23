@@ -134,10 +134,7 @@ const CustomerList = () => {
                       {customer.income}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      <button
-                        className="text-gray-500 hover:text-gray-700"
-                        onClick={(e) => handleEditClick(e, customer.id)}
-                      >
+                      <button className="text-gray-500 hover:text-gray-700">
                         <img
                           src="../assets/pen-edit-icon.png"
                           alt="Edit"
