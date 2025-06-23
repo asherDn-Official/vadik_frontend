@@ -35,7 +35,7 @@ const SettingsPage = () => {
       {/* Settings Sidebar */}
       <div className="w-64 border-r border-gray-200 bg-white rounded-tl-[20px] rounded-bl-[20px]">
         <div className="p-6 border-b border-gray-200">
-          <h1 className="text-xl font-medium text-gray-800">Settings</h1>
+          <h1 className="text-xl font-medium text-[#313166]">Settings</h1>
         </div>
         <div className="py-4">
           <SettingsTab
@@ -96,7 +96,7 @@ const SettingsTab = ({ icon, text, isActive, onClick }) => {
       }`}
       onClick={onClick}
     >
-      <span className={`mr-3 ${isActive ? "text-blue-500" : "text-gray-600"}`}>
+      <span className={`mr-3 ${isActive ? "text-[#313166]" : "text-gray-600"}`}>
         {icon}
       </span>
       <span

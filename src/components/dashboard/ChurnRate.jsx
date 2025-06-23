@@ -49,7 +49,7 @@ function ChurnRate({ value = 55 }) {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md w-full mx-auto">
+    <div className="bg-white p-6 rounded-xl shadow-md w-full mx-auto h-[264px]">
       <h2 className="text-lg font-semibold text-[#1e1b4b] mb-4">Churn Rate</h2>
 
       <div className="relative w-full h-48">

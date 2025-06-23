@@ -19,7 +19,7 @@ function Dashboard() {
     <div className="min-h-screen bg-gray-50">
       <div className=" max-w-[1600px] mx-auto">
         <div className="bg-white p-4">
-          <header className="flex justify-between items-center mb-8">
+          <header className="flex justify-between items-center">
             <h1 className="text-2xl font-semibold text-gray-800">
               Welcome, Admin
             </h1>

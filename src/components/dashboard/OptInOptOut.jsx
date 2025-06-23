@@ -1,11 +1,11 @@
-import React from 'react';
+import React from "react";
 
 function OptInOptOut() {
   const optOut = 25;
   const optIn = 75;
 
   return (
-    <div className="bg-white rounded-xl shadow-md px-5 py-4 w-[285px]">
+    <div className="bg-white rounded-xl shadow-md px-5 py-4 ">
       {/* Title */}
       <h2 className="text-base font-semibold text-[#1D1B4F] mb-5">
         Opt-In/Opt-Out
