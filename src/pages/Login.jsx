@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import api from "../api/apiconfig";
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
@@ -25,25 +26,15 @@ const Login = () => {
     setError(null);
 
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/auth/retailerLogin",
+      const response = await api.post(
+        "api/auth/retailerLogin",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: credentials.email,
-            password: credentials.password,
-          }),
+          email: credentials.email,
+          password: credentials.password,
         }
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
+      const data = response.data;
 
       // Login successful
       console.log("Login successful:", data);
@@ -56,7 +47,11 @@ const Login = () => {
       // Redirect to dashboard or appropriate page
       navigate("/dashboard"); // Change this to your desired route
     } catch (err) {
-      setError(err.message || "An error occurred during login");
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "An error occurred during login"
+      );
       console.error("Login error:", err);
     } finally {
       setLoading(false);
