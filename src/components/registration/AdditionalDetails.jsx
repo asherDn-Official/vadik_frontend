@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import api from "../../api/apiconfig";
 
 const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
   const [errors, setErrors] = useState({});
@@ -10,6 +11,9 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
   const [submitError, setSubmitError] = useState("");
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+
+  const retailerId = localStorage.getItem("retailerId");
+  console.log(retailerId);
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -89,56 +93,49 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
       const data = new FormData();
 
       // Append all the form fields to the FormData
-      data.append("firstName", formData.firstName);
-      data.append("lastName", formData.lastName);
-      data.append("phone", formData.mobile);
-      data.append("email", formData.email);
-      data.append("gender", formData.gender || "Male");
+      data.append("fullName", `${formData.firstName} ${formData.lastName}`);
       data.append("storeName", formData.storeName);
       data.append("storeType", formData.storeType);
       data.append("storeAddress", formData.storeAddress);
-      data.append("city", formData.city);
-      data.append("pincode", formData.pincode);
-      if (formData.logo) {
-        data.append("photo", formData.logo);
-      }
-      data.append("gstNumber", formData.gstNumber);
-      data.append("numberOfStaffs", formData.staffCount);
-      data.append("shopContactNumber", formData.contactNumber);
-      data.append("ownerName", formData.ownerName);
+      data.append("storeOwnerName", formData.ownerName);
+      data.append("storeContactNumber", formData.contactNumber);
+      data.append("storeCity", formData.city);
+      data.append("storePincode", formData.pincode);
+      data.append("GSTNumber", formData.gstNumber);
+      data.append("numberOfEmployees", formData.staffCount);
       data.append("numberOfCustomers", formData.customerCount || "1-10");
+      data.append("status", "active");
+      if (formData.logo) {
+        data.append("storeImage", formData.logo);
+      }
+      
+      // data.append("phone", formData.mobile);
+      data.append("email", formData.email);
+      // data.append("gender", formData.gender || "Male");
+      data.append("notes", "Updated retailer information");
 
-      const response = await axios.post(
-        "http://localhost:5000/retailer/register",
-        data,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const response = await api.post(`api/retailer/${retailerId}`, data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       console.log("Registration successful:", response.data);
       // Navigate to completion page with success state
       navigate("/completion", {
         state: {
           success: true,
-          data: response.data,
+          data: [],
         },
       });
+
+      // localStorage.removeItem('retailerId')
     } catch (error) {
       console.error("Registration failed:", error);
       setSubmitError(
         error.response?.data?.message ||
           "Registration failed. Please try again."
       );
-      // Navigate to completion page with failure state
-      navigate("/completion", {
-        state: {
-          success: false,
-          error: error.response?.data?.message || "Registration failed",
-        },
-      });
     } finally {
       setIsSubmitting(false);
     }

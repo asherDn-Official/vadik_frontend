@@ -1,21 +1,69 @@
-import { useState } from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import ProgressIndicator from "../components/registration/ProgressIndicator";
 import BasicInformation from "../components/registration/BasicInformation";
 import StoreInformation from "../components/registration/StoreInformation";
 import AdditionalDetails from "../components/registration/AdditionalDetails";
 import Completion from "../components/registration/Completion";
+import api from "../api/apiconfig";
 
 const Register = ({ formData, updateFormData }) => {
+  const [initialOnboardingData, setInitialOnboardingData] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
   const navigate = useNavigate();
+  const params = useParams();
+  const wildcardPath = params["*"];
+  const id = wildcardPath?.split("/")?.[1];
+
+
+
+  const getOnBoradingInitialData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/api/retailer/${id}`);
+      const data = response.data.data;
+      setInitialOnboardingData(data);
+      
+      // Update form data directly from API response
+      const nameParts = data.fullName.split(" ");
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+      
+      updateFormData({
+        firstName: firstName,
+        lastName: lastName,
+        email: data.email,
+        mobile: data.phone,
+        storeName: data.company,
+      });
+    } catch (err) {
+      console.error("Error fetching onboarding data:", err);
+      // You might want to add error state handling here
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      getOnBoradingInitialData();
+        localStorage.setItem("retailerId", id);
+    }
+  }, [id]);
 
   const goToStep = (step) => {
     setCurrentStep(step);
 
     switch (step) {
       case 1:
-        navigate("/register/basic");
+        navigate(`/register/basic/${id}`);
         break;
       case 2:
         navigate("/register/store");
@@ -30,6 +78,19 @@ const Register = ({ formData, updateFormData }) => {
         navigate("/register/basic");
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background-light flex items-center justify-center">
+        <div className="text-center">
+          <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full" role="status">
+            {/* <span className="visually-hidden">Loading...</span> */}
+          </div>
+          <p className="mt-4">Loading your information...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background-light m-10">
@@ -58,10 +119,10 @@ const Register = ({ formData, updateFormData }) => {
         <Routes>
           <Route
             path="/"
-            element={<Navigate to="/register/basic\" replace />}
+            element={<Navigate to={`/register/basic/${id}`} replace />}
           />
           <Route
-            path="/basic"
+            path="/basic/:id"
             element={
               <BasicInformation
                 formData={formData}
