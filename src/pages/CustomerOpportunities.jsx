@@ -112,7 +112,7 @@ const CustomerOpportunities = () => {
   if (showCreateForm && activeTab === "engagement") {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="p-6">
+        <div className="p-8">
           <button
             onClick={handleBackToList}
             className="flex items-center text-slate-600 hover:text-slate-800 transition-colors mb-6"
@@ -295,9 +295,9 @@ const CustomerOpportunities = () => {
               </h3>
               <button
                 onClick={handleCreateCampaign}
-                className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center text-[#313166] px-4 py-2 bg-white border border-[#313166] rounded-[10px] hover:bg-gray-50 transition-colors"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4 mr-2 text-[#313166]" />
                 Create{" "}
                 {selectedCampaign === "quiz"
                   ? "Quiz"

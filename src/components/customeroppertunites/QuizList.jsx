@@ -7,14 +7,15 @@ const QuizList = ({ campaigns, onEdit, onDelete }) => {
       {campaigns.map((campaign) => (
         <div
           key={campaign.id}
-          className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-md transition-shadow"
+          className="bg-white rounded-lg p-6 border border-gray-300 hover:shadow-md transition-shadow"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center">
-                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                  <span className="text-pink-500 text-xs font-bold">?</span>
-                </div>
+                {/* <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center"> */}
+                  {/* <span className="text-pink-500 text-xs font-bold">?</span> */}
+                  <img src="../assets/quiz-icon.png" alt="" />
+                {/* </div> */}
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-slate-800">
@@ -29,13 +30,13 @@ const QuizList = ({ campaigns, onEdit, onDelete }) => {
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => onEdit(campaign)}
-                className="p-2 text-gray-500 hover:text-pink-600 hover:bg-pink-50 rounded-lg transition-colors"
+                className="p-2 text-[#313166] bg-[#3131661A] hover:text-pink-600 hover:bg-pink-50 rounded-lg transition-colors"
               >
                 <Edit className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(campaign.id)}
-                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="p-2 text-[#FD2C2F] bg-[#FF00001A] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { XCircle, CheckCircle, List, BarChart } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -18,61 +19,68 @@ const CustomerDetails = ({
   onCancel,
   onSave,
   onInputChange,
-  onTogglePurchaseView = () => {}, // Default empty function
+  onTogglePurchaseView,
   showPurchaseList,
-  onToggleShowAllPurchases,
+  onToggleShowAllPurchases
 }) => {
   const tabs = ["Advanced Details", "Advanced Privacy", "Referral"];
+
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
   const [recipientNumber, setRecipientNumber] = useState("");
   const [messageType, setMessageType] = useState("birthday");
 
-  const DetailItem = ({ iconSrc, label, value, field, isEditable = true }) => (
-    <div
-      className="flex items-center justify-between p-4 rounded-[14px]"
-      style={{ border: "1px solid #3131661A" }}
-    >
-      <div className="flex items-center">
+  const DetailItem = ({ iconSrc, label, value, field, isEditable = true }) => {
+    const currentValue = isEditing ? (editedData[field] || "") : value;
+    return (
+      <div
+        className="flex items-center justify-between p-4 rounded-[14px]"
+        style={{ border: "1px solid #3131661A" }}
+      >
+        <div className="flex items-center">
+          <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
+            <img src={iconSrc} alt={label} className="w-12 h-12" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-900">{label}</p>
+            {isEditing && isEditable ? (
+              <input
+                type="text"
+                value={currentValue}
+                onChange={(e) => onInputChange(field, e.target.value)}
+                className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+              />
+            ) : (
+              <p className="text-sm text-gray-600">{value}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const PrivacyItem = ({ iconSrc, label, value, field, isEditable = true }) => {
+    const currentValue = isEditing ? (editedData[field] || "") : value;
+    return (
+      <div className="flex items-center p-4 border-b border-gray-100">
         <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
           <img src={iconSrc} alt={label} className="w-12 h-12" />
         </div>
-        <div>
-          <p className="text-sm font-medium text-gray-900">{label}</p>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-500 mb-1">{label}</p>
           {isEditing && isEditable ? (
             <input
               type="text"
-              value={editedData[field] || ""}
+              value={currentValue}
               onChange={(e) => onInputChange(field, e.target.value)}
-              className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           ) : (
-            <p className="text-sm text-gray-600">{value}</p>
+            <p className="text-sm font-medium text-gray-900">{value}</p>
           )}
         </div>
       </div>
-    </div>
-  );
-
-  const PrivacyItem = ({ iconSrc, label, value, field, isEditable = true }) => (
-    <div className="flex items-center p-4 border-b border-gray-100">
-      <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
-        <img src={iconSrc} alt={label} className="w-12 h-12" />
-      </div>
-      <div className="flex-1">
-        <p className="text-sm font-medium text-gray-500 mb-1">{label}</p>
-        {isEditing && isEditable ? (
-          <input
-            type="text"
-            value={editedData[field] || ""}
-            onChange={(e) => onInputChange(field, e.target.value)}
-            className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        ) : (
-          <p className="text-sm font-medium text-gray-900">{value}</p>
-        )}
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderStars = (rating) => {
     const stars = [];
@@ -81,20 +89,26 @@ const CustomerDetails = ({
 
     for (let i = 0; i < fullStars; i++) {
       stars.push(
-        <span key={i} className="text-yellow-400">★</span>
+        <span key={i} className="text-yellow-400">
+          ★
+        </span>
       );
     }
 
     if (hasHalfStar) {
       stars.push(
-        <span key="half" className="text-yellow-400">☆</span>
+        <span key="half" className="text-yellow-400">
+          ☆
+        </span>
       );
     }
 
     const remainingStars = 5 - Math.ceil(rating);
     for (let i = 0; i < remainingStars; i++) {
       stars.push(
-        <span key={`empty-${i}`} className="text-gray-300">★</span>
+        <span key={`empty-${i}`} className="text-gray-300">
+          ★
+        </span>
       );
     }
 
@@ -104,8 +118,11 @@ const CustomerDetails = ({
   return (
     <div className="flex-1 flex flex-col bg-[#F4F5F9]">
       <div className="pr-6 pt-6 pl-6">
-        <h1 className="text-xl font-semibold text-gray-900">Customer Profile</h1>
+        <h1 className="text-xl font-semibold text-gray-900">
+          Customer Profile
+        </h1>
       </div>
+
       <div className="flex-1 p-6 overflow-y-auto">
         <div className="rounded-lg shadow-sm">
           {/* Profile Header */}
@@ -119,23 +136,21 @@ const CustomerDetails = ({
                     className="w-[152px] h-[182px] rounded-lg object-cover"
                   />
                   <div
-                    className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ${
+                    className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center ${
                       customer.isActive ? "bg-green-500" : "bg-red-500"
-                    }`}
+                    } shadow-lg`}
                   >
-                    <img
-                      src={
-                        customer.isActive
-                          ? "https://cdn.jsdelivr.net/gh/lucide-icons/lucide@latest/icons/check.svg" 
-                          : "https://cdn.jsdelivr.net/gh/lucide-icons/lucide@latest/icons/x.svg" 
-                      }
-                      className="w-3 h-3 text-white"
-                      alt="status"
-                    />
+                    {customer.isActive ? (
+                      <CheckCircle className="w-3 h-3 text-white" />
+                    ) : (
+                      <XCircle className="w-3 h-3 text-white" />
+                    )}
                   </div>
                 </div>
                 <div className="ml-14">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Details</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                    Basic Details
+                  </h2>
                   <div className="grid grid-cols-3 gap-x-16 gap-y-6">
                     <div>
                       <p className="text-sm text-gray-500 mb-2">Name</p>
@@ -143,15 +158,21 @@ const CustomerDetails = ({
                         <input
                           type="text"
                           value={editedData.name || ""}
-                          onChange={(e) => onInputChange("name", e.target.value)}
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          onChange={(e) =>
+                            onInputChange("name", e.target.value)
+                          }
+                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
                         />
                       ) : (
-                        <p className="text-sm font-medium text-gray-900">{customer.name}</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {customer.name}
+                        </p>
                       )}
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500 mb-2">Mobile Number</p>
+                      <p className="text-sm text-gray-500 mb-2">
+                        Mobile Number
+                      </p>
                       {isEditing ? (
                         <input
                           type="text"
@@ -159,7 +180,7 @@ const CustomerDetails = ({
                           onChange={(e) =>
                             onInputChange("mobileNumber", e.target.value)
                           }
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
                         />
                       ) : (
                         <p className="text-sm font-medium text-gray-900">
@@ -175,7 +196,7 @@ const CustomerDetails = ({
                           onChange={(e) =>
                             onInputChange("source", e.target.value)
                           }
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
                         >
                           <option value="Walk In">Walk In</option>
                           <option value="Online">Online</option>
@@ -196,7 +217,7 @@ const CustomerDetails = ({
                           onChange={(e) =>
                             onInputChange("vadikId", e.target.value)
                           }
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
                         />
                       ) : (
                         <p className="text-sm font-medium text-gray-900">
@@ -212,7 +233,7 @@ const CustomerDetails = ({
                           onChange={(e) =>
                             onInputChange("gender", e.target.value)
                           }
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
                         >
                           <option value="Male">Male</option>
                           <option value="Female">Female</option>
@@ -233,7 +254,7 @@ const CustomerDetails = ({
                           onChange={(e) =>
                             onInputChange("firstVisit", e.target.value)
                           }
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
                         />
                       ) : (
                         <p className="text-sm font-medium text-gray-900">
@@ -246,11 +267,10 @@ const CustomerDetails = ({
               </div>
             </div>
           </div>
-
-          {/* Tabs Section */}
           <div className="bg-white p-8 rounded-[20px]">
-            <div className="border-b border-gray-200 pb-5">
-              <nav className="flex space-x-8 px-6">
+            {/* Tabs */}
+            <div className="border-b border-gray-200 bg-white pb-5">
+              <nav className="flex space-x-8 px-6 ">
                 {tabs.map((tab) => (
                   <button
                     key={tab}
@@ -364,13 +384,13 @@ const CustomerDetails = ({
                     value={customer.advancedDetails.customerLabel}
                     field="customerLabel"
                   />
-
                   {showBirthdayPopup && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
                       <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
                         <h3 className="text-lg font-semibold mb-4 text-[#2e2d5f]">
                           Send WhatsApp Message
                         </h3>
+
                         <input
                           type="tel"
                           placeholder="Enter mobile number (e.g. 919XXXXXXXXX)"
@@ -378,6 +398,7 @@ const CustomerDetails = ({
                           onChange={(e) => setRecipientNumber(e.target.value)}
                           className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
                         />
+
                         <select
                           value={messageType}
                           onChange={(e) => setMessageType(e.target.value)}
@@ -386,6 +407,7 @@ const CustomerDetails = ({
                           <option value="birthday">🎂 Birthday</option>
                           <option value="holiday">🎉 Holiday</option>
                         </select>
+
                         <div className="mt-4 flex justify-end space-x-2">
                           <button
                             onClick={() => setShowBirthdayPopup(false)}
@@ -395,7 +417,7 @@ const CustomerDetails = ({
                           </button>
                           <button
                             onClick={() => {
-                              fetch("https://graph.facebook.com/v22.0/685786047947355/messages",  {
+                              fetch("https://graph.facebook.com/v22.0/685786047947355/messages", {
                                 method: "POST",
                                 headers: {
                                   Authorization:
@@ -469,7 +491,9 @@ const CustomerDetails = ({
                         Satisfaction Score
                       </p>
                       <div className="flex items-center">
-                        {renderStars(customer.advancedPrivacy.satisfactionScore)}
+                        {renderStars(
+                          customer.advancedPrivacy.satisfactionScore
+                        )}
                       </div>
                     </div>
                   </div>
@@ -492,7 +516,7 @@ const CustomerDetails = ({
                     field="loyaltyPoints"
                   />
 
-                  {/* Purchase History */}
+                  {/* Purchase History Section */}
                   <div className="p-6 border-t border-gray-200">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-medium text-gray-900">
@@ -500,58 +524,14 @@ const CustomerDetails = ({
                       </h3>
                       <div className="flex space-x-2">
                         <button
-                          type="button"
-                          onClick={() => onTogglePurchaseView(false)}
-                          className={`p-2 rounded-lg ${
-                            !showPurchaseList
-                              ? 'bg-blue-100 text-blue-600'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                          aria-label="View as chart"
+                          onClick={onTogglePurchaseView}
+                          className="p-2 bg-gray-100 rounded hover:bg-gray-200"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M3 3v18h18"/>
-                            <path d="m19 9-5 5-4-4-3 3"/>
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onTogglePurchaseView(true)}
-                          className={`p-2 rounded-lg ${
-                            showPurchaseList
-                              ? 'bg-blue-100 text-blue-600'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                          aria-label="View as list"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <line x1="8" x2="21" y1="6" y2="6"/>
-                            <line x1="8" x2="21" y1="12" y2="12"/>
-                            <line x1="8" x2="21" y1="18" y2="18"/>
-                            <line x1="3" x2="3.01" y1="6" y2="6"/>
-                            <line x1="3" x2="3.01" y1="12" y2="12"/>
-                            <line x1="3" x2="3.01" y1="18" y2="18"/>
-                          </svg>
+                          {showPurchaseList ? (
+                            <BarChart className="w-5 h-5" />
+                          ) : (
+                            <List className="w-5 h-5" />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -589,7 +569,7 @@ const CustomerDetails = ({
                           .map((purchase, index) => (
                             <div
                               key={index}
-                              className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg"
+                              className="flex justify-between items-center py-2"
                             >
                               <div>
                                 <p className="text-sm font-medium text-gray-900">
@@ -607,11 +587,15 @@ const CustomerDetails = ({
                         {customer.purchaseHistory.length > 5 && (
                           <button
                             onClick={() =>
-                              onToggleShowAllPurchases(!customer.showAllPurchases)
+                              onToggleShowAllPurchases(
+                                !customer.showAllPurchases
+                              )
                             }
-                            className="text-pink-600 text-sm font-medium hover:text-pink-700 w-full text-center py-2"
+                            className="text-pink-600 text-sm font-medium hover:text-pink-700"
                           >
-                            {customer.showAllPurchases ? "Show Less" : "See More"}
+                            {customer.showAllPurchases
+                              ? "Show Less"
+                              : "See More"}
                           </button>
                         )}
                       </div>
@@ -683,8 +667,8 @@ const CustomerDetails = ({
                                 <img
                                   src={
                                     referral.status === "active"
-                                      ? "https://cdn.jsdelivr.net/gh/lucide-icons/lucide@latest/icons/check.svg" 
-                                      : "https://cdn.jsdelivr.net/gh/lucide-icons/lucide@latest/icons/x.svg" 
+                                      ? "https://cdn.jsdelivr.net/gh/lucide-icons/lucide@latest/icons/check.svg"
+                                      : "https://cdn.jsdelivr.net/gh/lucide-icons/lucide@latest/icons/x.svg"
                                   }
                                   className="w-3 h-3 text-white"
                                   alt="status"
@@ -708,7 +692,7 @@ const CustomerDetails = ({
         </div>
       </div>
 
-      {/* Save/Cancel Buttons */}
+      {/* Fixed Bottom Buttons - Only show when editing */}
       {isEditing && (
         <div className="bg-white border-t border-gray-200 p-6 flex justify-end space-x-4">
           <button

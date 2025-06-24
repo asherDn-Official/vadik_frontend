@@ -120,7 +120,7 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-slate-800">Create Quiz</h2>
         <div className="flex items-center space-x-4">
@@ -153,7 +153,7 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
         {formData.questions.map((question, qIndex) => (
           <div
             key={question.id}
-            className="bg-gray-50 rounded-lg p-6 border border-gray-200"
+            className="bg-[#31316612] rounded-lg p-6 border border-gray-200"
           >
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-lg font-semibold text-slate-800">
