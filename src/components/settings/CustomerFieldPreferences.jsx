@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { FiPlus, FiTrash2, FiSave, FiX } from "react-icons/fi";
 import axios from "axios";
@@ -11,11 +11,13 @@ const CustomerFieldPreferences = () => {
     "Advance Privacy": [],
   });
   const [isAddingField, setIsAddingField] = useState(false);
+  const [isAddingPreference, setIsAddingPreference] = useState(false);
   const [newFieldName, setNewFieldName] = useState("");
+  const [newPreferenceName, setNewPreferenceName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retailerId, setRetailerId] = useState("12345");
-  const [preferenceId, setPreferenceId] = useState("");
+  const [preferenceId, setPreferenceId] = useState("685a7d6ccdaef1ad80c48377");
 
   // Map UI tabs to API field names
   const tabToApiFieldMap = {
@@ -24,51 +26,45 @@ const CustomerFieldPreferences = () => {
     "Advance Privacy": "advancedPrivacyDetails",
   };
 
-  useEffect(() => {
-    const fetchPreferences = async () => {
-      try {
-        const response = await axios.get(
-          "http://13.60.19.134:5000/api/customer-preferences"
-        );
-        
-        if (response.data && response.data.length > 0) {
-          // Find preferences for our retailer
-          const retailerPrefs = response.data.find(
-            pref => pref.retailerId === retailerId
-          );
+  const fetchPreferences = async () => {
+    try {
+      const response = await axios.get(
+        `http://13.60.19.134:5000/api/customer-preferences`
+      );
 
-          if (retailerPrefs) {
-            setPreferenceId(retailerPrefs._id);
-            
-            // Transform API data to UI format
-            const transformedFields = {
-              "Basic Details": retailerPrefs.additionalData.map(item => ({
-                id: `basic-${item.toLowerCase().replace(/\s+/g, '-')}`,
-                label: item,
-              })),
-              "Advance Details": retailerPrefs.advancedDetails.map(item => ({
-                id: `advance-${item.toLowerCase().replace(/\s+/g, '-')}`,
-                label: item,
-              })),
-              "Advance Privacy": retailerPrefs.advancedPrivacyDetails.map(item => ({
-                id: `privacy-${item.toLowerCase().replace(/\s+/g, '-')}`,
-                label: item,
-              })),
-            };
+      if (response.data) {
+        // Transform API data to UI format
+        const transformedFields = {
+          "Basic Details":
+            response.data[0].additionalData?.map((item) => ({
+              id: `basic-${item.toLowerCase().replace(/\s+/g, "-")}`,
+              label: item,
+            })) || [],
+          "Advance Details":
+            response.data[0].advancedDetails?.map((item) => ({
+              id: `advance-${item.toLowerCase().replace(/\s+/g, "-")}`,
+              label: item,
+            })) || [],
+          "Advance Privacy":
+            response.data[0].advancedPrivacyDetails?.map((item) => ({
+              id: `privacy-${item.toLowerCase().replace(/\s+/g, "-")}`,
+              label: item,
+            })) || [],
+        };
 
-            setFields(transformedFields);
-          }
-        }
-        setIsLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setIsLoading(false);
-        console.error("Error fetching preferences:", err);
+        setFields(transformedFields);
       }
-    };
+      setIsLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setIsLoading(false);
+      console.error("Error fetching preferences:", err);
+    }
+  };
 
+  useEffect(() => {
     fetchPreferences();
-  }, [retailerId]);
+  }, [preferenceId]);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -82,11 +78,14 @@ const CustomerFieldPreferences = () => {
     const [removed] = sourceFields.splice(result.source.index, 1);
     destFields.splice(result.destination.index, 0, removed);
 
-    setFields({
+    const updatedFields = {
       ...fields,
       [sourceTab]: sourceFields,
       [destTab]: destFields,
-    });
+    };
+
+    setFields(updatedFields);
+    updatePreferences(updatedFields);
   };
 
   const startAddingField = () => {
@@ -99,6 +98,54 @@ const CustomerFieldPreferences = () => {
     setNewFieldName("");
   };
 
+  const startAddingPreference = () => {
+    setIsAddingPreference(true);
+    setNewPreferenceName("");
+  };
+
+  const cancelAddingPreference = () => {
+    setIsAddingPreference(false);
+    setNewPreferenceName("");
+  };
+
+  const updatePreferences = async (updatedFields) => {
+    try {
+      let payload = {};
+
+      if (activeTab === "Basic Details") {
+        payload = {
+          retailerId,
+          additionalData: updatedFields["Basic Details"].map((f) => f.label),
+          advancedDetails: fields["Advance Details"].map((f) => f.label),
+          advancedPrivacyDetails: fields["Advance Privacy"].map((f) => f.label),
+        };
+      } else if (activeTab === "Advance Details") {
+        payload = {
+          retailerId,
+          additionalData: fields["Basic Details"].map((f) => f.label),
+          advancedDetails: updatedFields["Advance Details"].map((f) => f.label),
+          advancedPrivacyDetails: fields["Advance Privacy"].map((f) => f.label),
+        };
+      } else if (activeTab === "Advance Privacy") {
+        payload = {
+          retailerId,
+          additionalData: fields["Basic Details"].map((f) => f.label),
+          advancedDetails: fields["Advance Details"].map((f) => f.label),
+          advancedPrivacyDetails: updatedFields["Advance Privacy"].map(
+            (f) => f.label
+          ),
+        };
+      }
+
+      await axios.put(
+        `http://13.60.19.134:5000/api/customer-preferences/${preferenceId}`,
+        payload
+      );
+    } catch (err) {
+      console.error("Error updating preferences:", err);
+    }
+  };
+
   const handleAddField = async () => {
     if (!newFieldName.trim()) return;
 
@@ -107,106 +154,92 @@ const CustomerFieldPreferences = () => {
       label: newFieldName.trim(),
     };
 
-    // Update local state immediately for better UX
-    setFields(prev => ({
-      ...prev,
-      [activeTab]: [...prev[activeTab], newField],
-    }));
+    const updatedFields = {
+      ...fields,
+      [activeTab]: [...fields[activeTab], newField],
+    };
 
-    try {
-      // Prepare the updated preferences
-      const apiFieldName = tabToApiFieldMap[activeTab];
-      const updatedFields = {
-        retailerId,
-        [apiFieldName]: [...fields[activeTab].map(f => f.label), newField.label],
-      };
-
-      // Use PUT if we have a preferenceId, otherwise POST
-      if (preferenceId) {
-        await axios.put(
-          `http://13.60.19.134:5000/api/customer-preferences/${preferenceId}`,
-          updatedFields
-        );
-      } else {
-        const response = await axios.post(
-          "http://13.60.19.134:5000/api/customer-preferences",
-          updatedFields
-        );
-        if (response.data._id) {
-          setPreferenceId(response.data._id);
-        }
-      }
-    } catch (err) {
-      console.error("Error adding field:", err);
-      // Revert local state if API call fails
-      setFields(fields);
-    }
-
+    setFields(updatedFields);
+    await updatePreferences(updatedFields);
     setIsAddingField(false);
     setNewFieldName("");
   };
 
+  const handleAddPreference = async () => {
+    if (!newPreferenceName.trim()) return;
+
+    try {
+      const payload = {
+        retailerId,
+        additionalData:
+          activeTab === "Basic Details"
+            ? [
+                ...fields["Basic Details"].map((f) => f.label),
+                newPreferenceName.trim(),
+              ]
+            : fields["Basic Details"].map((f) => f.label),
+        advancedDetails:
+          activeTab === "Advance Details"
+            ? [
+                ...fields["Advance Details"].map((f) => f.label),
+                newPreferenceName.trim(),
+              ]
+            : fields["Advance Details"].map((f) => f.label),
+        advancedPrivacyDetails:
+          activeTab === "Advance Privacy"
+            ? [
+                ...fields["Advance Privacy"].map((f) => f.label),
+                newPreferenceName.trim(),
+              ]
+            : fields["Advance Privacy"].map((f) => f.label),
+      };
+
+      const response = await axios.put(
+        `http://13.60.19.134:5000/api/customer-preferences/685a7d6ccdaef1ad80c48377`,
+        payload
+      );
+
+      fetchPreferences();
+
+      // Update the preference ID to the newly dcreated one
+      setPreferenceId(response.data._id);
+      setIsAddingPreference(false);
+      setNewPreferenceName("");
+    } catch (err) {
+      console.error("Error adding preference:", err);
+    }
+  };
+
   const handleRemoveField = async (tabName, fieldId) => {
-    // Find the field to remove
-    const fieldToRemove = fields[tabName].find(f => f.id === fieldId);
+    const fieldToRemove = fields[tabName].find((f) => f.id === fieldId);
     if (!fieldToRemove) return;
 
-    // Update local state immediately
     const updatedFields = {
       ...fields,
       [tabName]: fields[tabName].filter((field) => field.id !== fieldId),
     };
+
     setFields(updatedFields);
-
-    try {
-      // Prepare the updated preferences
-      const apiFieldName = tabToApiFieldMap[tabName];
-      const updatedPreferences = {
-        retailerId,
-        [apiFieldName]: updatedFields[tabName].map(f => f.label),
-      };
-
-      // Use PUT to update
-      await axios.put(
-        `http://13.60.19.134:5000/api/customer-preferences/${preferenceId}`,
-        updatedPreferences
-      );
-    } catch (err) {
-      console.error("Error removing field:", err);
-      // Revert local state if API call fails
-      setFields(fields);
-    }
+    await updatePreferences(updatedFields);
   };
 
   const handleUpdatePreferences = async () => {
     try {
-      const updatedPreferences = {
+      const payload = {
         retailerId,
-        additionalData: fields["Basic Details"].map(f => f.label),
-        advancedDetails: fields["Advance Details"].map(f => f.label),
-        advancedPrivacyDetails: fields["Advance Privacy"].map(f => f.label),
+        additionalData: fields["Basic Details"].map((f) => f.label),
+        advancedDetails: fields["Advance Details"].map((f) => f.label),
+        advancedPrivacyDetails: fields["Advance Privacy"].map((f) => f.label),
       };
 
-      if (preferenceId) {
-        await axios.put(
-          `http://13.60.19.134:5000/api/customer-preferences/${preferenceId}`,
-          updatedPreferences
-        );
-      } else {
-        const response = await axios.post(
-          "http://13.60.19.134:5000/api/customer-preferences",
-          updatedPreferences
-        );
-        if (response.data._id) {
-          setPreferenceId(response.data._id);
-        }
-      }
-      
+      await axios.put(
+        `http://13.60.19.134:5000/api/customer-preferences/${preferenceId}`,
+        payload
+      );
+
       console.log("Preferences updated successfully");
-      // You might want to show a success message to the user
     } catch (err) {
       console.error("Error updating preferences:", err);
-      // You might want to show an error message to the user
     }
   };
 
@@ -338,10 +371,46 @@ const CustomerFieldPreferences = () => {
             </Droppable>
           </DragDropContext>
 
-          <div className="mt-6">
+          <div className="mt-6 space-y-4">
+            {!isAddingPreference && (
+              <button
+                onClick={startAddingPreference}
+                className="flex items-center px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+              >
+                <FiPlus className="mr-2" /> Add New Preference
+              </button>
+            )}
+
+            {isAddingPreference && (
+              <div className="flex items-center p-3 bg-gray-50 rounded border">
+                <input
+                  type="text"
+                  value={newPreferenceName}
+                  onChange={(e) => setNewPreferenceName(e.target.value)}
+                  placeholder={`Enter new ${activeTab.toLowerCase()} preference`}
+                  className="flex-1 p-2 border border-gray-300 rounded-l focus:outline-none focus:ring-1 focus:ring-primary"
+                  autoFocus
+                />
+                <button
+                  onClick={handleAddPreference}
+                  className="p-2 bg-green-500 text-white hover:bg-green-600"
+                  title="Save"
+                >
+                  <FiSave />
+                </button>
+                <button
+                  onClick={cancelAddingPreference}
+                  className="p-2 bg-red-500 text-white hover:bg-red-600 ml-1"
+                  title="Cancel"
+                >
+                  <FiX />
+                </button>
+              </div>
+            )}
+
             <button
               onClick={handleUpdatePreferences}
-              className="flex items-center px-6 py-2 bg-primary bg-gradient-to-r from-[#CB376D] to-[#A72962] rounded-md hover:bg-pink-700 text-white"
+              className="flex items-center px-6 py-2 bg-primary bg-gradient-to-r from-[#CB376D] to-[#A72962] rounded-md hover:bg-pink-700 text-white w-full justify-center"
             >
               <FiSave className="mr-2" /> Update Changes
             </button>
