@@ -1,29 +1,101 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import axios from "axios";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
+import api from "../../api/apiconfig";
 
 const MyProfile = () => {
   const [profile, setProfile] = useState({
-    firstName: "Srinivasan",
-    lastName: "P",
-    mobile: "+91 95522 45418",
-    email: "Srini.vasan543@gmail.com",
-    storeName: "ABC Textile India",
-    role: "Founder",
-    address: "1, Raja Annamalai puram, Adyar, Chennai - 600 055.",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
+    storeName: "",
+    role: "Retailer",
+    address: "",
     profilePicture: "https://randomuser.me/api/portraits/men/36.jpg",
   });
 
   const [uploadError, setUploadError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const response = await api.get(
+          "api/retailer/6856350030bcee9b82be4c17"
+        );
+        
+        if (response.data.status === "success") {
+          const retailerData = response.data.data;
+          
+          // Split full name into first and last name
+          const nameParts = retailerData.fullName.split(' ');
+          const firstName = nameParts[0];
+          const lastName = nameParts.slice(1).join(' ');
+          
+          setProfile({
+            firstName: firstName || "",
+            lastName: lastName || "",
+            phone: `${retailerData.phoneCode}${retailerData.phone}`,
+            email: retailerData.email,
+            storeName: retailerData.storeName,
+            role: "Retailer",
+            address: retailerData.storeAddress,
+            profilePicture: profile.profilePicture
+          });
+        }
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
+        console.error("Error fetching profile data:", err);
+      }
+    };
+
+    fetchProfileData();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handlePhoneChange = (value, country) => {
+    setProfile((prev) => ({ ...prev, phone: value }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Submit form data
-    console.log("Profile updated:", profile);
+    try {
+      // Extract country code and phone number
+      const phoneCode = profile.phone.slice(0, 2);
+      const phoneNumber = profile.phone.slice(2);
+      
+      const updatedData = {
+        fullName: `${profile.firstName} ${profile.lastName}`,
+        email: profile.email,
+        phoneCode: `+${phoneCode}`,
+        phone: phoneNumber,
+        storeName: profile.storeName,
+        storeAddress: profile.address,
+      };
+
+      const response = await axios.put(
+        "http://13.60.19.134:5000/api/retailer/6856350030bcee9b82be4c17",
+        updatedData
+      );
+
+      if (response.data.status === "success") {
+        console.log("Profile updated successfully:", response.data);
+        // You might want to show a success message to the user
+      }
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      // You might want to show an error message to the user
+    }
   };
 
   const handleImageUpload = (e) => {
@@ -59,6 +131,14 @@ const MyProfile = () => {
   const triggerFileInput = () => {
     fileInputRef.current.click();
   };
+
+  if (loading) {
+    return <div className="px-10 py-3 mx-auto">Loading profile data...</div>;
+  }
+
+  if (error) {
+    return <div className="px-10 py-3 mx-auto text-red-500">Error: {error}</div>;
+  }
 
   return (
     <div className="px-10 py-3 mx-auto">
@@ -101,14 +181,15 @@ const MyProfile = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block text-sm text-[#31316680]">
-                  Mobile Number
+                  Phone Number
                 </label>
-                <input
-                  type="text"
-                  name="mobile"
-                  value={profile.mobile}
-                  onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                <PhoneInput
+                  country={'in'}
+                  value={profile.phone}
+                  onChange={handlePhoneChange}
+                  inputClass="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  inputStyle={{ width: '100%' }}
+                  dropdownClass="text-gray-700"
                 />
               </div>
 
@@ -148,6 +229,7 @@ const MyProfile = () => {
                   value={profile.role}
                   onChange={handleChange}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  disabled
                 />
               </div>
             </div>
@@ -182,8 +264,6 @@ const MyProfile = () => {
             <h3 className="font-medium mb-1 text-[#313166] text-[14px]">
               Profile Picture
             </h3>
-            {/* <p className="text-sm text-gray-500">{profile.email}</p>
-            <p className="text-sm text-gray-500">Role: {profile.role}</p> */}
           </div>
           <div className="w-34 h-34 rounded-full overflow-hidden mb-4 border-2 border-gray-200">
             <img
@@ -194,13 +274,11 @@ const MyProfile = () => {
           </div>
           <div className="text-center text-xs text-gray-500 mb-2">
             <span className="text-[#31316680] text-[10px]">
-              {" "}
-              Upload jpg or png{" "}
+              Upload jpg or png
             </span>
             <br />
             <span className="text-[#EC396F] text-[10px]">
-              {" "}
-              (max 200x200px, 2MB){" "}
+              (max 200x200px, 2MB)
             </span>
           </div>
 
