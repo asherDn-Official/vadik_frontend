@@ -1,44 +1,79 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import debounce from "lodash.debounce";
 
 const CustomerList = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [totalItems, setTotalItems] = useState(0);
+  const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    totalItems: 0,
+    totalPages: 1,
+    currentPage: 1,
+  });
+  
   const itemsPerPage = 6;
   const navigate = useNavigate();
+  const searchTerm = searchParams.get("search") || "";
+
+  const fetchCustomers = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const queryParams = new URLSearchParams({
+        retailerId: "6856350030bcee9b82be4c17",
+        page: pagination.currentPage,
+        limit: itemsPerPage,
+        ...(searchTerm && { search: searchTerm }),
+      });
+
+      const response = await fetch(
+        `http://13.60.19.134:5000/api/customers?${queryParams}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      setCustomers(data.data);
+      setPagination({
+        totalItems: data.pagination.totalItems,
+        totalPages: Math.ceil(data.pagination.totalItems / itemsPerPage),
+        currentPage: data.pagination.currentPage,
+      });
+    } catch (err) {
+      console.error("Error fetching customers:", err);
+      setError("Failed to load customers. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  }, [pagination.currentPage, searchTerm]);
 
   useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `http://13.60.19.134:5000/api/customers?retailerId=6856350030bcee9b82be4c17&page=${currentPage}&limit=${itemsPerPage}`
-        );
-        const data = await response.json();
-        setCustomers(data.data);
-        setTotalItems(data.pagination.totalItems);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching customers:", error);
-        setLoading(false);
-      }
-    };
-
     fetchCustomers();
-  }, [currentPage]);
+  }, [fetchCustomers]);
 
-  const filteredCustomers = customers.filter(
-    (customer) =>
-      customer.firstname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.lastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.mobileNumber.includes(searchTerm) ||
-      customer.source.toLowerCase().includes(searchTerm.toLowerCase())
+  // Debounced search to avoid too many API calls while typing
+  const debouncedSearch = useCallback(
+    debounce((term) => {
+      setSearchParams(term ? { search: term } : {});
+      setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    }, 500),
+    []
   );
 
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const handleSearchChange = (e) => {
+    const term = e.target.value;
+    debouncedSearch(term);
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination((prev) => ({ ...prev, currentPage: newPage }));
+  };
 
   const handleCustomerClick = (customerId) => {
     navigate(`/customer-profile/${customerId}`);
@@ -49,10 +84,10 @@ const CustomerList = () => {
     navigate(`/customers/edit/${customerId}`);
   };
 
-  if (loading) {
+  if (error) {
     return (
       <div className="flex h-screen bg-[#F4F5F9] items-center justify-center">
-        <div>Loading...</div>
+        <div className="text-red-500">{error}</div>
       </div>
     );
   }
@@ -65,15 +100,15 @@ const CustomerList = () => {
             <h1 className="text-xl font-semibold text-gray-900">
               Customer List{" "}
               <span className="text-gray-500 font-normal">
-                ({totalItems})
+                ({pagination.totalItems})
               </span>
             </h1>
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search here"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by name, mobile or source"
+                defaultValue={searchTerm}
+                onChange={handleSearchChange}
                 className="w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent"
               />
               <svg
@@ -95,112 +130,145 @@ const CustomerList = () => {
 
         <div className="flex-1 overflow-auto">
           <div className="bg-white shadow-sm p-4">
-            <table className="min-w-full">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
-                    First Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
-                    Last Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
-                    Mobile Number
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
-                    Source
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
-                    {/* Actions */}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredCustomers.map((customer) => (
-                  <tr
-                    key={customer._id}
-                    className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => handleCustomerClick(customer._id)}
-                  >
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      {customer.firstname}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      {customer.lastname}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      {customer.mobileNumber}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      {customer.source}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      <button 
-                        className="text-gray-500 hover:text-gray-700"
-                        onClick={(e) => handleEditClick(e, customer._id)}
-                      >
-                        <img
-                          src="../assets/pen-edit-icon.png"
-                          alt="Edit"
-                          className="h-4 w-4"
-                        />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+              </div>
+            ) : (
+              <>
+                {customers.length === 0 ? (
+                  <div className="text-center py-10 text-gray-500">
+                    No customers found
+                  </div>
+                ) : (
+                  <table className="min-w-full">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
+                          First Name
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
+                          Last Name
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
+                          Mobile Number
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
+                          Source
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {customers.map((customer) => (
+                        <tr
+                          key={customer._id}
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={() => handleCustomerClick(customer._id)}
+                        >
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
+                            {customer.firstname}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
+                            {customer.lastname}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
+                            {customer.mobileNumber}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
+                            {customer.source}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
+                            <button
+                              className="text-gray-500 hover:text-gray-700"
+                              onClick={(e) => handleEditClick(e, customer._id)}
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                />
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </>
+            )}
           </div>
         </div>
 
-        <div className="bg-white border-t border-gray-200 px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-[#313166]">
-              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{" "}
-              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
-              {totalItems} results
-            </div>
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className={`px-3 py-1 text-sm border rounded-md ${
-                  currentPage === 1
-                    ? "bg-[#3131661A] cursor-not-allowed opacity-50"
-                    : "bg-[#3131661A] hover:bg-gray-100"
-                }`}
-              >
-                Previous
-              </button>
-              {[...Array(totalPages)].map((_, i) => (
+        {!loading && customers.length > 0 && (
+          <div className="bg-white border-t border-gray-200 px-6 py-3">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-[#313166]">
+                Showing{" "}
+                {Math.min(
+                  (pagination.currentPage - 1) * itemsPerPage + 1,
+                  pagination.totalItems
+                )}{" "}
+                to{" "}
+                {Math.min(
+                  pagination.currentPage * itemsPerPage,
+                  pagination.totalItems
+                )}{" "}
+                of {pagination.totalItems} results
+              </div>
+              <div className="flex items-center space-x-1">
                 <button
-                  key={i + 1}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1 text-sm border rounded-md mx-1 ${
-                    currentPage === i + 1
-                      ? "bg-[#313166] text-white border-[#313166]"
-                      : "bg-[#3131661A] text-[#313166] hover:bg-gray-100"
+                  onClick={() => handlePageChange(pagination.currentPage - 1)}
+                  disabled={pagination.currentPage === 1}
+                  className={`px-3 py-1 text-sm border rounded-md ${
+                    pagination.currentPage === 1
+                      ? "bg-[#3131661A] cursor-not-allowed opacity-50"
+                      : "bg-[#3131661A] hover:bg-gray-100"
                   }`}
                 >
-                  {i + 1}
+                  Previous
                 </button>
-              ))}
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-                className={`px-3 py-1 text-sm border rounded-md ${
-                  currentPage === totalPages
-                    ? "bg-[#3131661A] cursor-not-allowed opacity-50"
-                    : "bg-[#3131661A] hover:bg-gray-100"
-                }`}
-              >
-                Next
-              </button>
+                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-3 py-1 text-sm border rounded-md mx-1 ${
+                        pagination.currentPage === page
+                          ? "bg-[#313166] text-white border-[#313166]"
+                          : "bg-[#3131661A] text-[#313166] hover:bg-gray-100"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+                <button
+                  onClick={() => handlePageChange(pagination.currentPage + 1)}
+                  disabled={pagination.currentPage === pagination.totalPages}
+                  className={`px-3 py-1 text-sm border rounded-md ${
+                    pagination.currentPage === pagination.totalPages
+                      ? "bg-[#3131661A] cursor-not-allowed opacity-50"
+                      : "bg-[#3131661A] hover:bg-gray-100"
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
