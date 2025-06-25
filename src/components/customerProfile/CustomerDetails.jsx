@@ -29,7 +29,7 @@ const CustomerDetails = ({
   const [showPurchaseList, setShowPurchaseList] = useState(false);
   const [showAllPurchases, setShowAllPurchases] = useState(false);
 
-  const DetailItem = ({ iconSrc, label, value, field, isEditable = true }) => {
+  const DetailItem = ({ iconSrc, label, value, field, isEditable = false }) => {
     const currentValue = isEditing ? editedData[field] || "" : value;
     return (
       <div className="flex items-center justify-between p-4 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
@@ -117,9 +117,7 @@ const CustomerDetails = ({
     if (!fields) return null;
     
     return Object.entries(fields).map(([key, value]) => {
-      // Skip these special fields as they're handled separately
-      if (key === 'satisfactionScore') return null;
-      
+      const isEditable = section === 'additionalData';
       return (
         <DetailItem
           key={key}
@@ -127,6 +125,7 @@ const CustomerDetails = ({
           label={key}
           value={value}
           field={key}
+          isEditable={isEditable}
         />
       );
     });
@@ -160,63 +159,26 @@ const CustomerDetails = ({
                 </div>
                 <div className="ml-14">
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Details</h2>
-                  <div className="grid grid-cols-3 gap-x-16 gap-y-6">
+                  
+                  {/* Non-editable basic fields */}
+                  <div className="grid grid-cols-3 gap-x-16 gap-y-6 mb-6">
                     <div>
                       <p className="text-sm text-gray-500 mb-2">First Name</p>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={editedData.firstname || ""}
-                          onChange={(e) => onInputChange("firstname", e.target.value)}
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-                        />
-                      ) : (
-                        <p className="text-sm font-medium text-gray-900">
-                          {customer.firstname}
-                        </p>
-                      )}
+                      <p className="text-sm font-medium text-gray-900">
+                        {customer.firstname}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 mb-2">Last Name</p>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={editedData.lastname || ""}
-                          onChange={(e) => onInputChange("lastname", e.target.value)}
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-                        />
-                      ) : (
-                        <p className="text-sm font-medium text-gray-900">{customer.lastname}</p>
-                      )}
+                      <p className="text-sm font-medium text-gray-900">{customer.lastname}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 mb-2">Mobile Number</p>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={editedData.mobileNumber || ""}
-                          onChange={(e) => onInputChange("mobileNumber", e.target.value)}
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-                        />
-                      ) : (
-                        <p className="text-sm font-medium text-gray-900">{customer.mobileNumber}</p>
-                      )}
+                      <p className="text-sm font-medium text-gray-900">{customer.mobileNumber}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 mb-2">Source</p>
-                      {isEditing ? (
-                        <select
-                          value={editedData.source || ""}
-                          onChange={(e) => onInputChange("source", e.target.value)}
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-                        >
-                          <option value="Walk In">Walk In</option>
-                          <option value="Online">Online</option>
-                          <option value="Referral">Referral</option>
-                        </select>
-                      ) : (
-                        <p className="text-sm font-medium text-gray-900">{customer.source}</p>
-                      )}
+                      <p className="text-sm font-medium text-gray-900">{customer.source}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 mb-2">Customer ID</p>
@@ -229,11 +191,18 @@ const CustomerDetails = ({
                       </p>
                     </div>
                   </div>
+
+                  {/* Editable additionalData fields */}
+                  {customer.additionalData && (
+                    <div className="grid grid-cols-2 gap-4">
+                      {renderDynamicFields(customer.additionalData, "additionalData")}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-          
+
           {/* Main Content */}
           <div className="bg-white p-8 rounded-[20px]">
             {/* Tabs */}
@@ -401,10 +370,8 @@ const CustomerDetails = ({
                         ))}
                       </tbody>
                     </table>
-                    {customer.referralData.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        No referral data available
-                      </div>
+                    {(customer.referralData || []).length === 0 && (
+                      <div className="text-center py-8 text-gray-500">No referral data available</div>
                     )}
                   </div>
                 </div>
