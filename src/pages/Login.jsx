@@ -26,13 +26,10 @@ const Login = () => {
     setError(null);
 
     try {
-      const response = await api.post(
-        "api/auth/retailerLogin",
-        {
-          email: credentials.email,
-          password: credentials.password,
-        }
-      );
+      const response = await api.post("api/auth/retailerLogin", {
+        email: credentials.email,
+        password: credentials.password,
+      });
 
       const data = response.data;
 
@@ -42,6 +39,10 @@ const Login = () => {
       // Store token or user data if needed
       if (data.token) {
         localStorage.setItem("token", data.token);
+      }
+
+      if (data.retailer && data.retailer._id) {
+        localStorage.setItem("retailerId", data.retailer._id);
       }
 
       // Redirect to dashboard or appropriate page

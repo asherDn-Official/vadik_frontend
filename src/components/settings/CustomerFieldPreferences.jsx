@@ -16,7 +16,7 @@ const CustomerFieldPreferences = () => {
   const [newPreferenceName, setNewPreferenceName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [retailerId] = useState("6856350030bcee9b82be4c17");
+  const [retailerId, setRetailerId] = useState("6856350030bcee9b82be4c17");
   const [preferenceId, setPreferenceId] = useState(null);
   const [isCreatingPreference, setIsCreatingPreference] = useState(false);
 
@@ -216,32 +216,6 @@ const CustomerFieldPreferences = () => {
     await updatePreferences(updatedFields);
   };
 
-  const handleUpdatePreferences = async () => {
-    try {
-      const payload = {
-        retailerId,
-        additionalData: fields["Basic Details"].map((f) => f.label),
-        advancedDetails: fields["Advance Details"].map((f) => f.label),
-        advancedPrivacyDetails: fields["Advance Privacy"].map((f) => f.label),
-      };
-
-      if (preferenceId) {
-        await api.put(
-          `/api/customer-preferences/${preferenceId}`,
-          payload
-        );
-      } else {
-        const response = await api.post(
-          `/api/customer-preferences`,
-          payload
-        );
-        setPreferenceId(response.data._id);
-      }
-    } catch (err) {
-      console.error("Error updating preferences:", err);
-      setError("Failed to update preferences. Please try again.");
-    }
-  };
 
   if (isLoading || isCreatingPreference) {
     return (
