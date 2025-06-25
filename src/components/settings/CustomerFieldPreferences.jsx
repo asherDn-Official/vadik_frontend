@@ -423,12 +423,12 @@ const CustomerFieldPreferences = () => {
               </div>
             )}
 
-            <button
+            {/* <button
               onClick={handleUpdatePreferences}
               className="flex items-center px-6 py-2 bg-primary bg-gradient-to-r from-[#CB376D] to-[#A72962] rounded-md hover:bg-pink-700 text-white w-full justify-center"
             >
               <FiSave className="mr-2" /> Update Changes
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
