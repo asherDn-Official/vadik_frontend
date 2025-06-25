@@ -16,7 +16,9 @@ const CustomerFieldPreferences = () => {
   const [newPreferenceName, setNewPreferenceName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [retailerId, setRetailerId] = useState("6856350030bcee9b82be4c17");
+  const [retailerId, setRetailerId] = useState(() => {
+    return localStorage.getItem("retailerId") || "";
+  });
   const [preferenceId, setPreferenceId] = useState(null);
   const [isCreatingPreference, setIsCreatingPreference] = useState(false);
 
@@ -28,13 +30,10 @@ const CustomerFieldPreferences = () => {
         retailerId,
         additionalData: [],
         advancedDetails: [],
-        advancedPrivacyDetails: []
+        advancedPrivacyDetails: [],
       };
 
-      const response = await api.post(
-        `/api/customer-preferences`,
-        payload
-      );
+      const response = await api.post(`/api/customer-preferences`, payload);
 
       setPreferenceId(response.data._id);
       return response.data._id;
@@ -50,12 +49,10 @@ const CustomerFieldPreferences = () => {
   const fetchPreferences = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // First try to get the preference
-      const response = await api.get(
-        `/api/customer-preferences/${retailerId}`
-      );
+      const response = await api.get(`/api/customer-preferences/${retailerId}`);
 
       if (response.data) {
         setPreferenceId(response.data._id);
@@ -147,13 +144,12 @@ const CustomerFieldPreferences = () => {
         retailerId,
         additionalData: updatedFields["Basic Details"].map((f) => f.label),
         advancedDetails: updatedFields["Advance Details"].map((f) => f.label),
-        advancedPrivacyDetails: updatedFields["Advance Privacy"].map((f) => f.label),
+        advancedPrivacyDetails: updatedFields["Advance Privacy"].map(
+          (f) => f.label
+        ),
       };
 
-      await api.put(
-        `/api/customer-preferences/${retailerId}`,
-        payload
-      );
+      await api.put(`/api/customer-preferences/${retailerId}`, payload);
     } catch (err) {
       console.error("Error updating preferences:", err);
       setError("Failed to update preferences. Please try again.");
@@ -185,12 +181,12 @@ const CustomerFieldPreferences = () => {
     try {
       const newField = {
         id: `pref-${Date.now()}`,
-        label: newPreferenceName.trim()
+        label: newPreferenceName.trim(),
       };
 
       const updatedFields = {
         ...fields,
-        [activeTab]: [...fields[activeTab], newField]
+        [activeTab]: [...fields[activeTab], newField],
       };
 
       setFields(updatedFields);
@@ -215,7 +211,6 @@ const CustomerFieldPreferences = () => {
     setFields(updatedFields);
     await updatePreferences(updatedFields);
   };
-
 
   if (isLoading || isCreatingPreference) {
     return (

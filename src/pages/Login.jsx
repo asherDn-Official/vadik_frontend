@@ -33,9 +33,6 @@ const Login = () => {
 
       const data = response.data;
 
-      // Login successful
-      console.log("Login successful:", data);
-
       // Store token or user data if needed
       if (data.token) {
         localStorage.setItem("token", data.token);
