@@ -12,7 +12,7 @@ const IntegrationPage = () => {
       title: "G-Sheets",
       icon: "./assets/whatsapp-icon.png",
       description:
-        "Export customer data, quiz responses, and analytics directly to Google Sheets for comprehensive reporting and analysis.",
+        "Export customer context, quiz responses, and analytics directly to Google Sheets for comprehensive reporting and analysis.",
     },
     {
       title: "WhatsApp",

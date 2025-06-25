@@ -129,7 +129,7 @@
 //   optOut: 25,
 // };
 
-// Sample mock data for the application
+// Sample mock context for the application
 
 export const products = [
   {
@@ -216,7 +216,7 @@ export const userProfile = {
   profilePicture: "https://randomuser.me/api/portraits/men/36.jpg",
 };
 
-// customer profile data ////////////////////////////////////
+// customer profile context ////////////////////////////////////
 
 export const customers = [
   {

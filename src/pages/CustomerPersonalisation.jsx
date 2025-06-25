@@ -28,7 +28,7 @@ const CustomerPersonalisation = () => {
   const [showExport, setShowExport] = useState(false);
   const customersPerPage = 10;
 
-  // Mock data - replace with your actual data import
+  // Mock context - replace with your actual context import
   const customers = [
     {
       id: "1",

@@ -37,7 +37,7 @@ const AddProduct = ({ onBack }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Product data:", productData);
+    console.log("Product context:", productData);
     onBack();
   };
 

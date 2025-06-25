@@ -689,7 +689,7 @@ const CustomerDetails = ({
                     </table>
                     {customer.referralData.length === 0 && (
                       <div className="text-center py-8 text-gray-500">
-                        No referral data available
+                        No referral context available
                       </div>
                     )}
                   </div>

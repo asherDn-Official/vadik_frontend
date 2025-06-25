@@ -51,9 +51,9 @@ const CustomerProfile = () => {
 
   const handleSave = () => {
     // In a real application, you would save to a backend here
-    console.log("Saving customer data:", editedData);
+    console.log("Saving customer context:", editedData);
 
-    // Update the selected customer with new data
+    // Update the selected customer with new context
     const updatedCustomer = {
       ...selectedCustomer,
       name: editedData.name,
@@ -92,7 +92,7 @@ const CustomerProfile = () => {
     setIsEditing(false);
 
     // Show success message
-    alert("Customer data updated successfully!");
+    alert("Customer context updated successfully!");
   };
 
   const handleInputChange = (field, value) => {

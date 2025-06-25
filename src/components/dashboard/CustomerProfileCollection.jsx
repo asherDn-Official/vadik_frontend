@@ -1,6 +1,6 @@
 import { FaCalendarAlt } from "react-icons/fa";
 
-// Sample customer data
+// Sample customer context
 const customerData = [
   { day: 19, new: 10, retention: 50 },
   { day: 12, new: 60, retention: 30 },

@@ -84,7 +84,7 @@ const StoreRecommendation = () => {
       id: Date.now() + 1,
       type: "ai",
       content:
-        "I'll analyze your store data and provide insights based on your request. Let me gather the relevant information about inventory, sales trends, and customer preferences to give you actionable recommendations.",
+        "I'll analyze your store context and provide insights based on your request. Let me gather the relevant information about inventory, sales trends, and customer preferences to give you actionable recommendations.",
       timestamp: new Date(),
     };
 

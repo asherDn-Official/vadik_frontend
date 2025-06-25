@@ -10,7 +10,7 @@ const Inventory = () => {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
 
-  // Mock data for products
+  // Mock context for products
   const products = [
     {
       id: 1,

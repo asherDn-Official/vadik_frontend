@@ -35,7 +35,7 @@ const DailyBillingUpdate = () => {
     setCurrentView("orderSheet");
   };
 
-  // Mock data for the table with customer lists
+  // Mock context for the table with customer lists
   const billingData = [
     {
       id: 1,

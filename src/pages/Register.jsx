@@ -44,7 +44,7 @@ const Register = ({ formData, updateFormData }) => {
         storeName: data.company,
       });
     } catch (err) {
-      console.error("Error fetching onboarding data:", err);
+      console.error("Error fetching onboarding context:", err);
       // You might want to add error state handling here
     } finally {
       setIsLoading(false);

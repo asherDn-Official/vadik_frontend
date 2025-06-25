@@ -61,7 +61,7 @@ const UserPermissions = ({ user, onSave, onBack }) => {
       key: "customerOpportunity",
       title: "Customer Opportunity",
       description:
-        "Access behavioral trends, engagement stats, and customer segmentation data.",
+        "Access behavioral trends, engagement stats, and customer segmentation context.",
     },
     {
       key: "personalisationInsight",

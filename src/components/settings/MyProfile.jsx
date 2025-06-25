@@ -133,7 +133,7 @@ const MyProfile = () => {
   };
 
   if (loading) {
-    return <div className="px-10 py-3 mx-auto">Loading profile data...</div>;
+    return <div className="px-10 py-3 mx-auto">Loading profile context...</div>;
   }
 
   if (error) {
