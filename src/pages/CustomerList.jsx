@@ -1,27 +1,44 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { customers } from "../data/mockData";
-import Sidebar from "../components/common/Sidebar";
 
 const CustomerList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 6;
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `http://13.60.19.134:5000/api/customers?retailerId=6856350030bcee9b82be4c17&page=${currentPage}&limit=${itemsPerPage}`
+        );
+        const data = await response.json();
+        setCustomers(data.data);
+        setTotalItems(data.pagination.totalItems);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchCustomers();
+  }, [currentPage]);
+
   const filteredCustomers = customers.filter(
     (customer) =>
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.firstname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.lastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.mobileNumber.includes(searchTerm) ||
-      customer.profession.toLowerCase().includes(searchTerm.toLowerCase())
+      customer.source.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedCustomers = filteredCustomers.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const handleCustomerClick = (customerId) => {
     navigate(`/customer-profile/${customerId}`);
@@ -32,6 +49,14 @@ const CustomerList = () => {
     navigate(`/customers/edit/${customerId}`);
   };
 
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-[#F4F5F9] items-center justify-center">
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-[#F4F5F9]">
       <div className="flex-1 flex flex-col overflow-hidden m-2 rounded-[20px]">
@@ -40,7 +65,7 @@ const CustomerList = () => {
             <h1 className="text-xl font-semibold text-gray-900">
               Customer List{" "}
               <span className="text-gray-500 font-normal">
-                ({filteredCustomers.length})
+                ({totalItems})
               </span>
             </h1>
             <div className="relative">
@@ -74,28 +99,16 @@ const CustomerList = () => {
               <thead className="bg-gray-100">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
-                    ID.No
+                    First Name
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
-                    Name
+                    Last Name
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
                     Mobile Number
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
-                    Gender
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
                     Source
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
-                    Profession
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
-                    Location
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
-                    Income
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
                     {/* Actions */}
@@ -103,38 +116,29 @@ const CustomerList = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedCustomers.map((customer) => (
+                {filteredCustomers.map((customer) => (
                   <tr
-                    key={customer.id}
+                    key={customer._id}
                     className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => handleCustomerClick(customer.id)}
+                    onClick={() => handleCustomerClick(customer._id)}
                   >
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      {customer.id}
+                      {customer.firstname}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      {customer.name}
+                      {customer.lastname}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
                       {customer.mobileNumber}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      {customer.gender}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
                       {customer.source}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      {customer.profession}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      {customer.location}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      {customer.income}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
-                      <button className="text-gray-500 hover:text-gray-700">
+                      <button 
+                        className="text-gray-500 hover:text-gray-700"
+                        onClick={(e) => handleEditClick(e, customer._id)}
+                      >
                         <img
                           src="../assets/pen-edit-icon.png"
                           alt="Edit"
@@ -152,9 +156,9 @@ const CustomerList = () => {
         <div className="bg-white border-t border-gray-200 px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="text-sm text-[#313166]">
-              Showing {startIndex + 1} to{" "}
-              {Math.min(startIndex + itemsPerPage, filteredCustomers.length)} of{" "}
-              {filteredCustomers.length} results
+              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{" "}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+              {totalItems} results
             </div>
             <div className="flex items-center space-x-1">
               <button
