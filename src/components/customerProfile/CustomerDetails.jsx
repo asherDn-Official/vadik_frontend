@@ -6,6 +6,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
 } from "recharts";
 
@@ -19,23 +20,19 @@ const CustomerDetails = ({
   onCancel,
   onSave,
   onInputChange,
-  onTogglePurchaseView,
-  showPurchaseList,
-  onToggleShowAllPurchases,
+  isLoading,
 }) => {
   const tabs = ["Advanced Details", "Advanced Privacy", "Referral"];
-
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
   const [recipientNumber, setRecipientNumber] = useState("");
   const [messageType, setMessageType] = useState("birthday");
+  const [showPurchaseList, setShowPurchaseList] = useState(false);
+  const [showAllPurchases, setShowAllPurchases] = useState(false);
 
   const DetailItem = ({ iconSrc, label, value, field, isEditable = true }) => {
     const currentValue = isEditing ? editedData[field] || "" : value;
     return (
-      <div
-        className="flex items-center justify-between p-4 rounded-[14px]"
-        style={{ border: "1px solid #3131661A" }}
-      >
+      <div className="flex items-center justify-between p-4 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
         <div className="flex items-center">
           <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
             <img src={iconSrc} alt={label} className="w-12 h-12" />
@@ -50,7 +47,7 @@ const CustomerDetails = ({
                 className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
               />
             ) : (
-              <p className="text-sm text-gray-600">{value}</p>
+              <p className="text-sm text-gray-600">{value || "-"}</p>
             )}
           </div>
         </div>
@@ -75,7 +72,7 @@ const CustomerDetails = ({
               className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           ) : (
-            <p className="text-sm font-medium text-gray-900">{value}</p>
+            <p className="text-sm font-medium text-gray-900">{value || "-"}</p>
           )}
         </div>
       </div>
@@ -83,6 +80,7 @@ const CustomerDetails = ({
   };
 
   const renderStars = (rating) => {
+    if (!rating) return null;
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
@@ -115,12 +113,29 @@ const CustomerDetails = ({
     return stars;
   };
 
+  const renderDynamicFields = (fields, section) => {
+    if (!fields) return null;
+    
+    return Object.entries(fields).map(([key, value]) => {
+      // Skip these special fields as they're handled separately
+      if (key === 'satisfactionScore') return null;
+      
+      return (
+        <DetailItem
+          key={key}
+          iconSrc="../assets/default-icon.png"
+          label={key}
+          value={value}
+          field={key}
+        />
+      );
+    });
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-[#F4F5F9]">
       <div className="pr-6 pt-6 pl-6">
-        <h1 className="text-xl font-semibold text-gray-900">
-          Customer Profile
-        </h1>
+        <h1 className="text-xl font-semibold text-gray-900">Customer Profile</h1>
       </div>
 
       <div className="flex-1 p-6 overflow-y-auto">
@@ -131,15 +146,11 @@ const CustomerDetails = ({
               <div className="flex items-center">
                 <div className="relative">
                   <img
-                    src={customer.profileImage}
-                    alt={customer.name}
+                    src={customer.profileImage || "../assets/default-profile.png"}
+                    alt={`${customer.firstname} ${customer.lastname}`}
                     className="w-[152px] h-[182px] rounded-lg object-cover"
                   />
-                  <div
-                    className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center ${
-                      customer.isActive ? "bg-green-500" : "bg-red-500"
-                    } shadow-lg`}
-                  >
+                  <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center ${customer.isActive ? "bg-green-500" : "bg-red-500"} shadow-lg`}>
                     {customer.isActive ? (
                       <CheckCircle className="w-3 h-3 text-white" />
                     ) : (
@@ -148,44 +159,47 @@ const CustomerDetails = ({
                   </div>
                 </div>
                 <div className="ml-14">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                    Basic Details
-                  </h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Details</h2>
                   <div className="grid grid-cols-3 gap-x-16 gap-y-6">
                     <div>
-                      <p className="text-sm text-gray-500 mb-2">Name</p>
+                      <p className="text-sm text-gray-500 mb-2">First Name</p>
                       {isEditing ? (
                         <input
                           type="text"
-                          value={editedData.name || ""}
-                          onChange={(e) =>
-                            onInputChange("name", e.target.value)
-                          }
+                          value={editedData.firstname || ""}
+                          onChange={(e) => onInputChange("firstname", e.target.value)}
                           className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
                         />
                       ) : (
                         <p className="text-sm font-medium text-gray-900">
-                          {customer.name}
+                          {customer.firstname}
                         </p>
                       )}
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500 mb-2">
-                        Mobile Number
-                      </p>
+                      <p className="text-sm text-gray-500 mb-2">Last Name</p>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editedData.lastname || ""}
+                          onChange={(e) => onInputChange("lastname", e.target.value)}
+                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+                        />
+                      ) : (
+                        <p className="text-sm font-medium text-gray-900">{customer.lastname}</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-2">Mobile Number</p>
                       {isEditing ? (
                         <input
                           type="text"
                           value={editedData.mobileNumber || ""}
-                          onChange={(e) =>
-                            onInputChange("mobileNumber", e.target.value)
-                          }
+                          onChange={(e) => onInputChange("mobileNumber", e.target.value)}
                           className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
                         />
                       ) : (
-                        <p className="text-sm font-medium text-gray-900">
-                          {customer.mobileNumber}
-                        </p>
+                        <p className="text-sm font-medium text-gray-900">{customer.mobileNumber}</p>
                       )}
                     </div>
                     <div>
@@ -193,9 +207,7 @@ const CustomerDetails = ({
                       {isEditing ? (
                         <select
                           value={editedData.source || ""}
-                          onChange={(e) =>
-                            onInputChange("source", e.target.value)
-                          }
+                          onChange={(e) => onInputChange("source", e.target.value)}
                           className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
                         >
                           <option value="Walk In">Walk In</option>
@@ -203,74 +215,30 @@ const CustomerDetails = ({
                           <option value="Referral">Referral</option>
                         </select>
                       ) : (
-                        <p className="text-sm font-medium text-gray-900">
-                          {customer.source}
-                        </p>
+                        <p className="text-sm font-medium text-gray-900">{customer.source}</p>
                       )}
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500 mb-2">Vadik Id</p>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={editedData.vadikId || ""}
-                          onChange={(e) =>
-                            onInputChange("vadikId", e.target.value)
-                          }
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-                        />
-                      ) : (
-                        <p className="text-sm font-medium text-gray-900">
-                          {customer.vadikId}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">Gender</p>
-                      {isEditing ? (
-                        <select
-                          value={editedData.gender || ""}
-                          onChange={(e) =>
-                            onInputChange("gender", e.target.value)
-                          }
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-                        >
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      ) : (
-                        <p className="text-sm font-medium text-gray-900">
-                          {customer.gender}
-                        </p>
-                      )}
+                      <p className="text-sm text-gray-500 mb-2">Customer ID</p>
+                      <p className="text-sm font-medium text-gray-900">{customer.customerId}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 mb-2">First Visit</p>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={editedData.firstVisit || ""}
-                          onChange={(e) =>
-                            onInputChange("firstVisit", e.target.value)
-                          }
-                          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-                        />
-                      ) : (
-                        <p className="text-sm font-medium text-gray-900">
-                          {customer.firstVisit}
-                        </p>
-                      )}
+                      <p className="text-sm font-medium text-gray-900">
+                        {new Date(customer.firstVisit).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+          
+          {/* Main Content */}
           <div className="bg-white p-8 rounded-[20px]">
             {/* Tabs */}
             <div className="border-b border-gray-200 bg-white pb-5">
-              <nav className="flex space-x-8 px-6 ">
+              <nav className="flex space-x-8 px-6">
                 {tabs.map((tab) => (
                   <button
                     key={tab}
@@ -285,17 +253,19 @@ const CustomerDetails = ({
                   </button>
                 ))}
                 <div className="flex-1 flex justify-end items-center">
-                  <button
-                    onClick={onEdit}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center"
-                  >
-                    <img
-                      src="../assets/edit-icon.png"
-                      className="w-4 h-4 mr-2"
-                      alt="Edit"
-                    />
-                    Edit
-                  </button>
+                  {!isEditing ? (
+                    <button
+                      onClick={onEdit}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center"
+                    >
+                      <img
+                        src="../assets/edit-icon.png"
+                        className="w-4 h-4 mr-2"
+                        alt="Edit"
+                      />
+                      Edit
+                    </button>
+                  ) : null}
                 </div>
               </nav>
             </div>
@@ -304,235 +274,36 @@ const CustomerDetails = ({
             <div className="p-2 bg-white pt-5">
               {activeTab === "Advanced Details" && (
                 <div className="grid grid-cols-2 gap-4">
-                  <DetailItem
-                    iconSrc="../assets/Profession-icon.png"
-                    label="Profession"
-                    value={customer.advancedDetails.profession}
-                    field="profession"
-                  />
-                  <DetailItem
-                    iconSrc="../assets/Income-icon.png"
-                    label="Income Level"
-                    value={customer.advancedDetails.incomeLevel}
-                    field="incomeLevel"
-                  />
-                  <DetailItem
-                    iconSrc="../assets/Location-icon.png"
-                    label="Location"
-                    value={customer.advancedDetails.location}
-                    field="location"
-                  />
-                  <DetailItem
-                    iconSrc="../assets/Product-icon.png"
-                    label="Favourite Product"
-                    value={customer.advancedDetails.favouriteProduct}
-                    field="favouriteProduct"
-                  />
-                  <DetailItem
-                    iconSrc="../assets/Colour-icon.png"
-                    label="Favourite Colour"
-                    value={customer.advancedDetails.favouriteColour}
-                    field="favouriteColour"
-                  />
-                  <DetailItem
-                    iconSrc="../assets/Brand-icon.png"
-                    label="Favourite Brand"
-                    value={customer.advancedDetails.favouriteBrand}
-                    field="favouriteBrand"
-                  />
-                  <div
-                    onClick={() => setShowBirthdayPopup(true)}
-                    className="cursor-pointer"
-                  >
-                    <DetailItem
-                      iconSrc="../assets/Birthday-icon.png"
-                      label="Birthday"
-                      value={customer.advancedDetails.birthday}
-                      field="birthday"
-                    />
-                  </div>
-                  <DetailItem
-                    iconSrc="../assets/Fitness-icon.png"
-                    label="Life Style"
-                    value={customer.advancedDetails.lifeStyle}
-                    field="lifeStyle"
-                  />
-                  <DetailItem
-                    iconSrc="../assets/date-icon.png"
-                    label="Anniversary"
-                    value={customer.advancedDetails.anniversary}
-                    field="anniversary"
-                  />
-                  <DetailItem
-                    iconSrc="../assets/Interest-icon.png"
-                    label="Interest"
-                    value={customer.advancedDetails.interest}
-                    field="interest"
-                  />
-                  <DetailItem
-                    iconSrc="../assets/shirt-measure-icon.png"
-                    label="Shirt Measurement"
-                    value={customer.advancedDetails.shirtMeasurement}
-                    field="shirtMeasurement"
-                  />
-                  <DetailItem
-                    iconSrc="../assets/pant-icon.png"
-                    label="Pant Measurement"
-                    value={customer.advancedDetails.pantMeasurement}
-                    field="pantMeasurement"
-                  />
-                  <DetailItem
-                    iconSrc="../assets/label-icon.png"
-                    label="Customer Label"
-                    value={customer.advancedDetails.customerLabel}
-                    field="customerLabel"
-                  />
-                  {showBirthdayPopup && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-                      <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
-                        <h3 className="text-lg font-semibold mb-4 text-[#2e2d5f]">
-                          Send WhatsApp Message
-                        </h3>
-
-                        <input
-                          type="tel"
-                          placeholder="Enter mobile number (e.g. 919XXXXXXXXX)"
-                          value={recipientNumber}
-                          onChange={(e) => setRecipientNumber(e.target.value)}
-                          className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
-                        />
-
-                        <select
-                          value={messageType}
-                          onChange={(e) => setMessageType(e.target.value)}
-                          className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
-                        >
-                          <option value="birthday">🎂 Birthday</option>
-                          <option value="holiday">🎉 Holiday</option>
-                        </select>
-
-                        <div className="mt-4 flex justify-end space-x-2">
-                          <button
-                            onClick={() => setShowBirthdayPopup(false)}
-                            className="px-4 py-1.5 text-sm rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => {
-                              fetch(
-                                "https://graph.facebook.com/v22.0/685786047947355/messages",
-                                {
-                                  method: "POST",
-                                  headers: {
-                                    Authorization:
-                                      "Bearer EAAJo9kmHxq0BOwLi9ac3pZCDeBNCVzYIUZBYBCGQaK3HG4hX63S2oFxe2oBTBwZB9ZCaRxZAmknYznwRsG9cYc9gdZBldB0MSZBKKxAt3VFVrJqxSWBoSEZAyPJugcHObsw9ULZCmRqndPM13R0TwgVIdZAHoZBmLIbZBoGvsmsGEe7XeR2ZAdkBmWsZCDlgB1VNmXJLbd52YFE0yGxPF2i1G2oDyrJZBzrvUMnCpjhSdweEXZC4ZAJRL5wZDZD",
-                                    "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({
-                                    messaging_product: "whatsapp",
-                                    to: recipientNumber,
-                                    type: "template",
-                                    template: {
-                                      name: messageType,
-                                      language: { code: "en" },
-                                    },
-                                  }),
-                                }
-                              )
-                                .then((res) => res.json())
-                                .then((json) => {
-                                  console.log("✅ Message sent", json);
-                                  setShowBirthdayPopup(false);
-                                  setRecipientNumber("");
-                                })
-                                .catch((err) => {
-                                  console.error("❌ Send failed", err);
-                                });
-                            }}
-                            className={`px-4 py-1.5 text-sm rounded bg-[#2e2d5f] text-white hover:bg-[#24244a] ${
-                              !recipientNumber
-                                ? "opacity-50 cursor-not-allowed"
-                                : ""
-                            }`}
-                            disabled={!recipientNumber}
-                          >
-                            Send
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {customer.advancedDetails && renderDynamicFields(customer.advancedDetails, "advancedDetails")}
                 </div>
               )}
 
               {activeTab === "Advanced Privacy" && (
                 <div className="space-y-0">
-                  <PrivacyItem
-                    iconSrc="../assets/sms-icon.png"
-                    label="Communication Channel"
-                    value={customer.advancedPrivacy.communicationChannel}
-                    field="communicationChannel"
-                  />
-                  <PrivacyItem
-                    iconSrc="../assets/offer-icon.png"
-                    label="Types of Communication Required"
-                    value={customer.advancedPrivacy.communicationTypes}
-                    field="communicationTypes"
-                  />
-                  <PrivacyItem
-                    iconSrc="../assets/privacy-note-icon.png"
-                    label="Privacy Note"
-                    value={customer.advancedPrivacy.privacyNote}
-                    field="privacyNote"
-                  />
-                  <div className="flex items-center p-4 border-b border-gray-100">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
-                      <img
-                        src="../assets/score-icon.png"
-                        alt="Satisfaction Score"
-                        className="w-12 h-12"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-500 mb-1">
-                        Satisfaction Score
-                      </p>
-                      <div className="flex items-center">
-                        {renderStars(
-                          customer.advancedPrivacy.satisfactionScore
-                        )}
+                  {customer.advancedPrivacyDetails && renderDynamicFields(customer.advancedPrivacyDetails, "advancedPrivacy")}
+                  
+                  {/* Satisfaction Score (special case) */}
+                  {customer.advancedPrivacyDetails?.satisfactionScore && (
+                    <div className="flex items-center p-4 border-b border-gray-100">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
+                        <img src="../assets/score-icon.png" alt="Satisfaction Score" className="w-12 h-12" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-500 mb-1">Satisfaction Score</p>
+                        <div className="flex items-center">
+                          {renderStars(customer.advancedPrivacyDetails.satisfactionScore)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <PrivacyItem
-                    iconSrc="../assets/e-score-icon.png"
-                    label="Engagement Score"
-                    value={customer.advancedPrivacy.engagementScore}
-                    field="engagementScore"
-                  />
-                  <PrivacyItem
-                    iconSrc="../assets/label-icon.png"
-                    label="Opt In/Opt out"
-                    value={customer.advancedPrivacy.optInOut}
-                    field="optInOut"
-                  />
-                  <PrivacyItem
-                    iconSrc="../assets/loyalty-icon.png"
-                    label="Loyalty Points"
-                    value={customer.advancedPrivacy.loyaltyPoints}
-                    field="loyaltyPoints"
-                  />
+                  )}
 
                   {/* Purchase History Section */}
                   <div className="p-6 border-t border-gray-200">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium text-gray-900">
-                        Purchase History
-                      </h3>
+                      <h3 className="text-lg font-medium text-gray-900">Purchase History</h3>
                       <div className="flex space-x-2">
                         <button
-                          onClick={onTogglePurchaseView}
+                          onClick={() => setShowPurchaseList(!showPurchaseList)}
                           className="p-2 bg-gray-100 rounded hover:bg-gray-200"
                         >
                           {showPurchaseList ? (
@@ -547,19 +318,11 @@ const CustomerDetails = ({
                     {!showPurchaseList ? (
                       <div className="mb-6 h-64">
                         <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={customer.chartData}>
+                          <LineChart data={customer.chartData || []}>
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis
-                              dataKey="month"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 12 }}
-                            />
-                            <YAxis
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 12 }}
-                            />
+                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                            <Tooltip />
                             <Line
                               type="monotone"
                               dataKey="value"
@@ -572,38 +335,21 @@ const CustomerDetails = ({
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {customer.purchaseHistory
-                          .slice(0, customer.showAllPurchases ? undefined : 5)
-                          .map((purchase, index) => (
-                            <div
-                              key={index}
-                              className="flex justify-between items-center py-2"
-                            >
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">
-                                  {purchase.item}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {purchase.date}
-                                </p>
-                              </div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {purchase.amount}
-                              </p>
+                        {(customer.purchaseHistory || []).slice(0, showAllPurchases ? undefined : 5).map((purchase, index) => (
+                          <div key={index} className="flex justify-between items-center py-2">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{purchase.item}</p>
+                              <p className="text-xs text-gray-500">{purchase.date}</p>
                             </div>
-                          ))}
-                        {customer.purchaseHistory.length > 5 && (
+                            <p className="text-sm font-medium text-gray-900">{purchase.amount}</p>
+                          </div>
+                        ))}
+                        {(customer.purchaseHistory || []).length > 5 && (
                           <button
-                            onClick={() =>
-                              onToggleShowAllPurchases(
-                                !customer.showAllPurchases
-                              )
-                            }
+                            onClick={() => setShowAllPurchases(!showAllPurchases)}
                             className="text-pink-600 text-sm font-medium hover:text-pink-700"
                           >
-                            {customer.showAllPurchases
-                              ? "Show Less"
-                              : "See More"}
+                            {showAllPurchases ? "Show Less" : "See More"}
                           </button>
                         )}
                       </div>
@@ -618,79 +364,45 @@ const CustomerDetails = ({
                     <table className="min-w-full">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            VID.No
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Name
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Phone Number
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Join Date
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Coupon Code
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">VID.No</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Join Date</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coupon Code</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {customer.referralData.map((referral, index) => (
+                        {(customer.referralData || []).map((referral, index) => (
                           <tr key={index}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.vidNo}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.name}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.phoneNumber}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.joinDate}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {referral.vidNo}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {referral.name}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {referral.phoneNumber}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {referral.joinDate}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              <span
-                                className={`px-2 py-1 rounded text-xs ${
-                                  referral.status === "active"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                referral.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                              }`}>
                                 {referral.couponCode}
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              <div
-                                className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                                  referral.status === "active"
-                                    ? "bg-green-500"
-                                    : "bg-red-500"
-                                }`}
-                              >
-                                <img
-                                  src={
-                                    referral.status === "active"
-                                      ? "https://cdn.jsdelivr.net/gh/lucide-icons/lucide@latest/icons/check.svg"
-                                      : "https://cdn.jsdelivr.net/gh/lucide-icons/lucide@latest/icons/x.svg"
-                                  }
-                                  className="w-3 h-3 text-white"
-                                  alt="status"
-                                />
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                                referral.status === "active" ? "bg-green-500" : "bg-red-500"
+                              }`}>
+                                {referral.status === "active" ? (
+                                  <CheckCircle className="w-3 h-3 text-white" />
+                                ) : (
+                                  <XCircle className="w-3 h-3 text-white" />
+                                )}
                               </div>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    {customer.referralData.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        No referral data available
-                      </div>
+                    {(customer.referralData || []).length === 0 && (
+                      <div className="text-center py-8 text-gray-500">No referral data available</div>
                     )}
                   </div>
                 </div>
@@ -700,20 +412,99 @@ const CustomerDetails = ({
         </div>
       </div>
 
-      {/* Fixed Bottom Buttons - Only show when editing */}
+      {/* Birthday Popup */}
+      {showBirthdayPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
+            <h3 className="text-lg font-semibold mb-4 text-[#2e2d5f]">Send WhatsApp Message</h3>
+            <input
+              type="tel"
+              placeholder="Enter mobile number (e.g. 919XXXXXXXXX)"
+              value={recipientNumber}
+              onChange={(e) => setRecipientNumber(e.target.value)}
+              className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
+            />
+            <select
+              value={messageType}
+              onChange={(e) => setMessageType(e.target.value)}
+              className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
+            >
+              <option value="birthday">🎂 Birthday</option>
+              <option value="holiday">🎉 Holiday</option>
+            </select>
+            <div className="mt-4 flex justify-end space-x-2">
+              <button
+                onClick={() => setShowBirthdayPopup(false)}
+                className="px-4 py-1.5 text-sm rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  fetch("https://graph.facebook.com/v22.0/685786047947355/messages", {
+                    method: "POST",
+                    headers: {
+                      Authorization: "Bearer EAAJo9kmHxq0BOwLi9ac3pZCDeBNCVzYIUZBYBCGQaK3HG4hX63S2oFxe2oBTBwZB9ZCaRxZAmknYznwRsG9cYc9gdZBldB0MSZBKKxAt3VFVrJqxSWBoSEZAyPJugcHObsw9ULZCmRqndPM13R0TwgVIdZAHoZBmLIbZBoGvsmsGEe7XeR2ZAdkBmWsZCDlgB1VNmXJLbd52YFE0yGxPF2i1G2oDyrJZBzrvUMnCpjhSdweEXZC4ZAJRL5wZDZD",
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      messaging_product: "whatsapp",
+                      to: recipientNumber,
+                      type: "template",
+                      template: {
+                        name: messageType,
+                        language: { code: "en" },
+                      },
+                    }),
+                  })
+                    .then((res) => res.json())
+                    .then((json) => {
+                      console.log("✅ Message sent", json);
+                      setShowBirthdayPopup(false);
+                      setRecipientNumber("");
+                    })
+                    .catch((err) => {
+                      console.error("❌ Send failed", err);
+                    });
+                }}
+                className={`px-4 py-1.5 text-sm rounded bg-[#2e2d5f] text-white hover:bg-[#24244a] ${
+                  !recipientNumber ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                disabled={!recipientNumber}
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Mode Buttons */}
       {isEditing && (
         <div className="bg-white border-t border-gray-200 p-6 flex justify-end space-x-4">
           <button
             onClick={onCancel}
+            disabled={isLoading}
             className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             Cancel
           </button>
           <button
             onClick={onSave}
-            className="px-6 py-2 bg-pink-600 text-white rounded-lg text-sm font-medium hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500"
+            disabled={isLoading}
+            className="px-6 py-2 bg-pink-600 text-white rounded-lg text-sm font-medium hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 disabled:opacity-50 flex items-center"
           >
-            Update Changes
+            {isLoading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Updating...
+              </>
+            ) : (
+              "Update Changes"
+            )}
           </button>
         </div>
       )}

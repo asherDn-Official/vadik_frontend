@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { customers } from "../../data/mockData";
 import CustomerSidebar from "./CustomerSidebar";
 import CustomerDetails from "./CustomerDetails";
 
@@ -10,25 +9,41 @@ const CustomerProfile = () => {
   const [activeTab, setActiveTab] = useState("Advanced Details");
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const customer = customers.find((c) => c.id === parseInt(customerId));
-    if (customer) {
-      setSelectedCustomer(customer);
-      setEditedData({
-        ...customer,
-        ...customer.advancedDetails,
-        ...customer.advancedPrivacy,
-      });
-    }
+    const fetchCustomer = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`http://13.60.19.134:5000/api/customers/${customerId}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch customer");
+        }
+        const data = await response.json();
+        setSelectedCustomer(data);
+        setEditedData({
+          ...data,
+          ...data.additionalData,
+          ...data.advancedDetails,
+          ...data.advancedPrivacyDetails,
+        });
+      } catch (error) {
+        console.error("Error fetching customer:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCustomer();
   }, [customerId]);
 
   const handleCustomerSelect = (customer) => {
     setSelectedCustomer(customer);
     setEditedData({
       ...customer,
+      ...customer.additionalData,
       ...customer.advancedDetails,
-      ...customer.advancedPrivacy,
+      ...customer.advancedPrivacyDetails,
     });
     setIsEditing(false);
     setActiveTab("Advanced Details");
@@ -43,56 +58,78 @@ const CustomerProfile = () => {
     if (selectedCustomer) {
       setEditedData({
         ...selectedCustomer,
+        ...selectedCustomer.additionalData,
         ...selectedCustomer.advancedDetails,
-        ...selectedCustomer.advancedPrivacy,
+        ...selectedCustomer.advancedPrivacyDetails,
       });
     }
   };
 
-  const handleSave = () => {
-    // In a real application, you would save to a backend here
-    console.log("Saving customer data:", editedData);
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+      let payload = {};
+      
+      if (activeTab === "Advanced Details") {
+        // Extract only advancedDetails fields from editedData
+        const { advancedDetails, ...rest } = selectedCustomer;
+        payload = {
+          ...rest,
+          advancedDetails: Object.keys(editedData).reduce((acc, key) => {
+            if (key in advancedDetails) {
+              acc[key] = editedData[key];
+            }
+            return acc;
+          }, {})
+        };
+      } else if (activeTab === "Advanced Privacy") {
+        // Extract only advancedPrivacyDetails fields from editedData
+        const { advancedPrivacyDetails, ...rest } = selectedCustomer;
+        payload = {
+          ...rest,
+          advancedPrivacyDetails: Object.keys(editedData).reduce((acc, key) => {
+            if (key in advancedPrivacyDetails) {
+              acc[key] = editedData[key];
+            }
+            return acc;
+          }, {})
+        };
+      } else {
+        // For Basic Details
+        const { additionalData, ...rest } = selectedCustomer;
+        payload = {
+          ...rest,
+          additionalData: Object.keys(editedData).reduce((acc, key) => {
+            if (key in additionalData) {
+              acc[key] = editedData[key];
+            }
+            return acc;
+          }, {})
+        };
+      }
 
-    // Update the selected customer with new data
-    const updatedCustomer = {
-      ...selectedCustomer,
-      name: editedData.name,
-      mobileNumber: editedData.mobileNumber,
-      gender: editedData.gender,
-      source: editedData.source,
-      vadikId: editedData.vadikId,
-      firstVisit: editedData.firstVisit,
-      advancedDetails: {
-        profession: editedData.profession,
-        incomeLevel: editedData.incomeLevel,
-        location: editedData.location,
-        favouriteProduct: editedData.favouriteProduct,
-        favouriteColour: editedData.favouriteColour,
-        favouriteBrand: editedData.favouriteBrand,
-        birthday: editedData.birthday,
-        lifeStyle: editedData.lifeStyle,
-        anniversary: editedData.anniversary,
-        interest: editedData.interest,
-        shirtMeasurement: editedData.shirtMeasurement,
-        pantMeasurement: editedData.pantMeasurement,
-        customerLabel: editedData.customerLabel,
-      },
-      advancedPrivacy: {
-        communicationChannel: editedData.communicationChannel,
-        communicationTypes: editedData.communicationTypes,
-        privacyNote: editedData.privacyNote,
-        satisfactionScore: editedData.satisfactionScore,
-        engagementScore: editedData.engagementScore,
-        optInOut: editedData.optInOut,
-        loyaltyPoints: editedData.loyaltyPoints,
-      },
-    };
+      const response = await fetch(`http://13.60.19.134:5000/api/customers/${selectedCustomer._id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    setSelectedCustomer(updatedCustomer);
-    setIsEditing(false);
+      if (!response.ok) {
+        throw new Error("Failed to update customer");
+      }
 
-    // Show success message
-    alert("Customer data updated successfully!");
+      const updatedCustomer = await response.json();
+      setSelectedCustomer(updatedCustomer);
+      setIsEditing(false);
+      alert("Customer data updated successfully!");
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      alert("Failed to update customer. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (field, value) => {
@@ -102,18 +139,21 @@ const CustomerProfile = () => {
     }));
   };
 
+  if (isLoading && !selectedCustomer) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+
   if (!selectedCustomer) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center h-screen">Customer not found</div>;
   }
 
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="flex-1 flex">
-        <CustomerSidebar
-          customers={customers}
+        {/* <CustomerSidebar
           selectedCustomer={selectedCustomer}
           onCustomerSelect={handleCustomerSelect}
-        />
+        /> */}
 
         <CustomerDetails
           customer={selectedCustomer}
@@ -125,6 +165,7 @@ const CustomerProfile = () => {
           onCancel={handleCancel}
           onSave={handleSave}
           onInputChange={handleInputChange}
+          isLoading={isLoading}
         />
       </div>
     </div>
