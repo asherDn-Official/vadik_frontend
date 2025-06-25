@@ -401,10 +401,8 @@ const CustomerDetails = ({
                         ))}
                       </tbody>
                     </table>
-                    {customer.referralData.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        No referral data available
-                      </div>
+                    {(customer.referralData || []).length === 0 && (
+                      <div className="text-center py-8 text-gray-500">No referral data available</div>
                     )}
                   </div>
                 </div>
