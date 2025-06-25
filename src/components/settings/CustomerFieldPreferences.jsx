@@ -16,8 +16,8 @@ const CustomerFieldPreferences = () => {
   const [newPreferenceName, setNewPreferenceName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [retailerId, setRetailerId] = useState("12345");
-  const [preferenceId, setPreferenceId] = useState("685a7d6ccdaef1ad80c48377");
+  const [retailerId, setRetailerId] = useState("6856350030bcee9b82be4c17");
+  const [preferenceId, setPreferenceId] = useState("6856350030bcee9b82be4c17");
 
   // Map UI tabs to API field names
   const tabToApiFieldMap = {
@@ -26,27 +26,52 @@ const CustomerFieldPreferences = () => {
     "Advance Privacy": "advancedPrivacyDetails",
   };
 
+  const createInitialPreference = async () => {
+    try {
+      const payload = {
+        retailerId,
+        additionalData: [],
+        advancedDetails: [],
+        advancedPrivacyDetails: []
+      };
+
+      const response = await axios.post(
+        `http://13.60.19.134:5000/api/customer-preferences`,
+        payload
+      );
+
+      setPreferenceId(response.data._id);
+      return response.data._id;
+    } catch (err) {
+      console.error("Error creating initial preference:", err);
+      setError("Failed to create initial preference");
+      return null;
+    }
+  };
+
   const fetchPreferences = async () => {
     try {
+      // First try to get the preference
       const response = await axios.get(
-        `http://13.60.19.134:5000/api/customer-preferences`
+        `http://13.60.19.134:5000/api/customer-preferences/${retailerId}`
       );
 
       if (response.data) {
+        setPreferenceId(response.data._id);
         // Transform API data to UI format
         const transformedFields = {
           "Basic Details":
-            response.data[0].additionalData?.map((item) => ({
+            response.data.additionalData?.map((item) => ({
               id: `basic-${item.toLowerCase().replace(/\s+/g, "-")}`,
               label: item,
             })) || [],
           "Advance Details":
-            response.data[0].advancedDetails?.map((item) => ({
+            response.data.advancedDetails?.map((item) => ({
               id: `advance-${item.toLowerCase().replace(/\s+/g, "-")}`,
               label: item,
             })) || [],
           "Advance Privacy":
-            response.data[0].advancedPrivacyDetails?.map((item) => ({
+            response.data.advancedPrivacyDetails?.map((item) => ({
               id: `privacy-${item.toLowerCase().replace(/\s+/g, "-")}`,
               label: item,
             })) || [],
@@ -56,15 +81,24 @@ const CustomerFieldPreferences = () => {
       }
       setIsLoading(false);
     } catch (err) {
-      setError(err.message);
-      setIsLoading(false);
-      console.error("Error fetching preferences:", err);
+      if (err.response && err.response.status === 404) {
+        // Preference not found, create a new one
+        const newPreferenceId = await createInitialPreference();
+        if (newPreferenceId) {
+          // Retry fetching with the new preference ID
+          await fetchPreferences();
+        }
+      } else {
+        setError(err.message);
+        setIsLoading(false);
+        console.error("Error fetching preferences:", err);
+      }
     }
   };
 
   useEffect(() => {
     fetchPreferences();
-  }, [preferenceId]);
+  }, []);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -109,36 +143,18 @@ const CustomerFieldPreferences = () => {
   };
 
   const updatePreferences = async (updatedFields) => {
-    try {
-      let payload = {};
+    if (!preferenceId) return;
 
-      if (activeTab === "Basic Details") {
-        payload = {
-          retailerId,
-          additionalData: updatedFields["Basic Details"].map((f) => f.label),
-          advancedDetails: fields["Advance Details"].map((f) => f.label),
-          advancedPrivacyDetails: fields["Advance Privacy"].map((f) => f.label),
-        };
-      } else if (activeTab === "Advance Details") {
-        payload = {
-          retailerId,
-          additionalData: fields["Basic Details"].map((f) => f.label),
-          advancedDetails: updatedFields["Advance Details"].map((f) => f.label),
-          advancedPrivacyDetails: fields["Advance Privacy"].map((f) => f.label),
-        };
-      } else if (activeTab === "Advance Privacy") {
-        payload = {
-          retailerId,
-          additionalData: fields["Basic Details"].map((f) => f.label),
-          advancedDetails: fields["Advance Details"].map((f) => f.label),
-          advancedPrivacyDetails: updatedFields["Advance Privacy"].map(
-            (f) => f.label
-          ),
-        };
-      }
+    try {
+      const payload = {
+        retailerId,
+        additionalData: updatedFields["Basic Details"].map((f) => f.label),
+        advancedDetails: updatedFields["Advance Details"].map((f) => f.label),
+        advancedPrivacyDetails: updatedFields["Advance Privacy"].map((f) => f.label),
+      };
 
       await axios.put(
-        `http://13.60.19.134:5000/api/customer-preferences/${preferenceId}`,
+        `http://13.60.19.134:5000/api/customer-preferences/${retailerId}`,
         payload
       );
     } catch (err) {
@@ -169,40 +185,16 @@ const CustomerFieldPreferences = () => {
     if (!newPreferenceName.trim()) return;
 
     try {
-      const payload = {
-        retailerId,
-        additionalData:
-          activeTab === "Basic Details"
-            ? [
-                ...fields["Basic Details"].map((f) => f.label),
-                newPreferenceName.trim(),
-              ]
-            : fields["Basic Details"].map((f) => f.label),
-        advancedDetails:
-          activeTab === "Advance Details"
-            ? [
-                ...fields["Advance Details"].map((f) => f.label),
-                newPreferenceName.trim(),
-              ]
-            : fields["Advance Details"].map((f) => f.label),
-        advancedPrivacyDetails:
-          activeTab === "Advance Privacy"
-            ? [
-                ...fields["Advance Privacy"].map((f) => f.label),
-                newPreferenceName.trim(),
-              ]
-            : fields["Advance Privacy"].map((f) => f.label),
+      const updatedFields = {
+        ...fields,
+        [activeTab]: [...fields[activeTab], {
+          id: `pref-${Date.now()}`,
+          label: newPreferenceName.trim()
+        }],
       };
 
-      const response = await axios.put(
-        `http://13.60.19.134:5000/api/customer-preferences/685a7d6ccdaef1ad80c48377`,
-        payload
-      );
-
-      fetchPreferences();
-
-      // Update the preference ID to the newly dcreated one
-      setPreferenceId(response.data._id);
+      setFields(updatedFields);
+      await updatePreferences(updatedFields);
       setIsAddingPreference(false);
       setNewPreferenceName("");
     } catch (err) {
@@ -232,10 +224,18 @@ const CustomerFieldPreferences = () => {
         advancedPrivacyDetails: fields["Advance Privacy"].map((f) => f.label),
       };
 
-      await axios.put(
-        `http://13.60.19.134:5000/api/customer-preferences/${preferenceId}`,
-        payload
-      );
+      if (preferenceId) {
+        await axios.put(
+          `http://13.60.19.134:5000/api/customer-preferences/${preferenceId}`,
+          payload
+        );
+      } else {
+        const response = await axios.post(
+          `http://13.60.19.134:5000/api/customer-preferences`,
+          payload
+        );
+        setPreferenceId(response.data._id);
+      }
 
       console.log("Preferences updated successfully");
     } catch (err) {
