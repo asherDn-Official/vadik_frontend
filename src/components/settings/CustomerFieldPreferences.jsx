@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { FiPlus, FiTrash2, FiSave, FiX } from "react-icons/fi";
-import axios from "axios";
+import api from "../../api/apiconfig";
 
 const CustomerFieldPreferences = () => {
   const [activeTab, setActiveTab] = useState("Basic Details");
@@ -20,12 +20,6 @@ const CustomerFieldPreferences = () => {
   const [preferenceId, setPreferenceId] = useState(null);
   const [isCreatingPreference, setIsCreatingPreference] = useState(false);
 
-  // Map UI tabs to API field names
-  const tabToApiFieldMap = {
-    "Basic Details": "additionalData",
-    "Advance Details": "advancedDetails",
-    "Advance Privacy": "advancedPrivacyDetails",
-  };
 
   const createInitialPreference = async () => {
     setIsCreatingPreference(true);
@@ -37,8 +31,8 @@ const CustomerFieldPreferences = () => {
         advancedPrivacyDetails: []
       };
 
-      const response = await axios.post(
-        `http://13.60.19.134:5000/api/customer-preferences`,
+      const response = await api.post(
+        `/api/customer-preferences`,
         payload
       );
 
@@ -59,8 +53,8 @@ const CustomerFieldPreferences = () => {
     
     try {
       // First try to get the preference
-      const response = await axios.get(
-        `http://13.60.19.134:5000/api/customer-preferences/${retailerId}`
+      const response = await api.get(
+        `/api/customer-preferences/${retailerId}`
       );
 
       if (response.data) {
@@ -156,8 +150,8 @@ const CustomerFieldPreferences = () => {
         advancedPrivacyDetails: updatedFields["Advance Privacy"].map((f) => f.label),
       };
 
-      await axios.put(
-        `http://13.60.19.134:5000/api/customer-preferences/${retailerId}`,
+      await api.put(
+        `/api/customer-preferences/${retailerId}`,
         payload
       );
     } catch (err) {
@@ -232,13 +226,13 @@ const CustomerFieldPreferences = () => {
       };
 
       if (preferenceId) {
-        await axios.put(
-          `http://13.60.134:5000/api/customer-preferences/${preferenceId}`,
+        await api.put(
+          `/api/customer-preferences/${preferenceId}`,
           payload
         );
       } else {
-        const response = await axios.post(
-          `http://13.60.19.134:5000/api/customer-preferences`,
+        const response = await api.post(
+          `/api/customer-preferences`,
           payload
         );
         setPreferenceId(response.data._id);
