@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import CustomerSidebar from "./CustomerSidebar";
 import CustomerDetails from "./CustomerDetails";
+import api from "../../api/apiconfig";
 
 const CustomerProfile = () => {
   const { customerId } = useParams();
@@ -15,7 +16,9 @@ const CustomerProfile = () => {
     const fetchCustomer = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`http://13.60.19.134:5000/api/customers/${customerId}`);
+        const response = await fetch(
+          `http://13.60.19.134:5000/api/customers/${customerId}`
+        );
         if (!response.ok) {
           throw new Error("Failed to fetch customer");
         }
@@ -69,7 +72,7 @@ const CustomerProfile = () => {
     try {
       setIsLoading(true);
       let payload = {};
-      
+
       if (activeTab === "Advanced Details") {
         // Extract only advancedDetails fields from editedData
         const { advancedDetails, ...rest } = selectedCustomer;
@@ -80,7 +83,7 @@ const CustomerProfile = () => {
               acc[key] = editedData[key];
             }
             return acc;
-          }, {})
+          }, {}),
         };
       } else if (activeTab === "Advanced Privacy") {
         // Extract only advancedPrivacyDetails fields from editedData
@@ -92,7 +95,7 @@ const CustomerProfile = () => {
               acc[key] = editedData[key];
             }
             return acc;
-          }, {})
+          }, {}),
         };
       } else {
         // For Basic Details
@@ -104,17 +107,19 @@ const CustomerProfile = () => {
               acc[key] = editedData[key];
             }
             return acc;
-          }, {})
+          }, {}),
         };
       }
 
-      const response = await fetch(`http://13.60.19.134:5000/api/customers/${selectedCustomer._id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await api.patch(
+        `http://13.60.19.134:5000/api/customers/${selectedCustomer._id}`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to update customer");
@@ -140,11 +145,19 @@ const CustomerProfile = () => {
   };
 
   if (isLoading && !selectedCustomer) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Loading...
+      </div>
+    );
   }
 
   if (!selectedCustomer) {
-    return <div className="flex items-center justify-center h-screen">Customer not found</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Customer not found
+      </div>
+    );
   }
 
   return (
