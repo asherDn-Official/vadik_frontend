@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { XCircle, CheckCircle, List, BarChart } from 'lucide-react';
+import React, { useState } from "react";
+import { XCircle, CheckCircle, List, BarChart } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -21,7 +21,7 @@ const CustomerDetails = ({
   onInputChange,
   onTogglePurchaseView,
   showPurchaseList,
-  onToggleShowAllPurchases
+  onToggleShowAllPurchases,
 }) => {
   const tabs = ["Advanced Details", "Advanced Privacy", "Referral"];
 
@@ -30,7 +30,7 @@ const CustomerDetails = ({
   const [messageType, setMessageType] = useState("birthday");
 
   const DetailItem = ({ iconSrc, label, value, field, isEditable = true }) => {
-    const currentValue = isEditing ? (editedData[field] || "") : value;
+    const currentValue = isEditing ? editedData[field] || "" : value;
     return (
       <div
         className="flex items-center justify-between p-4 rounded-[14px]"
@@ -59,7 +59,7 @@ const CustomerDetails = ({
   };
 
   const PrivacyItem = ({ iconSrc, label, value, field, isEditable = true }) => {
-    const currentValue = isEditing ? (editedData[field] || "") : value;
+    const currentValue = isEditing ? editedData[field] || "" : value;
     return (
       <div className="flex items-center p-4 border-b border-gray-100">
         <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
@@ -340,7 +340,10 @@ const CustomerDetails = ({
                     value={customer.advancedDetails.favouriteBrand}
                     field="favouriteBrand"
                   />
-                  <div onClick={() => setShowBirthdayPopup(true)} className="cursor-pointer">
+                  <div
+                    onClick={() => setShowBirthdayPopup(true)}
+                    className="cursor-pointer"
+                  >
                     <DetailItem
                       iconSrc="../assets/Birthday-icon.png"
                       label="Birthday"
@@ -417,23 +420,26 @@ const CustomerDetails = ({
                           </button>
                           <button
                             onClick={() => {
-                              fetch("https://graph.facebook.com/v22.0/685786047947355/messages", {
-                                method: "POST",
-                                headers: {
-                                  Authorization:
-                                    "Bearer EAAJo9kmHxq0BOZB9wZCtMLOsXResmMgPuDF1JPVhCZC5uqGjaOTAZCEcnZBVHuI3xZCwSsIf3p1CxeYlVHWRkm5w9qFIkZADf5AmMVAJJymjj3pi5mJGzZBeYoqqQfTdFA5YEoCqwEH0i6BFRwXSZBpwQu2C2PUqLZCTdQkzCCxOeXUkBt2ZBpQUO3fLMAEEfVw4z6fZAQhLQUeRwrW4CO9P16uB21ni8PHnREGOEjtZC192MVW8xcQZDZD",
-                                  "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({
-                                  messaging_product: "whatsapp",
-                                  to: recipientNumber,
-                                  type: "template",
-                                  template: {
-                                    name: messageType,
-                                    language: { code: "en" },
+                              fetch(
+                                "https://graph.facebook.com/v22.0/685786047947355/messages",
+                                {
+                                  method: "POST",
+                                  headers: {
+                                    Authorization:
+                                      "Bearer EAAJo9kmHxq0BOwLi9ac3pZCDeBNCVzYIUZBYBCGQaK3HG4hX63S2oFxe2oBTBwZB9ZCaRxZAmknYznwRsG9cYc9gdZBldB0MSZBKKxAt3VFVrJqxSWBoSEZAyPJugcHObsw9ULZCmRqndPM13R0TwgVIdZAHoZBmLIbZBoGvsmsGEe7XeR2ZAdkBmWsZCDlgB1VNmXJLbd52YFE0yGxPF2i1G2oDyrJZBzrvUMnCpjhSdweEXZC4ZAJRL5wZDZD",
+                                    "Content-Type": "application/json",
                                   },
-                                }),
-                              })
+                                  body: JSON.stringify({
+                                    messaging_product: "whatsapp",
+                                    to: recipientNumber,
+                                    type: "template",
+                                    template: {
+                                      name: messageType,
+                                      language: { code: "en" },
+                                    },
+                                  }),
+                                }
+                              )
                                 .then((res) => res.json())
                                 .then((json) => {
                                   console.log("✅ Message sent", json);
@@ -445,7 +451,9 @@ const CustomerDetails = ({
                                 });
                             }}
                             className={`px-4 py-1.5 text-sm rounded bg-[#2e2d5f] text-white hover:bg-[#24244a] ${
-                              !recipientNumber ? "opacity-50 cursor-not-allowed" : ""
+                              !recipientNumber
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
                             }`}
                             disabled={!recipientNumber}
                           >
