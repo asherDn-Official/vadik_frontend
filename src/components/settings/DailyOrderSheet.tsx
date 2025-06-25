@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Scan, Plus, Trash2 } from "lucide-react";
+import { Scan, Plus, Trash2, ArrowLeft } from "lucide-react";
 
 const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const [formData, setFormData] = useState({
@@ -90,9 +90,17 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm">
       <div className="flex items-center justify-between p-6 border-b">
-        <h2 className="text-xl font-semibold text-gray-800">
-          Daily Order sheet
-        </h2>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h2 className="text-xl font-semibold text-gray-800">
+            Daily Order sheet
+          </h2>
+        </div>
 
         <div className="flex gap-3">
           <button
