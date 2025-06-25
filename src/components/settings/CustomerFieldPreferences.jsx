@@ -16,8 +16,9 @@ const CustomerFieldPreferences = () => {
   const [newPreferenceName, setNewPreferenceName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [retailerId, setRetailerId] = useState("6856350030bcee9b82be4c17");
-  const [preferenceId, setPreferenceId] = useState("6856350030bcee9b82be4c17");
+  const [retailerId] = useState("6856350030bcee9b82be4c17");
+  const [preferenceId, setPreferenceId] = useState(null);
+  const [isCreatingPreference, setIsCreatingPreference] = useState(false);
 
   // Map UI tabs to API field names
   const tabToApiFieldMap = {
@@ -27,6 +28,7 @@ const CustomerFieldPreferences = () => {
   };
 
   const createInitialPreference = async () => {
+    setIsCreatingPreference(true);
     try {
       const payload = {
         retailerId,
@@ -44,12 +46,17 @@ const CustomerFieldPreferences = () => {
       return response.data._id;
     } catch (err) {
       console.error("Error creating initial preference:", err);
-      setError("Failed to create initial preference");
+      setError("Failed to create initial preference. Please try again.");
       return null;
+    } finally {
+      setIsCreatingPreference(false);
     }
   };
 
   const fetchPreferences = async () => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
       // First try to get the preference
       const response = await axios.get(
@@ -61,44 +68,40 @@ const CustomerFieldPreferences = () => {
         // Transform API data to UI format
         const transformedFields = {
           "Basic Details":
-            response.data.additionalData?.map((item) => ({
-              id: `basic-${item.toLowerCase().replace(/\s+/g, "-")}`,
+            response.data.additionalData?.map((item, index) => ({
+              id: `basic-${index}-${item.toLowerCase().replace(/\s+/g, "-")}`,
               label: item,
             })) || [],
           "Advance Details":
-            response.data.advancedDetails?.map((item) => ({
-              id: `advance-${item.toLowerCase().replace(/\s+/g, "-")}`,
+            response.data.advancedDetails?.map((item, index) => ({
+              id: `advance-${index}-${item.toLowerCase().replace(/\s+/g, "-")}`,
               label: item,
             })) || [],
           "Advance Privacy":
-            response.data.advancedPrivacyDetails?.map((item) => ({
-              id: `privacy-${item.toLowerCase().replace(/\s+/g, "-")}`,
+            response.data.advancedPrivacyDetails?.map((item, index) => ({
+              id: `privacy-${index}-${item.toLowerCase().replace(/\s+/g, "-")}`,
               label: item,
             })) || [],
         };
 
         setFields(transformedFields);
       }
-      setIsLoading(false);
     } catch (err) {
       if (err.response && err.response.status === 404) {
         // Preference not found, create a new one
-        const newPreferenceId = await createInitialPreference();
-        if (newPreferenceId) {
-          // Retry fetching with the new preference ID
-          await fetchPreferences();
-        }
+        await createInitialPreference();
+        // No need to retry fetch here - the effect will run again when preferenceId changes
       } else {
-        setError(err.message);
-        setIsLoading(false);
-        console.error("Error fetching preferences:", err);
+        setError(err.message || "Failed to fetch preferences");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchPreferences();
-  }, []);
+  }, [preferenceId]); // Add preferenceId to dependencies to refetch when it changes
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -159,6 +162,7 @@ const CustomerFieldPreferences = () => {
       );
     } catch (err) {
       console.error("Error updating preferences:", err);
+      setError("Failed to update preferences. Please try again.");
     }
   };
 
@@ -185,12 +189,14 @@ const CustomerFieldPreferences = () => {
     if (!newPreferenceName.trim()) return;
 
     try {
+      const newField = {
+        id: `pref-${Date.now()}`,
+        label: newPreferenceName.trim()
+      };
+
       const updatedFields = {
         ...fields,
-        [activeTab]: [...fields[activeTab], {
-          id: `pref-${Date.now()}`,
-          label: newPreferenceName.trim()
-        }],
+        [activeTab]: [...fields[activeTab], newField]
       };
 
       setFields(updatedFields);
@@ -199,6 +205,7 @@ const CustomerFieldPreferences = () => {
       setNewPreferenceName("");
     } catch (err) {
       console.error("Error adding preference:", err);
+      setError("Failed to add preference. Please try again.");
     }
   };
 
@@ -226,7 +233,7 @@ const CustomerFieldPreferences = () => {
 
       if (preferenceId) {
         await axios.put(
-          `http://13.60.19.134:5000/api/customer-preferences/${preferenceId}`,
+          `http://13.60.134:5000/api/customer-preferences/${preferenceId}`,
           payload
         );
       } else {
@@ -236,19 +243,33 @@ const CustomerFieldPreferences = () => {
         );
         setPreferenceId(response.data._id);
       }
-
-      console.log("Preferences updated successfully");
     } catch (err) {
       console.error("Error updating preferences:", err);
+      setError("Failed to update preferences. Please try again.");
     }
   };
 
-  if (isLoading) {
-    return <div className="p-6 text-center">Loading preferences...</div>;
+  if (isLoading || isCreatingPreference) {
+    return (
+      <div className="p-6 text-center">
+        <p>Loading preferences...</p>
+        {isCreatingPreference && <p>Creating new preference set...</p>}
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="p-6 text-red-500">Error: {error}</div>;
+    return (
+      <div className="p-6">
+        <div className="text-red-500 mb-4">Error: {error}</div>
+        <button
+          onClick={fetchPreferences}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
