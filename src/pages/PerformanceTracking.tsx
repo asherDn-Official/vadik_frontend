@@ -51,7 +51,7 @@ const PerformanceTracking: React.FC = () => {
           />
         </div>
 
-        {/* Second Row - Campaign Table & Conversion Chart */}
+        {/* Second Row - Activities Table & Conversion Chart */}
         <div className="grid grid-cols-2 lg:grid-cols-10 gap-6">
           {/* <div className="lg:col-span-7"> */}
           <CampaignTable />

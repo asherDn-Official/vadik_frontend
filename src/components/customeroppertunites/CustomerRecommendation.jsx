@@ -50,7 +50,7 @@ const CustomerRecommendation = () => {
         id: Date.now() + 1,
         type: "ai",
         content:
-          "Based on your customer data, I found 15 customers with special days coming up this month:\n\n• 8 customers have birthdays in the next 2 weeks\n• 4 customers have anniversaries this month\n• 3 customers have other special occasions\n\nWould you like me to create personalized campaigns for these customers?",
+          "Based on your customer data, I found 15 customers with special days coming up this month:\n\n• 8 customers have birthdays in the next 2 weeks\n• 4 customers have anniversaries this month\n• 3 customers have other special occasions\n\nWould you like me to create personalized activities for these customers?",
         timestamp: new Date(),
       };
     } else {
@@ -58,7 +58,7 @@ const CustomerRecommendation = () => {
         id: Date.now() + 1,
         type: "ai",
         content:
-          "Here are the upcoming events and reminders for your customers:\n\n• Valentine's Day - 12 customers interested in romantic gifts\n• Mother's Day - 25 customers with purchase history of gifts\n• Summer Collection Launch - 45 customers who bought seasonal items last year\n\nShall I help you create targeted campaigns for these events?",
+          "Here are the upcoming events and reminders for your customers:\n\n• Valentine's Day - 12 customers interested in romantic gifts\n• Mother's Day - 25 customers with purchase history of gifts\n• Summer Collection Launch - 45 customers who bought seasonal items last year\n\nShall I help you create targeted activities for these events?",
         timestamp: new Date(),
       };
     }
@@ -80,7 +80,7 @@ const CustomerRecommendation = () => {
       id: Date.now() + 1,
       type: "ai",
       content:
-        "I understand your request. Let me analyze your customer data and provide personalized recommendations based on their behavior and preferences. This will help you create more targeted and effective campaigns.",
+        "I understand your request. Let me analyze your customer data and provide personalized recommendations based on their behavior and preferences. This will help you create more targeted and effective activities.",
       timestamp: new Date(),
     };
 

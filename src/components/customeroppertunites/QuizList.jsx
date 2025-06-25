@@ -1,10 +1,10 @@
 import React from "react";
 import { Edit, Trash2 } from "lucide-react";
 
-const QuizList = ({ campaigns, onEdit, onDelete }) => {
+const QuizList = ({ activities, onEdit, onDelete }) => {
   return (
     <div className="space-y-4">
-      {campaigns.map((campaign) => (
+      {activities.map((campaign) => (
         <div
           key={campaign.id}
           className="bg-white rounded-lg p-6 border border-gray-300 hover:shadow-md transition-shadow"
@@ -45,10 +45,10 @@ const QuizList = ({ campaigns, onEdit, onDelete }) => {
         </div>
       ))}
 
-      {campaigns.length === 0 && (
+      {activities.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           <p>
-            No quiz campaigns created yet. Click "Create Quiz" to get started.
+            No quiz activities created yet. Click "Create Quiz" to get started.
           </p>
         </div>
       )}

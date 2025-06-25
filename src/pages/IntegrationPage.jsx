@@ -24,13 +24,13 @@ const IntegrationPage = () => {
       title: "Engage Bird",
       icon: "./assets/whatsapp-icon.png",
       description:
-        "Streamline customer engagement with automated responses and personalized messaging campaigns.",
+        "Streamline customer engagement with automated responses and personalized messaging activities.",
     },
     {
       title: "Meta",
       icon: "./assets/whatsapp-icon.png",
       description:
-        "Connect with Facebook and Instagram audiences through targeted ads and automated social media campaigns.",
+        "Connect with Facebook and Instagram audiences through targeted ads and automated social media activities.",
     },
   ];
 
@@ -57,7 +57,7 @@ const IntegrationPage = () => {
       title: "Scratch Card",
       icon: "./assets/whatsapp-icon.png",
       description:
-        "Deploy virtual scratch cards for instant rewards and promotional campaigns with guaranteed engagement.",
+        "Deploy virtual scratch cards for instant rewards and promotional activities with guaranteed engagement.",
     },
   ];
 
@@ -98,7 +98,7 @@ const IntegrationPage = () => {
       />
 
       <PlatformSection
-        title="Campaign Platform"
+        title="Activities Platform"
         integrations={campaignPlatforms.filter((item) => {
           return (
             searchQuery === "" ||

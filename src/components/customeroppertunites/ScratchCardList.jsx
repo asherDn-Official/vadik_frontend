@@ -1,10 +1,10 @@
 import React from "react";
 import { Edit, Trash2, Gift } from "lucide-react";
 
-const ScratchCardList = ({ campaigns, onEdit, onDelete }) => {
+const ScratchCardList = ({ activities, onEdit, onDelete }) => {
   return (
     <div className="space-y-4">
-      {campaigns.map((campaign) => (
+      {activities.map((campaign) => (
         <div
           key={campaign.id}
           className="bg-white rounded-lg p-6 border border-gray-300 hover:shadow-md transition-shadow"
@@ -43,10 +43,10 @@ const ScratchCardList = ({ campaigns, onEdit, onDelete }) => {
         </div>
       ))}
 
-      {campaigns.length === 0 && (
+      {activities.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           <p>
-            No scratch card campaigns created yet. Click "Create Scratch Card"
+            No scratch card activities created yet. Click "Create Scratch Card"
             to get started.
           </p>
         </div>

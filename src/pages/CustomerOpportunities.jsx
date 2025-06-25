@@ -16,19 +16,19 @@ const CustomerOpportunities = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState(null);
 
-  const [quizCampaigns, setQuizCampaigns] = useState([
+  const [quizActivities, setQuizActivities] = useState([
     { id: 1, title: "Special Day Quizz", questions: 8 },
     { id: 2, title: "Favourite Product Quizz", questions: 6 },
     { id: 3, title: "Personal Details Quiz", questions: 3 },
   ]);
 
-  const [spinWheelCampaigns, setSpinWheelCampaigns] = useState([
+  const [spinWheelActivities, setSpinWheelActivities] = useState([
     { id: 1, title: "Spin Wheel 1", spins: 8 },
     { id: 2, title: "Spin Wheel 2", spins: 6 },
     { id: 3, title: "Spin Wheel 3", spins: 3 },
   ]);
 
-  const [scratchCardCampaigns, setScratchCardCampaigns] = useState([
+  const [scratchCardActivities, setScratchCardActivities] = useState([
     { id: 1, title: "Summer Sale Scratch", offers: 5 },
     { id: 2, title: "Welcome Bonus Card", offers: 3 },
   ]);
@@ -46,7 +46,7 @@ const CustomerOpportunities = () => {
   const handleSaveCampaign = (campaignData) => {
     if (selectedCampaign === "quiz") {
       if (editingCampaign) {
-        setQuizCampaigns((prev) =>
+        setQuizActivities((prev) =>
           prev.map((c) =>
             c.id === editingCampaign.id
               ? { ...campaignData, id: editingCampaign.id }
@@ -54,14 +54,14 @@ const CustomerOpportunities = () => {
           )
         );
       } else {
-        setQuizCampaigns((prev) => [
+        setQuizActivities((prev) => [
           ...prev,
           { ...campaignData, id: Date.now() },
         ]);
       }
     } else if (selectedCampaign === "spinwheel") {
       if (editingCampaign) {
-        setSpinWheelCampaigns((prev) =>
+        setSpinWheelActivities((prev) =>
           prev.map((c) =>
             c.id === editingCampaign.id
               ? { ...campaignData, id: editingCampaign.id }
@@ -69,14 +69,14 @@ const CustomerOpportunities = () => {
           )
         );
       } else {
-        setSpinWheelCampaigns((prev) => [
+        setSpinWheelActivities((prev) => [
           ...prev,
           { ...campaignData, id: Date.now() },
         ]);
       }
     } else if (selectedCampaign === "scratchcard") {
       if (editingCampaign) {
-        setScratchCardCampaigns((prev) =>
+        setScratchCardActivities((prev) =>
           prev.map((c) =>
             c.id === editingCampaign.id
               ? { ...campaignData, id: editingCampaign.id }
@@ -84,7 +84,7 @@ const CustomerOpportunities = () => {
           )
         );
       } else {
-        setScratchCardCampaigns((prev) => [
+        setScratchCardActivities((prev) => [
           ...prev,
           { ...campaignData, id: Date.now() },
         ]);
@@ -96,11 +96,11 @@ const CustomerOpportunities = () => {
 
   const handleDeleteCampaign = (id) => {
     if (selectedCampaign === "quiz") {
-      setQuizCampaigns((prev) => prev.filter((c) => c.id !== id));
+      setQuizActivities((prev) => prev.filter((c) => c.id !== id));
     } else if (selectedCampaign === "spinwheel") {
-      setSpinWheelCampaigns((prev) => prev.filter((c) => c.id !== id));
+      setSpinWheelActivities((prev) => prev.filter((c) => c.id !== id));
     } else if (selectedCampaign === "scratchcard") {
-      setScratchCardCampaigns((prev) => prev.filter((c) => c.id !== id));
+      setScratchCardActivities((prev) => prev.filter((c) => c.id !== id));
     }
   };
 
@@ -201,7 +201,7 @@ const CustomerOpportunities = () => {
             </div>
             <div>
               <div className="font-semibold text-slate-800 text-start">
-                Personalization Campaign
+                Personalization Activities
               </div>
               <div className="text-xs text-gray-500 text-start">
                 Festival and region-specific campaign suggestions.
@@ -259,10 +259,10 @@ const CustomerOpportunities = () => {
           <div className="max-w-6xl mx-auto">
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-slate-800 mb-2">
-                Select Campaign
+                Select Activities
               </h2>
               <p className="text-gray-600 mb-6">
-                Create fun campaigns like quiz, scratch card, or spin wheel to
+                Create fun activities like quiz, scratch card, or spin wheel to
                 interact with your customers and learn their preferences.
               </p>
 
@@ -282,16 +282,16 @@ const CustomerOpportunities = () => {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold text-slate-800">
                 {selectedCampaign === "quiz"
-                  ? quizCampaigns.length
+                  ? quizActivities.length
                   : selectedCampaign === "spinwheel"
-                  ? spinWheelCampaigns.length
-                  : scratchCardCampaigns.length}{" "}
+                  ? spinWheelActivities.length
+                  : scratchCardActivities.length}{" "}
                 {selectedCampaign === "quiz"
                   ? "Quiz"
                   : selectedCampaign === "spinwheel"
                   ? "Spin Wheel"
                   : "Scratch Card"}{" "}
-                Campaign
+                Activities
               </h3>
               <button
                 onClick={handleCreateCampaign}
@@ -309,7 +309,7 @@ const CustomerOpportunities = () => {
 
             {selectedCampaign === "quiz" && (
               <QuizList
-                campaigns={quizCampaigns}
+                activities={quizActivities}
                 onEdit={handleEditCampaign}
                 onDelete={handleDeleteCampaign}
               />
@@ -317,7 +317,7 @@ const CustomerOpportunities = () => {
 
             {selectedCampaign === "spinwheel" && (
               <SpinWheelList
-                campaigns={spinWheelCampaigns}
+                activities={spinWheelActivities}
                 onEdit={handleEditCampaign}
                 onDelete={handleDeleteCampaign}
               />
@@ -325,7 +325,7 @@ const CustomerOpportunities = () => {
 
             {selectedCampaign === "scratchcard" && (
               <ScratchCardList
-                campaigns={scratchCardCampaigns}
+                activities={scratchCardActivities}
                 onEdit={handleEditCampaign}
                 onDelete={handleDeleteCampaign}
               />
@@ -335,9 +335,9 @@ const CustomerOpportunities = () => {
 
         {activeTab === "campaign" && (
           <PersonalizationCampaign
-            quizCampaigns={quizCampaigns}
-            spinWheelCampaigns={spinWheelCampaigns}
-            scratchCardCampaigns={scratchCardCampaigns}
+            quizActivities={quizActivities}
+            spinWheelActivities={spinWheelActivities}
+            scratchCardActivities={scratchCardActivities}
           />
         )}
 

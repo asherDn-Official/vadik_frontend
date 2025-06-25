@@ -3,9 +3,9 @@ import { ChevronDown, Upload, X } from "lucide-react";
 import CustomerFilterModal from "./CustomerFilterModal";
 
 const PersonalizationCampaign = ({
-  quizCampaigns,
-  spinWheelCampaigns,
-  scratchCardCampaigns,
+  quizActivities,
+  spinWheelActivities,
+  scratchCardActivities,
 }) => {
   const [selectedCampaignType, setSelectedCampaignType] = useState("");
   const [selectedCampaign, setSelectedCampaign] = useState("");
@@ -120,17 +120,17 @@ const PersonalizationCampaign = ({
   const getCampaignOptions = () => {
     switch (selectedCampaignType) {
       case "quiz":
-        return quizCampaigns.map((campaign) => ({
+        return quizActivities.map((campaign) => ({
           value: campaign.id,
           label: campaign.title,
         }));
       case "spinwheel":
-        return spinWheelCampaigns.map((campaign) => ({
+        return spinWheelActivities.map((campaign) => ({
           value: campaign.id,
           label: campaign.title,
         }));
       case "scratchcard":
-        return scratchCardCampaigns.map((campaign) => ({
+        return scratchCardActivities.map((campaign) => ({
           value: campaign.id,
           label: campaign.title,
         }));
@@ -214,19 +214,19 @@ const PersonalizationCampaign = ({
     }
 
     console.log("Sending campaign to:", selectedCustomers);
-    alert("Campaign sent successfully!");
+    alert("Activities sent successfully!");
   };
 
   return (
     <div className="max-w-7xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        {/* Campaign Type */}
+        {/* Activities Type */}
         <div>
           <h3 className="text-lg font-semibold text-slate-800 mb-2">
-            Campaign Type
+            Activities Type
           </h3>
           <p className="text-gray-600 mb-4">
-            What Kind of Campaign Would You Like to Run?
+            What Kind of Activities Would You Like to Run?
           </p>
           <select
             value={selectedCampaignType}
@@ -236,20 +236,20 @@ const PersonalizationCampaign = ({
             }}
             className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
           >
-            <option value="">Select Campaign Type</option>
+            <option value="">Select Activities Type</option>
             <option value="quiz">Quiz</option>
             <option value="spinwheel">Spin Wheel</option>
             <option value="scratchcard">Scratch Card</option>
           </select>
         </div>
 
-        {/* Select Campaign */}
+        {/* Select Activities */}
         <div>
           <h3 className="text-lg font-semibold text-slate-800 mb-2">
-            Select Campaign
+            Select Activities
           </h3>
           <p className="text-gray-600 mb-4">
-            Select a Campaign You've Already Created
+            Select a Activities You've Already Created
           </p>
           <select
             value={selectedCampaign}
@@ -377,7 +377,7 @@ const PersonalizationCampaign = ({
       {/* Send Options */}
       <div className="mb-8">
         <h3 className="text-lg font-semibold text-slate-800 mb-4">
-          Select Tool To Send Campaign
+          Select Tool To Send Activities
         </h3>
         <div className="space-y-3">
           <label className="flex items-center">
@@ -407,7 +407,7 @@ const PersonalizationCampaign = ({
           onClick={handleSendCampaign}
           className="px-8 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
         >
-          Send Campaign
+          Send Activities
         </button>
       </div>
 

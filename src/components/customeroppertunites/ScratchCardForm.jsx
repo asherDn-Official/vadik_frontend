@@ -124,7 +124,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Campaign Title
+                Activities Title
               </label>
               <input
                 type="text"
