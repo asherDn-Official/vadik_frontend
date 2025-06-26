@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import api from "../../api/apiconfig";
 
-const CustomerSidebar = ({ retailerId }) => {
+const CustomerSidebar = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [retailerId, setRetailerId] = useState(() => {
+    return localStorage.getItem("retailerId") || "";
+  });
   const [pagination, setPagination] = useState({
     totalItems: 0,
     currentPage: 1,
@@ -20,13 +24,12 @@ const CustomerSidebar = ({ retailerId }) => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await axios.get(
-        `http://13.60.19.134:5000/api/customers`,
+
+      const response = await api.get(`/api/customers`,
         {
           params: {
-            retailerId:"6856350030bcee9b82be4c17",
-            search
+            retailerId,
+            search,
             // page,
           },
         }
@@ -36,7 +39,7 @@ const CustomerSidebar = ({ retailerId }) => {
 
       setCustomers(data);
       setPagination(pagination);
-      
+
       // Auto-select first customer if none selected
       if (data.length > 0 && !selectedCustomer) {
         handleCustomerSelect(data[0]);
@@ -106,7 +109,9 @@ const CustomerSidebar = ({ retailerId }) => {
         ) : error ? (
           <div className="p-4 text-red-500 text-center">{error}</div>
         ) : customers.length === 0 ? (
-          <div className="p-4 text-gray-500 text-center">No customers found</div>
+          <div className="p-4 text-gray-500 text-center">
+            No customers found
+          </div>
         ) : (
           customers.map((customer) => (
             <div
@@ -144,7 +149,9 @@ const CustomerSidebar = ({ retailerId }) => {
       {pagination.totalPages > 1 && (
         <div className="flex justify-between items-center p-4 border-t border-gray-200">
           <button
-            onClick={() => fetchCustomers(pagination.currentPage - 1, searchTerm)}
+            onClick={() =>
+              fetchCustomers(pagination.currentPage - 1, searchTerm)
+            }
             disabled={pagination.currentPage === 1}
             className="px-3 py-1 rounded-md border disabled:opacity-50"
           >
@@ -154,7 +161,9 @@ const CustomerSidebar = ({ retailerId }) => {
             Page {pagination.currentPage} of {pagination.totalPages}
           </span>
           <button
-            onClick={() => fetchCustomers(pagination.currentPage + 1, searchTerm)}
+            onClick={() =>
+              fetchCustomers(pagination.currentPage + 1, searchTerm)
+            }
             disabled={pagination.currentPage === pagination.totalPages}
             className="px-3 py-1 rounded-md border disabled:opacity-50"
           >
