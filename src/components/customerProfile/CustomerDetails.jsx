@@ -29,6 +29,25 @@ const CustomerDetails = ({
   const [showPurchaseList, setShowPurchaseList] = useState(false);
   const [showAllPurchases, setShowAllPurchases] = useState(false);
 
+  const FieldItem = ({ label, value, field, isEditable = false }) => {
+    const currentValue = isEditing ? editedData[field] || "" : value;
+    return (
+      <div className="mb-4">
+        <p className="text-sm text-gray-500 mb-2">{label}</p>
+        {isEditing && isEditable ? (
+          <input
+            type="text"
+            value={currentValue}
+            onChange={(e) => onInputChange(field, e.target.value)}
+            className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+          />
+        ) : (
+          <p className="text-sm font-medium text-gray-900">{value || "-"}</p>
+        )}
+      </div>
+    );
+  };
+
   const DetailItem = ({ iconSrc, label, value, field, isEditable = false }) => {
     const currentValue = isEditing ? editedData[field] || "" : value;
     return (
@@ -118,14 +137,22 @@ const CustomerDetails = ({
     
     return Object.entries(fields).map(([key, value]) => {
       const isEditable = section === 'additionalData';
-      return (
+      return isEditable ? (
+        <FieldItem
+          key={key}
+          label={key}
+          value={value}
+          field={key}
+          isEditable={true}
+        />
+      ) : (
         <DetailItem
           key={key}
           iconSrc="../assets/default-icon.png"
           label={key}
           value={value}
           field={key}
-          isEditable={isEditable}
+          isEditable={false}
         />
       );
     });
@@ -157,44 +184,25 @@ const CustomerDetails = ({
                     )}
                   </div>
                 </div>
-                <div className="ml-14">
+                <div className="ml-14 w-full">
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Details</h2>
                   
                   {/* Non-editable basic fields */}
                   <div className="grid grid-cols-3 gap-x-16 gap-y-6 mb-6">
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">First Name</p>
-                      <p className="text-sm font-medium text-gray-900">
-                        {customer.firstname}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">Last Name</p>
-                      <p className="text-sm font-medium text-gray-900">{customer.lastname}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">Mobile Number</p>
-                      <p className="text-sm font-medium text-gray-900">{customer.mobileNumber}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">Source</p>
-                      <p className="text-sm font-medium text-gray-900">{customer.source}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">Customer ID</p>
-                      <p className="text-sm font-medium text-gray-900">{customer.customerId}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">First Visit</p>
-                      <p className="text-sm font-medium text-gray-900">
-                        {new Date(customer.firstVisit).toLocaleDateString()}
-                      </p>
-                    </div>
+                    <FieldItem label="First Name" value={customer.firstname} />
+                    <FieldItem label="Last Name" value={customer.lastname} />
+                    <FieldItem label="Mobile Number" value={customer.mobileNumber} />
+                    <FieldItem label="Source" value={customer.source} />
+                    <FieldItem label="Customer ID" value={customer.customerId} />
+                    <FieldItem 
+                      label="First Visit" 
+                      value={new Date(customer.firstVisit).toLocaleDateString()} 
+                    />
                   </div>
 
                   {/* Editable additionalData fields */}
                   {customer.additionalData && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-x-16 gap-y-6">
                       {renderDynamicFields(customer.additionalData, "additionalData")}
                     </div>
                   )}
