@@ -14,9 +14,9 @@ const Inventory = () => {
       id: 1,
       name: "Premium Leather Sneakers",
       category: "Footwear",
-      price: "€129.99",
+      price: 129.99,
       status: "In Stock",
-      stock: "42 units",
+      stock: 42,
       image:
         "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
     },
@@ -24,9 +24,9 @@ const Inventory = () => {
       id: 2,
       name: "Premium Denim Jeans",
       category: "Clothing",
-      price: "€59.99",
+      price: 59.99,
       status: "In Stock",
-      stock: "42 units",
+      stock: 42,
       image:
         "https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
     },
@@ -34,9 +34,9 @@ const Inventory = () => {
       id: 3,
       name: "Performance Running Shoes",
       category: "Footwear",
-      price: "€45.50",
+      price: 45.50,
       status: "Out of Stock",
-      stock: "0 units",
+      stock: 0,
       image:
         "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
     },
@@ -44,9 +44,9 @@ const Inventory = () => {
       id: 4,
       name: "Organic Cotton T-Shirt",
       category: "Clothing",
-      price: "€24.99",
+      price: 24.99,
       status: "In Stock",
-      stock: "42 units",
+      stock: 42,
       image:
         "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
     },
@@ -54,9 +54,9 @@ const Inventory = () => {
       id: 5,
       name: "Classic Formal Shoes",
       category: "Footwear",
-      price: "€179.99",
+      price: 179.99,
       status: "Low Stock",
-      stock: "42 units",
+      stock: 5,
       image:
         "https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
     },
@@ -64,9 +64,9 @@ const Inventory = () => {
       id: 6,
       name: "Wool Blend Sweater",
       category: "Clothing",
-      price: "€18.50",
+      price: 18.50,
       status: "In Stock",
-      stock: "42 units",
+      stock: 42,
       image:
         "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
     },
@@ -75,13 +75,13 @@ const Inventory = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case "In Stock":
-        return "text-success";
+        return "#03BD00"; // Green
       case "Out of Stock":
-        return "text-error";
+        return "#FD2C2F"; // Red
       case "Low Stock":
-        return "text-warning";
+        return "#E6B100"; // Yellow
       default:
-        return "text-gray-700";
+        return "#6B7280"; // Gray
     }
   };
 
@@ -101,6 +101,38 @@ const Inventory = () => {
     setEditProduct(null);
   };
 
+  // Filter and sort products
+  const filteredProducts = products
+    .filter(product => {
+      // Search filter
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Category filter
+      const matchesCategory = categoryFilter === "All Category" || 
+                             product.category === categoryFilter;
+      
+      // Status filter
+      const matchesStatus = statusFilter === "All Status" || 
+                          product.status === statusFilter;
+      
+      return matchesSearch && matchesCategory && matchesStatus;
+    })
+    .sort((a, b) => {
+      // Sort by options
+      switch (sortBy) {
+        case "Name (A-Z)":
+          return a.name.localeCompare(b.name);
+        case "Name (Z-A)":
+          return b.name.localeCompare(a.name);
+        case "Price (Low to High)":
+          return a.price - b.price;
+        case "Price (High to Low)":
+          return b.price - a.price;
+        default:
+          return 0;
+      }
+    });
+
   if (showAddProduct) {
     return <AddProduct onBack={handleBack} product={editProduct} />;
   }
@@ -113,7 +145,7 @@ const Inventory = () => {
         </h2>
         <button
           onClick={() => setShowAddProduct(true)}
-          className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-pink-700 transition"
+          className="flex items-center px-4 py-2 bg-[#EC396F] text-white rounded-md hover:bg-pink-700 transition"
         >
           <FiPlus className="mr-2" /> Add Product
         </button>
@@ -199,47 +231,57 @@ const Inventory = () => {
               </tr>
             </thead>
             <tbody>
-              {products.map((product) => (
-                <tr key={product.id} className="border-b border-gray-200">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-10 h-10 mr-3 object-cover rounded-md"
-                      />
-                      <span>{product.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">{product.category}</td>
-                  <td className="px-4 py-3">{product.price}</td>
-                  <td className={`px-4 py-3 ${getStatusColor(product.status)}`}>
-                    {product.status}
-                  </td>
-                  <td className="px-4 py-3">{product.stock}</td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      className="text-blue-500 hover:text-blue-700 mr-3"
-                      onClick={() => handleEdit(product)}
-                    >
-                      <FiEdit2 />
-                    </button>
-                    <button 
-                      className="text-red-500 hover:text-red-700"
-                      onClick={() => handleDelete(product.id)}
-                    >
-                      <FiTrash2 />
-                    </button>
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product) => (
+                  <tr key={product.id} className="border-b border-gray-200">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center">
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-10 h-10 mr-3 object-cover rounded-md"
+                        />
+                        <span>{product.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">{product.category}</td>
+                    <td className="px-4 py-3">€{product.price.toFixed(2)}</td>
+                    <td className="px-4 py-3">
+                      <span style={{ color: getStatusColor(product.status) }}>
+                        {product.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">{product.stock} units</td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        className="text-blue-500 hover:text-blue-700 mr-3"
+                        onClick={() => handleEdit(product)}
+                      >
+                        <FiEdit2 />
+                      </button>
+                      <button 
+                        className="text-red-500 hover:text-red-700"
+                        onClick={() => handleDelete(product.id)}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="px-4 py-6 text-center text-gray-500">
+                    No products found matching your criteria
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
 
         <div className="flex justify-between items-center mt-6">
           <div className="text-sm text-gray-600">
-            Showing 1 to {products.length} of {products.length} results
+            Showing 1 to {filteredProducts.length} of {filteredProducts.length} results
           </div>
 
           <div className="flex space-x-1">
