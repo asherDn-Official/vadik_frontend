@@ -1,17 +1,81 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import api from "../../api/apiconfig";
 
-const CustomerSidebar = ({ customers, selectedCustomer, onCustomerSelect }) => {
+const CustomerSidebar = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [customers, setCustomers] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [retailerId, setRetailerId] = useState(() => {
+    return localStorage.getItem("retailerId") || "";
+  });
+  const [pagination, setPagination] = useState({
+    totalItems: 0,
+    currentPage: 1,
+    totalPages: 1,
+  });
+  const navigate = useNavigate();
 
-  const filteredCustomers = customers.filter((customer) =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Fetch customers data
+  const fetchCustomers = async (page = 1, search = "") => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await api.get(`/api/customers`,
+        {
+          params: {
+            retailerId,
+            search,
+            // page,
+          },
+        }
+      );
+
+      const { data, pagination } = response.data;
+
+      setCustomers(data);
+      setPagination(pagination);
+
+      // Auto-select first customer if none selected
+      if (data.length > 0 && !selectedCustomer) {
+        handleCustomerSelect(data[0]);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to fetch customers");
+      console.error("Error fetching customers:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch and on search term change
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      fetchCustomers(1, searchTerm);
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchTerm, retailerId]);
+
+  const handleCustomerSelect = (customer) => {
+    setSelectedCustomer(customer);
+    navigate(`/customer-profile/${customer._id}`);
+  };
+
+  // Format customer name
+  const formatName = (customer) => {
+    return `${customer.firstname} ${customer.lastname}`.trim();
+  };
 
   return (
-    <div className="w-80 bg-white  flex flex-col m-2 rounded-[10px]">
+    <div className="w-80 bg-white flex flex-col m-2 rounded-[10px]">
       <div className="p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Customer List (527)
+          Customer List ({pagination.totalItems})
         </h2>
         <div className="relative">
           <input
@@ -38,32 +102,75 @@ const CustomerSidebar = ({ customers, selectedCustomer, onCustomerSelect }) => {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {filteredCustomers.map((customer) => (
-          <div
-            key={customer.id}
-            onClick={() => onCustomerSelect(customer)}
-            className={`p-4 border-b border-gray-100 cursor-pointer transition-colors duration-200 ${
-              selectedCustomer.id === customer.id
-                ? "bg-purple-50 border-l-4"
-                : "hover:bg-gray-50"
-            }`}
-          >
-            <div className="flex items-center">
-              <div className="w-10 h-10  flex items-center justify-center mr-3">
-                <img src="../assets/user-in-cp.png" alt="" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-[400] text-[18px] text-[#313166]">
-                  {customer.name}
-                </h3>
-                <p className="font-[400] text-[15px] text-[#31316680]">
-                  {customer.mobileNumber}
-                </p>
+        {loading ? (
+          <div className="flex justify-center items-center h-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+          </div>
+        ) : error ? (
+          <div className="p-4 text-red-500 text-center">{error}</div>
+        ) : customers.length === 0 ? (
+          <div className="p-4 text-gray-500 text-center">
+            No customers found
+          </div>
+        ) : (
+          customers.map((customer) => (
+            <div
+              key={customer._id}
+              onClick={() => handleCustomerSelect(customer)}
+              className={`p-4 border-b border-gray-100 cursor-pointer transition-colors duration-200 ${
+                selectedCustomer?._id === customer._id
+                  ? "bg-purple-50 border-l-4 border-purple-500"
+                  : "hover:bg-gray-50"
+              }`}
+            >
+              <div className="flex items-center">
+                <div className="w-10 h-10 flex items-center justify-center mr-3">
+                  <img
+                    src="../assets/user-in-cp.png"
+                    alt={formatName(customer)}
+                    className="rounded-full"
+                  />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-[400] text-[18px] text-[#313166]">
+                    {formatName(customer)}
+                  </h3>
+                  <p className="font-[400] text-[15px] text-[#31316680]">
+                    {customer.mobileNumber}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
+
+      {/* Pagination controls */}
+      {pagination.totalPages > 1 && (
+        <div className="flex justify-between items-center p-4 border-t border-gray-200">
+          <button
+            onClick={() =>
+              fetchCustomers(pagination.currentPage - 1, searchTerm)
+            }
+            disabled={pagination.currentPage === 1}
+            className="px-3 py-1 rounded-md border disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span>
+            Page {pagination.currentPage} of {pagination.totalPages}
+          </span>
+          <button
+            onClick={() =>
+              fetchCustomers(pagination.currentPage + 1, searchTerm)
+            }
+            disabled={pagination.currentPage === pagination.totalPages}
+            className="px-3 py-1 rounded-md border disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

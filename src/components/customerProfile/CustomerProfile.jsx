@@ -16,13 +16,10 @@ const CustomerProfile = () => {
     const fetchCustomer = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(
-          `http://13.60.19.134:5000/api/customers/${customerId}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch customer");
-        }
-        const data = await response.json();
+        const response = await api.get(
+          `/api/customers/${customerId}`
+        );  
+        const data = response.data;
         setSelectedCustomer(data);
         setEditedData({
           ...data,
@@ -163,10 +160,7 @@ const CustomerProfile = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="flex-1 flex">
-        {/* <CustomerSidebar
-          selectedCustomer={selectedCustomer}
-          onCustomerSelect={handleCustomerSelect}
-        /> */}
+        <CustomerSidebar/>
 
         <CustomerDetails
           customer={selectedCustomer}

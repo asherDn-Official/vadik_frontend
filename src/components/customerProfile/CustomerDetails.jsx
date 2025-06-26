@@ -29,14 +29,33 @@ const CustomerDetails = ({
   const [showPurchaseList, setShowPurchaseList] = useState(false);
   const [showAllPurchases, setShowAllPurchases] = useState(false);
 
+  const FieldItem = ({ label, value, field, isEditable = false }) => {
+    const currentValue = isEditing ? editedData[field] || "" : value;
+    return (
+      <div className="mb-4">
+        <p className="text-sm text-gray-500 mb-2">{label}</p>
+        {isEditing && isEditable ? (
+          <input
+            type="text"
+            value={currentValue}
+            onChange={(e) => onInputChange(field, e.target.value)}
+            className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+          />
+        ) : (
+          <p className="text-sm font-medium text-gray-900">{value || "-"}</p>
+        )}
+      </div>
+    );
+  };
+
   const DetailItem = ({ iconSrc, label, value, field, isEditable = false }) => {
     const currentValue = isEditing ? editedData[field] || "" : value;
     return (
       <div className="flex items-center justify-between p-4 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
         <div className="flex items-center">
-          <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
-            <img src={iconSrc} alt={label} className="w-12 h-12" />
-          </div>
+          {/* <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4"> */}
+            {/* <img src={iconSrc} alt={label} className="w-12 h-12" /> */}
+          {/* </div> */}
           <div className="flex-1">
             <p className="text-sm font-medium text-gray-900">{label}</p>
             {isEditing && isEditable ? (
@@ -117,17 +136,44 @@ const CustomerDetails = ({
     if (!fields) return null;
     
     return Object.entries(fields).map(([key, value]) => {
-      const isEditable = section === 'additionalData';
-      return (
-        <DetailItem
-          key={key}
-          iconSrc="../assets/default-icon.png"
-          label={key}
-          value={value}
-          field={key}
-          isEditable={isEditable}
-        />
-      );
+      const isEditable = isEditing && (section === 'additionalData' || section === 'advancedDetails' || section === 'advancedPrivacy');
+      
+      if (section === 'additionalData') {
+        return (
+          <FieldItem
+            key={key}
+            label={key}
+            value={value}
+            field={key}
+            isEditable={isEditable}
+          />
+        );
+      } else if (section === 'advancedPrivacy' && key === 'satisfactionScore') {
+        return (
+          <div key={key} className="flex items-center p-4 border-b border-gray-100">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
+              <img src="../assets/score-icon.png" alt={key} className="w-12 h-12" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-500 mb-1">{key}</p>
+              <div className="flex items-center">
+                {renderStars(value)}
+              </div>
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <DetailItem
+            key={key}
+            iconSrc="../assets/default-icon.png"
+            label={key}
+            value={value}
+            field={key}
+            isEditable={isEditable}
+          />
+        );
+      }
     });
   };
 
@@ -145,56 +191,37 @@ const CustomerDetails = ({
               <div className="flex items-center">
                 <div className="relative">
                   <img
-                    src={customer.profileImage || "../assets/default-profile.png"}
+                    src={customer.profileImage || "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"}
                     alt={`${customer.firstname} ${customer.lastname}`}
-                    className="w-[152px] h-[182px] rounded-lg object-cover"
+                    className="w-[118px] h-[92px] rounded-lg object-cover"
                   />
-                  <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center ${customer.isActive ? "bg-green-500" : "bg-red-500"} shadow-lg`}>
+                  {/* <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center ${customer.isActive ? "bg-green-500" : "bg-red-500"} shadow-lg`}>
                     {customer.isActive ? (
                       <CheckCircle className="w-3 h-3 text-white" />
                     ) : (
                       <XCircle className="w-3 h-3 text-white" />
                     )}
-                  </div>
+                  </div> */}
                 </div>
-                <div className="ml-14">
+                <div className="ml-14 w-full">
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Details</h2>
                   
                   {/* Non-editable basic fields */}
                   <div className="grid grid-cols-3 gap-x-16 gap-y-6 mb-6">
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">First Name</p>
-                      <p className="text-sm font-medium text-gray-900">
-                        {customer.firstname}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">Last Name</p>
-                      <p className="text-sm font-medium text-gray-900">{customer.lastname}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">Mobile Number</p>
-                      <p className="text-sm font-medium text-gray-900">{customer.mobileNumber}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">Source</p>
-                      <p className="text-sm font-medium text-gray-900">{customer.source}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">Customer ID</p>
-                      <p className="text-sm font-medium text-gray-900">{customer.customerId}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">First Visit</p>
-                      <p className="text-sm font-medium text-gray-900">
-                        {new Date(customer.firstVisit).toLocaleDateString()}
-                      </p>
-                    </div>
+                    <FieldItem label="First Name" value={customer.firstname} />
+                    <FieldItem label="Last Name" value={customer.lastname} />
+                    <FieldItem label="Mobile Number" value={customer.mobileNumber} />
+                    <FieldItem label="Source" value={customer.source} />
+                    <FieldItem label="Customer ID" value={customer.customerId} />
+                    <FieldItem 
+                      label="First Visit" 
+                      value={new Date(customer.firstVisit).toLocaleDateString()} 
+                    />
                   </div>
 
                   {/* Editable additionalData fields */}
                   {customer.additionalData && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-x-16 gap-y-6">
                       {renderDynamicFields(customer.additionalData, "additionalData")}
                     </div>
                   )}
@@ -251,21 +278,6 @@ const CustomerDetails = ({
                 <div className="space-y-0">
                   {customer.advancedPrivacyDetails && renderDynamicFields(customer.advancedPrivacyDetails, "advancedPrivacy")}
                   
-                  {/* Satisfaction Score (special case) */}
-                  {customer.advancedPrivacyDetails?.satisfactionScore && (
-                    <div className="flex items-center p-4 border-b border-gray-100">
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
-                        <img src="../assets/score-icon.png" alt="Satisfaction Score" className="w-12 h-12" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-500 mb-1">Satisfaction Score</p>
-                        <div className="flex items-center">
-                          {renderStars(customer.advancedPrivacyDetails.satisfactionScore)}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Purchase History Section */}
                   <div className="p-6 border-t border-gray-200">
                     <div className="flex items-center justify-between mb-4">
