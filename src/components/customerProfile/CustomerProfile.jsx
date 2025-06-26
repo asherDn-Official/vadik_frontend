@@ -163,10 +163,11 @@ const CustomerProfile = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="flex-1 flex">
-        {/* <CustomerSidebar
-          selectedCustomer={selectedCustomer}
-          onCustomerSelect={handleCustomerSelect}
-        /> */}
+        <CustomerSidebar
+          // selectedCustomer={selectedCustomer}
+          // onCustomerSelect={handleCustomerSelect}
+          retailerId={"685a49ac0f2998c871215353"}
+        />
 
         <CustomerDetails
           customer={selectedCustomer}
