@@ -195,13 +195,13 @@ const CustomerDetails = ({
                     alt={`${customer.firstname} ${customer.lastname}`}
                     className="w-[118px] h-[92px] rounded-lg object-cover"
                   />
-                  <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center ${customer.isActive ? "bg-green-500" : "bg-red-500"} shadow-lg`}>
+                  {/* <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center ${customer.isActive ? "bg-green-500" : "bg-red-500"} shadow-lg`}>
                     {customer.isActive ? (
                       <CheckCircle className="w-3 h-3 text-white" />
                     ) : (
                       <XCircle className="w-3 h-3 text-white" />
                     )}
-                  </div>
+                  </div> */}
                 </div>
                 <div className="ml-14 w-full">
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Details</h2>
