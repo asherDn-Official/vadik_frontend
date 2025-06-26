@@ -136,25 +136,44 @@ const CustomerDetails = ({
     if (!fields) return null;
     
     return Object.entries(fields).map(([key, value]) => {
-      const isEditable = section === 'additionalData';
-      return isEditable ? (
-        <FieldItem
-          key={key}
-          label={key}
-          value={value}
-          field={key}
-          isEditable={true}
-        />
-      ) : (
-        <DetailItem
-          key={key}
-          iconSrc="../assets/default-icon.png"
-          label={key}
-          value={value}
-          field={key}
-          isEditable={false}
-        />
-      );
+      const isEditable = isEditing && (section === 'additionalData' || section === 'advancedDetails' || section === 'advancedPrivacy');
+      
+      if (section === 'additionalData') {
+        return (
+          <FieldItem
+            key={key}
+            label={key}
+            value={value}
+            field={key}
+            isEditable={isEditable}
+          />
+        );
+      } else if (section === 'advancedPrivacy' && key === 'satisfactionScore') {
+        return (
+          <div key={key} className="flex items-center p-4 border-b border-gray-100">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
+              <img src="../assets/score-icon.png" alt={key} className="w-12 h-12" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-500 mb-1">{key}</p>
+              <div className="flex items-center">
+                {renderStars(value)}
+              </div>
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <DetailItem
+            key={key}
+            iconSrc="../assets/default-icon.png"
+            label={key}
+            value={value}
+            field={key}
+            isEditable={isEditable}
+          />
+        );
+      }
     });
   };
 
@@ -259,21 +278,6 @@ const CustomerDetails = ({
                 <div className="space-y-0">
                   {customer.advancedPrivacyDetails && renderDynamicFields(customer.advancedPrivacyDetails, "advancedPrivacy")}
                   
-                  {/* Satisfaction Score (special case) */}
-                  {customer.advancedPrivacyDetails?.satisfactionScore && (
-                    <div className="flex items-center p-4 border-b border-gray-100">
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
-                        <img src="../assets/score-icon.png" alt="Satisfaction Score" className="w-12 h-12" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-500 mb-1">Satisfaction Score</p>
-                        <div className="flex items-center">
-                          {renderStars(customer.advancedPrivacyDetails.satisfactionScore)}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Purchase History Section */}
                   <div className="p-6 border-t border-gray-200">
                     <div className="flex items-center justify-between mb-4">
