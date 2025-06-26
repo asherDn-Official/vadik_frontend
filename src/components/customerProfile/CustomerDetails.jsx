@@ -193,7 +193,7 @@ const CustomerDetails = ({
                   <img
                     src={customer.profileImage || "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"}
                     alt={`${customer.firstname} ${customer.lastname}`}
-                    className="w-[152px] h-[182px] rounded-lg object-cover"
+                    className="w-[118px] h-[92px] rounded-lg object-cover"
                   />
                   <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center ${customer.isActive ? "bg-green-500" : "bg-red-500"} shadow-lg`}>
                     {customer.isActive ? (
