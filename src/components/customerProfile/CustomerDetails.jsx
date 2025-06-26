@@ -53,9 +53,9 @@ const CustomerDetails = ({
     return (
       <div className="flex items-center justify-between p-4 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
         <div className="flex items-center">
-          <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
-            <img src={iconSrc} alt={label} className="w-12 h-12" />
-          </div>
+          {/* <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4"> */}
+            {/* <img src={iconSrc} alt={label} className="w-12 h-12" /> */}
+          {/* </div> */}
           <div className="flex-1">
             <p className="text-sm font-medium text-gray-900">{label}</p>
             {isEditing && isEditable ? (
@@ -191,7 +191,7 @@ const CustomerDetails = ({
               <div className="flex items-center">
                 <div className="relative">
                   <img
-                    src={customer.profileImage || "../assets/default-profile.png"}
+                    src={customer.profileImage || "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"}
                     alt={`${customer.firstname} ${customer.lastname}`}
                     className="w-[152px] h-[182px] rounded-lg object-cover"
                   />
