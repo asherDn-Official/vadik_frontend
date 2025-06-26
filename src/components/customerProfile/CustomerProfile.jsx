@@ -16,13 +16,10 @@ const CustomerProfile = () => {
     const fetchCustomer = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(
-          `http://13.60.19.134:5000/api/customers/${customerId}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch customer");
-        }
-        const data = await response.json();
+        const response = await api.get(
+          `/api/customers/${customerId}`
+        );  
+        const data = response.data;
         setSelectedCustomer(data);
         setEditedData({
           ...data,
