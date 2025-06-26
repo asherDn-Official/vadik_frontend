@@ -9,9 +9,7 @@ const Inventory = () => {
   const [sortBy, setSortBy] = useState("Name (A-Z)");
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
-
-  // Mock context for products
-  const products = [
+  const [products, setProducts] = useState([
     {
       id: 1,
       name: "Premium Leather Sneakers",
@@ -72,7 +70,7 @@ const Inventory = () => {
       image:
         "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
     },
-  ];
+  ]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -90,6 +88,12 @@ const Inventory = () => {
   const handleEdit = (product) => {
     setEditProduct(product);
     setShowAddProduct(true);
+  };
+
+  const handleDelete = (productId) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      setProducts(products.filter(product => product.id !== productId));
+    }
   };
 
   const handleBack = () => {
@@ -220,7 +224,10 @@ const Inventory = () => {
                     >
                       <FiEdit2 />
                     </button>
-                    <button className="text-red-500 hover:text-red-700">
+                    <button 
+                      className="text-red-500 hover:text-red-700"
+                      onClick={() => handleDelete(product.id)}
+                    >
                       <FiTrash2 />
                     </button>
                   </td>
@@ -232,7 +239,7 @@ const Inventory = () => {
 
         <div className="flex justify-between items-center mt-6">
           <div className="text-sm text-gray-600">
-            Showing 1 to 6 of 24 results
+            Showing 1 to {products.length} of {products.length} results
           </div>
 
           <div className="flex space-x-1">
