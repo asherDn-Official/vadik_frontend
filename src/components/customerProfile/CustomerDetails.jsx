@@ -29,16 +29,21 @@ const CustomerDetails = ({
   const [showPurchaseList, setShowPurchaseList] = useState(false);
   const [showAllPurchases, setShowAllPurchases] = useState(false);
 
-  const FieldItem = ({ label, value, field, isEditable = false }) => {
-    const currentValue = isEditing ? editedData[field] || "" : value;
+  const FieldItem = ({ label, value, field, isEditable = false, section = 'basic' }) => {
+    const currentValue = isEditing ? editedData[section]?.[field] : value;
+    
+    const handleChange = (e) => {
+      onInputChange(field, e.target.value, section);
+    };
+
     return (
       <div className="mb-4">
         <p className="text-sm text-gray-500 mb-2">{label}</p>
         {isEditing && isEditable ? (
           <input
             type="text"
-            value={currentValue}
-            onChange={(e) => onInputChange(field, e.target.value)}
+            value={currentValue || ""}
+            onChange={handleChange}
             className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
           />
         ) : (
@@ -48,51 +53,29 @@ const CustomerDetails = ({
     );
   };
 
-  const DetailItem = ({ iconSrc, label, value, field, isEditable = false }) => {
-    const currentValue = isEditing ? editedData[field] || "" : value;
+  const DetailItem = ({ label, value, field, isEditable = false, section = 'basic' }) => {
+    const currentValue = isEditing ? editedData[section]?.[field] : value;
+    
+    const handleChange = (e) => {
+      onInputChange(field, e.target.value, section);
+    };
+
     return (
       <div className="flex items-center justify-between p-4 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
         <div className="flex items-center">
-          {/* <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4"> */}
-            {/* <img src={iconSrc} alt={label} className="w-12 h-12" /> */}
-          {/* </div> */}
           <div className="flex-1">
             <p className="text-sm font-medium text-gray-900">{label}</p>
             {isEditing && isEditable ? (
               <input
                 type="text"
-                value={currentValue}
-                onChange={(e) => onInputChange(field, e.target.value)}
+                value={currentValue || ""}
+                onChange={handleChange}
                 className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
               />
             ) : (
               <p className="text-sm text-gray-600">{value || "-"}</p>
             )}
           </div>
-        </div>
-      </div>
-    );
-  };
-
-  const PrivacyItem = ({ iconSrc, label, value, field, isEditable = true }) => {
-    const currentValue = isEditing ? editedData[field] || "" : value;
-    return (
-      <div className="flex items-center p-4 border-b border-gray-100">
-        <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
-          <img src={iconSrc} alt={label} className="w-12 h-12" />
-        </div>
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-500 mb-1">{label}</p>
-          {isEditing && isEditable ? (
-            <input
-              type="text"
-              value={currentValue}
-              onChange={(e) => onInputChange(field, e.target.value)}
-              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          ) : (
-            <p className="text-sm font-medium text-gray-900">{value || "-"}</p>
-          )}
         </div>
       </div>
     );
@@ -105,28 +88,16 @@ const CustomerDetails = ({
     const hasHalfStar = rating % 1 !== 0;
 
     for (let i = 0; i < fullStars; i++) {
-      stars.push(
-        <span key={i} className="text-yellow-400">
-          ★
-        </span>
-      );
+      stars.push(<span key={i} className="text-yellow-400">★</span>);
     }
 
     if (hasHalfStar) {
-      stars.push(
-        <span key="half" className="text-yellow-400">
-          ☆
-        </span>
-      );
+      stars.push(<span key="half" className="text-yellow-400">☆</span>);
     }
 
     const remainingStars = 5 - Math.ceil(rating);
     for (let i = 0; i < remainingStars; i++) {
-      stars.push(
-        <span key={`empty-${i}`} className="text-gray-300">
-          ★
-        </span>
-      );
+      stars.push(<span key={`empty-${i}`} className="text-gray-300">★</span>);
     }
 
     return stars;
@@ -136,7 +107,7 @@ const CustomerDetails = ({
     if (!fields) return null;
     
     return Object.entries(fields).map(([key, value]) => {
-      const isEditable = isEditing && (section === 'additionalData' || section === 'advancedDetails' || section === 'advancedPrivacy');
+      const isEditable = isEditing;
       
       if (section === 'additionalData') {
         return (
@@ -146,6 +117,7 @@ const CustomerDetails = ({
             value={value}
             field={key}
             isEditable={isEditable}
+            section={section}
           />
         );
       } else if (section === 'advancedPrivacy' && key === 'satisfactionScore') {
@@ -166,11 +138,11 @@ const CustomerDetails = ({
         return (
           <DetailItem
             key={key}
-            iconSrc="../assets/default-icon.png"
             label={key}
             value={value}
             field={key}
             isEditable={isEditable}
+            section={section}
           />
         );
       }
@@ -195,31 +167,23 @@ const CustomerDetails = ({
                     alt={`${customer.firstname} ${customer.lastname}`}
                     className="w-[118px] h-[92px] rounded-lg object-cover"
                   />
-                  {/* <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center ${customer.isActive ? "bg-green-500" : "bg-red-500"} shadow-lg`}>
-                    {customer.isActive ? (
-                      <CheckCircle className="w-3 h-3 text-white" />
-                    ) : (
-                      <XCircle className="w-3 h-3 text-white" />
-                    )}
-                  </div> */}
                 </div>
                 <div className="ml-14 w-full">
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Details</h2>
                   
-                  {/* Non-editable basic fields */}
                   <div className="grid grid-cols-3 gap-x-16 gap-y-6 mb-6">
-                    <FieldItem label="First Name" value={customer.firstname} />
-                    <FieldItem label="Last Name" value={customer.lastname} />
-                    <FieldItem label="Mobile Number" value={customer.mobileNumber} />
-                    <FieldItem label="Source" value={customer.source} />
-                    <FieldItem label="Customer ID" value={customer.customerId} />
+                    <FieldItem label="First Name" value={customer.firstname} field="firstname" isEditable={isEditing} />
+                    <FieldItem label="Last Name" value={customer.lastname} field="lastname" isEditable={isEditing} />
+                    <FieldItem label="Mobile Number" value={customer.mobileNumber} field="mobileNumber" isEditable={isEditing} />
+                    <FieldItem label="Source" value={customer.source} field="source" isEditable={isEditing} />
+                    <FieldItem label="Customer ID" value={customer.customerId} field="customerId" />
                     <FieldItem 
                       label="First Visit" 
                       value={new Date(customer.firstVisit).toLocaleDateString()} 
+                      field="firstVisit"
                     />
                   </div>
 
-                  {/* Editable additionalData fields */}
                   {customer.additionalData && (
                     <div className="grid grid-cols-3 gap-x-16 gap-y-6">
                       {renderDynamicFields(customer.additionalData, "additionalData")}
@@ -254,11 +218,7 @@ const CustomerDetails = ({
                       onClick={onEdit}
                       className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center"
                     >
-                      <img
-                        src="../assets/edit-icon.png"
-                        className="w-4 h-4 mr-2"
-                        alt="Edit"
-                      />
+                      <img src="../assets/edit-icon.png" className="w-4 h-4 mr-2" alt="Edit" />
                       Edit
                     </button>
                   ) : null}
@@ -287,11 +247,7 @@ const CustomerDetails = ({
                           onClick={() => setShowPurchaseList(!showPurchaseList)}
                           className="p-2 bg-gray-100 rounded hover:bg-gray-200"
                         >
-                          {showPurchaseList ? (
-                            <BarChart className="w-5 h-5" />
-                          ) : (
-                            <List className="w-5 h-5" />
-                          )}
+                          {showPurchaseList ? <BarChart className="w-5 h-5" /> : <List className="w-5 h-5" />}
                         </button>
                       </div>
                     </div>
@@ -392,73 +348,6 @@ const CustomerDetails = ({
           </div>
         </div>
       </div>
-
-      {/* Birthday Popup */}
-      {showBirthdayPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
-            <h3 className="text-lg font-semibold mb-4 text-[#2e2d5f]">Send WhatsApp Message</h3>
-            <input
-              type="tel"
-              placeholder="Enter mobile number (e.g. 919XXXXXXXXX)"
-              value={recipientNumber}
-              onChange={(e) => setRecipientNumber(e.target.value)}
-              className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
-            />
-            <select
-              value={messageType}
-              onChange={(e) => setMessageType(e.target.value)}
-              className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
-            >
-              <option value="birthday">🎂 Birthday</option>
-              <option value="holiday">🎉 Holiday</option>
-            </select>
-            <div className="mt-4 flex justify-end space-x-2">
-              <button
-                onClick={() => setShowBirthdayPopup(false)}
-                className="px-4 py-1.5 text-sm rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  fetch("https://graph.facebook.com/v22.0/685786047947355/messages", {
-                    method: "POST",
-                    headers: {
-                      Authorization: "Bearer EAAJo9kmHxq0BOwLi9ac3pZCDeBNCVzYIUZBYBCGQaK3HG4hX63S2oFxe2oBTBwZB9ZCaRxZAmknYznwRsG9cYc9gdZBldB0MSZBKKxAt3VFVrJqxSWBoSEZAyPJugcHObsw9ULZCmRqndPM13R0TwgVIdZAHoZBmLIbZBoGvsmsGEe7XeR2ZAdkBmWsZCDlgB1VNmXJLbd52YFE0yGxPF2i1G2oDyrJZBzrvUMnCpjhSdweEXZC4ZAJRL5wZDZD",
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      messaging_product: "whatsapp",
-                      to: recipientNumber,
-                      type: "template",
-                      template: {
-                        name: messageType,
-                        language: { code: "en" },
-                      },
-                    }),
-                  })
-                    .then((res) => res.json())
-                    .then((json) => {
-                      console.log("✅ Message sent", json);
-                      setShowBirthdayPopup(false);
-                      setRecipientNumber("");
-                    })
-                    .catch((err) => {
-                      console.error("❌ Send failed", err);
-                    });
-                }}
-                className={`px-4 py-1.5 text-sm rounded bg-[#2e2d5f] text-white hover:bg-[#24244a] ${
-                  !recipientNumber ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-                disabled={!recipientNumber}
-              >
-                Send
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Edit Mode Buttons */}
       {isEditing && (
