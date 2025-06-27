@@ -9,12 +9,6 @@ const CustomerProfile = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [activeTab, setActiveTab] = useState("Advanced Details");
   const [isEditing, setIsEditing] = useState(false);
-  const [editedData, setEditedData] = useState({
-    basic: {},
-    additionalData: {},
-    advancedDetails: {},
-    advancedPrivacyDetails: {}
-  });
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -24,19 +18,6 @@ const CustomerProfile = () => {
         const response = await api.get(`/api/customers/${customerId}`);
         const data = response.data;
         setSelectedCustomer(data);
-        setEditedData({
-          basic: {
-            firstname: data.firstname,
-            lastname: data.lastname,
-            mobileNumber: data.mobileNumber,
-            source: data.source,
-            customerId: data.customerId,
-            firstVisit: data.firstVisit
-          },
-          additionalData: { ...data.additionalData },
-          advancedDetails: { ...data.advancedDetails },
-          advancedPrivacyDetails: { ...data.advancedPrivacyDetails }
-        });
       } catch (error) {
         console.error("Error fetching customer:", error);
       } finally {
@@ -53,33 +34,18 @@ const CustomerProfile = () => {
 
   const handleCancel = () => {
     setIsEditing(false);
-    if (selectedCustomer) {
-      setEditedData({
-        basic: {
-          firstname: selectedCustomer.firstname,
-          lastname: selectedCustomer.lastname,
-          mobileNumber: selectedCustomer.mobileNumber,
-          source: selectedCustomer.source,
-          customerId: selectedCustomer.customerId,
-          firstVisit: selectedCustomer.firstVisit
-        },
-        additionalData: { ...selectedCustomer.additionalData },
-        advancedDetails: { ...selectedCustomer.advancedDetails },
-        advancedPrivacyDetails: { ...selectedCustomer.advancedPrivacyDetails }
-      });
-    }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (formData) => {
     try {
       setIsLoading(true);
       
-      // Prepare the payload based on the active tab
-      let payload = {
-        ...editedData.basic,
-        additionalData: editedData.additionalData,
-        advancedDetails: editedData.advancedDetails,
-        advancedPrivacyDetails: editedData.advancedPrivacyDetails
+      // Prepare the payload with all form data
+      const payload = {
+        ...formData.basic,
+        additionalData: formData.additionalData || {},
+        advancedDetails: formData.advancedDetails || {},
+        advancedPrivacyDetails: formData.advancedPrivacyDetails || {}
       };
 
       const response = await api.patch(
@@ -99,16 +65,6 @@ const CustomerProfile = () => {
     }
   };
 
-  const handleInputChange = (field, value, section = 'basic') => {
-    setEditedData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
-      }
-    }));
-  };
-
   if (isLoading && !selectedCustomer) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
@@ -126,11 +82,9 @@ const CustomerProfile = () => {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           isEditing={isEditing}
-          editedData={editedData}
           onEdit={handleEdit}
           onCancel={handleCancel}
           onSave={handleSave}
-          onInputChange={handleInputChange}
           isLoading={isLoading}
         />
       </div>
