@@ -9,23 +9,33 @@ const CustomerProfile = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [activeTab, setActiveTab] = useState("Advanced Details");
   const [isEditing, setIsEditing] = useState(false);
-  const [editedData, setEditedData] = useState({});
+  const [editedData, setEditedData] = useState({
+    basic: {},
+    additionalData: {},
+    advancedDetails: {},
+    advancedPrivacyDetails: {}
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchCustomer = async () => {
       try {
         setIsLoading(true);
-        const response = await api.get(
-          `/api/customers/${customerId}`
-        );  
+        const response = await api.get(`/api/customers/${customerId}`);
         const data = response.data;
         setSelectedCustomer(data);
         setEditedData({
-          ...data,
-          ...data.additionalData,
-          ...data.advancedDetails,
-          ...data.advancedPrivacyDetails,
+          basic: {
+            firstname: data.firstname,
+            lastname: data.lastname,
+            mobileNumber: data.mobileNumber,
+            source: data.source,
+            customerId: data.customerId,
+            firstVisit: data.firstVisit
+          },
+          additionalData: { ...data.additionalData },
+          advancedDetails: { ...data.advancedDetails },
+          advancedPrivacyDetails: { ...data.advancedPrivacyDetails }
         });
       } catch (error) {
         console.error("Error fetching customer:", error);
@@ -37,18 +47,6 @@ const CustomerProfile = () => {
     fetchCustomer();
   }, [customerId]);
 
-  const handleCustomerSelect = (customer) => {
-    setSelectedCustomer(customer);
-    setEditedData({
-      ...customer,
-      ...customer.additionalData,
-      ...customer.advancedDetails,
-      ...customer.advancedPrivacyDetails,
-    });
-    setIsEditing(false);
-    setActiveTab("Advanced Details");
-  };
-
   const handleEdit = () => {
     setIsEditing(true);
   };
@@ -57,10 +55,17 @@ const CustomerProfile = () => {
     setIsEditing(false);
     if (selectedCustomer) {
       setEditedData({
-        ...selectedCustomer,
-        ...selectedCustomer.additionalData,
-        ...selectedCustomer.advancedDetails,
-        ...selectedCustomer.advancedPrivacyDetails,
+        basic: {
+          firstname: selectedCustomer.firstname,
+          lastname: selectedCustomer.lastname,
+          mobileNumber: selectedCustomer.mobileNumber,
+          source: selectedCustomer.source,
+          customerId: selectedCustomer.customerId,
+          firstVisit: selectedCustomer.firstVisit
+        },
+        additionalData: { ...selectedCustomer.additionalData },
+        advancedDetails: { ...selectedCustomer.advancedDetails },
+        advancedPrivacyDetails: { ...selectedCustomer.advancedPrivacyDetails }
       });
     }
   };
@@ -68,61 +73,21 @@ const CustomerProfile = () => {
   const handleSave = async () => {
     try {
       setIsLoading(true);
-      let payload = {};
-
-      if (activeTab === "Advanced Details") {
-        // Extract only advancedDetails fields from editedData
-        const { advancedDetails, ...rest } = selectedCustomer;
-        payload = {
-          ...rest,
-          advancedDetails: Object.keys(editedData).reduce((acc, key) => {
-            if (key in advancedDetails) {
-              acc[key] = editedData[key];
-            }
-            return acc;
-          }, {}),
-        };
-      } else if (activeTab === "Advanced Privacy") {
-        // Extract only advancedPrivacyDetails fields from editedData
-        const { advancedPrivacyDetails, ...rest } = selectedCustomer;
-        payload = {
-          ...rest,
-          advancedPrivacyDetails: Object.keys(editedData).reduce((acc, key) => {
-            if (key in advancedPrivacyDetails) {
-              acc[key] = editedData[key];
-            }
-            return acc;
-          }, {}),
-        };
-      } else {
-        // For Basic Details
-        const { additionalData, ...rest } = selectedCustomer;
-        payload = {
-          ...rest,
-          additionalData: Object.keys(editedData).reduce((acc, key) => {
-            if (key in additionalData) {
-              acc[key] = editedData[key];
-            }
-            return acc;
-          }, {}),
-        };
-      }
+      
+      // Prepare the payload based on the active tab
+      let payload = {
+        ...editedData.basic,
+        additionalData: editedData.additionalData,
+        advancedDetails: editedData.advancedDetails,
+        advancedPrivacyDetails: editedData.advancedPrivacyDetails
+      };
 
       const response = await api.patch(
-        `http://13.60.19.134:5000/api/customers/${selectedCustomer._id}`,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        `/api/customers/${selectedCustomer._id}`,
+        payload
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to update customer");
-      }
-
-      const updatedCustomer = await response.json();
+      const updatedCustomer = response.data;
       setSelectedCustomer(updatedCustomer);
       setIsEditing(false);
       alert("Customer data updated successfully!");
@@ -134,34 +99,28 @@ const CustomerProfile = () => {
     }
   };
 
-  const handleInputChange = (field, value) => {
-    setEditedData((prev) => ({
+  const handleInputChange = (field, value, section = 'basic') => {
+    setEditedData(prev => ({
       ...prev,
-      [field]: value,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
     }));
   };
 
   if (isLoading && !selectedCustomer) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Loading...
-      </div>
-    );
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
   if (!selectedCustomer) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Customer not found
-      </div>
-    );
+    return <div className="flex items-center justify-center h-screen">Customer not found</div>;
   }
 
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="flex-1 flex">
         <CustomerSidebar/>
-
         <CustomerDetails
           customer={selectedCustomer}
           activeTab={activeTab}
