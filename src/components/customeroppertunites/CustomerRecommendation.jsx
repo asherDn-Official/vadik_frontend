@@ -100,7 +100,7 @@ const CustomerRecommendation = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto flex h-[calc(100vh-200px)]">
+    <div className="rounded-[40px] mx-auto flex h-[calc(100vh-200px)]">
       {/* Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
         {/* New Chat Button */}

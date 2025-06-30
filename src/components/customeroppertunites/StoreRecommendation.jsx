@@ -202,7 +202,7 @@ const StoreRecommendation = () => {
             />
             <button
               onClick={handleSendMessage}
-              className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="p-3 bg-[#004AAC] text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Send className="w-5 h-5" />
             </button>
