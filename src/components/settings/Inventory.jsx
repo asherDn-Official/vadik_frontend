@@ -1,76 +1,127 @@
-import React, { useState } from "react";
+// src/components/Inventory.js
+import React, { useState, useEffect } from "react";
 import { FiEdit2, FiTrash2, FiSearch, FiPlus } from "react-icons/fi";
 import AddProduct from "./AddProduct";
+import api from "../../api/apiconfig";
+// import {
+//   getProducts,
+//   deleteProduct as deleteProductApi,
+// } from "../services/inventoryService";
+// import { useAuth } from "../context/AuthContext";
+
+// Get all products
+export const getProducts = async (retailerId, params = {}) => {
+  try {
+    const response = await api.get('/api/inventory', {
+      params: {
+        retailerId,
+        ...params,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    throw error;
+  }
+};
+
+// Get single product
+export const getProduct = async (productId) => {
+  try {
+    const response = await api.get(`/${productId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    throw error;
+  }
+};
+
+// Create product
+export const createProduct = async (retailerId, productData) => {
+  try {
+    const formData = new FormData();
+    Object.keys(productData).forEach(key => {
+      if (key === 'colors' && Array.isArray(productData[key])) {
+        productData[key].forEach(color => formData.append('colors', color));
+      } else if (key === 'image' && productData[key]) {
+        formData.append('image', productData[key]);
+      } else {
+        formData.append(key, productData[key]);
+      }
+    });
+    formData.append('retailerId', retailerId);
+
+    const response = await api.post('', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating product:', error);
+    throw error;
+  }
+};
+
+// Update product
+export const updateProduct = async (productId, productData) => {
+  try {
+    const formData = new FormData();
+    Object.keys(productData).forEach(key => {
+      if (key === 'colors' && Array.isArray(productData[key])) {
+        productData[key].forEach(color => formData.append('colors', color));
+      } else if (key === 'image' && productData[key]) {
+        formData.append('image', productData[key]);
+      } else if (productData[key] !== undefined) {
+        formData.append(key, productData[key]);
+      }
+    });
+
+    const response = await api.patch(`/${productId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating product:', error);
+    throw error;
+  }
+};
+
+// Delete product
+export const deleteProduct = async (productId) => {
+  try {
+    const response = await api.delete(`/${productId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    throw error;
+  }
+};
+
 
 const Inventory = () => {
+  // const { user } = useAuth();
+  const user = {
+    retailerId: "6856350030bcee9b82be4c17"
+  }
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All Category");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [sortBy, setSortBy] = useState("Name (A-Z)");
+  const [sortBy, setSortBy] = useState("productName");
+  const [sortOrder, setSortOrder] = useState("asc");
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "Premium Leather Sneakers",
-      category: "Footwear",
-      price: 129.99,
-      status: "In Stock",
-      stock: 42,
-      image:
-        "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
-    },
-    {
-      id: 2,
-      name: "Premium Denim Jeans",
-      category: "Clothing",
-      price: 59.99,
-      status: "In Stock",
-      stock: 42,
-      image:
-        "https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
-    },
-    {
-      id: 3,
-      name: "Performance Running Shoes",
-      category: "Footwear",
-      price: 45.50,
-      status: "Out of Stock",
-      stock: 0,
-      image:
-        "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
-    },
-    {
-      id: 4,
-      name: "Organic Cotton T-Shirt",
-      category: "Clothing",
-      price: 24.99,
-      status: "In Stock",
-      stock: 42,
-      image:
-        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
-    },
-    {
-      id: 5,
-      name: "Classic Formal Shoes",
-      category: "Footwear",
-      price: 179.99,
-      status: "Low Stock",
-      stock: 5,
-      image:
-        "https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
-    },
-    {
-      id: 6,
-      name: "Wool Blend Sweater",
-      category: "Clothing",
-      price: 18.50,
-      status: "In Stock",
-      stock: 42,
-      image:
-        "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=96&h=96",
-    },
-  ]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    total: 0,
+    limit: 10,
+    totalPages: 1,
+  });
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -85,56 +136,83 @@ const Inventory = () => {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        page: pagination.page,
+        search: searchTerm,
+        ...(categoryFilter !== "All Category" && { category: categoryFilter }),
+        ...(statusFilter !== "All Status" && { status: statusFilter }),
+        sortBy,
+        sortOrder,
+      };
+
+      const response = await getProducts(user?.retailerId, params);
+      setProducts(response.data);
+      setPagination(response.pagination);
+    } catch (err) {
+      setError(err.message || "Failed to fetch products");
+      console.error("Error fetching products:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.retailerId) {
+      fetchProducts();
+    }
+  }, [user?.retailerId, searchTerm, categoryFilter, statusFilter, sortBy, sortOrder, pagination.page]);
+
   const handleEdit = (product) => {
     setEditProduct(product);
     setShowAddProduct(true);
   };
 
-  const handleDelete = (productId) => {
+  const handleDelete = async (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts(products.filter(product => product.id !== productId));
+      try {
+        await deleteProductApi(productId);
+        fetchProducts(); // Refresh the list
+      } catch (err) {
+        console.error("Error deleting product:", err);
+        alert("Failed to delete product");
+      }
     }
   };
 
   const handleBack = () => {
     setShowAddProduct(false);
     setEditProduct(null);
+    fetchProducts(); // Refresh the list after adding/editing
   };
 
-  // Filter and sort products
-  const filteredProducts = products
-    .filter(product => {
-      // Search filter
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      // Category filter
-      const matchesCategory = categoryFilter === "All Category" || 
-                             product.category === categoryFilter;
-      
-      // Status filter
-      const matchesStatus = statusFilter === "All Status" || 
-                          product.status === statusFilter;
-      
-      return matchesSearch && matchesCategory && matchesStatus;
-    })
-    .sort((a, b) => {
-      // Sort by options
-      switch (sortBy) {
-        case "Name (A-Z)":
-          return a.name.localeCompare(b.name);
-        case "Name (Z-A)":
-          return b.name.localeCompare(a.name);
-        case "Price (Low to High)":
-          return a.price - b.price;
-        case "Price (High to Low)":
-          return b.price - a.price;
-        default:
-          return 0;
-      }
-    });
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination({ ...pagination, page: newPage });
+    }
+  };
+
+  const handleSortChange = (newSortBy) => {
+    if (sortBy === newSortBy) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(newSortBy);
+      setSortOrder("asc");
+    }
+  };
 
   if (showAddProduct) {
     return <AddProduct onBack={handleBack} product={editProduct} />;
+  }
+
+  if (loading && !products.length) {
+    return <div className="text-center py-8">Loading products...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-500">{error}</div>;
   }
 
   return (
@@ -185,6 +263,7 @@ const Inventory = () => {
               <option>All Category</option>
               <option>Clothing</option>
               <option>Footwear</option>
+              <option>Electronics</option>
               <option>Accessories</option>
             </select>
           </div>
@@ -207,13 +286,17 @@ const Inventory = () => {
             <label className="block text-sm text-gray-600 mb-1">Sort By</label>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              onChange={(e) => {
+                const [newSortBy, newSortOrder] = e.target.value.split(":");
+                setSortBy(newSortBy);
+                setSortOrder(newSortOrder);
+              }}
               className="w-full p-2 border border-gray-300 rounded-md"
             >
-              <option>Name (A-Z)</option>
-              <option>Name (Z-A)</option>
-              <option>Price (Low to High)</option>
-              <option>Price (High to Low)</option>
+              <option value="productName:asc">Name (A-Z)</option>
+              <option value="productName:desc">Name (Z-A)</option>
+              <option value="price:asc">Price (Low to High)</option>
+              <option value="price:desc">Price (High to Low)</option>
             </select>
           </div>
         </div>
@@ -231,21 +314,23 @@ const Inventory = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map((product) => (
-                  <tr key={product.id} className="border-b border-gray-200">
+              {products.length > 0 ? (
+                products.map((product) => (
+                  <tr key={product._id} className="border-b border-gray-200">
                     <td className="px-4 py-3">
                       <div className="flex items-center">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-10 h-10 mr-3 object-cover rounded-md"
-                        />
-                        <span>{product.name}</span>
+                        {product.image && (
+                          <img
+                            src={product.image}
+                            alt={product.productname}
+                            className="w-10 h-10 mr-3 object-cover rounded-md"
+                          />
+                        )}
+                        <span>{product.productname}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">{product.category}</td>
-                    <td className="px-4 py-3">€{product.price.toFixed(2)}</td>
+                    <td className="px-4 py-3">€{product.price?.toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <span style={{ color: getStatusColor(product.status) }}>
                         {product.status}
@@ -259,9 +344,9 @@ const Inventory = () => {
                       >
                         <FiEdit2 />
                       </button>
-                      <button 
+                      <button
                         className="text-red-500 hover:text-red-700"
-                        onClick={() => handleDelete(product.id)}
+                        onClick={() => handleDelete(product._id)}
                       >
                         <FiTrash2 />
                       </button>
@@ -281,29 +366,57 @@ const Inventory = () => {
 
         <div className="flex justify-between items-center mt-6">
           <div className="text-sm text-gray-600">
-            Showing 1 to {filteredProducts.length} of {filteredProducts.length} results
+            Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+            {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
+            {pagination.total} results
           </div>
 
           <div className="flex space-x-1">
-            <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
+            <button
+              className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50"
+              disabled={pagination.page === 1}
+              onClick={() => handlePageChange(pagination.page - 1)}
+            >
               &lt;
             </button>
-            <button className="px-3 py-1 bg-sidebar text-white rounded-md">
-              1
-            </button>
-            <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-              2
-            </button>
-            <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-              3
-            </button>
-            <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-              ...
-            </button>
-            <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-              8
-            </button>
-            <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
+
+            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+              let pageNum;
+              if (pagination.totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (pagination.page <= 3) {
+                pageNum = i + 1;
+              } else if (pagination.page >= pagination.totalPages - 2) {
+                pageNum = pagination.totalPages - 4 + i;
+              } else {
+                pageNum = pagination.page - 2 + i;
+              }
+
+              return (
+                <button
+                  key={pageNum}
+                  className={`px-3 py-1 border rounded-md ${pagination.page === pageNum
+                      ? "bg-sidebar text-white"
+                      : "border-gray-300 hover:bg-gray-100"
+                    }`}
+                  onClick={() => handlePageChange(pageNum)}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            {pagination.totalPages > 5 && pagination.page < pagination.totalPages - 2 && (
+              <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
+                ...
+              </button>
+            )}
+
+            <button
+              className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50"
+              disabled={pagination.page === pagination.totalPages}
+              onClick={() => handlePageChange(pagination.page + 1)}
+            >
               &gt;
             </button>
           </div>
