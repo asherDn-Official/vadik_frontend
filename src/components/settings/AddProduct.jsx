@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FiArrowLeft, FiSearch, FiPlusCircle, FiX, FiUpload } from "react-icons/fi";
 import api from "../../api/apiconfig";
+import { color } from "chart.js/helpers";
 // import { createProduct, updateProduct, getProduct } from "../services/inventoryService";
 
 export const createProduct = async (formData) => {
@@ -13,9 +14,9 @@ export const createProduct = async (formData) => {
   }
 };
 
-export const updateProduct = async (formData) => {
+export const updateProduct = async (productId, formData) => {
   try {
-  
+
     const response = await api.patch(`/api/inventory/${productId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -156,7 +157,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     setError(null);
 
     try {
-      const formData = new FormData();  
+      const formData = new FormData();
       formData.append('retailerId', user.retailerId);
       formData.append('productname', productData.productname);
       formData.append('description', productData.description);
@@ -164,11 +165,13 @@ const AddProduct = ({ onBack, product: editProduct }) => {
       formData.append('status', productData.status);
       formData.append('category', productData.category);
       formData.append('stock', productData.stock);
-      formData.append('colors', colors.join(''));
-      imageFiles.map(file=>formData.append('images', file))
+      formData.append('colors', colors.join(','));
+      imageFiles.map(file => formData.append('images', file))
+
+      console.log('colors', colors.join(','))
 
       if (editProduct) {
-        await updateProduct(formData);
+        await updateProduct(editProduct._id,formData);
       } else {
         await createProduct(formData);
       }
