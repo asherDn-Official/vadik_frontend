@@ -319,9 +319,9 @@ const Inventory = () => {
                   <tr key={product._id} className="border-b border-gray-200">
                     <td className="px-4 py-3">
                       <div className="flex items-center">
-                        {product.image && (
+                        {product.images && (
                           <img
-                            src={product.image}
+                            src={product.images[0]}
                             alt={product.productname}
                             className="w-10 h-10 mr-3 object-cover rounded-md"
                           />
