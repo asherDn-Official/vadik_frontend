@@ -1,26 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { FiArrowLeft, FiSearch, FiPlusCircle, FiX, FiUpload } from "react-icons/fi";
+import api from "../../api/apiconfig";
 // import { createProduct, updateProduct, getProduct } from "../services/inventoryService";
 
-export const createProduct = async (retailerId, productData) => {
+export const createProduct = async (formData) => {
   try {
-    const formData = new FormData();
-    Object.keys(productData).forEach(key => {
-      if (key === 'colors' && Array.isArray(productData[key])) {
-        productData[key].forEach(color => formData.append('colors', color));
-      } else if (key === 'image' && productData[key]) {
-        formData.append('image', productData[key]);
-      } else {
-        formData.append(key, productData[key]);
-      }
-    });
-    formData.append('retailerId', retailerId);
-
-    const response = await api.post('', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await api.post('/api/inventory', formData);
     return response.data;
   } catch (error) {
     console.error('Error creating product:', error);
@@ -28,20 +13,10 @@ export const createProduct = async (retailerId, productData) => {
   }
 };
 
-export const updateProduct = async (productId, productData) => {
+export const updateProduct = async (formData) => {
   try {
-    const formData = new FormData();
-    Object.keys(productData).forEach(key => {
-      if (key === 'colors' && Array.isArray(productData[key])) {
-        productData[key].forEach(color => formData.append('colors', color));
-      } else if (key === 'image' && productData[key]) {
-        formData.append('image', productData[key]);
-      } else if (productData[key] !== undefined) {
-        formData.append(key, productData[key]);
-      }
-    });
-
-    const response = await api.patch(`/${productId}`, formData, {
+  
+    const response = await api.patch(`/api/inventory/${productId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -189,14 +164,11 @@ const AddProduct = ({ onBack, product: editProduct }) => {
       formData.append('status', productData.status);
       formData.append('category', productData.category);
       formData.append('stock', productData.stock);
-
-      colors.forEach(color => formData.append('colors', color));
-
-      // Only append new images if they exist
-      imageFiles.forEach(file => formData.append('image', file));
+      formData.append('colors', colors.join(''));
+      formData.append('image', imageFiles);
 
       if (editProduct) {
-        await updateProduct(editProduct._id, formData);
+        await updateProduct(formData);
       } else {
         await createProduct(formData);
       }
