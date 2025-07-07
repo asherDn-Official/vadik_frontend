@@ -1,8 +1,19 @@
-import React from "react";
-import { Users, DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
-import { Calendar } from "lucide-react";
+import React, { useState } from "react";
+import {
+  Users,
+  DollarSign,
+  ShoppingCart,
+  TrendingUp,
+  Calendar,
+} from "lucide-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const CartValueCards = () => {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [startDate, endDate] = dateRange;
+
   const cardData = [
     {
       icon: Users,
@@ -36,15 +47,23 @@ const CartValueCards = () => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <h3 className="text-lg font-semibold text-gray-900">Cart Value</h3>
+
         <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <Calendar className="w-4 h-4" />
-          <span>Today</span>
+          <Calendar className="w-4 h-4 text-gray-500" />
+          <DatePicker
+            selected={selectedDate}
+            onChange={(date) => setSelectedDate(date)}
+            selectsStart
+            startDate={selectedDate}
+            className="border border-gray-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 w-full sm:w-40"
+            placeholderText="Select date"
+          />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {cardData.map((card, index) => {
           const Icon = card.icon;
           return (

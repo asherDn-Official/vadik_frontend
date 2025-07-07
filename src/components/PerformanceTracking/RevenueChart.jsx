@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { Calendar, TrendingUp, TrendingDown } from "lucide-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const data = [
   { name: "Jan", value: 10 },
@@ -18,19 +20,33 @@ const data = [
 ];
 
 const RevenueChart = () => {
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [startDate, endDate] = dateRange;
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
         <h3 className="text-lg font-semibold text-gray-900">Revenue Growth</h3>
+
         <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <Calendar className="w-4 h-4" />
-          <span>Today</span>
+          <Calendar className="w-4 h-4 text-gray-500" />
+          <DatePicker
+            selectsRange={true}
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(update) => {
+              setDateRange(update);
+            }}
+            isClearable={true}
+            className="border border-gray-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 w-full sm:w-48"
+            placeholderText="Select date range"
+          />
         </div>
       </div>
 
       <div className="mb-6">
         <div className="text-3xl font-bold text-gray-900 mb-2">$ 58,000.00</div>
-        <div className="flex items-center space-x-4 text-sm">
+        <div className="flex flex-wrap gap-4 text-sm">
           <div className="flex items-center space-x-1 text-green-600">
             <TrendingUp className="w-4 h-4" />
             <span>20% Yesterday</span>

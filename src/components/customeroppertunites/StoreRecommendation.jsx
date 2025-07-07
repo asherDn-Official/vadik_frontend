@@ -165,7 +165,7 @@ const StoreRecommendation = () => {
                   }`}
                 >
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
+                    className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
                       message.type === "user" ? "bg-gray-600" : "bg-pink-600"
                     }`}
                   >
