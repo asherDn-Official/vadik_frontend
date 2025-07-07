@@ -78,8 +78,8 @@ const AddProduct = ({ onBack, product: editProduct }) => {
             stock: product.stock,
           });
           setColors(product.colors || []);
-          if (product.image) {
-            setImagePreviews([product.image]);
+          if (product.images) {
+            setImagePreviews(product.images);
           }
         } catch (err) {
           setError(err.message || "Failed to load product details");
