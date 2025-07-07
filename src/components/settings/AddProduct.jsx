@@ -165,7 +165,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
       formData.append('category', productData.category);
       formData.append('stock', productData.stock);
       formData.append('colors', colors.join(''));
-      formData.append('image', imageFiles);
+      imageFiles.map(file=>formData.append('images', file))
 
       if (editProduct) {
         await updateProduct(formData);
