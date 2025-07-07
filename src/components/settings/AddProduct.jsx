@@ -30,7 +30,7 @@ export const updateProduct = async (formData) => {
 
 export const getProduct = async (productId) => {
   try {
-    const response = await api.get(`/${productId}`);
+    const response = await api.get(`api/inventory/${productId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching product:', error);
@@ -156,7 +156,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     setError(null);
 
     try {
-      const formData = new FormData();
+      const formData = new FormData();  
       formData.append('retailerId', user.retailerId);
       formData.append('productname', productData.productname);
       formData.append('description', productData.description);
@@ -227,7 +227,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
           <h3 className="text-lg font-medium mb-4">Add New Product</h3>
         )}
 
-        {editProduct && (
+        {/* {editProduct && (
           <div className="relative mb-6">
             <input
               type="text"
@@ -265,7 +265,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
               </div>
             )}
           </div>
-        )}
+        )} */}
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           {imagePreviews.length > 0 ? (
