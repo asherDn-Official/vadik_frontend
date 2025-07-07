@@ -92,7 +92,7 @@ export const updateProduct = async (productId, productData) => {
 // Delete product
 export const deleteProduct = async (productId) => {
   try {
-    const response = await api.delete(`/${productId}`);
+    const response = await api.delete(`/api/inventory/${productId}`);
     return response.data;
   } catch (error) {
     console.error('Error deleting product:', error);
@@ -173,7 +173,7 @@ const Inventory = () => {
   const handleDelete = async (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await deleteProductApi(productId);
+        await deleteProduct(productId);
         fetchProducts(); // Refresh the list
       } catch (err) {
         console.error("Error deleting product:", err);
