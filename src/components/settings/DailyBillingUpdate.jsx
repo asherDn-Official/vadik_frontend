@@ -268,12 +268,12 @@ const DailyBillingUpdate = () => {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+              className="pl-5 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
             />
-            <Calendar
+            {/* <Calendar
               className="absolute left-3 top-3 text-gray-400"
               size={16}
-            />
+            /> */}
           </div>
 
           <span className="text-gray-500">-</span>
@@ -283,12 +283,12 @@ const DailyBillingUpdate = () => {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+              className="pl-5 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
             />
-            <Calendar
+            {/* <Calendar
               className="absolute left-3 top-3 text-gray-400"
               size={16}
-            />
+            /> */}
           </div>
         </div>
 

@@ -5,6 +5,8 @@ const CustomerRecommendation = () => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [selectedButton, setSelectedButton] = useState(null);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [activeSidebarItem, setActiveSidebarItem] = useState(null);
 
   const sidebarItems = [
     "Store Stocks",
@@ -34,8 +36,67 @@ const CustomerRecommendation = () => {
     },
   ];
 
+  const handleSidebarItemClick = (item) => {
+    setActiveSidebarItem(item);
+    setSelectedButton(null);
+
+    const userMessage = {
+      id: Date.now(),
+      type: "user",
+      content: item,
+      timestamp: new Date(),
+    };
+
+    let aiResponse;
+    switch (item) {
+      case "Store Stocks":
+        aiResponse = {
+          id: Date.now() + 1,
+          type: "ai",
+          content:
+            "Here's your current store stock analysis:\n\n• Cotton Shirts: 142 units\n• Denim Jeans: 87 units\n• Summer Dresses: 56 units\n\nWould you like to generate a restock recommendation?",
+          timestamp: new Date(),
+        };
+        break;
+      case "Birthday Invites":
+        aiResponse = {
+          id: Date.now() + 1,
+          type: "ai",
+          content:
+            "I found 23 customers with birthdays in the next 30 days. Here are some personalized invite templates we can send:\n\n1. 'Celebrate your special day with us! 20% off for your birthday week!'\n2. 'Happy Birthday! Enjoy a free gift with any purchase this week.'",
+          timestamp: new Date(),
+        };
+        break;
+      case "Current Stock Availability":
+        aiResponse = {
+          id: Date.now() + 1,
+          type: "ai",
+          content:
+            "Current stock availability by category:\n\n• Men's Wear: 65% available\n• Women's Wear: 42% available\n• Kids: 78% available\n• Accessories: 91% available",
+          timestamp: new Date(),
+        };
+        break;
+      // Add cases for other sidebar items...
+      default:
+        aiResponse = {
+          id: Date.now() + 1,
+          type: "ai",
+          content: `I understand you're asking about ${item}. Let me analyze the data and provide specific recommendations for this topic.`,
+          timestamp: new Date(),
+        };
+    }
+
+    setMessages([userMessage, aiResponse]);
+
+    // Add to chat history if not already present
+    if (!chatHistory.includes(item)) {
+      setChatHistory([...chatHistory, item]);
+    }
+  };
+
   const handleQuickButtonClick = (buttonId) => {
     setSelectedButton(buttonId);
+    setActiveSidebarItem(null);
 
     const userMessage = {
       id: Date.now(),
@@ -97,6 +158,7 @@ const CustomerRecommendation = () => {
   const handleNewChat = () => {
     setMessages([]);
     setSelectedButton(null);
+    setActiveSidebarItem(null);
   };
 
   return (
@@ -120,7 +182,12 @@ const CustomerRecommendation = () => {
             {sidebarItems.map((item, index) => (
               <div
                 key={index}
-                className="py-2 px-3 text-sm text-slate-600 hover:bg-gray-50 rounded cursor-pointer"
+                onClick={() => handleSidebarItemClick(item)}
+                className={`py-2 px-3 text-sm rounded cursor-pointer ${
+                  activeSidebarItem === item
+                    ? "bg-pink-100 text-pink-600"
+                    : "text-slate-600 hover:bg-gray-50"
+                }`}
               >
                 {item}
               </div>
