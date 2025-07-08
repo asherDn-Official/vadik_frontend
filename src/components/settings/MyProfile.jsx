@@ -3,6 +3,7 @@ import axios from "axios";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import api from "../../api/apiconfig";
+import { useAuth } from "../../context/AuthContext";
 
 const MyProfile = () => {
   const [profile, setProfile] = useState({
@@ -21,11 +22,14 @@ const MyProfile = () => {
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
+  const {auth} =useAuth();
+
   useEffect(() => {
+
     const fetchProfileData = async () => {
       try {
         const response = await api.get(
-          "api/retailer/6856350030bcee9b82be4c17"
+          `api/retailer/${auth?._id}`
         );
         
         if (response.data.status === "success") {
@@ -55,7 +59,9 @@ const MyProfile = () => {
       }
     };
 
-    fetchProfileData();
+    if(auth?._id){
+      fetchProfileData();
+    }
   }, []);
 
   const handleChange = (e) => {
