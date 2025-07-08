@@ -102,10 +102,10 @@ export const deleteProduct = async (productId) => {
 
 
 const Inventory = () => {
-  // const { user } = useAuth();
-  const user = {
-    retailerId: "6856350030bcee9b82be4c17"
-  }
+
+  const [retailerId, setRetailerId] = useState(() => {
+    return localStorage.getItem("retailerId") || "";
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All Category");
   const [statusFilter, setStatusFilter] = useState("All Status");
@@ -148,7 +148,7 @@ const Inventory = () => {
         sortOrder,
       };
 
-      const response = await getProducts(user?.retailerId, params);
+      const response = await getProducts(retailerId, params);
       setProducts(response.data);
       setPagination(response.pagination);
     } catch (err) {
@@ -160,10 +160,10 @@ const Inventory = () => {
   };
 
   useEffect(() => {
-    if (user?.retailerId) {
+    if (retailerId) {
       fetchProducts();
     }
-  }, [user?.retailerId, searchTerm, categoryFilter, statusFilter, sortBy, sortOrder, pagination.page]);
+  }, [retailerId, searchTerm, categoryFilter, statusFilter, sortBy, sortOrder, pagination.page]);
 
   const handleEdit = (product) => {
     setEditProduct(product);
