@@ -43,9 +43,9 @@ export const getProduct = async (productId) => {
 
 const AddProduct = ({ onBack, product: editProduct }) => {
   // const { user } = useAuth();
-  const user = {
-    retailerId: "6856350030bcee9b82be4c17"
-  }
+  const [retailerId, setRetailerId] = useState(() => {
+    return localStorage.getItem("retailerId") || "";
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -158,7 +158,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
 
     try {
       const formData = new FormData();
-      formData.append('retailerId', user.retailerId);
+      formData.append('retailerId', retailerId);
       formData.append('productname', productData.productname);
       formData.append('description', productData.description);
       formData.append('price', productData.price);
