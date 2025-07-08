@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FiArrowLeft, FiSearch, FiPlusCircle, FiX, FiUpload } from "react-icons/fi";
 import api from "../../api/apiconfig";
-import { color } from "chart.js/helpers";
-// import { createProduct, updateProduct, getProduct } from "../services/inventoryService";
 
 export const createProduct = async (formData) => {
   try {
@@ -20,7 +18,7 @@ export const updateProduct = async (productId, formData) => {
     const response = await api.patch(`/api/inventory/${productId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
-      },
+        },
     });
     return response.data;
   } catch (error) {
@@ -50,6 +48,8 @@ const AddProduct = ({ onBack, product: editProduct }) => {
   const [error, setError] = useState(null);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
+  const [imagesToRemove, setImagesToRemove] = useState([]); // Track images to remove
+
   const [colors, setColors] = useState([]);
   const [newColor, setNewColor] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -121,18 +121,24 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     setImageFiles(newImageFiles);
   };
 
+  
   const removeImage = (index) => {
     const newImagePreviews = [...imagePreviews];
-    const newImageFiles = [...imageFiles];
-
-    newImagePreviews.splice(index, 1);
-    // Only remove from files if it's a newly added file (not the existing one)
-    if (index < newImageFiles.length) {
-      newImageFiles.splice(index, 1);
+    const removedImage = newImagePreviews[index];
+    
+    // If this is an existing image (has URL), add to imagesToRemove
+    if (typeof removedImage === 'string' && removedImage.startsWith('http')) {
+      setImagesToRemove([...imagesToRemove, removedImage]);
     }
-
+    // If this is a newly added file (not yet uploaded), remove from imageFiles
+    else if (index < imageFiles.length) {
+      const newImageFiles = [...imageFiles];
+      newImageFiles.splice(index, 1);
+      setImageFiles(newImageFiles);
+    }
+    
+    newImagePreviews.splice(index, 1);
     setImagePreviews(newImagePreviews);
-    setImageFiles(newImageFiles);
   };
 
   const handleAddColor = () => {
@@ -151,7 +157,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     setProductData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -166,12 +172,19 @@ const AddProduct = ({ onBack, product: editProduct }) => {
       formData.append('category', productData.category);
       formData.append('stock', productData.stock);
       formData.append('colors', colors.join(','));
-      imageFiles.map(file => formData.append('images', file))
 
-      console.log('colors', colors.join(','))
+      // Add images to remove
+      imagesToRemove.forEach(imageUrl => {
+        formData.append('removeImages', imageUrl);
+      });
+
+      // Add new images
+      imageFiles.forEach(file => {
+        formData.append('images', file);
+      });
 
       if (editProduct) {
-        await updateProduct(editProduct._id,formData);
+        await updateProduct(editProduct._id, formData);
       } else {
         await createProduct(formData);
       }
@@ -184,6 +197,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
       setLoading(false);
     }
   };
+
 
   const handleSearch = () => {
     setShowSearchResults(true);
