@@ -92,7 +92,7 @@ const CustomerFieldPreferences = () => {
 
   useEffect(() => {
     fetchPreferences();
-  }, [preferenceId]); // Add preferenceId to dependencies to refetch when it changes
+  }, []); // Add preferenceId to dependencies to refetch when it changes
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
