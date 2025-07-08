@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import debounce from "lodash.debounce";
+import api from "../api/apiconfig";
 
 const CustomerList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -12,7 +13,10 @@ const CustomerList = () => {
     totalPages: 1,
     currentPage: 1,
   });
-  
+  const [retailerId, setRetailerId] = useState(() => {
+    return localStorage.getItem("retailerId") || "";
+  });
+
   const itemsPerPage = 6;
   const navigate = useNavigate();
   const searchTerm = searchParams.get("search") || "";
@@ -21,24 +25,20 @@ const CustomerList = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const queryParams = new URLSearchParams({
-        retailerId: "6856350030bcee9b82be4c17",
+        retailerId: retailerId,
         page: pagination.currentPage,
         limit: itemsPerPage,
         ...(searchTerm && { search: searchTerm }),
       });
 
-      const response = await fetch(
-        `http://13.60.19.134:5000/api/customers?${queryParams}`
+      const response = await api.get(
+        `/api/customers?${queryParams}`
       );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const data = await response.data;
 
-      const data = await response.json();
-      
       setCustomers(data.data);
       setPagination({
         totalItems: data.pagination.totalItems,
@@ -47,7 +47,6 @@ const CustomerList = () => {
       });
     } catch (err) {
       console.error("Error fetching customers:", err);
-      setError("Failed to load customers. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -231,11 +230,10 @@ const CustomerList = () => {
                 <button
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={pagination.currentPage === 1}
-                  className={`px-3 py-1 text-sm border rounded-md ${
-                    pagination.currentPage === 1
+                  className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === 1
                       ? "bg-[#3131661A] cursor-not-allowed opacity-50"
                       : "bg-[#3131661A] hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   Previous
                 </button>
@@ -244,11 +242,10 @@ const CustomerList = () => {
                     <button
                       key={page}
                       onClick={() => handlePageChange(page)}
-                      className={`px-3 py-1 text-sm border rounded-md mx-1 ${
-                        pagination.currentPage === page
+                      className={`px-3 py-1 text-sm border rounded-md mx-1 ${pagination.currentPage === page
                           ? "bg-[#313166] text-white border-[#313166]"
                           : "bg-[#3131661A] text-[#313166] hover:bg-gray-100"
-                      }`}
+                        }`}
                     >
                       {page}
                     </button>
@@ -257,11 +254,10 @@ const CustomerList = () => {
                 <button
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={pagination.currentPage === pagination.totalPages}
-                  className={`px-3 py-1 text-sm border rounded-md ${
-                    pagination.currentPage === pagination.totalPages
+                  className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === pagination.totalPages
                       ? "bg-[#3131661A] cursor-not-allowed opacity-50"
                       : "bg-[#3131661A] hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   Next
                 </button>
