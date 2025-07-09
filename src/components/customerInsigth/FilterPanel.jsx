@@ -3,7 +3,6 @@ import { Calendar, Search, Plus, Minus, X } from "lucide-react";
 import DatePicker from "./DatePicker";
 import ReactSlider from "react-slider";
 
-
 const FilterPanel = ({
   filters,
   onFilterChange,
@@ -21,8 +20,15 @@ const FilterPanel = ({
   const filterOptions = {
     gender: ["All", "Male", "Female", "Others"],
     profession: [
-      "All", "Corporate", "Student", "Home Maker", "Business",
-      "IT", "Medicine", "Service", "Teacher",
+      "All",
+      "Corporate",
+      "Student",
+      "Home Maker",
+      "Business",
+      "IT",
+      "Medicine",
+      "Service",
+      "Teacher",
     ],
     source: ["All", "Walk In", "Website", "Social Media"],
     incomeLevel: ["All", "High", "Medium", "Low"],
@@ -45,8 +51,8 @@ const FilterPanel = ({
     : [];
 
   const favoriteBrandSelected = Array.isArray(filters.favoriteBrand)
-  ? filters.favoriteBrand
-  : [];
+    ? filters.favoriteBrand
+    : [];
 
   const toggleFilter = (key) => {
     setExpandedFilter((prev) => (prev === key ? null : key));
@@ -82,7 +88,7 @@ const FilterPanel = ({
 
       {/* Period Selection with Standalone Calendar Button */}
       <div className="flex items-center justify-between p-4 border-b mb-2">
-        <div className="flex gap-2 h-8">
+        <div className="flex gap-2 h-8 w-full justify-between">
           {["Yearly", "Quarterly", "Monthly"].map((period) => (
             <button
               key={period}
@@ -135,7 +141,6 @@ const FilterPanel = ({
           </div>
         </div>
       )}
-
 
       {/* Filter Groups */}
       <div className="space-y-2 overflow-y-auto flex-1">
@@ -237,7 +242,6 @@ const FilterPanel = ({
             </button>
           </div>
         </FilterItem>
-
 
         {/* Source Filter */}
         <FilterItem
@@ -430,7 +434,7 @@ const FilterPanel = ({
             )}
           </div>
         </FilterItem>
-        
+
         {/* Favorite Colour Filter */}
         <FilterItem
           name="Favourite Colour"
@@ -545,7 +549,9 @@ const FilterPanel = ({
                 {filterOptions.favoriteBrand
                   .filter(
                     (option) =>
-                      option.toLowerCase().includes(brandSearchTerm.toLowerCase()) &&
+                      option
+                        .toLowerCase()
+                        .includes(brandSearchTerm.toLowerCase()) &&
                       !favoriteBrandSelected.includes(option)
                   )
                   .map((option) => (
@@ -620,7 +626,9 @@ const FilterPanel = ({
                   />
                 </svg>
                 {filters.specialDaysStart
-                  ? new Date(filters.specialDaysStart).toLocaleDateString("en-GB")
+                  ? new Date(filters.specialDaysStart).toLocaleDateString(
+                      "en-GB"
+                    )
                   : "DD/MM/YYYY"}
               </button>
 
@@ -847,21 +855,19 @@ const FilterPanel = ({
                   }`}
                   onClick={() => onFilterChange("ratingFilter", option)}
                 >
-                  {option === "All" ? (
-                    "All"
-                  ) : (
-                    [...Array(stars)].map((_, i) => (
-                      <svg
-                        key={i}
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-3.5 w-3.5 text-[#facc15]" // Tailwind amber-400
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.138 3.498a1 1 0 00.95.69h3.676c.969 0 1.371 1.24.588 1.81l-2.975 2.163a1 1 0 00-.364 1.118l1.139 3.498c.3.921-.755 1.688-1.54 1.118l-2.976-2.163a1 1 0 00-1.176 0l-2.976 2.163c-.784.57-1.838-.197-1.539-1.118l1.138-3.498a1 1 0 00-.364-1.118L2.21 8.925c-.783-.57-.38-1.81.588-1.81h3.675a1 1 0 00.951-.69l1.138-3.498z" />
-                      </svg>
-                    ))
-                  )}
+                  {option === "All"
+                    ? "All"
+                    : [...Array(stars)].map((_, i) => (
+                        <svg
+                          key={i}
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5 text-[#facc15]" // Tailwind amber-400
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.138 3.498a1 1 0 00.95.69h3.676c.969 0 1.371 1.24.588 1.81l-2.975 2.163a1 1 0 00-.364 1.118l1.139 3.498c.3.921-.755 1.688-1.54 1.118l-2.976-2.163a1 1 0 00-1.176 0l-2.976 2.163c-.784.57-1.838-.197-1.539-1.118l1.138-3.498a1 1 0 00-.364-1.118L2.21 8.925c-.783-.57-.38-1.81.588-1.81h3.675a1 1 0 00.951-.69l1.138-3.498z" />
+                        </svg>
+                      ))}
                 </button>
               );
             })}
@@ -888,7 +894,7 @@ const FilterPanel = ({
                 <div
                   {...props}
                   className={`absolute top-0 h-1.5 rounded-full ${
-                    state.index === 1 ? 'bg-[#2e2d5f]' : 'bg-[#e5e5eb]'
+                    state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
                   }`}
                 />
               )}
@@ -903,14 +909,22 @@ const FilterPanel = ({
             {/* Value Labels */}
             <div className="flex justify-between text-xs text-[#2e2d5f] font-medium mt-2">
               <span>
-                ₹ {Number(filters.loyaltyPoints?.[0] || 0).toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                })}
+                ₹{" "}
+                {Number(filters.loyaltyPoints?.[0] || 0).toLocaleString(
+                  "en-IN",
+                  {
+                    minimumFractionDigits: 2,
+                  }
+                )}
               </span>
               <span>
-                ₹ {Number(filters.loyaltyPoints?.[1] || 40000).toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                })}
+                ₹{" "}
+                {Number(filters.loyaltyPoints?.[1] || 40000).toLocaleString(
+                  "en-IN",
+                  {
+                    minimumFractionDigits: 2,
+                  }
+                )}
               </span>
             </div>
           </div>
@@ -930,13 +944,15 @@ const FilterPanel = ({
               pearling
               minDistance={1000}
               value={filters.currentBusinessValue || [0, 100000]}
-              onChange={(value) => onFilterChange("currentBusinessValue", value)}
+              onChange={(value) =>
+                onFilterChange("currentBusinessValue", value)
+              }
               className="relative w-full h-1.5 mt-2"
               renderTrack={(props, state) => (
                 <div
                   {...props}
                   className={`absolute top-0 h-1.5 rounded-full ${
-                    state.index === 1 ? 'bg-[#2e2d5f]' : 'bg-[#e5e5eb]'
+                    state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
                   }`}
                 />
               )}
@@ -952,13 +968,18 @@ const FilterPanel = ({
             <div className="flex justify-between text-xs text-[#2e2d5f] font-medium mt-2">
               <span>
                 ₹{" "}
-                {Number(filters.currentBusinessValue?.[0] || 0).toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                })}
+                {Number(filters.currentBusinessValue?.[0] || 0).toLocaleString(
+                  "en-IN",
+                  {
+                    minimumFractionDigits: 2,
+                  }
+                )}
               </span>
               <span>
                 ₹{" "}
-                {Number(filters.currentBusinessValue?.[1] || 100000).toLocaleString("en-IN", {
+                {Number(
+                  filters.currentBusinessValue?.[1] || 100000
+                ).toLocaleString("en-IN", {
                   minimumFractionDigits: 2,
                 })}
               </span>
@@ -980,7 +1001,9 @@ const FilterPanel = ({
               pearling
               minDistance={1000}
               value={filters.predictedFutureValue || [0, 200000]}
-              onChange={(value) => onFilterChange("predictedFutureValue", value)}
+              onChange={(value) =>
+                onFilterChange("predictedFutureValue", value)
+              }
               className="relative w-full h-1.5 mt-2"
               renderTrack={(props, state) => (
                 <div
@@ -1002,18 +1025,20 @@ const FilterPanel = ({
             <div className="flex justify-between text-xs text-[#2e2d5f] font-medium mt-2">
               <span>
                 ₹{" "}
-                {Number(filters.predictedFutureValue?.[0] || 0).toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                })}
-              </span>
-              <span>
-                ₹{" "}
-                {Number(filters.predictedFutureValue?.[1] || 200000).toLocaleString(
+                {Number(filters.predictedFutureValue?.[0] || 0).toLocaleString(
                   "en-IN",
                   {
                     minimumFractionDigits: 2,
                   }
                 )}
+              </span>
+              <span>
+                ₹{" "}
+                {Number(
+                  filters.predictedFutureValue?.[1] || 200000
+                ).toLocaleString("en-IN", {
+                  minimumFractionDigits: 2,
+                })}
               </span>
             </div>
           </div>

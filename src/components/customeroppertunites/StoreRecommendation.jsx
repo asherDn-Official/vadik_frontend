@@ -245,7 +245,7 @@ const StoreRecommendation = () => {
   return (
     <div className="max-w-7xl mx-auto flex h-[calc(100vh-200px)]">
       {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-80 bg-[#3131660A] border-r border-gray-200 flex flex-col">
         {/* New Chat Button */}
         <div className="p-4 border-b border-gray-200">
           <button
@@ -317,8 +317,8 @@ const StoreRecommendation = () => {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Chat Header */}
-        <div className="p-4 border-b border-gray-200 bg-white">
-          <div className="flex items-center justify-center">
+        <div className="p-4 border-b border-gray-200 bg-[#3131660A]">
+          <div className="flex items-center">
             <button
               onClick={handleAboutStoresClick}
               className={`flex items-center px-4 py-2 rounded-lg border transition-colors ${
@@ -327,14 +327,19 @@ const StoreRecommendation = () => {
                   : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
               }`}
             >
-              <Store className="w-4 h-4 mr-2" />
+              {/* <Store className="w-4 h-4 mr-2" /> */}
+              <img
+                src="../assets/about-our-story-icon.png"
+                alt=""
+                className="w-7 h-7 mr-2"
+              />
               About Our Stores
             </button>
           </div>
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 bg-[#3131660A]">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -393,7 +398,7 @@ const StoreRecommendation = () => {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 border-t border-gray-200 bg-white">
+        <div className="p-4 border-t border-gray-200 bg-[#3131660A]">
           <div className="flex items-center space-x-3">
             <input
               type="text"

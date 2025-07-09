@@ -270,10 +270,6 @@ const DailyBillingUpdate = () => {
               onChange={(e) => setStartDate(e.target.value)}
               className="pl-5 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
             />
-            {/* <Calendar
-              className="absolute left-3 top-3 text-gray-400"
-              size={16}
-            /> */}
           </div>
 
           <span className="text-gray-500">-</span>
