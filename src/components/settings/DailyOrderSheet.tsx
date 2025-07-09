@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Scan, Plus, Trash2, ArrowLeft } from "lucide-react";
+import axios from "axios";
 
 const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const [formData, setFormData] = useState({
     phoneNumber: "",
-    customerName: "",
-    orderId: "",
-    gender: "",
-    customerType: "",
-    firstVisitDate: "",
+    firstName: "",
+    lastName: "",
   });
 
   const [products, setProducts] = useState([
@@ -22,26 +20,21 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   ]);
 
   const [discount, setDiscount] = useState(0);
+  const [paymentStatus, setPaymentStatus] = useState("Unpaid");
 
   useEffect(() => {
     if (customer) {
       setFormData({
         phoneNumber: customer.mobile,
-        customerName: customer.name,
-        orderId: customer.orderId,
-        gender: customer.gender,
-        customerType: "Regular",
-        firstVisitDate: customer.date,
+        firstName: customer.firstName || "",
+        lastName: customer.lastName || "",
       });
     } else {
       // Reset form for new order
       setFormData({
         phoneNumber: "",
-        customerName: "",
-        orderId: `ORD-${Date.now()}`,
-        gender: "",
-        customerType: "",
-        firstVisitDate: new Date().toISOString().split("T")[0],
+        firstName: "",
+        lastName: "",
       });
       setProducts([]);
     }
@@ -53,7 +46,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
   const addProduct = () => {
     const newProduct = {
-      id: products.length + 1,
+      id: Date.now(), // Using timestamp for unique ID
       name: "",
       quantity: 1,
       unitPrice: 0,
@@ -67,9 +60,19 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       products.map((product) => {
         if (product.id === id) {
           const updated = { ...product, [field]: value };
+
+          // Recalculate totalPrice if quantity or unitPrice changes
           if (field === "quantity" || field === "unitPrice") {
             updated.totalPrice = updated.quantity * updated.unitPrice;
           }
+
+          // If totalPrice is directly edited, update unitPrice to maintain consistency
+          if (field === "totalPrice") {
+            updated.unitPrice = updated.quantity > 0
+              ? updated.totalPrice / updated.quantity
+              : 0;
+          }
+
           return updated;
         }
         return product;
@@ -82,10 +85,41 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   };
 
   const subtotal = products.reduce(
-    (sum, product) => sum + product.totalPrice,
+    (sum, product) => sum + (product.totalPrice || 0),
     0
   );
   const grandTotal = subtotal - discount;
+
+  const handleSubmit = async () => {
+    const orderData = {
+      retailerId: "6856350030bcee9b82be4c13", // This should come from your app state or auth
+      mobileNumber: formData.phoneNumber,
+      firstname: formData.firstName,
+      lastname: formData.lastName,
+      products: products.map(product => ({
+        productName: product.name,
+        quantity: product.quantity,
+        unitPrice: product.unitPrice,
+        totalPrice: product.totalPrice
+      })),
+      orderSummary: {
+        totalItems: products.length,
+        subTotal: subtotal,
+        discount: discount,
+        grandTotal: grandTotal,
+        paymentStatus: paymentStatus
+      }
+    };
+
+    try {
+      const response = await axios.post('https://app.vadik.ai/api/orderHistory/', orderData);
+      console.log('Order saved successfully:', response.data);
+      // Handle success (e.g., show notification, reset form, etc.)
+    } catch (error) {
+      console.error('Error saving order:', error);
+      // Handle error (e.g., show error message)
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm">
@@ -129,6 +163,36 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                First Name
+              </label>
+              <input
+                type="text"
+                value={formData.firstName}
+                onChange={(e) =>
+                  handleInputChange("firstName", e.target.value)
+                }
+                placeholder="Enter first name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Last Name
+              </label>
+              <input
+                type="text"
+                value={formData.lastName}
+                onChange={(e) =>
+                  handleInputChange("lastName", e.target.value)
+                }
+                placeholder="Enter last name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number
               </label>
               <input
@@ -140,83 +204,6 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 placeholder="Enter Phone Number"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Customer Name
-              </label>
-              <input
-                type="text"
-                value={formData.customerName}
-                onChange={(e) =>
-                  handleInputChange("customerName", e.target.value)
-                }
-                placeholder="Enter name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Order ID
-              </label>
-              <input
-                type="text"
-                value={formData.orderId}
-                onChange={(e) => handleInputChange("orderId", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-                readOnly
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Gender
-              </label>
-              <select
-                value={formData.gender}
-                onChange={(e) => handleInputChange("gender", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-              >
-                <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                First Visit Date
-              </label>
-              <input
-                type="text"
-                value={formData.firstVisitDate}
-                onChange={(e) =>
-                  handleInputChange("firstVisitDate", e.target.value)
-                }
-                placeholder="Enter Profession"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Customer Type
-              </label>
-              <select
-                value={formData.customerType}
-                onChange={(e) =>
-                  handleInputChange("customerType", e.target.value)
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-              >
-                <option value="">Select Customer Type</option>
-                <option value="Regular">Regular</option>
-                <option value="Premium">Premium</option>
-                <option value="VIP">VIP</option>
-              </select>
             </div>
           </div>
         </div>
@@ -243,10 +230,10 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                     Quantity
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Unit Price
+                    Unit Price (₹)
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Total Price
+                    Total Price (₹)
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
                     Action
@@ -269,6 +256,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                     <td className="px-4 py-3">
                       <input
                         type="number"
+                        min="1"
                         value={product.quantity}
                         onChange={(e) =>
                           updateProduct(
@@ -284,6 +272,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                       <input
                         type="number"
                         step="0.01"
+                        min="0"
                         value={product.unitPrice}
                         onChange={(e) =>
                           updateProduct(
@@ -295,8 +284,21 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                         className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
                       />
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      €{product.totalPrice.toFixed(2)}
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={product.totalPrice}
+                        onChange={(e) =>
+                          updateProduct(
+                            product.id,
+                            "totalPrice",
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                      />
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -326,16 +328,18 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
             <div className="flex justify-between">
               <span className="text-gray-600">Subtotal:</span>
-              <span className="font-medium">€{subtotal.toFixed(2)}</span>
+              <span className="font-medium">₹{subtotal.toFixed(2)}</span>
             </div>
 
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Discount:</span>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">€</span>
+                <span className="text-sm text-gray-500">₹</span>
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
+                  max={subtotal}
                   value={discount}
                   onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
                   className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
@@ -345,21 +349,35 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
             <div className="flex justify-between text-lg font-semibold border-t pt-3">
               <span>Grand Total:</span>
-              <span>€{grandTotal.toFixed(2)}</span>
+              <span>₹{grandTotal.toFixed(2)}</span>
             </div>
 
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Payment Status:</span>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 border-2 border-gray-400 rounded-full"></div>
-                <span className="text-gray-600">Unpaid</span>
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={paymentStatus === "Paid"}
+                    onChange={(e) =>
+                      setPaymentStatus(e.target.checked ? "Paid" : "Unpaid")
+                    }
+                    className="form-checkbox h-5 w-5 text-pink-600 rounded focus:ring-pink-500"
+                  />
+                  <span className="ml-2 text-gray-700">
+                    {paymentStatus}
+                  </span>
+                </label>
               </div>
             </div>
           </div>
         </div>
 
         <div className="flex justify-center mt-8">
-          <button className="px-8 py-3 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors font-medium">
+          <button
+            onClick={handleSubmit}
+            className="px-8 py-3 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors font-medium"
+          >
             Save
           </button>
         </div>
