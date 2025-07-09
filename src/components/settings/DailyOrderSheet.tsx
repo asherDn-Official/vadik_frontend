@@ -7,6 +7,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     phoneNumber: "",
     firstName: "",
     lastName: "",
+    gender: "",
+    source: ""
   });
 
   const [products, setProducts] = useState([
@@ -16,11 +18,13 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       quantity: 1,
       unitPrice: 249.99,
       totalPrice: 249.99,
+      colors: []
     },
   ]);
 
   const [discount, setDiscount] = useState(0);
   const [paymentStatus, setPaymentStatus] = useState("Unpaid");
+  const [newColor, setNewColor] = useState("");
 
   useEffect(() => {
     if (customer) {
@@ -28,6 +32,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         phoneNumber: customer.mobile,
         firstName: customer.firstName || "",
         lastName: customer.lastName || "",
+        gender: customer.gender || "",
+        source: customer.source || ""
       });
     } else {
       // Reset form for new order
@@ -35,6 +41,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         phoneNumber: "",
         firstName: "",
         lastName: "",
+        gender: "",
+        source: ""
       });
       setProducts([]);
     }
@@ -51,6 +59,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       quantity: 1,
       unitPrice: 0,
       totalPrice: 0,
+      colors: []
     };
     setProducts([...products, newProduct]);
   };
@@ -84,8 +93,40 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     setProducts(products.filter((product) => product.id !== id));
   };
 
+  const addColor = (productId) => {
+    if (!newColor.trim()) return;
+    
+    setProducts(products.map(product => {
+      if (product.id === productId) {
+        return {
+          ...product,
+          colors: [...product.colors, newColor.trim()]
+        };
+      }
+      return product;
+    }));
+    
+    setNewColor("");
+  };
+
+  const removeColor = (productId, colorIndex) => {
+    setProducts(products.map(product => {
+      if (product.id === productId) {
+        return {
+          ...product,
+          colors: product.colors.filter((_, index) => index !== colorIndex)
+        };
+      }
+      return product;
+    }));
+  };
+
   const subtotal = products.reduce(
     (sum, product) => sum + (product.totalPrice || 0),
+    0
+  );
+  const totalQuantity = products.reduce(
+    (sum, product) => sum + (product.quantity || 0),
     0
   );
   const grandTotal = subtotal - discount;
@@ -96,14 +137,17 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       mobileNumber: formData.phoneNumber,
       firstname: formData.firstName,
       lastname: formData.lastName,
+      gender: formData.gender,
+      source: formData.source,
       products: products.map(product => ({
         productName: product.name,
         quantity: product.quantity,
         unitPrice: product.unitPrice,
-        totalPrice: product.totalPrice
+        totalPrice: product.totalPrice,
+        color: product.colors.join(',')
       })),
       orderSummary: {
-        totalItems: products.length,
+        totalItems: totalQuantity,
         subTotal: subtotal,
         discount: discount,
         grandTotal: grandTotal,
@@ -205,6 +249,36 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gender
+              </label>
+              <select
+                value={formData.gender}
+                onChange={(e) => handleInputChange("gender", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Source
+              </label>
+              <select
+                value={formData.source}
+                onChange={(e) => handleInputChange("source", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+              >
+                <option value="">Select Source</option>
+                <option value="walk-in">Walk-in</option>
+                <option value="online">Online</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -213,9 +287,10 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
             <h3 className="text-lg font-medium text-gray-800">Product Entry</h3>
             <button
               onClick={addProduct}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
             >
-              Add Product +
+              <Plus size={16} />
+              Add Product
             </button>
           </div>
 
@@ -234,6 +309,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
                     Total Price (₹)
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Colors
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
                     Action
@@ -301,6 +379,39 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                       />
                     </td>
                     <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2 items-center">
+                        {product.colors.map((color, index) => (
+                          <span 
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100"
+                          >
+                            {color}
+                            <button 
+                              onClick={() => removeColor(product.id, index)}
+                              className="ml-1 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </span>
+                        ))}
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={newColor}
+                            onChange={(e) => setNewColor(e.target.value)}
+                            placeholder="Add color"
+                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                          />
+                          <button
+                            onClick={() => addColor(product.id)}
+                            className="text-green-600 hover:text-green-800"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
                       <button
                         onClick={() => removeProduct(product.id)}
                         className="text-red-500 hover:text-red-700"
@@ -323,7 +434,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">Total Items:</span>
-              <span className="font-medium">{products.length}</span>
+              <span className="font-medium">{totalQuantity}</span>
             </div>
 
             <div className="flex justify-between">
