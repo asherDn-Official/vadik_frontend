@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, Send, Heart, Calendar } from "lucide-react";
+import { Plus, Send, Heart, CalendarDays } from "lucide-react";
 
 const CustomerRecommendation = () => {
   const [messages, setMessages] = useState([]);
@@ -14,26 +14,10 @@ const CustomerRecommendation = () => {
     "Current Stock Availability",
     "Store Opening Hours",
     "Bulk Stock Purchase",
-    "Previous 7 Days",
     "Seasonal Textile ...",
     "Anniversary Special Offers",
     "Upcoming Birthday ...",
     "Birthday Gifts",
-  ];
-
-  const quickButtons = [
-    {
-      id: "special-days",
-      label: "Special Days",
-      icon: Heart,
-      color: "bg-pink-100 text-pink-600 border-pink-200",
-    },
-    {
-      id: "event-reminders",
-      label: "Event Reminders",
-      icon: Calendar,
-      color: "bg-orange-100 text-orange-600 border-orange-200",
-    },
   ];
 
   const handleSidebarItemClick = (item) => {
@@ -76,7 +60,6 @@ const CustomerRecommendation = () => {
           timestamp: new Date(),
         };
         break;
-      // Add cases for other sidebar items...
       default:
         aiResponse = {
           id: Date.now() + 1,
@@ -88,7 +71,6 @@ const CustomerRecommendation = () => {
 
     setMessages([userMessage, aiResponse]);
 
-    // Add to chat history if not already present
     if (!chatHistory.includes(item)) {
       setChatHistory([...chatHistory, item]);
     }
@@ -164,7 +146,7 @@ const CustomerRecommendation = () => {
   return (
     <div className="rounded-[40px] mx-auto flex h-[calc(100vh-200px)]">
       {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-80 bg-[#3131660A] border-r border-gray-200 flex flex-col">
         {/* New Chat Button */}
         <div className="p-4 border-b border-gray-200">
           <button
@@ -199,27 +181,48 @@ const CustomerRecommendation = () => {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Chat Header */}
-        <div className="p-4 border-b border-gray-200 bg-white">
-          <div className="flex items-center justify-center space-x-4">
-            {quickButtons.map((button) => (
-              <button
-                key={button.id}
-                onClick={() => handleQuickButtonClick(button.id)}
-                className={`flex items-center px-4 py-2 rounded-lg border transition-colors ${
-                  selectedButton === button.id
-                    ? button.color
-                    : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
-                }`}
-              >
-                <button.icon className="w-4 h-4 mr-2" />
-                {button.label}
-              </button>
-            ))}
+        <div className="p-4 border-b border-gray-200 bg-[#3131660A]">
+          <div className="flex items-center space-x-4">
+            {/* Special Days Button */}
+            <button
+              onClick={() => handleQuickButtonClick("special-days")}
+              className={`flex items-center px-6 py-2 rounded-[10px] border transition-colors ${
+                selectedButton === "special-days"
+                  ? "bg-pink-100 text-pink-600 border-pink-200"
+                  : "bg-[#fff] text-gray-600 border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              {/* <Heart className="w-8 h-8 mb-2 text-pink-500" /> */}
+              <img
+                src="../assets/heart-icon.png"
+                alt=""
+                className="w-[30px] h-[30px] mr-2"
+              />
+              <span className="text-[#313166]">Special Days</span>
+            </button>
+
+            {/* Event Reminders Button */}
+            <button
+              onClick={() => handleQuickButtonClick("event-reminders")}
+              className={`flex items-center px-6 py-2 rounded-[10px] align-bottom border transition-colors ${
+                selectedButton === "event-reminders"
+                  ? "bg-orange-100 text-orange-600 border-orange-200"
+                  : "bg-[#fff] text-gray-600 border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              {/* <CalendarDays className="w-8 h-8 mb-2 text-orange-500" /> */}
+              <img
+                src="../assets/cus-2.png"
+                alt=""
+                className="w-[30px] h-[30px] mr-2"
+              />
+              <span className="text-[#313166]">Event Reminders</span>
+            </button>
           </div>
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 bg-[#3131660A]">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -273,7 +276,7 @@ const CustomerRecommendation = () => {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 border-t border-gray-200 bg-white">
+        <div className="p-4 border-t border-gray-200 bg-[#3131660A]">
           <div className="flex items-center space-x-3">
             <input
               type="text"
