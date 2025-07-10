@@ -174,7 +174,7 @@ const CustomerOpportunities = () => {
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
             }`}
           >
-            <div className="w-8 h-8 rounded-lg flex justify-center">
+            <div className="w-8 h-8 rounded-lg flex justify-center items-center">
               {/* <div className="w-4 h-4 bg-white rounded"></div> */}
               <img src="../assets/cus-1.png" alt="" />
             </div>

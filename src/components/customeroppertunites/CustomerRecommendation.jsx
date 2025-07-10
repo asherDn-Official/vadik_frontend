@@ -151,7 +151,7 @@ const CustomerRecommendation = () => {
         <div className="p-4 border-b border-gray-200">
           <button
             onClick={handleNewChat}
-            className="flex items-center w-full px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+            className="flex items-center w-full px-4 py-2 text-[#313166] font-[600] hover:text-slate-800 transition-colors"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Chat
@@ -186,7 +186,7 @@ const CustomerRecommendation = () => {
             {/* Special Days Button */}
             <button
               onClick={() => handleQuickButtonClick("special-days")}
-              className={`flex items-center px-6 py-2 rounded-[10px] border transition-colors ${
+              className={`flex items-center px-2 py-2 rounded-[10px] border justify-between transition-colors ${
                 selectedButton === "special-days"
                   ? "bg-pink-100 text-pink-600 border-pink-200"
                   : "bg-[#fff] text-gray-600 border-gray-200 hover:border-gray-300"
@@ -204,7 +204,7 @@ const CustomerRecommendation = () => {
             {/* Event Reminders Button */}
             <button
               onClick={() => handleQuickButtonClick("event-reminders")}
-              className={`flex items-center px-6 py-2 rounded-[10px] align-bottom border transition-colors ${
+              className={`flex items-center px-2 py-2 rounded-[10px] align-bottom border transition-colors ${
                 selectedButton === "event-reminders"
                   ? "bg-orange-100 text-orange-600 border-orange-200"
                   : "bg-[#fff] text-gray-600 border-gray-200 hover:border-gray-300"

@@ -250,7 +250,7 @@ const StoreRecommendation = () => {
         <div className="p-4 border-b border-gray-200">
           <button
             onClick={handleNewChat}
-            className="flex items-center w-full px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+            className="flex items-center w-full px-4 py-2 text-[#313166] font-[600] hover:text-slate-800 transition-colors"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Chat
@@ -295,7 +295,7 @@ const StoreRecommendation = () => {
           {/* Recent Chats (previously Quick Actions) */}
           <div className="p-4 border-t border-gray-200">
             <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Recent Chats
+              Store Stocks
             </h4>
             {sidebarItems.map((item, index) => (
               <div
