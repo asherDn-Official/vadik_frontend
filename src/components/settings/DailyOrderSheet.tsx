@@ -412,182 +412,190 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         </div>
 
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-800">Product Entry</h3>
-            <button
-              onClick={addProduct}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
-            >
-              <Plus size={16} />
-              Add Product
-            </button>
-          </div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-gray-800">Product Entry</h3>
+          <button
+            onClick={addProduct}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+          >
+            <Plus size={16} />
+            Add Product
+          </button>
+        </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Product Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Quantity
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Unit Price (₹)
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Total Price (₹)
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Colors
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product.id} className="border-b border-gray-200">
-                    <td className="px-4 py-3 relative">
-                      <input
-                        type="text"
-                        value={currentProductSearches[product.id] || product.name}
-                        onChange={(e) =>
-                          handleProductNameChange(product.id, e.target.value)
-                        }
-                        placeholder="Search product"
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
-                        onFocus={() => {
-                          if (currentProductSearches[product.id]?.length >= 3 && 
-                              productSearchResults[product.id]?.length > 0) {
-                            setShowProductSuggestions(prev => ({
-                              ...prev,
-                              [product.id]: true
-                            }));
-                          }
-                        }}
-                        onBlur={() => setTimeout(() => {
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  Product Name
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  Quantity
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  Unit Price (₹)
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  Total Price (₹)
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  Colors
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product.id} className="border-b border-gray-200">
+                  <td className="px-4 py-3 relative">
+                    <input
+                      type="text"
+                      value={currentProductSearches[product.id] || product.name}
+                      onChange={(e) =>
+                        handleProductNameChange(product.id, e.target.value)
+                      }
+                      placeholder="Search product"
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                      onFocus={() => {
+                        if (
+                          currentProductSearches[product.id]?.length >= 3 &&
+                          productSearchResults[product.id]?.length > 0
+                        ) {
                           setShowProductSuggestions(prev => ({
                             ...prev,
-                            [product.id]: false
+                            [product.id]: true,
                           }));
-                        }, 200)}
-                      />
-                      {showProductSuggestions[product.id] && productSearchResults[product.id]?.length > 0 && (
+                        }
+                      }}
+                      onBlur={() =>
+                        setTimeout(() => {
+                          setShowProductSuggestions(prev => ({
+                            ...prev,
+                            [product.id]: false,
+                          }));
+                        }, 200)
+                      }
+                    />
+                    {showProductSuggestions[product.id] &&
+                      productSearchResults[product.id]?.length > 0 && (
                         <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                           {productSearchResults[product.id].map((productResult) => (
                             <div
                               key={productResult._id}
                               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => selectProduct(product.id, productResult)}
+                              onMouseDown={() => // Use onMouseDown instead of onClick for better UX
+                                selectProduct(product.id, productResult)
+                              }
                             >
                               <div className="font-medium">
                                 {productResult.productname}
                               </div>
                               <div className="text-sm text-gray-600">
-                                ₹{productResult.price} | Stock: {productResult.stock} | Colors: {productResult.colors.join(', ')}
+                                ₹{productResult.price} | Stock: {productResult.stock} | Colors: {productResult.colors.join(", ")}
                               </div>
                             </div>
                           ))}
                         </div>
                       )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <input
-                        type="number"
-                        min="1"
-                        value={product.quantity}
-                        onChange={(e) =>
-                          updateProduct(
-                            product.id,
-                            "quantity",
-                            parseInt(e.target.value) || 0
-                          )
-                        }
-                        className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={product.unitPrice}
-                        onChange={(e) =>
-                          updateProduct(
-                            product.id,
-                            "unitPrice",
-                            parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={product.totalPrice}
-                        onChange={(e) =>
-                          updateProduct(
-                            product.id,
-                            "totalPrice",
-                            parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2 items-center">
-                        {product.colors.map((color, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100"
-                          >
-                            {color}
-                            <button
-                              onClick={() => removeColor(product.id, index)}
-                              className="ml-1 text-red-500 hover:text-red-700"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          </span>
-                        ))}
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="text"
-                            value={newColor}
-                            onChange={(e) => setNewColor(e.target.value)}
-                            placeholder="Add color"
-                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
-                          />
+                  </td>
+                  <td className="px-4 py-3">
+                    <input
+                      type="number"
+                      min="1"
+                      value={product.quantity}
+                      onChange={(e) =>
+                        updateProduct(
+                          product.id,
+                          "quantity",
+                          parseInt(e.target.value) || 0
+                        )
+                      }
+                      className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={product.unitPrice}
+                      onChange={(e) =>
+                        updateProduct(
+                          product.id,
+                          "unitPrice",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={product.totalPrice}
+                      onChange={(e) =>
+                        updateProduct(
+                          product.id,
+                          "totalPrice",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-2 items-center">
+                      {product.colors.map((color, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100"
+                        >
+                          {color}
                           <button
-                            onClick={() => addColor(product.id)}
-                            className="text-green-600 hover:text-green-800"
+                            onClick={() => removeColor(product.id, index)}
+                            className="ml-1 text-red-500 hover:text-red-700"
                           >
-                            <Plus size={16} />
+                            <Trash2 size={12} />
                           </button>
-                        </div>
+                        </span>
+                      ))}
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="text"
+                          value={newColor}
+                          onChange={(e) => setNewColor(e.target.value)}
+                          placeholder="Add color"
+                          className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                        />
+                        <button
+                          onClick={() => addColor(product.id)}
+                          className="text-green-600 hover:text-green-800"
+                        >
+                          <Plus size={16} />
+                        </button>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => removeProduct(product.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => removeProduct(product.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      </div>
+
 
         <div className="bg-gray-50 p-6 rounded-lg">
           <h3 className="text-lg font-medium text-gray-800 mb-4">
