@@ -170,7 +170,6 @@ const DailyBillingUpdate = () => {
   };
 
   const handleReset = () => {
-
     console.log("Resetting filters...");
     setStartDate("");
     setEndDate("");
@@ -239,42 +238,6 @@ const DailyBillingUpdate = () => {
         </h2>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => handleDateChange("start", e.target.value)}
-                max={endDate}
-                className="w-full pl-3 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-              />
-              <Calendar
-                className="absolute right-3 top-2.5 text-gray-400 pointer-events-none"
-                size={16}
-              />
-            </div>
-            <span className="text-gray-500 mx-1">to</span>
-            <div className="relative flex-1">
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => handleDateChange("end", e.target.value)}
-                min={startDate}
-                className="w-full pl-3 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-              />
-              <Calendar
-                className="absolute right-3 top-2.5 text-gray-400 pointer-events-none"
-                size={16}
-              />
-            </div>
-            <button
-              onClick={handleReset}
-              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Reset
-            </button>
-          </div>
-
           <div className="flex gap-2">
             <button className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors whitespace-nowrap">
               <Upload size={16} />
@@ -289,6 +252,42 @@ const DailyBillingUpdate = () => {
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2  max-w-20 ">
+        <div className="relative ">
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => handleDateChange("start", e.target.value)}
+            max={endDate}
+            className="w-full pl-3 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+          />
+          {/* <Calendar
+            // className="absolute right-3 top-2.5 text-gray-400 pointer-events-none"
+            size={16}
+          /> */}
+        </div>
+        <span className="text-gray-500 mx-1">to</span>
+        <div className="relative ">
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => handleDateChange("end", e.target.value)}
+            min={startDate}
+            className="w-full pl-3 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+          />
+          {/* <Calendar
+            className="absolute right-3 top-2.5 text-gray-400 pointer-events-none"
+            size={16}
+          /> */}
+        </div>
+        <button
+          onClick={handleReset}
+          className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+        >
+          Reset
+        </button>
       </div>
 
       <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
