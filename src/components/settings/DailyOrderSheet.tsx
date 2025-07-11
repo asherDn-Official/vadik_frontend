@@ -8,7 +8,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     firstName: "",
     lastName: "",
     gender: "",
-    source: ""
+    source: "",
   });
 
   const [products, setProducts] = useState([
@@ -18,7 +18,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       quantity: 1,
       unitPrice: 249.99,
       totalPrice: 249.99,
-      colors: []
+      colors: [],
     },
   ]);
 
@@ -28,6 +28,86 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  // Product search states - now tracking per product
+  const [productSearchResults, setProductSearchResults] = useState({});
+  const [showProductSuggestions, setShowProductSuggestions] = useState({});
+  const [currentProductSearches, setCurrentProductSearches] = useState({});
+
+  // Initialize product search states
+  useEffect(() => {
+    const initialSearchStates = {};
+    products.forEach(product => {
+      initialSearchStates[product.id] = "";
+    });
+    setCurrentProductSearches(initialSearchStates);
+    setShowProductSuggestions({});
+    setProductSearchResults({});
+  }, [products]);
+
+  const searchProducts = async (query, productId) => {
+    try {
+      const response = await axios.get(
+        `https://app.vadik.ai/api/inventory?retailerId=6856350030bcee9b82be4c17&search=${query}`
+      );
+      setProductSearchResults(prev => ({
+        ...prev,
+        [productId]: response.data.data || []
+      }));
+      setShowProductSuggestions(prev => ({
+        ...prev,
+        [productId]: true
+      }));
+    } catch (error) {
+      console.error("Error searching products:", error);
+      setProductSearchResults(prev => ({
+        ...prev,
+        [productId]: []
+      }));
+      setShowProductSuggestions(prev => ({
+        ...prev,
+        [productId]: false
+      }));
+    }
+  };
+
+  const selectProduct = (productId, selectedProduct) => {
+    updateProduct(productId, "name", selectedProduct.productname);
+    updateProduct(productId, "unitPrice", selectedProduct.price);
+    updateProduct(productId, "colors", [...selectedProduct.colors]);
+    
+    setShowProductSuggestions(prev => ({
+      ...prev,
+      [productId]: false
+    }));
+    
+    setCurrentProductSearches(prev => ({
+      ...prev,
+      [productId]: selectedProduct.productname
+    }));
+  };
+
+  const handleProductNameChange = (productId, value) => {
+    setCurrentProductSearches(prev => ({
+      ...prev,
+      [productId]: value
+    }));
+    
+    updateProduct(productId, "name", value);
+    
+    if (value.length >= 3) {
+      searchProducts(value, productId);
+    } else {
+      setProductSearchResults(prev => ({
+        ...prev,
+        [productId]: []
+      }));
+      setShowProductSuggestions(prev => ({
+        ...prev,
+        [productId]: false
+      }));
+    }
+  };
+
   useEffect(() => {
     if (customer) {
       setFormData({
@@ -35,16 +115,15 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         firstName: customer.firstname || customer.firstName || "",
         lastName: customer.lastname || customer.lastName || "",
         gender: customer.additionalData?.gender || customer.gender || "",
-        source: customer.source || ""
+        source: customer.source || "",
       });
     } else {
-      // Reset form for new order
       setFormData({
         phoneNumber: "",
         firstName: "",
         lastName: "",
         gender: "",
-        source: ""
+        source: "",
       });
       setProducts([]);
     }
@@ -52,8 +131,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    
-    // Trigger search when phone number changes
+
     if (field === "phoneNumber" && value.length >= 3) {
       searchCustomers(value);
     } else if (field === "phoneNumber") {
@@ -82,19 +160,19 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       firstName: customer.firstname || "",
       lastName: customer.lastname || "",
       gender: customer.additionalData?.gender || "",
-      source: customer.source || ""
+      source: customer.source || "",
     });
     setShowSuggestions(false);
   };
 
   const addProduct = () => {
     const newProduct = {
-      id: Date.now(), // Using timestamp for unique ID
+      id: Date.now(),
       name: "",
       quantity: 1,
       unitPrice: 0,
       totalPrice: 0,
-      colors: []
+      colors: [],
     };
     setProducts([...products, newProduct]);
   };
@@ -105,16 +183,13 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         if (product.id === id) {
           const updated = { ...product, [field]: value };
 
-          // Recalculate totalPrice if quantity or unitPrice changes
           if (field === "quantity" || field === "unitPrice") {
             updated.totalPrice = updated.quantity * updated.unitPrice;
           }
 
-          // If totalPrice is directly edited, update unitPrice to maintain consistency
           if (field === "totalPrice") {
-            updated.unitPrice = updated.quantity > 0
-              ? updated.totalPrice / updated.quantity
-              : 0;
+            updated.unitPrice =
+              updated.quantity > 0 ? updated.totalPrice / updated.quantity : 0;
           }
 
           return updated;
@@ -130,30 +205,34 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
   const addColor = (productId) => {
     if (!newColor.trim()) return;
-    
-    setProducts(products.map(product => {
-      if (product.id === productId) {
-        return {
-          ...product,
-          colors: [...product.colors, newColor.trim()]
-        };
-      }
-      return product;
-    }));
-    
+
+    setProducts(
+      products.map((product) => {
+        if (product.id === productId) {
+          return {
+            ...product,
+            colors: [...product.colors, newColor.trim()],
+          };
+        }
+        return product;
+      })
+    );
+
     setNewColor("");
   };
 
   const removeColor = (productId, colorIndex) => {
-    setProducts(products.map(product => {
-      if (product.id === productId) {
-        return {
-          ...product,
-          colors: product.colors.filter((_, index) => index !== colorIndex)
-        };
-      }
-      return product;
-    }));
+    setProducts(
+      products.map((product) => {
+        if (product.id === productId) {
+          return {
+            ...product,
+            colors: product.colors.filter((_, index) => index !== colorIndex),
+          };
+        }
+        return product;
+      })
+    );
   };
 
   const subtotal = products.reduce(
@@ -168,35 +247,36 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
   const handleSubmit = async () => {
     const orderData = {
-      retailerId: "6856350030bcee9b82be4c13", // This should come from your app state or auth
+      retailerId: "6856350030bcee9b82be4c13",
       mobileNumber: formData.phoneNumber,
       firstname: formData.firstName,
       lastname: formData.lastName,
       gender: formData.gender,
       source: formData.source,
-      products: products.map(product => ({
+      products: products.map((product) => ({
         productName: product.name,
         quantity: product.quantity,
         unitPrice: product.unitPrice,
         totalPrice: product.totalPrice,
-        color: product.colors.join(',')
+        color: product.colors.join(","),
       })),
       orderSummary: {
         totalItems: totalQuantity,
         subTotal: subtotal,
         discount: discount,
         grandTotal: grandTotal,
-        paymentStatus: paymentStatus
-      }
+        paymentStatus: paymentStatus,
+      },
     };
 
     try {
-      const response = await axios.post('https://app.vadik.ai/api/orderHistory/', orderData);
-      console.log('Order saved successfully:', response.data);
-      // Handle success (e.g., show notification, reset form, etc.)
+      const response = await axios.post(
+        "https://app.vadik.ai/api/orderHistory/",
+        orderData
+      );
+      console.log("Order saved successfully:", response.data);
     } catch (error) {
-      console.error('Error saving order:', error);
-      // Handle error (e.g., show error message)
+      console.error("Error saving order:", error);
     }
   };
 
@@ -247,9 +327,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <input
                 type="text"
                 value={formData.firstName}
-                onChange={(e) =>
-                  handleInputChange("firstName", e.target.value)
-                }
+                onChange={(e) => handleInputChange("firstName", e.target.value)}
                 placeholder="Enter first name"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
@@ -262,9 +340,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <input
                 type="text"
                 value={formData.lastName}
-                onChange={(e) =>
-                  handleInputChange("lastName", e.target.value)
-                }
+                onChange={(e) => handleInputChange("lastName", e.target.value)}
                 placeholder="Enter last name"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
@@ -335,7 +411,6 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
           </div>
         </div>
 
-        {/* Rest of the component remains the same */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-gray-800">Product Entry</h3>
@@ -375,15 +450,49 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <tbody>
                 {products.map((product) => (
                   <tr key={product.id} className="border-b border-gray-200">
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 relative">
                       <input
                         type="text"
-                        value={product.name}
+                        value={currentProductSearches[product.id] || product.name}
                         onChange={(e) =>
-                          updateProduct(product.id, "name", e.target.value)
+                          handleProductNameChange(product.id, e.target.value)
                         }
+                        placeholder="Search product"
                         className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                        onFocus={() => {
+                          if (currentProductSearches[product.id]?.length >= 3 && 
+                              productSearchResults[product.id]?.length > 0) {
+                            setShowProductSuggestions(prev => ({
+                              ...prev,
+                              [product.id]: true
+                            }));
+                          }
+                        }}
+                        onBlur={() => setTimeout(() => {
+                          setShowProductSuggestions(prev => ({
+                            ...prev,
+                            [product.id]: false
+                          }));
+                        }, 200)}
                       />
+                      {showProductSuggestions[product.id] && productSearchResults[product.id]?.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                          {productSearchResults[product.id].map((productResult) => (
+                            <div
+                              key={productResult._id}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                              onClick={() => selectProduct(product.id, productResult)}
+                            >
+                              <div className="font-medium">
+                                {productResult.productname}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                ₹{productResult.price} | Stock: {productResult.stock} | Colors: {productResult.colors.join(', ')}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <input
@@ -435,12 +544,12 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2 items-center">
                         {product.colors.map((color, index) => (
-                          <span 
+                          <span
                             key={index}
                             className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100"
                           >
                             {color}
-                            <button 
+                            <button
                               onClick={() => removeColor(product.id, index)}
                               className="ml-1 text-red-500 hover:text-red-700"
                             >
@@ -529,9 +638,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                     }
                     className="form-checkbox h-5 w-5 text-pink-600 rounded focus:ring-pink-500"
                   />
-                  <span className="ml-2 text-gray-700">
-                    {paymentStatus}
-                  </span>
+                  <span className="ml-2 text-gray-700">{paymentStatus}</span>
                 </label>
               </div>
             </div>
