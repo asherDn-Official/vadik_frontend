@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Calendar, Upload, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Calendar,
+  Upload,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import PurchasedCustomerList from "./PurchasedCustomerList";
 import DailyOrderSheet from "./DailyOrderSheet";
 import { format, parseISO } from "date-fns";
@@ -13,8 +19,8 @@ const DailyBillingUpdate = () => {
 
   // Set default dates to current date
   const today = format(new Date(), "yyyy-MM-dd");
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(today);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [currentView, setCurrentView] = useState("billing");
   const [selectedBillingData, setSelectedBillingData] = useState(null);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -33,17 +39,20 @@ const DailyBillingUpdate = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
+      // Prepare params object
+      const params = {
+        retailerId: "6856350030bcee9b82be4c13",
+        page: pagination.page,
+        limit: pagination.limit,
+        ...(startDate && { startDate: startDate }),
+        ...(startDate && { endDate: endDate }),
+      };
+
       const response = await api.get(
         `https://app.vadik.ai/api/orderHistory/gross-total-by-date-range`,
         {
-          params: {
-            retailerId:"6856350030bcee9b82be4c13",
-            page: pagination.page,
-            limit: pagination.limit,
-            startDate,
-            endDate,
-          },
+          params,
         }
       );
 
@@ -51,26 +60,32 @@ const DailyBillingUpdate = () => {
 
       const formattedData = response.data.map((item, index) => ({
         id: index + 1,
-        serial: String(index + 1 + (pagination.page - 1) * pagination.limit).padStart(2, "0"),
+        serial: String(
+          index + 1 + (pagination.page - 1) * pagination.limit
+        ).padStart(2, "0"),
         date: item.date,
         customers: item.noOfCustomers,
         sale: `₹ ${new Intl.NumberFormat("en-IN").format(item.totalSale)}`,
-        dateForApi: format(new Date(item.date.split('/').reverse().join('-')), "yyyy-MM-dd"),
+        dateForApi: item.date
+          ? format(
+              new Date(item.date.split("/").reverse().join("-")),
+              "yyyy-MM-dd"
+            )
+          : format(new Date(), "yyyy-MM-dd"), // Fallback to current date or another default
       }));
 
       setBillingData(formattedData);
-      
+
       // Calculate total pages based on data length and limit
       // Note: The API doesn't return pagination info, so we'll estimate
       // If you can modify the backend to return total count, that would be better
-      setPagination(prev => ({
+      setPagination((prev) => ({
         ...prev,
         totalPages: Math.ceil(response.data.length / prev.limit),
         totalDocs: response.data.length,
       }));
     } catch (err) {
       console.error("Error fetching billing data:", err);
-      setError("Failed to fetch billing data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -81,22 +96,19 @@ const DailyBillingUpdate = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await api.get(
-        `https://app.vadik.ai/api/orderHistory`,
-        {
-          params: {
-            retailerId:"6856350030bcee9b82be4c13",
-            page,
-            limit: 10,
-            singleDate: date,
-          },
-        }
-      );
+
+      const response = await api.get(`https://app.vadik.ai/api/orderHistory`, {
+        params: {
+          retailerId: "6856350030bcee9b82be4c13",
+          page,
+          limit: 10,
+          singleDate: date,
+        },
+      });
 
       console.log("Customer details response:", response.data.docs);
 
-      const formattedCustomers = response?.data?.docs.map(doc => ({
+      const formattedCustomers = response?.data?.docs.map((doc) => ({
         id: doc._id,
         name: doc.customerName,
         mobile: doc.mobileNumber,
@@ -107,7 +119,7 @@ const DailyBillingUpdate = () => {
       }));
 
       // Update the selected billing data with customers
-      setSelectedBillingData(prev => ({
+      setSelectedBillingData((prev) => ({
         ...prev,
         customersList: formattedCustomers,
         pagination: {
@@ -158,10 +170,11 @@ const DailyBillingUpdate = () => {
   };
 
   const handleReset = () => {
-    const today = format(new Date(), "yyyy-MM-dd");
-    setStartDate(today);
-    setEndDate(today);
-    setPagination(prev => ({ ...prev, page: 1 }));
+
+    console.log("Resetting filters...");
+    setStartDate("");
+    setEndDate("");
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handleDateChange = (type, value) => {
@@ -179,12 +192,12 @@ const DailyBillingUpdate = () => {
       }
     }
     // Reset to first page when dates change
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handlePageChange = (newPage) => {
     if (newPage > 0 && newPage <= pagination.totalPages) {
-      setPagination(prev => ({ ...prev, page: newPage }));
+      setPagination((prev) => ({ ...prev, page: newPage }));
     }
   };
 
@@ -203,7 +216,7 @@ const DailyBillingUpdate = () => {
         onPageChange={handleCustomerPageChange}
         loading={loading}
         error={error}
-      />  
+      />
     );
   }
 
@@ -235,7 +248,10 @@ const DailyBillingUpdate = () => {
                 max={endDate}
                 className="w-full pl-3 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
-              <Calendar className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" size={16} />
+              <Calendar
+                className="absolute right-3 top-2.5 text-gray-400 pointer-events-none"
+                size={16}
+              />
             </div>
             <span className="text-gray-500 mx-1">to</span>
             <div className="relative flex-1">
@@ -246,7 +262,10 @@ const DailyBillingUpdate = () => {
                 min={startDate}
                 className="w-full pl-3 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
-              <Calendar className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" size={16} />
+              <Calendar
+                className="absolute right-3 top-2.5 text-gray-400 pointer-events-none"
+                size={16}
+              />
             </div>
             <button
               onClick={handleReset}
@@ -313,10 +332,18 @@ const DailyBillingUpdate = () => {
                         key={item.id}
                         className="border-b border-gray-200 hover:bg-gray-50"
                       >
-                        <td className="px-4 py-3 text-sm whitespace-nowrap">{item.serial}</td>
-                        <td className="px-4 py-3 text-sm whitespace-nowrap">{item.date}</td>
-                        <td className="px-4 py-3 text-sm whitespace-nowrap">{item.customers}</td>
-                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">{item.sale}</td>
+                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                          {item.serial}
+                        </td>
+                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                          {item.date}
+                        </td>
+                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                          {item.customers}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
+                          {item.sale}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <button
                             onClick={() => handleViewDetails(item)}
@@ -329,7 +356,10 @@ const DailyBillingUpdate = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="px-4 py-6 text-center text-gray-500">
+                      <td
+                        colSpan="5"
+                        className="px-4 py-6 text-center text-gray-500"
+                      >
                         No billing data found for the selected date range
                       </td>
                     </tr>
@@ -347,14 +377,22 @@ const DailyBillingUpdate = () => {
                   <button
                     onClick={() => handlePageChange(pagination.page - 1)}
                     disabled={pagination.page === 1}
-                    className={`p-2 rounded-md ${pagination.page === 1 ? "text-gray-400 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"}`}
+                    className={`p-2 rounded-md ${
+                      pagination.page === 1
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
                   >
                     <ChevronLeft size={18} />
                   </button>
                   <button
                     onClick={() => handlePageChange(pagination.page + 1)}
                     disabled={pagination.page === pagination.totalPages}
-                    className={`p-2 rounded-md ${pagination.page === pagination.totalPages ? "text-gray-400 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"}`}
+                    className={`p-2 rounded-md ${
+                      pagination.page === pagination.totalPages
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
                   >
                     <ChevronRight size={18} />
                   </button>
