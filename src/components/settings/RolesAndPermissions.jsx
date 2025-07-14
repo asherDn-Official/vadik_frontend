@@ -46,27 +46,63 @@ const RolesAndPermissions = () => {
 
     const [permissions, setPermissions] = useState([
       {
-        module: "orders",
-        canCreate: false,
-        canRead: false,
-        canUpdate: false,
-        canDelete: false,
+        "module": "dashboard",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
       },
       {
-        module: "products",
-        canCreate: false,
-        canRead: false,
-        canUpdate: false,
-        canDelete: false,
+        "module": "customers",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
       },
       {
-        module: "dashboard",
-        canCreate: false,
-        canRead: false,
-        canUpdate: false,
-        canDelete: false,
+        "module": "personalisation",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
       },
-    ]);
+      {
+        "module": "customeropportunities",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "performance",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "integration",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "kyc",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "settings",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      }
+    ]
+    );
 
     const handlePermissionChange = (moduleIndex, permissionType, value) => {
       setPermissions(prev =>
@@ -295,26 +331,61 @@ const RolesAndPermissions = () => {
 
     const [permissions, setPermissions] = useState([
       {
-        module: "orders",
-        canCreate: false,
-        canRead: false,
-        canUpdate: false,
-        canDelete: false,
+        "module": "dashboard",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
       },
       {
-        module: "products",
-        canCreate: false,
-        canRead: false,
-        canUpdate: false,
-        canDelete: false,
+        "module": "customers",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
       },
       {
-        module: "dashboard",
-        canCreate: false,
-        canRead: false,
-        canUpdate: false,
-        canDelete: false,
+        "module": "personalisation",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
       },
+      {
+        "module": "customeropportunities",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "performance",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "integration",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "kyc",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "settings",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      }
     ]);
 
     useEffect(() => {
@@ -329,28 +400,63 @@ const RolesAndPermissions = () => {
 
         // Initialize permissions based on selected user
         const defaultPerms = [
-          {
-            module: "orders",
-            canCreate: false,
-            canRead: false,
-            canUpdate: false,
-            canDelete: false,
-          },
-          {
-            module: "products",
-            canCreate: false,
-            canRead: false,
-            canUpdate: false,
-            canDelete: false,
-          },
-          {
-            module: "dashboard",
-            canCreate: false,
-            canRead: false,
-            canUpdate: false,
-            canDelete: false,
-          },
-        ];
+      {
+        "module": "dashboard",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "customers",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "personalisation",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "customeropportunities",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "performance",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "integration",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "kyc",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "settings",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      }
+    ];
 
         if (selectedUser.permissions) {
           selectedUser.permissions.forEach(userPerm => {
