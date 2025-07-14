@@ -114,175 +114,269 @@ const RolesAndPermissions = () => {
 
   // Add Employee Form Component
   const AddEmployeeForm = () => {
-    const [formData, setFormData] = useState({
-      firstName: "",
-      lastName: "",
-      phone: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    });
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      if (formData.password !== formData.confirmPassword) {
-        alert("Passwords do not match");
-        return;
+  const [permissions, setPermissions] = useState({
+    dashboard: {
+      canCreate: false,
+      canRead: false,
+      canUpdate: false,
+      canDelete: false,
+    },
+    customers: {
+      canCreate: false,
+      canRead: false,
+      canUpdate: false,
+      canDelete: false,
+    },
+    personalization: {
+      canCreate: false,
+      canRead: false,
+      canUpdate: false,
+      canDelete: false,
+    },
+    performance: {
+      canCreate: false,
+      canRead: false,
+      canUpdate: false,
+      canDelete: false,
+    },
+    integration: {
+      canCreate: false,
+      canRead: false,
+      canUpdate: false,
+      canDelete: false,
+    },
+    kyc: {
+      canCreate: false,
+      canRead: false,
+      canUpdate: false,
+      canDelete: false,
+    },
+    settings: {
+      canCreate: false,
+      canRead: false,
+      canUpdate: false,
+      canDelete: false,
+    },
+  });
+
+  const handlePermissionChange = (module, permissionType, value) => {
+    setPermissions(prev => ({
+      ...prev,
+      [module]: {
+        ...prev[module],
+        [permissionType]: value
       }
+    }));
+  };
 
-      const newUser = {
-        id: (users.length + 1).toString(),
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
-        role: "Employee",
-        email: formData.email,
-        phone: formData.phone,
-        permissions: {
-          adminDashboard: false,
-          customerProfile: false,
-          customerOpportunity: false,
-          personalisationInsight: false,
-          performanceTracking: false,
-          integrationManagement: false,
-          kyc: false,
-          settings: false,
-        },
-      };
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
 
-      setUsers([...users, newUser]);
-      setSelectedUser(newUser);
-      setCurrentView("userPermissions");
+    const newUser = {
+      id: (users.length + 1).toString(),
+      name: `${formData.firstName} ${formData.lastName}`.trim(),
+      role: "Employee",
+      email: formData.email,
+      phone: formData.phone,
+      permissions: permissions
     };
 
-    return (
-      <div>
-        <button
-          onClick={() => setCurrentView("userManagement")}
-          className="flex items-center text-gray-600 hover:text-gray-800 mb-4"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Back
-        </button>
-        <h2 className="text-xl text-[#313166] font-[400] mb-6">Add Employee</h2>
-
-        <form onSubmit={handleSubmit} className="max-w-4xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                placeholder="Enter first name"
-                value={formData.firstName}
-                onChange={(e) =>
-                  setFormData({ ...formData, firstName: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Designation
-              </label>
-              <input
-                type="text"
-                placeholder="Enter last name"
-                value={formData.lastName}
-                onChange={(e) =>
-                  setFormData({ ...formData, lastName: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                placeholder="Enter Phone Number"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                placeholder="Enter email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Create Password
-              </label>
-              <input
-                type="password"
-                placeholder="Enter Password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                placeholder="Confirm Password"
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => setCurrentView("userManagement")}
-              className="px-6 py-2 border border-pink-600 text-pink-600 rounded-[10px] hover:bg-pink-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-[10px] hover:opacity-90 transition-opacity"
-            >
-              Save
-            </button>
-          </div>
-        </form>
-      </div>
-    );
+    setUsers([...users, newUser]);
+    setSelectedUser(newUser);
+    setCurrentView("userManagement");
   };
+
+  return (
+    <div>
+      <button
+        onClick={() => setCurrentView("userManagement")}
+        className="flex items-center text-gray-600 hover:text-gray-800 mb-4"
+      >
+        <ArrowLeft className="w-5 h-5 mr-2" />
+        Back
+      </button>
+      <h2 className="text-xl text-[#313166] font-[400] mb-6">Add Employee</h2>
+
+      <form onSubmit={handleSubmit} className="max-w-4xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              First Name
+            </label>
+            <input
+              type="text"
+              placeholder="Enter first name"
+              value={formData.firstName}
+              onChange={(e) =>
+                setFormData({ ...formData, firstName: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Last Name
+            </label>
+            <input
+              type="text"
+              placeholder="Enter last name"
+              value={formData.lastName}
+              onChange={(e) =>
+                setFormData({ ...formData, lastName: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              placeholder="Enter Phone Number"
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              placeholder="Enter email"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Create Password
+            </label>
+            <input
+              type="password"
+              placeholder="Enter Password"
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              value={formData.confirmPassword}
+              onChange={(e) =>
+                setFormData({ ...formData, confirmPassword: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Permissions Section */}
+        <div className="mb-8">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Permissions</h3>
+          <div className="space-y-4">
+            {Object.entries(permissions).map(([module, perms]) => (
+              <div key={module} className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-gray-800 capitalize">
+                    {module === 'kyc' ? 'KYC' : module.replace(/([A-Z])/g, ' $1').trim()}
+                  </h4>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {Object.entries(perms).map(([permType, value]) => (
+                    <div key={permType} className="flex items-center">
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={value}
+                          onChange={(e) =>
+                            handlePermissionChange(module, permType, e.target.checked)
+                          }
+                        />
+                        <div
+                          className={`w-11 h-6 rounded-full transition-colors ${
+                            value
+                              ? "bg-gradient-to-r from-[#CB376D] to-[#A72962]"
+                              : "bg-gray-300"
+                          }`}
+                        >
+                          <div
+                            className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform m-0.5 ${
+                              value ? "translate-x-5" : "translate-x-0"
+                            }`}
+                          />
+                        </div>
+                        <span className="ml-2 text-sm font-medium text-gray-700 capitalize">
+                          {permType.replace('can', '')}
+                        </span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setCurrentView("userManagement")}
+            className="px-6 py-2 border border-pink-600 text-pink-600 rounded-[10px] hover:bg-pink-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-6 py-2 bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-[10px] hover:opacity-90 transition-opacity"
+          >
+            Save
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
 
   // User Permissions Component
   const UserPermissionsForm = () => {
