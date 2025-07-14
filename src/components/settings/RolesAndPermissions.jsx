@@ -12,13 +12,13 @@ const RolesAndPermissions = () => {
   const [error, setError] = useState(null);
 
   // API base URL
-  const API_URL = "https://app.vadik.ai/api/staff";
+  const END_POINT = "api/staff";
 
   // Fetch all staff members
   const fetchStaff = async () => {
     setLoading(true);
     try {
-      const response = await api.get(API_URL);
+      const response = await api.get(END_POINT);
       setUsers(response.data.staffs);
       setError(null);
     } catch (err) {
@@ -133,7 +133,7 @@ const RolesAndPermissions = () => {
           ),
         };
 
-        await axios.post(API_URL, payload);
+        await api.post(END_POINT, payload);
         await fetchStaff(); // Refresh the list
         setCurrentView("userManagement");
       } catch (err) {
@@ -500,7 +500,7 @@ const RolesAndPermissions = () => {
           ),
         };
 
-        await axios.put(`${API_URL}/${selectedUser._id}`, payload);
+        await api.put(`${END_POINT}/${selectedUser._id}`, payload);
         await fetchStaff(); // Refresh the list
         setCurrentView("userManagement");
         setSelectedUser(null);
@@ -513,7 +513,7 @@ const RolesAndPermissions = () => {
     const handleDelete = async () => {
       if (window.confirm("Are you sure you want to delete this staff member?")) {
         try {
-          await axios.delete(`${API_URL}/${selectedUser._id}`);
+          await api.delete(`${END_POINT}/${selectedUser._id}`);
           await fetchStaff(); // Refresh the list
           setCurrentView("userManagement");
           setSelectedUser(null);
