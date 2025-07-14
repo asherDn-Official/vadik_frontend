@@ -67,7 +67,7 @@ const RolesAndPermissions = () => {
         "canDelete": false
       },
       {
-        "module": "customeropportunities",
+        "module": "customerOpportunities",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
@@ -352,7 +352,7 @@ const RolesAndPermissions = () => {
         "canDelete": false
       },
       {
-        "module": "customeropportunities",
+        "module": "customerOpportunities",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
@@ -422,7 +422,7 @@ const RolesAndPermissions = () => {
         "canDelete": false
       },
       {
-        "module": "customeropportunities",
+        "module": "customerOpportunities",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
