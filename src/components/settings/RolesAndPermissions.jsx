@@ -299,12 +299,16 @@ const RolesAndPermissions = () => {
       }
     );
 
-    const handlePermissionChange = (key, value) => {
-      setPermissions((prev) => ({
+    const handlePermissionChange = (module, permissionType, value) => {
+      setPermissions(prev => ({
         ...prev,
-        [key]: value,
+        [module]: {
+          ...prev[module],
+          [permissionType]: value
+        }
       }));
     };
+
 
     const handleSave = () => {
       if (selectedUser) {
@@ -326,54 +330,41 @@ const RolesAndPermissions = () => {
         .toUpperCase();
     };
 
-    const permissionItems = [
+    const permissionModules = [
       {
-        key: "adminDashboard",
+        module: "dashboard",
         title: "Admin Dashboard",
-        description:
-          "Full access to platform insights, key metrics, and administrative control panel.",
+        description: "Full access to platform insights, key metrics, and administrative control panel.",
       },
       {
-        key: "customerProfile",
-        title: "Customer Profile",
-        description:
-          "View and manage customer details, preferences, and activity history.",
+        module: "customers",
+        title: "Customer Management",
+        description: "View and manage customer details, preferences, and activity history.",
       },
       {
-        key: "customerOpportunity",
-        title: "Customer Opportunity",
-        description:
-          "Access behavioral trends, engagement stats, and customer segmentation context.",
-      },
-      {
-        key: "personalisationInsight",
+        module: "personalization",
         title: "Personalisation Insight",
-        description:
-          "Track personalization effectiveness based on customer interactions and targeting.",
+        description: "Track personalization effectiveness based on customer interactions and targeting.",
       },
       {
-        key: "performanceTracking",
+        module: "performance",
         title: "Performance Tracking",
-        description:
-          "Monitor campaign success, conversion rates, and operational performance metrics.",
+        description: "Monitor campaign success, conversion rates, and operational performance metrics.",
       },
       {
-        key: "integrationManagement",
+        module: "integration",
         title: "Integration Management",
-        description:
-          "Connect and manage third-party services, APIs, and system integrations.",
+        description: "Connect and manage third-party services, APIs, and system integrations.",
       },
       {
-        key: "kyc",
+        module: "kyc",
         title: "KYC",
-        description:
-          "Verify and validate customer identities through Know Your Customer processes.",
+        description: "Verify and validate customer identities through Know Your Customer processes.",
       },
       {
-        key: "settings",
+        module: "settings",
         title: "Settings",
-        description:
-          "Configure system preferences, user roles, and notification settings.",
+        description: "Configure system preferences, user roles, and notification settings.",
       },
     ];
 
@@ -426,9 +417,9 @@ const RolesAndPermissions = () => {
           </div>
 
           <div className="divide-y divide-gray-200">
-            {permissionItems.map((item) => (
-              <div key={item.key} className="p-6">
-                <div className="flex items-center justify-between">
+            {permissionModules.map((item) => (
+              <div key={item.module} className="p-6 border-b border-gray-200">
+                <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center mb-2">
                       <Info className="w-4 h-4 text-gray-400 mr-2" />
@@ -436,45 +427,123 @@ const RolesAndPermissions = () => {
                         {item.title}
                       </h4>
                     </div>
-                    <p className="text-sm text-gray-600 ml-6">
+                    <p className="text-sm text-gray-600 ml-6 mb-4">
                       {item.description}
                     </p>
-                  </div>
-                  <div className="ml-6">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only"
-                        checked={permissions[item.key]}
-                        onChange={(e) =>
-                          handlePermissionChange(item.key, e.target.checked)
-                        }
-                      />
-                      <div
-                        className={`w-14 h-8 rounded-full transition-colors ${
-                          permissions[item.key]
-                            ? "bg-gradient-to-r from-[#CB376D] to-[#A72962]"
-                            : "bg-gray-300"
-                        }`}
-                      >
-                        <div
-                          className={`w-6 h-6 bg-white rounded-full shadow transform transition-transform m-1 ${
-                            permissions[item.key]
-                              ? "translate-x-6"
-                              : "translate-x-0"
-                          }`}
-                        />
+
+                    <div className="ml-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {/* Create Permission */}
+                      <div className="flex items-center">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={permissions[item.module]?.canCreate || false}
+                            onChange={(e) =>
+                              handlePermissionChange(item.module, 'canCreate', e.target.checked)
+                            }
+                          />
+                          <div
+                            className={`w-11 h-6 rounded-full transition-colors ${permissions[item.module]?.canCreate
+                              ? "bg-gradient-to-r from-[#CB376D] to-[#A72962]"
+                              : "bg-gray-300"
+                              }`}
+                          >
+                            <div
+                              className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform m-0.5 ${permissions[item.module]?.canCreate
+                                ? "translate-x-5"
+                                : "translate-x-0"
+                                }`}
+                            />
+                          </div>
+                          <span className="ml-2 text-sm font-medium text-gray-700">Create</span>
+                        </label>
                       </div>
-                      <span
-                        className={`ml-3 text-sm font-medium ${
-                          permissions[item.key]
-                            ? "text-pink-600"
-                            : "text-gray-400"
-                        }`}
-                      >
-                        {permissions[item.key] ? "Yes" : "No"}
-                      </span>
-                    </label>
+
+                      {/* Read Permission */}
+                      <div className="flex items-center">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={permissions[item.module]?.canRead || false}
+                            onChange={(e) =>
+                              handlePermissionChange(item.module, 'canRead', e.target.checked)
+                            }
+                          />
+                          <div
+                            className={`w-11 h-6 rounded-full transition-colors ${permissions[item.module]?.canRead
+                              ? "bg-gradient-to-r from-[#CB376D] to-[#A72962]"
+                              : "bg-gray-300"
+                              }`}
+                          >
+                            <div
+                              className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform m-0.5 ${permissions[item.module]?.canRead
+                                ? "translate-x-5"
+                                : "translate-x-0"
+                                }`}
+                            />
+                          </div>
+                          <span className="ml-2 text-sm font-medium text-gray-700">Read</span>
+                        </label>
+                      </div>
+
+                      {/* Update Permission */}
+                      <div className="flex items-center">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={permissions[item.module]?.canUpdate || false}
+                            onChange={(e) =>
+                              handlePermissionChange(item.module, 'canUpdate', e.target.checked)
+                            }
+                          />
+                          <div
+                            className={`w-11 h-6 rounded-full transition-colors ${permissions[item.module]?.canUpdate
+                              ? "bg-gradient-to-r from-[#CB376D] to-[#A72962]"
+                              : "bg-gray-300"
+                              }`}
+                          >
+                            <div
+                              className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform m-0.5 ${permissions[item.module]?.canUpdate
+                                ? "translate-x-5"
+                                : "translate-x-0"
+                                }`}
+                            />
+                          </div>
+                          <span className="ml-2 text-sm font-medium text-gray-700">Update</span>
+                        </label>
+                      </div>
+
+                      {/* Delete Permission */}
+                      <div className="flex items-center">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={permissions[item.module]?.canDelete || false}
+                            onChange={(e) =>
+                              handlePermissionChange(item.module, 'canDelete', e.target.checked)
+                            }
+                          />
+                          <div
+                            className={`w-11 h-6 rounded-full transition-colors ${permissions[item.module]?.canDelete
+                              ? "bg-gradient-to-r from-[#CB376D] to-[#A72962]"
+                              : "bg-gray-300"
+                              }`}
+                          >
+                            <div
+                              className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform m-0.5 ${permissions[item.module]?.canDelete
+                                ? "translate-x-5"
+                                : "translate-x-0"
+                                }`}
+                            />
+                          </div>
+                          <span className="ml-2 text-sm font-medium text-gray-700">Delete</span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
