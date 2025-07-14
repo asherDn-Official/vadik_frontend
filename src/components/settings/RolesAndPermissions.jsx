@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Search, Plus, MoreHorizontal, ArrowLeft, Info } from "lucide-react";
 import axios from "axios";
 import api from "../../api/apiconfig";
@@ -596,12 +596,24 @@ const RolesAndPermissions = () => {
   };
 
   // User Management List Component
-  const UserManagementList = () => {
-    const filteredUsers = users.filter(
-      (user) =>
-        user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.designation.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const UserManagementList = React.memo(() => {
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredUsers = users.filter((user) => {
+      if (!searchTerm.trim()) return true;
+
+      const searchLower = searchTerm.toLowerCase();
+      const fieldsToSearch = [
+        user.fullName,
+        user.designation,
+        user.email,
+        user.phone,
+      ];
+
+      return fieldsToSearch.some(
+        field => field?.toLowerCase().includes(searchLower)
+      );
+    });
 
     const getInitials = (name) => {
       return name
@@ -616,6 +628,10 @@ const RolesAndPermissions = () => {
       setCurrentView("userPermissions");
     };
 
+    const handleSearchChange = useCallback((e) => {
+      setSearchTerm(e.target.value);
+    }, []);
+
     if (loading) return <div className="text-center py-8">Loading...</div>;
     if (error) return <div className="text-center py-8 text-red-600">{error}</div>;
 
@@ -624,13 +640,13 @@ const RolesAndPermissions = () => {
         <div className="flex justify-between items-center mb-9">
           <h2 className="text-xl text-[#313166] font-[400]">User Management</h2>
           <div className="flex space-x-4">
-            <div className="relative">
+            <div className="relative" key="search-input">
               <input
                 type="text"
                 placeholder="Search here"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10 pl-4 py-2 border border-gray-300 rounded-[10px] w-80"
+                onChange={handleSearchChange}
+                className="pr-10 pl-4 py-2 border border-gray-300 rounded-[10px] w-80 focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
               <Search className="absolute right-3 top-3 text-[#31316699] text-[20px] cursor-pointer" />
             </div>
@@ -660,7 +676,13 @@ const RolesAndPermissions = () => {
                     <p className="text-sm text-gray-500">{user.designation}</p>
                   </div>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600">
+                <button
+                  className="text-gray-400 hover:text-gray-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Handle menu click here
+                  }}
+                >
                   <MoreHorizontal />
                 </button>
               </div>
@@ -669,7 +691,7 @@ const RolesAndPermissions = () => {
         </div>
       </div>
     );
-  };
+  });
 
   // Render based on current view
   const renderContent = () => {
