@@ -6,11 +6,9 @@ const AuthProvider = ({ children }) => {
     const [auth, setAuth] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const retailerId = localStorage.getItem('retailerId');
-
     const checkAuth = async () => {
         try {
-            const response = await api.get(`/api/retailer/${retailerId}`);
+            const response = await api.get(`/api/retailer/profile`);
             // Ensure data exists before setting auth
             if (response.data && response.data.data) {
                 setAuth(response.data.data);

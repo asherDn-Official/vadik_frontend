@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import CustomerList from "./pages/CustomerList";
 // import CustomerProfile from "./pages/CustomerProfile";
@@ -15,8 +15,16 @@ import SettingsPage from "./pages/SettingsPage";
 import PerformanceTracking from "./pages/PerformanceTracking";
 import CustomerPersonalisation from "./pages/CustomerPersonalisation";
 import CustomerOpportunities from "./pages/CustomerOpportunities";
+import { useAuth } from "./context/AuthContext";
 
 function App() {
+
+  const { auth, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   const [formData, setFormData] = useState({
     // Basic information
     firstName: "",
@@ -44,11 +52,12 @@ function App() {
   const updateFormData = (newData) => {
     setFormData((prev) => ({ ...prev, ...newData }));
   };
-  
 
   return (
     <Router>
       <Routes>
+
+        {/* publiic */}
         <Route index element={<Login />} />
         <Route
           path="/register/*"
@@ -57,27 +66,35 @@ function App() {
           }
         />
         <Route path="completion" element={<Completion />} />
-        <Route path="/" element={<Layout />}>
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="customers" element={<CustomerList />} />
-          {/* <Route path="customers/:id" element={<CustomerProfile />} /> */}
-          <Route
-            path="/customer-profile/:customerId"
-            element={<CustomerProfile />}
-          />
-          <Route path="personalisation" element={<CustomerPersonalisation />} />{" "}
-          <Route
-            path="customeropportunities"
-            element={<CustomerOpportunities />}
-          />
-          <Route path="/performance" element={<PerformanceTracking />} />
-          <Route path="integration" element={<IntegrationPage />} />
-          <Route path="kyc" element={<KYCPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="settings/:tab" element={<SettingsPage />} />
-        </Route>
+
+        {auth ? (
+          <>
+            <Route path="/" element={<Layout />}>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="customers" element={<CustomerList />} />
+              {/* <Route path="customers/:id" element={<CustomerProfile />} /> */}
+              <Route
+                path="/customer-profile/:customerId"
+                element={<CustomerProfile />}
+              />
+              <Route path="personalisation" element={<CustomerPersonalisation />} />{" "}
+              <Route
+                path="customeropportunities"
+                element={<CustomerOpportunities />}
+              />
+              <Route path="/performance" element={<PerformanceTracking />} />
+              <Route path="integration" element={<IntegrationPage />} />
+              <Route path="kyc" element={<KYCPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="settings/:tab" element={<SettingsPage />} />
+            </Route>
+          </>
+        ) : (
+          <Route path="*" element={<Navigate to="/" replace />} />
+        )}
+
       </Routes>
-    </Router>
+    </Router >
   );
 }
 

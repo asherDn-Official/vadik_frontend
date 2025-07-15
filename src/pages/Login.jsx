@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/apiconfig";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
@@ -11,6 +12,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { checkAuth } = useAuth();
+
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -36,6 +39,9 @@ const Login = () => {
       // Store token or user data if needed
       if (data.token) {
         localStorage.setItem("token", data.token);
+        await checkAuth();
+        navigate("/dashboard"); // Change this to your desired route
+
       }
 
       if (data.retailer && data.retailer._id) {
@@ -43,12 +49,11 @@ const Login = () => {
       }
 
       // Redirect to dashboard or appropriate page
-      navigate("/dashboard"); // Change this to your desired route
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          err.message ||
-          "An error occurred during login"
+        err.message ||
+        "An error occurred during login"
       );
       console.error("Login error:", err);
     } finally {
@@ -117,9 +122,8 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white font-medium py-3 px-4 rounded-md transition duration-200 ease-in-out ${
-              loading ? "opacity-70 cursor-not-allowed" : ""
-            }`}
+            className={`w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white font-medium py-3 px-4 rounded-md transition duration-200 ease-in-out ${loading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
           >
             {loading ? "Signing In..." : "Sign In"}
           </button>
