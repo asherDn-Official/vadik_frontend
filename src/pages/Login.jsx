@@ -4,8 +4,9 @@ import api from "../api/apiconfig";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
+  const [loginType, setLoginType] = useState("retailer"); // 'retailer' or 'staff'
   const [credentials, setCredentials] = useState({
-    email: "", // Changed from emailOrPhone to match API
+    email: "",
     password: "",
     rememberMe: false,
   });
@@ -13,7 +14,6 @@ const Login = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
-
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -29,26 +29,30 @@ const Login = () => {
     setError(null);
 
     try {
-      const response = await api.post("api/auth/retailerLogin", {
+      const endpoint = loginType === "retailer" 
+        ? "api/auth/retailerLogin" 
+        : "api/auth/staffLogin";
+      
+      const response = await api.post(endpoint, {
         email: credentials.email,
         password: credentials.password,
       });
 
       const data = response.data;
 
-      // Store token or user data if needed
       if (data.token) {
         localStorage.setItem("token", data.token);
-        await checkAuth();
-        navigate("/dashboard"); // Change this to your desired route
+         await checkAuth();   
+          navigate("/dashboard");
+     
+        // Store appropriate ID based on login type
+        if (loginType === "retailer" && data.retailer?._id) {
+          localStorage.setItem("retailerId", data.retailer._id);
+        } else if (loginType === "staff" && data.staff?._id) {
+          localStorage.setItem("retailerId", data.staff._id);
+        }
 
       }
-
-      if (data.retailer && data.retailer._id) {
-        localStorage.setItem("retailerId", data.retailer._id);
-      }
-
-      // Redirect to dashboard or appropriate page
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -68,6 +72,30 @@ const Login = () => {
           Sign in to your account
         </h1>
 
+        {/* Login Type Toggle */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex rounded-md shadow-sm" role="group">
+            <button
+              type="button"
+              onClick={() => setLoginType("retailer")}
+              className={`px-4 py-2 text-sm font-medium rounded-l-lg ${loginType === "retailer" 
+                ? "bg-[#CB376D] text-white" 
+                : "bg-white/10 text-white/70 hover:bg-white/20"}`}
+            >
+              Retailer
+            </button>
+            <button
+              type="button"
+              onClick={() => setLoginType("staff")}
+              className={`px-4 py-2 text-sm font-medium rounded-r-lg ${loginType === "staff" 
+                ? "bg-[#CB376D] text-white" 
+                : "bg-white/10 text-white/70 hover:bg-white/20"}`}
+            >
+              Staff
+            </button>
+          </div>
+        </div>
+
         {error && (
           <div className="mb-4 p-3 bg-red-500/80 text-white rounded-md">
             {error}
@@ -77,11 +105,11 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <input
-              type="email" // Changed to email to match API
-              name="email" // Changed from emailOrPhone to match API
+              type="email"
+              name="email"
               value={credentials.email}
               onChange={handleChange}
-              placeholder="Enter Email address"
+              placeholder={`Enter ${loginType === "retailer" ? "Retailer" : "Staff"} Email address`}
               className="w-full px-4 py-3 rounded-md bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
               required
             />
