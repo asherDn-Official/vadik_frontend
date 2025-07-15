@@ -1,23 +1,77 @@
 import { NavLink, useLocation } from "react-router-dom";
-import {
-  FaHome,
-  FaUser,
-  FaChartPie,
-  FaCog,
-  FaShieldAlt,
-  FaLightbulb,
-  FaCogs,
-  FaUsersCog,
-} from "react-icons/fa";
+import { useAuth } from "../../context/AuthContext";
+import { useEffect } from "react";
 
 function Sidebar() {
   const location = useLocation();
+  const { auth } = useAuth();
 
   const isActive = (path) => {
     if (path === "/" && location.pathname === "/") return true;
     if (path !== "/" && location.pathname.startsWith(path)) return true;
     return false;
   };
+
+  // Check if user has read permission for a module
+  const canAccess = (moduleName) => {
+    if (!auth?.permissions) return false;
+    const modulePermission = auth.permissions.find(
+      (perm) => perm.module === moduleName
+    );
+    return modulePermission?.canRead || false;
+  };
+
+  // Define all possible sidebar items
+  const sidebarItems = [
+    {
+      path: "/dashboard",
+      module: "dashboard",
+      icon: "../assets/mage_dashboard-icon.png",
+      label: "Admin Dashboard",
+    },
+    {
+      path: "/customers",
+      module: "customers",
+      icon: "../assets/bi_person-fill-icon.png",
+      label: "Customer Profile",
+    },
+    {
+      path: "/personalisation",
+      module: "personalisation",
+      icon: "../assets/fluent-insights.png",
+      label: "Personalisation Insight",
+    },
+    {
+      path: "/customeropportunities",
+      module: "customerOpportunities",
+      icon: "../assets/user-check-icon.png",
+      label: "Customer Opportunities",
+    },
+    {
+      path: "/performance",
+      module: "performance",
+      icon: "../assets/mdi_performance-icon.png",
+      label: "Performance Tracking",
+    },
+    {
+      path: "/integration",
+      module: "integration",
+      icon: "../assets/integration-icon.png",
+      label: "Integration Management",
+    },
+    {
+      path: "/kyc",
+      module: "kyc",
+      icon: "../assets/kyc-icon.png",
+      label: "KYC",
+    },
+    {
+      path: "/settings",
+      module: "settings",
+      icon: "../assets/settings-icon.png",
+      label: "Settings",
+    },
+  ];
 
   return (
     <aside className="w-[290px] bg-[#313166] text-white flex flex-col">
@@ -26,89 +80,22 @@ function Sidebar() {
       </div>
 
       <nav className="flex-1 py-4">
-        <NavLink
-          to="/dashboard"
-          className={`sidebar-icon ${isActive("/") ? "sidebar-active" : ""}`}
-        >
-          {/* <FaHome size={20} /> */}
-          <img src="../assets/mage_dashboard-icon.png" alt="" />
-          <span>Admin Dashboard</span>
-        </NavLink>
-
-        <NavLink
-          to="/customers"
-          className={`sidebar-icon ${
-            isActive("/customers") ? "sidebar-active" : ""
-          }`}
-        >
-          {/* <FaUser size={20} /> */}
-          <img src="../assets/bi_person-fill-icon.png" alt="" />
-          <span>Customer Profile</span>
-        </NavLink>
-
-        <NavLink
-          to="/personalisation"
-          className={`sidebar-icon ${
-            isActive("/personalisation") ? "sidebar-active" : ""
-          }`}
-        >
-          {/* <FaLightbulb size={20} /> */}
-          <img src="../assets/fluent-insights.png" alt="" />
-          <span>Personalisation Insight</span>
-        </NavLink>
-
-        <NavLink
-          to="/customeropportunities"
-          className={`sidebar-icon ${
-            isActive("/customeropportunities") ? "sidebar-active" : ""
-          }`}
-        >
-          {/* <FaUsersCog size={20} /> */}
-          <img src="../assets/user-check-icon.png" alt="" />
-          <span>Customer Opportunities</span>
-        </NavLink>
-
-        <NavLink
-          to="/performance"
-          className={`sidebar-icon ${
-            isActive("/performance") ? "sidebar-active" : ""
-          }`}
-        >
-          {/* <FaChartPie size={20} /> */}
-          <img src="../assets/mdi_performance-icon.png" alt="" />
-          <span>Performance Tracking</span>
-        </NavLink>
-
-        <NavLink
-          to="/integration"
-          className={`sidebar-icon ${
-            isActive("/integration") ? "sidebar-active" : ""
-          }`}
-        >
-          {/* <FaCogs size={20} /> */}
-          <img src="../assets/integration-icon.png" alt="" />
-          <span>Integration Management</span>
-        </NavLink>
-
-        <NavLink
-          to="/kyc"
-          className={`sidebar-icon ${isActive("/kyc") ? "sidebar-active" : ""}`}
-        >
-          {/* <FaShieldAlt size={20} /> */}
-          <img src="../assets/kyc-icon.png" alt="" />
-          <span>KYC</span>
-        </NavLink>
-
-        <NavLink
-          to="/settings"
-          className={`sidebar-icon ${
-            isActive("/settings") ? "sidebar-active" : ""
-          }`}
-        >
-          {/* <FaCog size={20} /> */}
-          <img src="../assets/settings-icon.png" alt="" />
-          <span>Settings</span>
-        </NavLink>
+        {sidebarItems.map((item) => {
+          if (!canAccess(item.module)) return null;
+          
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={`sidebar-icon flex items-center px-6 py-5 text-white no-underline transition-colors hover:bg-[#3d3b83] ${
+                isActive(item.path) ? "sidebar-active" : ""
+              }`}
+            >
+              <img src={item.icon} alt={item.label} className="w-5 h-5 mr-3" />
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
       </nav>
     </aside>
   );
