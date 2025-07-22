@@ -17,52 +17,55 @@ const MyProfile = () => {
     profilePicture: "https://randomuser.me/api/portraits/men/36.jpg",
   });
 
+
   const [uploadError, setUploadError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
-  const {auth} =useAuth();
+  const { auth } = useAuth();
 
   useEffect(() => {
-
     const fetchProfileData = async () => {
       try {
-        const response = await api.get(
-          `api/retailer/${auth?._id}`
-        );
-        
+        const response = await api.get(`api/retailer`);
+
         if (response.data.status === "success") {
-          const retailerData = response.data.data;
-          
+          const retailerData = response.data.data[0];
+
           // Split full name into first and last name
-          const nameParts = retailerData.fullName.split(' ');
-          const firstName = nameParts[0];
-          const lastName = nameParts.slice(1).join(' ');
-          
+          const nameParts = retailerData?.fullName?.split(' ') || [];
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+
+
+          // Format phone number by removing the '+' from phoneCode
+          const formattedPhone = (retailerData.phoneCode?.replace('+', '') || '') + (retailerData.phone || '');
+
           setProfile({
-            firstName: firstName || "",
-            lastName: lastName || "",
-            phone: `${retailerData.phoneCode}${retailerData.phone}`,
-            email: retailerData.email,
-            storeName: retailerData.storeName,
+            firstName,
+            lastName,
+            phone: formattedPhone,
+            email: retailerData.email || "",
+            storeName: retailerData.storeName || "",
             role: "Retailer",
-            address: retailerData.storeAddress,
+            address: retailerData.storeAddress || "",
             profilePicture: profile.profilePicture
           });
         }
         setLoading(false);
       } catch (err) {
-        setError(err.message);
+        setError(err.message || "Failed to fetch profile data");
         setLoading(false);
         console.error("Error fetching profile data:", err);
       }
     };
 
-    if(auth?._id){
+    if (auth?.user) {
       fetchProfileData();
     }
-  }, []);
+  }, [auth]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -77,22 +80,20 @@ const MyProfile = () => {
     e.preventDefault();
     try {
       // Extract country code and phone number
-      const phoneCode = profile.phone.slice(0, 2);
+      const phoneCode = `+${profile.phone.slice(0, 2)}`;
       const phoneNumber = profile.phone.slice(2);
-      
+
       const updatedData = {
-        fullName: `${profile.firstName} ${profile.lastName}`,
+        fullName: `${profile.firstName} ${profile.lastName}`.trim(),
         email: profile.email,
-        phoneCode: `+${phoneCode}`,
+        phoneCode,
         phone: phoneNumber,
         storeName: profile.storeName,
         storeAddress: profile.address,
       };
 
-      const response = await axios.put(
-        "http://13.60.19.134:5000/api/retailer/6856350030bcee9b82be4c17",
-        updatedData
-      );
+      // Use the same API instance you used for GET
+      const response = await api.put(`api/retailer`, updatedData);
 
       if (response.data.status === "success") {
         console.log("Profile updated successfully:", response.data);
@@ -100,6 +101,7 @@ const MyProfile = () => {
       }
     } catch (err) {
       console.error("Error updating profile:", err);
+      setError(err.message || "Failed to update profile");
       // You might want to show an error message to the user
     }
   };
@@ -139,7 +141,7 @@ const MyProfile = () => {
   };
 
   if (loading) {
-    return <div className="px-10 py-3 mx-auto">Loading profile context...</div>;
+    return <div className="px-10 py-3 mx-auto">Loading profile data...</div>;
   }
 
   if (error) {
@@ -167,6 +169,7 @@ const MyProfile = () => {
                   value={profile.firstName}
                   onChange={handleChange}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  required
                 />
               </div>
 
@@ -209,6 +212,7 @@ const MyProfile = () => {
                   value={profile.email}
                   onChange={handleChange}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  required
                 />
               </div>
             </div>
@@ -224,6 +228,7 @@ const MyProfile = () => {
                   value={profile.storeName}
                   onChange={handleChange}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  required
                 />
               </div>
 
@@ -250,6 +255,7 @@ const MyProfile = () => {
                 value={profile.address}
                 onChange={handleChange}
                 className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                required
               />
             </div>
 
