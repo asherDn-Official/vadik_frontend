@@ -1,10 +1,10 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { useEffect } from "react";
 
 function Sidebar() {
   const location = useLocation();
   const { auth } = useAuth();
+  const userRole = auth?.data?.role;
 
   const isActive = (path) => {
     if (path === "/" && location.pathname === "/") return true;
@@ -12,13 +12,20 @@ function Sidebar() {
     return false;
   };
 
-  // Check if user has read permission for a module
+  // Check if user has read permission for a module or is retailer
   const canAccess = (moduleName) => {
-    if (!auth?.permissions) return false;
-    const modulePermission = auth.permissions.find(
-      (perm) => perm.module === moduleName
-    );
-    return modulePermission?.canRead || false;
+    // Retailers get full access
+    if (userRole === "retailer") return true;
+    
+    // Staff permissions check
+    if (userRole === "staff" && auth?.user?.permissions) {
+      const modulePermission = auth.user.permissions.find(
+        (perm) => perm.module === moduleName
+      );
+      return modulePermission?.canRead || false;
+    }
+    
+    return false;
   };
 
   // Define all possible sidebar items

@@ -11,7 +11,7 @@ const AuthProvider = ({ children }) => {
             const response = await api.get(`/api/auth/validate-token`);
             // Ensure data exists before setting auth
             if (response.data && response.data.data) {
-                setAuth(response.data.user);
+                setAuth(response.data);
             } else {
                 setAuth(null);
             }
