@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Calendar, Search, Plus, Minus, X } from "lucide-react";
 import DatePicker from "./DatePicker";
 import ReactSlider from "react-slider";
+import api from "../../api/apiconfig";
 
 const FilterPanel = ({
   filters,
@@ -14,10 +15,271 @@ const FilterPanel = ({
   const [expandedFilter, setExpandedFilter] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerType, setDatePickerType] = useState("");
-  const [brandSearchTerm, setBrandSearchTerm] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [apiFilterOptions, setApiFilterOptions] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const filterOptions = {
+  // Fetch customer preferences from API
+  useEffect(() => {
+    const fetchCustomerPreferences = async () => {
+      try {
+        setLoading(true);
+        // Get retailerId from localStorage/sessionStorage
+        const retailerId =
+          localStorage.getItem("retailerId") ||
+          sessionStorage.getItem("retailerId") ||
+          "6856350030bcee9b82be4c17"; // fallback retailerId
+
+        // Use axios instance which already handles authentication
+        const response = await api.get(
+          `/api/customer-preferences/${retailerId}`
+        );
+        const data = response.data;
+
+        // Debug: Log the API response
+        console.log("API Response:", data);
+
+        // Process API data to create filter options
+        const processedOptions = {
+          // Static filters (not from API)
+          gender: ["All", "Male", "Female", "Others"],
+          source: ["All", "Walk In", "Website", "Social Media"],
+          active: ["All", "Active", "Inactive"],
+          churnRole: ["All", "High Risk", "Medium Risk", "Low Risk"],
+          ratingFilter: [
+            "All",
+            "1 Star",
+            "2 Stars",
+            "3 Stars",
+            "4 Stars",
+            "5 Stars",
+          ],
+
+          // Dynamic filters from API
+          profession: ["All"], // Will be populated from additionalData
+          income: ["All"], // Will be populated from additionalData
+          location: ["All"], // Will be populated from additionalData
+          education: ["All"], // Will be populated from additionalData
+          interest: ["All"], // Will be populated from advancedDetails
+          favoriteColour: ["All"], // Will be populated from advancedDetails
+          customerLabel: ["All", "WhatsApp"],
+          specialDays: ["All", "Birthday", "Anniversary", "Festival"],
+          communicationChannel: ["All"], // Will be populated from advancedPrivacyDetails
+          satisfactionScore: [0, 100], // Range slider
+          engagementScore: [0, 100], // Range slider
+          loyaltyPoints: [0, 100], // Range slider
+        };
+
+        // Process additionalData
+        if (data.additionalData && Array.isArray(data.additionalData)) {
+          data.additionalData.forEach((item) => {
+            // Handle different field types based on API response
+            if (item.key === "profession") {
+              if (item.options && Array.isArray(item.options)) {
+                processedOptions.profession = ["All", ...item.options];
+              } else {
+                // For string/number types, make it a text input
+                processedOptions.profession = { type: item.type || "string" };
+              }
+            }
+            if (item.key === "income") {
+              if (item.options && Array.isArray(item.options)) {
+                processedOptions.income = ["All", ...item.options];
+              } else {
+                // For number type, make it a number input
+                processedOptions.income = { type: item.type || "number" };
+              }
+            }
+            if (item.key === "location") {
+              if (item.options && Array.isArray(item.options)) {
+                processedOptions.location = ["All", ...item.options];
+              } else {
+                // For string type, make it a text input
+                processedOptions.location = { type: item.type || "string" };
+              }
+            }
+            if (item.key === "education") {
+              if (item.options && Array.isArray(item.options)) {
+                processedOptions.education = ["All", ...item.options];
+              } else {
+                // For string type, make it a text input
+                processedOptions.education = { type: item.type || "string" };
+              }
+            }
+          });
+        }
+
+        // Process advancedDetails
+        if (data.advancedDetails && Array.isArray(data.advancedDetails)) {
+          data.advancedDetails.forEach((item) => {
+            if (item.key === "interest") {
+              if (item.options && Array.isArray(item.options)) {
+                processedOptions.interest = ["All", ...item.options];
+              } else {
+                // For array type, provide default interest options
+                processedOptions.interest = [
+                  "All",
+                  "Music",
+                  "Sports",
+                  "Reading",
+                  "Travel",
+                  "Movies",
+                  "Gaming",
+                  "Cooking",
+                  "Art",
+                  "Technology",
+                  "Fashion",
+                  "Fitness",
+                ];
+              }
+            }
+            if (item.key === "favirote colors") {
+              if (item.options && Array.isArray(item.options)) {
+                processedOptions.favoriteColour = [
+                  "All",
+                  ...item.options.map(
+                    (color) => color.charAt(0).toUpperCase() + color.slice(1)
+                  ),
+                ];
+              } else {
+                processedOptions.favoriteColour = {
+                  type: item.type || "percentage",
+                };
+              }
+            }
+            if (item.key === "anniversary") {
+              // Date type should be a date picker
+              processedOptions.anniversary = { type: "date" };
+            }
+            if (item.key === "short measurement") {
+              // Number type should be a number input
+              processedOptions.shortMeasurement = { type: "number" };
+            }
+          });
+        }
+
+        // Process advancedPrivacyDetails
+        if (
+          data.advancedPrivacyDetails &&
+          Array.isArray(data.advancedPrivacyDetails)
+        ) {
+          data.advancedPrivacyDetails.forEach((item) => {
+            if (item.key === "communication channel") {
+              if (item.options && Array.isArray(item.options)) {
+                processedOptions.communicationChannel = [
+                  "All",
+                  ...item.options,
+                ];
+              } else {
+                // For string type, make it a text input
+                processedOptions.communicationChannel = {
+                  type: item.type || "string",
+                };
+              }
+            }
+            if (item.key === "satisfaction score") {
+              // Number type should be a number input or range slider
+              processedOptions.satisfactionScore = { type: "number" };
+            }
+            if (item.key === "engagement score") {
+              // Number type should be a number input or range slider
+              processedOptions.engagementScore = { type: "number" };
+            }
+            if (item.key === "loyalty points") {
+              // Percentage type should be a range slider or number input
+              processedOptions.loyaltyPoints = { type: "percentage" };
+            }
+          });
+        }
+
+        // Debug: Log the processed options
+        console.log("Processed Filter Options:", processedOptions);
+
+        setApiFilterOptions(processedOptions);
+      } catch (error) {
+        console.error("Error fetching customer preferences:", error);
+
+        // Handle specific axios errors
+        if (error.response?.status === 401) {
+          console.error(
+            "Authentication failed. Please check your login status."
+          );
+        } else if (error.response?.status === 404) {
+          console.error("Customer preferences not found for this retailer.");
+        } else if (error.response) {
+          console.error(
+            `API Error: ${error.response.status} - ${error.response.statusText}`
+          );
+        } else if (error.request) {
+          console.error("Network error: Unable to reach the server.");
+        } else {
+          console.error("Error:", error.message);
+        }
+        // Fallback to static options
+        setApiFilterOptions({
+          gender: ["All", "Male", "Female", "Others"],
+          profession: [
+            "All",
+            "Corporate",
+            "Student",
+            "Home Maker",
+            "Business",
+            "IT",
+            "Medicine",
+            "Service",
+            "Teacher",
+          ],
+          source: ["All", "Walk In", "Website", "Social Media"],
+          income: ["All", "High", "Medium", "Low"],
+          location: ["All", "City", "Suburban", "Rural"],
+          education: ["All", "High School", "Bachelor's", "Master's", "PhD"],
+          favoriteColour: [
+            "All",
+            "Black",
+            "Blue",
+            "Red",
+            "White",
+            "Green",
+            "Orange",
+            "Violet",
+          ],
+          interest: [
+            "All",
+            "Music",
+            "Sports",
+            "Reading",
+            "Travel",
+            "Movies",
+            "Gaming",
+            "Cooking",
+            "Art",
+            "Technology",
+            "Fashion",
+            "Fitness",
+          ],
+          customerLabel: ["All", "WhatsApp"],
+          specialDays: ["All", "Birthday", "Anniversary", "Festival"],
+          communicationChannel: ["All", "Email", "SMS", "WhatsApp", "Phone"],
+          active: ["All", "Active", "Inactive"],
+          churnRole: ["All", "High Risk", "Medium Risk", "Low Risk"],
+          ratingFilter: [
+            "All",
+            "1 Star",
+            "2 Stars",
+            "3 Stars",
+            "4 Stars",
+            "5 Stars",
+          ],
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCustomerPreferences();
+  }, []);
+
+  // Use API options or fallback to static options
+  const filterOptions = apiFilterOptions || {
     gender: ["All", "Male", "Female", "Others"],
     profession: [
       "All",
@@ -31,28 +293,40 @@ const FilterPanel = ({
       "Teacher",
     ],
     source: ["All", "Walk In", "Website", "Social Media"],
-    incomeLevel: ["All", "High", "Medium", "Low"],
+    income: ["All", "High", "Medium", "Low"],
     location: ["All", "City", "Suburban", "Rural"],
-    favoriteProduct: ["All", "Jean", "T-Shirt", "Formal Wear", "Casual Wear"],
-    favoriteColour: ["All", "Black", "Blue", "Red", "White"],
-    favoriteBrand: ["All", "Peter England", "Van Heusen", "Allen Solly"],
-    lifeStyle: ["All", "Fitness", "Fashion", "Sports", "Travel"],
+    education: ["All", "High School", "Bachelor's", "Master's", "PhD"],
+    favoriteColour: [
+      "All",
+      "Black",
+      "Blue",
+      "Red",
+      "White",
+      "Green",
+      "Orange",
+      "Violet",
+    ],
+    interest: [
+      "All",
+      "Music",
+      "Sports",
+      "Reading",
+      "Travel",
+      "Movies",
+      "Gaming",
+      "Cooking",
+      "Art",
+      "Technology",
+      "Fashion",
+      "Fitness",
+    ],
     customerLabel: ["All", "WhatsApp"],
     specialDays: ["All", "Birthday", "Anniversary", "Festival"],
-    interest: ["All", "Music", "Sports", "Reading", "Travel"],
+    communicationChannel: ["All", "Email", "SMS", "WhatsApp", "Phone"],
     active: ["All", "Active", "Inactive"],
     churnRole: ["All", "High Risk", "Medium Risk", "Low Risk"],
     ratingFilter: ["All", "1 Star", "2 Stars", "3 Stars", "4 Stars", "5 Stars"],
   };
-
-  // ✅ Use safe fallback to avoid .map crash
-  const favoriteSelected = Array.isArray(filters.favoriteProduct)
-    ? filters.favoriteProduct
-    : [];
-
-  const favoriteBrandSelected = Array.isArray(filters.favoriteBrand)
-    ? filters.favoriteBrand
-    : [];
 
   const toggleFilter = (key) => {
     setExpandedFilter((prev) => (prev === key ? null : key));
@@ -63,8 +337,107 @@ const FilterPanel = ({
       onFilterChange("specialDaysStart", date);
     } else if (datePickerType === "specialDaysEnd") {
       onFilterChange("specialDaysEnd", date);
+    } else if (datePickerType === "anniversary") {
+      onFilterChange("anniversary", date);
     }
     setShowDatePicker(false);
+  };
+
+  // Helper function to render different input types
+  const renderFilterInput = (filterKey, filterConfig) => {
+    if (Array.isArray(filterConfig)) {
+      // Render as button options
+      return (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {loading ? (
+            <div className="text-sm text-gray-500">Loading...</div>
+          ) : (
+            filterConfig.map((option) => {
+              const isActive = filters[filterKey] === option;
+              return (
+                <button
+                  key={option}
+                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${
+                    isActive
+                      ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
+                      : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
+                  }`}
+                  onClick={() => onFilterChange(filterKey, option)}
+                >
+                  {option}
+                </button>
+              );
+            })
+          )}
+        </div>
+      );
+    } else if (filterConfig?.type === "string") {
+      // Render as text input
+      return (
+        <div className="mt-2 relative">
+          <input
+            type="text"
+            placeholder={`Enter ${filterKey
+              .replace(/([A-Z])/g, " $1")
+              .toLowerCase()}`}
+            className="w-full p-2 pl-8 border rounded-[10px] text-sm"
+            value={filters[filterKey] || ""}
+            onChange={(e) => onFilterChange(filterKey, e.target.value)}
+          />
+          <Search
+            size={16}
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+        </div>
+      );
+    } else if (
+      filterConfig?.type === "number" ||
+      filterConfig?.type === "percentage"
+    ) {
+      // Render as number input
+      return (
+        <div className="mt-2">
+          <input
+            type="number"
+            placeholder={`Enter ${filterKey
+              .replace(/([A-Z])/g, " $1")
+              .toLowerCase()}`}
+            className="w-full p-2 border rounded-[10px] text-sm"
+            value={filters[filterKey] || ""}
+            onChange={(e) => onFilterChange(filterKey, e.target.value)}
+            min="0"
+            step={filterConfig?.type === "percentage" ? "0.1" : "1"}
+          />
+        </div>
+      );
+    } else if (filterConfig?.type === "date") {
+      // Render as date picker
+      return (
+        <div className="mt-2">
+          <button
+            className="w-full p-2 border rounded text-sm text-left flex items-center justify-between"
+            onClick={() => {
+              setDatePickerType(filterKey);
+              if (!filters[filterKey]) {
+                const today = new Date();
+                onFilterChange(filterKey, today);
+              }
+              setShowDatePicker(true);
+            }}
+          >
+            {filters[filterKey]
+              ? new Date(filters[filterKey]).toLocaleDateString()
+              : "Select date"}
+            <Calendar size={16} className="text-gray-400" />
+          </button>
+        </div>
+      );
+    }
+
+    // Default fallback
+    return (
+      <div className="mt-2 text-sm text-gray-500">No options available</div>
+    );
   };
 
   return (
@@ -110,7 +483,6 @@ const FilterPanel = ({
               setShowDatePicker(true);
             }}
           >
-            {/* <Calendar size={14} /> */}
             <img src="../assets/calendar-icon.png" alt="" />
           </button>
         </div>
@@ -275,50 +647,16 @@ const FilterPanel = ({
           expanded={expandedFilter === "profession"}
           onToggle={() => toggleFilter("profession")}
         >
-          <div className="mt-2 flex flex-wrap gap-1">
-            {filterOptions.profession.map((option) => {
-              const isActive = filters.profession === option;
-              return (
-                <button
-                  key={option}
-                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${
-                    isActive
-                      ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
-                      : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
-                  }`}
-                  onClick={() => onFilterChange("profession", option)}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
+          {renderFilterInput("profession", filterOptions.profession)}
         </FilterItem>
 
         {/* Income Level Filter */}
         <FilterItem
           name="Income Level"
-          expanded={expandedFilter === "incomeLevel"}
-          onToggle={() => toggleFilter("incomeLevel")}
+          expanded={expandedFilter === "income"}
+          onToggle={() => toggleFilter("income")}
         >
-          <div className="mt-2 flex flex-wrap gap-1">
-            {filterOptions.incomeLevel.map((option) => {
-              const isActive = filters.incomeLevel === option;
-              return (
-                <button
-                  key={option}
-                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${
-                    isActive
-                      ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
-                      : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
-                  }`}
-                  onClick={() => onFilterChange("incomeLevel", option)}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
+          {renderFilterInput("income", filterOptions.income)}
         </FilterItem>
 
         {/* Location Filter */}
@@ -327,112 +665,16 @@ const FilterPanel = ({
           expanded={expandedFilter === "location"}
           onToggle={() => toggleFilter("location")}
         >
-          <div className="mt-2 flex flex-wrap gap-1">
-            {filterOptions.location.map((option) => {
-              const isActive = filters.location === option;
-              return (
-                <button
-                  key={option}
-                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${
-                    isActive
-                      ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
-                      : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
-                  }`}
-                  onClick={() => onFilterChange("location", option)}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
+          {renderFilterInput("location", filterOptions.location)}
         </FilterItem>
 
-        {/* Favorite Product Filter */}
+        {/* Education Filter */}
         <FilterItem
-          name="Favourite Product"
-          expanded={expandedFilter === "favoriteProduct"}
-          onToggle={() => toggleFilter("favoriteProduct")}
+          name="Education"
+          expanded={expandedFilter === "education"}
+          onToggle={() => toggleFilter("education")}
         >
-          <div className="mt-2">
-            {/* Search Box */}
-            <div className="relative mb-2">
-              <input
-                type="text"
-                placeholder="Search Product"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-4 pr-10 py-1.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7c7ba0]">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-4.35-4.35M5.5 11a5.5 5.5 0 1111 0 5.5 5.5 0 01-11 0z"
-                  />
-                </svg>
-              </span>
-            </div>
-
-            {/* Show Chips Only When Input is Empty */}
-            {searchTerm === "" && favoriteSelected.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-2">
-                {favoriteSelected.map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center px-3 py-1.5 bg-gray-100 text-[#2e2d5f] rounded-md text-sm"
-                  >
-                    <span className="mr-1">{item}</span>
-                    <button
-                      onClick={() =>
-                        onFilterChange(
-                          "favoriteProduct",
-                          favoriteSelected.filter((i) => i !== item)
-                        )
-                      }
-                      className="ml-1 text-[#2e2d5f] hover:text-red-500 text-xs"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Filter Buttons (Search Results) */}
-            {searchTerm && (
-              <div className="flex flex-wrap gap-1">
-                {filterOptions.favoriteProduct
-                  .filter(
-                    (option) =>
-                      option.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                      !favoriteSelected.includes(option)
-                  )
-                  .map((option) => (
-                    <button
-                      key={option}
-                      className="px-3 py-1 rounded-md border text-[10px] bg-transparent text-[#2e2d5f] border-[#2e2d5f] hover:bg-[#f1f1f8] transition"
-                      onClick={() => {
-                        onFilterChange("favoriteProduct", [
-                          ...favoriteSelected,
-                          option,
-                        ]);
-                        setSearchTerm(""); // Clear input after selecting
-                      }}
-                    >
-                      {option}
-                    </button>
-                  ))}
-              </div>
-            )}
-          </div>
+          {renderFilterInput("education", filterOptions.education)}
         </FilterItem>
 
         {/* Favorite Colour Filter */}
@@ -442,137 +684,86 @@ const FilterPanel = ({
           onToggle={() => toggleFilter("favoriteColour")}
         >
           <div className="mt-2 flex flex-wrap gap-2">
-            {filterOptions.favoriteColour.map((option) => {
-              const isSelected = filters.favoriteColour === option;
+            {loading ? (
+              <div className="text-sm text-gray-500">Loading...</div>
+            ) : (
+              filterOptions.favoriteColour.map((option) => {
+                const isSelected = filters.favoriteColour === option;
 
-              const colorMap = {
-                Black: "#000000",
-                Red: "#FF0000",
-                Blue: "#0000FF",
-                Pink: "#FF69B4",
-                Green: "#00C853",
-                Brown: "#8B4513",
-                Orange: "#FFA500",
-                White: "#FFFFFF",
-                Purple: "#8000FF",
-                Yellow: "#FFD700",
-              };
+                const colorMap = {
+                  Black: "#000000",
+                  Red: "#FF0000",
+                  Blue: "#0000FF",
+                  Pink: "#FF69B4",
+                  Green: "#00C853",
+                  Brown: "#8B4513",
+                  Orange: "#FFA500",
+                  White: "#FFFFFF",
+                  Purple: "#8000FF",
+                  Violet: "#8000FF",
+                  Yellow: "#FFD700",
+                };
 
-              const dotColor = colorMap[option] || "#999999";
-              const isWhite = option === "White";
+                const dotColor = colorMap[option] || "#999999";
+                const isWhite = option === "White";
 
-              return (
-                <button
-                  key={option}
-                  onClick={() => onFilterChange("favoriteColour", option)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-all duration-200 ${
-                    isSelected
-                      ? "bg-[#f1f1fb] text-[#2e2d5f] border-[#2e2d5f]"
-                      : "bg-white text-[#2e2d5f] border-[#2e2d5f]"
-                  }`}
-                >
-                  <span
-                    className={`w-2.5 h-2.5 rounded-full border ${
-                      isWhite ? "border-gray-400" : ""
+                return (
+                  <button
+                    key={option}
+                    onClick={() => onFilterChange("favoriteColour", option)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-all duration-200 ${
+                      isSelected
+                        ? "bg-[#f1f1fb] text-[#2e2d5f] border-[#2e2d5f]"
+                        : "bg-white text-[#2e2d5f] border-[#2e2d5f]"
                     }`}
-                    style={{ backgroundColor: dotColor }}
-                  />
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-        </FilterItem>
-
-        {/* Favorite Brand Filter */}
-        <FilterItem
-          name="Favorite Brand"
-          expanded={expandedFilter === "favoriteBrand"}
-          onToggle={() => toggleFilter("favoriteBrand")}
-        >
-          <div className="mt-2">
-            {/* Search Box */}
-            <div className="relative mb-2">
-              <input
-                type="text"
-                placeholder="Search Brand"
-                value={brandSearchTerm}
-                onChange={(e) => setBrandSearchTerm(e.target.value)}
-                className="w-full pl-4 pr-10 py-1.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-1 focus:ring-[#2e2d5f]"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7c7ba0]">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-4.35-4.35M5.5 11a5.5 5.5 0 1111 0 5.5 5.5 0 01-11 0z"
-                  />
-                </svg>
-              </span>
-            </div>
-
-            {/* Selected Chips Only When Not Typing */}
-            {brandSearchTerm === "" && favoriteBrandSelected.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-2">
-                {favoriteBrandSelected.map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center px-3 py-1.5 bg-gray-100 text-[#2e2d5f] rounded-md text-sm"
                   >
-                    <span className="mr-1">{item}</span>
-                    <button
-                      onClick={() =>
-                        onFilterChange(
-                          "favoriteBrand",
-                          favoriteBrandSelected.filter((i) => i !== item)
-                        )
-                      }
-                      className="ml-1 text-[#2e2d5f] hover:text-red-500 text-xs"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Filter Buttons Based on Search */}
-            {brandSearchTerm && (
-              <div className="flex flex-wrap gap-1">
-                {filterOptions.favoriteBrand
-                  .filter(
-                    (option) =>
-                      option
-                        .toLowerCase()
-                        .includes(brandSearchTerm.toLowerCase()) &&
-                      !favoriteBrandSelected.includes(option)
-                  )
-                  .map((option) => (
-                    <button
-                      key={option}
-                      className="px-3 py-1 rounded-md border text-[10px] bg-transparent text-[#2e2d5f] border-[#2e2d5f] hover:bg-[#f1f1f8] transition"
-                      onClick={() => {
-                        onFilterChange("favoriteBrand", [
-                          ...favoriteBrandSelected,
-                          option,
-                        ]);
-                        setBrandSearchTerm(""); // Clear input after selecting
-                      }}
-                    >
-                      {option}
-                    </button>
-                  ))}
-              </div>
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full border ${
+                        isWhite ? "border-gray-400" : ""
+                      }`}
+                      style={{ backgroundColor: dotColor }}
+                    />
+                    {option}
+                  </button>
+                );
+              })
             )}
           </div>
         </FilterItem>
+
+        {/* Interest Filter */}
+        <FilterItem
+          name="Interest"
+          expanded={expandedFilter === "interest"}
+          onToggle={() => toggleFilter("interest")}
+        >
+          {renderFilterInput("interest", filterOptions.interest)}
+        </FilterItem>
+
+        {/* Anniversary Filter */}
+        {filterOptions.anniversary && (
+          <FilterItem
+            name="Anniversary"
+            expanded={expandedFilter === "anniversary"}
+            onToggle={() => toggleFilter("anniversary")}
+          >
+            {renderFilterInput("anniversary", filterOptions.anniversary)}
+          </FilterItem>
+        )}
+
+        {/* Short Measurement Filter */}
+        {filterOptions.shortMeasurement && (
+          <FilterItem
+            name="Short Measurement"
+            expanded={expandedFilter === "shortMeasurement"}
+            onToggle={() => toggleFilter("shortMeasurement")}
+          >
+            {renderFilterInput(
+              "shortMeasurement",
+              filterOptions.shortMeasurement
+            )}
+          </FilterItem>
+        )}
 
         {/* Special Days Filter */}
         <FilterItem
@@ -692,58 +883,6 @@ const FilterPanel = ({
           </div>
         </FilterItem>
 
-        {/* Life Style Filter */}
-        <FilterItem
-          name="Life Style"
-          expanded={expandedFilter === "lifeStyle"}
-          onToggle={() => toggleFilter("lifeStyle")}
-        >
-          <div className="mt-2 flex flex-wrap gap-1">
-            {filterOptions.lifeStyle.map((option) => {
-              const isActive = filters.lifeStyle === option;
-              return (
-                <button
-                  key={option}
-                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${
-                    isActive
-                      ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
-                      : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
-                  }`}
-                  onClick={() => onFilterChange("lifeStyle", option)}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-        </FilterItem>
-
-        {/* Interest Filter */}
-        <FilterItem
-          name="Interest"
-          expanded={expandedFilter === "interest"}
-          onToggle={() => toggleFilter("interest")}
-        >
-          <div className="mt-2 flex flex-wrap gap-1">
-            {filterOptions.interest.map((option) => {
-              const isActive = filters.interest === option;
-              return (
-                <button
-                  key={option}
-                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${
-                    isActive
-                      ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
-                      : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
-                  }`}
-                  onClick={() => onFilterChange("interest", option)}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-        </FilterItem>
-
         {/* Customer Label Filter */}
         <FilterItem
           name="Customer Label"
@@ -777,6 +916,18 @@ const FilterPanel = ({
               );
             })}
           </div>
+        </FilterItem>
+
+        {/* Communication Channel Filter */}
+        <FilterItem
+          name="Communication Channel"
+          expanded={expandedFilter === "communicationChannel"}
+          onToggle={() => toggleFilter("communicationChannel")}
+        >
+          {renderFilterInput(
+            "communicationChannel",
+            filterOptions.communicationChannel
+          )}
         </FilterItem>
 
         {/* Active Filter */}
@@ -880,54 +1031,58 @@ const FilterPanel = ({
           expanded={expandedFilter === "loyaltyPoints"}
           onToggle={() => toggleFilter("loyaltyPoints")}
         >
-          <div className="mt-3">
-            <ReactSlider
-              min={0}
-              max={40000}
-              step={100}
-              pearling
-              minDistance={1000}
-              value={filters.loyaltyPoints || [0, 40000]}
-              onChange={(value) => onFilterChange("loyaltyPoints", value)}
-              className="relative w-full h-1.5 mt-2"
-              renderTrack={(props, state) => (
-                <div
-                  {...props}
-                  className={`absolute top-0 h-1.5 rounded-full ${
-                    state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
-                  }`}
-                />
-              )}
-              renderThumb={(props) => (
-                <div
-                  {...props}
-                  className="flex items-center justify-center absolute top-0 transform -translate-y-1.5 h-5 w-5 rounded-full bg-[#2e2d5f] shadow-[0_0_0_8px_rgba(47,45,95,0.15)]"
-                />
-              )}
-            />
+          {filterOptions.loyaltyPoints?.type === "percentage" ? (
+            renderFilterInput("loyaltyPoints", filterOptions.loyaltyPoints)
+          ) : (
+            <div className="mt-3">
+              <ReactSlider
+                min={0}
+                max={40000}
+                step={100}
+                pearling
+                minDistance={1000}
+                value={filters.loyaltyPoints || [0, 40000]}
+                onChange={(value) => onFilterChange("loyaltyPoints", value)}
+                className="relative w-full h-1.5 mt-2"
+                renderTrack={(props, state) => (
+                  <div
+                    {...props}
+                    className={`absolute top-0 h-1.5 rounded-full ${
+                      state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
+                    }`}
+                  />
+                )}
+                renderThumb={(props) => (
+                  <div
+                    {...props}
+                    className="flex items-center justify-center absolute top-0 transform -translate-y-1.5 h-5 w-5 rounded-full bg-[#2e2d5f] shadow-[0_0_0_8px_rgba(47,45,95,0.15)]"
+                  />
+                )}
+              />
 
-            {/* Value Labels */}
-            <div className="flex justify-between text-xs text-[#2e2d5f] font-medium mt-2">
-              <span>
-                ₹{" "}
-                {Number(filters.loyaltyPoints?.[0] || 0).toLocaleString(
-                  "en-IN",
-                  {
-                    minimumFractionDigits: 2,
-                  }
-                )}
-              </span>
-              <span>
-                ₹{" "}
-                {Number(filters.loyaltyPoints?.[1] || 40000).toLocaleString(
-                  "en-IN",
-                  {
-                    minimumFractionDigits: 2,
-                  }
-                )}
-              </span>
+              {/* Value Labels */}
+              <div className="flex justify-between text-xs text-[#2e2d5f] font-medium mt-2">
+                <span>
+                  ₹{" "}
+                  {Number(filters.loyaltyPoints?.[0] || 0).toLocaleString(
+                    "en-IN",
+                    {
+                      minimumFractionDigits: 2,
+                    }
+                  )}
+                </span>
+                <span>
+                  ₹{" "}
+                  {Number(filters.loyaltyPoints?.[1] || 40000).toLocaleString(
+                    "en-IN",
+                    {
+                      minimumFractionDigits: 2,
+                    }
+                  )}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
         </FilterItem>
 
         {/* Current Business Value Filter */}
@@ -1044,44 +1199,95 @@ const FilterPanel = ({
           </div>
         </FilterItem>
 
+        {/* Satisfaction Score Filter */}
+        <FilterItem
+          name="Satisfaction Score"
+          expanded={expandedFilter === "satisfactionScore"}
+          onToggle={() => toggleFilter("satisfactionScore")}
+        >
+          {filterOptions.satisfactionScore?.type === "number" ? (
+            renderFilterInput(
+              "satisfactionScore",
+              filterOptions.satisfactionScore
+            )
+          ) : (
+            <div className="mt-3">
+              <ReactSlider
+                min={0}
+                max={100}
+                step={1}
+                pearling
+                minDistance={5}
+                value={filters.satisfactionScore || [0, 100]}
+                onChange={(value) => onFilterChange("satisfactionScore", value)}
+                className="relative w-full h-1.5 mt-2"
+                renderTrack={(props, state) => (
+                  <div
+                    {...props}
+                    className={`absolute top-0 h-1.5 rounded-full ${
+                      state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
+                    }`}
+                  />
+                )}
+                renderThumb={(props) => (
+                  <div
+                    {...props}
+                    className="flex items-center justify-center absolute top-0 transform -translate-y-1.5 h-5 w-5 rounded-full bg-[#2e2d5f] shadow-[0_0_0_8px_rgba(47,45,95,0.15)]"
+                  />
+                )}
+              />
+
+              {/* Value Labels */}
+              <div className="flex justify-between text-xs text-[#2e2d5f] font-medium mt-2">
+                <span>{filters.satisfactionScore?.[0] ?? 0}</span>
+                <span>{filters.satisfactionScore?.[1] ?? 100}</span>
+              </div>
+            </div>
+          )}
+        </FilterItem>
+
         {/* Engagement Score Filter */}
         <FilterItem
           name="Engagement Score"
           expanded={expandedFilter === "engagementScore"}
           onToggle={() => toggleFilter("engagementScore")}
         >
-          <div className="mt-3">
-            <ReactSlider
-              min={0}
-              max={100}
-              step={1}
-              pearling
-              minDistance={5}
-              value={filters.engagementScore || [0, 100]}
-              onChange={(value) => onFilterChange("engagementScore", value)}
-              className="relative w-full h-1.5 mt-2"
-              renderTrack={(props, state) => (
-                <div
-                  {...props}
-                  className={`absolute top-0 h-1.5 rounded-full ${
-                    state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
-                  }`}
-                />
-              )}
-              renderThumb={(props) => (
-                <div
-                  {...props}
-                  className="flex items-center justify-center absolute top-0 transform -translate-y-1.5 h-5 w-5 rounded-full bg-[#2e2d5f] shadow-[0_0_0_8px_rgba(47,45,95,0.15)]"
-                />
-              )}
-            />
+          {filterOptions.engagementScore?.type === "number" ? (
+            renderFilterInput("engagementScore", filterOptions.engagementScore)
+          ) : (
+            <div className="mt-3">
+              <ReactSlider
+                min={0}
+                max={100}
+                step={1}
+                pearling
+                minDistance={5}
+                value={filters.engagementScore || [0, 100]}
+                onChange={(value) => onFilterChange("engagementScore", value)}
+                className="relative w-full h-1.5 mt-2"
+                renderTrack={(props, state) => (
+                  <div
+                    {...props}
+                    className={`absolute top-0 h-1.5 rounded-full ${
+                      state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
+                    }`}
+                  />
+                )}
+                renderThumb={(props) => (
+                  <div
+                    {...props}
+                    className="flex items-center justify-center absolute top-0 transform -translate-y-1.5 h-5 w-5 rounded-full bg-[#2e2d5f] shadow-[0_0_0_8px_rgba(47,45,95,0.15)]"
+                  />
+                )}
+              />
 
-            {/* Value Labels */}
-            <div className="flex justify-between text-xs text-[#2e2d5f] font-medium mt-2">
-              <span>{filters.engagementScore?.[0] ?? 0}</span>
-              <span>{filters.engagementScore?.[1] ?? 100}</span>
+              {/* Value Labels */}
+              <div className="flex justify-between text-xs text-[#2e2d5f] font-medium mt-2">
+                <span>{filters.engagementScore?.[0] ?? 0}</span>
+                <span>{filters.engagementScore?.[1] ?? 100}</span>
+              </div>
             </div>
-          </div>
+          )}
         </FilterItem>
       </div>
     </div>
