@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { XCircle, CheckCircle, List, BarChart } from "lucide-react";
 import {
   LineChart,
@@ -11,6 +10,94 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { extractFieldValue, transformCustomerData, transformFormDataToAPI, formatFieldForDisplay, getInputType, getFieldType } from "../../utils/customerDataUtils";
+
+// Memoized FieldItem component to prevent unnecessary re-renders
+const FieldItem = React.memo(({ 
+  label, 
+  name, 
+  defaultValue, 
+  section = 'basic', 
+  isEditable = false, 
+  value, 
+  onChange, 
+  customer, 
+  isEditing 
+}) => {
+  const fieldType = getFieldType(customer, section, name);
+  const inputType = getInputType(fieldType);
+  
+  const handleInputChange = useCallback((e) => {
+    onChange(section, name, e.target.value);
+  }, [onChange, section, name]);
+  
+  return (
+    <div className="mb-4">
+      <p className="text-sm text-gray-500 mb-2">{label}</p>
+      {isEditing && isEditable ? (
+        <input
+          type={inputType}
+          value={value || ''}
+          onChange={handleInputChange}
+          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+          placeholder={`Enter ${label.toLowerCase()}`}
+          autoComplete="off"
+        />
+      ) : (
+        <p className="text-sm font-medium text-gray-900">
+          {formatFieldForDisplay(defaultValue, fieldType)}
+        </p>
+      )}
+    </div>
+  );
+});
+
+// Memoized DetailItem component to prevent unnecessary re-renders
+const DetailItem = React.memo(({ 
+  label, 
+  name, 
+  defaultValue, 
+  section = 'basic', 
+  isEditable = false, 
+  value, 
+  onChange, 
+  customer, 
+  isEditing 
+}) => {
+  const fieldType = getFieldType(customer, section, name);
+  const inputType = getInputType(fieldType);
+  
+  const handleInputChange = useCallback((e) => {
+    onChange(section, name, e.target.value);
+  }, [onChange, section, name]);
+  
+  return (
+    <div className="flex items-center justify-between p-4 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
+      <div className="flex items-center">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-900">{label}</p>
+          {isEditing && isEditable ? (
+            <input
+              type={inputType}
+              value={value || ''}
+              onChange={handleInputChange}
+              className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+              placeholder={`Enter ${label.toLowerCase()}`}
+              autoComplete="off"
+            />
+          ) : (
+            <p className="text-sm text-gray-600">
+              {formatFieldForDisplay(defaultValue, fieldType)}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// Set display names for debugging
+FieldItem.displayName = 'FieldItem';
+DetailItem.displayName = 'DetailItem';
 
 const CustomerDetails = ({
   customer,
@@ -25,21 +112,72 @@ const CustomerDetails = ({
   isLoading,
 }) => {
   // Transform customer data to handle new nested structure
-  const transformedCustomer = transformCustomerData(customer);
+  const transformedCustomer = useMemo(() => transformCustomerData(customer), [customer]);
   
-  const { register, handleSubmit } = useForm({
-    defaultValues: {
-      basic: {
-        firstname: transformedCustomer?.firstname,
-        lastname: transformedCustomer?.lastname,
-        mobileNumber: transformedCustomer?.mobileNumber,
-        source: transformedCustomer?.source,
-      },
-      additionalData: transformedCustomer?.additionalData || {},
-      advancedDetails: transformedCustomer?.advancedDetails || {},
-      advancedPrivacyDetails: transformedCustomer?.advancedPrivacyDetails || {},
+  // Initialize form data with proper default values
+  const [formData, setFormData] = useState(() => {
+    if (transformedCustomer) {
+      return {
+        basic: {
+          firstname: transformedCustomer?.firstname || '',
+          lastname: transformedCustomer?.lastname || '',
+          mobileNumber: transformedCustomer?.mobileNumber || '',
+          source: transformedCustomer?.source || '',
+          customerId: transformedCustomer?.customerId || '',
+          firstVisit: transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : '',
+        },
+        additionalData: transformedCustomer?.additionalData || {},
+        advancedDetails: transformedCustomer?.advancedDetails || {},
+        advancedPrivacyDetails: transformedCustomer?.advancedPrivacyDetails || {},
+      };
     }
+    return {
+      basic: { 
+        firstname: '', 
+        lastname: '', 
+        mobileNumber: '', 
+        source: '', 
+        customerId: '', 
+        firstVisit: '' 
+      },
+      additionalData: {},
+      advancedDetails: {},
+      advancedPrivacyDetails: {},
+    };
   });
+
+  // Update form data when customer data changes
+  useEffect(() => {
+    if (transformedCustomer) {
+      const newFormData = {
+        basic: {
+          firstname: transformedCustomer?.firstname || '',
+          lastname: transformedCustomer?.lastname || '',
+          mobileNumber: transformedCustomer?.mobileNumber || '',
+          source: transformedCustomer?.source || '',
+          customerId: transformedCustomer?.customerId || '',
+          firstVisit: transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : '',
+        },
+        additionalData: transformedCustomer?.additionalData || {},
+        advancedDetails: transformedCustomer?.advancedDetails || {},
+        advancedPrivacyDetails: transformedCustomer?.advancedPrivacyDetails || {},
+      };
+      console.log('Setting form data:', newFormData);
+      setFormData(newFormData);
+    }
+  }, [transformedCustomer]);
+
+  // Memoized callback for handling input changes
+  const handleInputChange = useCallback((section, name, value) => {
+    console.log(`Input change: ${section}.${name} = ${value}`);
+    setFormData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [name]: value
+      }
+    }));
+  }, []);
 
   const tabs = ["Advanced Details", "Advanced Privacy", "Referral"];
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
@@ -48,51 +186,9 @@ const CustomerDetails = ({
   const [showPurchaseList, setShowPurchaseList] = useState(false);
   const [showAllPurchases, setShowAllPurchases] = useState(false);
 
-  const FieldItem = ({ label, name, defaultValue, register, section = 'basic', isEditable = false }) => {
-    const fieldType = getFieldType(customer, section, name);
-    const inputType = getInputType(fieldType);
-    
-    return (
-      <div className="mb-4">
-        <p className="text-sm text-gray-500 mb-2">{label}</p>
-        {isEditing && isEditable ? (
-          <input
-            type={inputType}
-            defaultValue={defaultValue || ""}
-            {...register(`${section}.${name}`)}
-            className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-          />
-        ) : (
-          <p className="text-sm font-medium text-gray-900">{formatFieldForDisplay(defaultValue, fieldType)}</p>
-        )}
-      </div>
-    );
-  };
 
-  const DetailItem = ({ label, name, defaultValue, register, section = 'basic', isEditable = false }) => {
-    const fieldType = getFieldType(customer, section, name);
-    const inputType = getInputType(fieldType);
-    
-    return (
-      <div className="flex items-center justify-between p-4 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
-        <div className="flex items-center">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900">{label}</p>
-            {isEditing && isEditable ? (
-              <input
-                type={inputType}
-                defaultValue={defaultValue || ""}
-                {...register(`${section}.${name}`)}
-                className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-              />
-            ) : (
-              <p className="text-sm text-gray-600">{formatFieldForDisplay(defaultValue, fieldType)}</p>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
+
+
 
   const renderStars = (rating) => {
     if (!rating) return null;
@@ -116,7 +212,8 @@ const CustomerDetails = ({
     return stars;
   };
 
-  const renderDynamicFields = (fields, section) => {
+  // Memoized function to render dynamic fields
+  const renderDynamicFields = useCallback((fields, section) => {
     if (!fields) return null;
     
     return Object.entries(fields).map(([key, value]) => {
@@ -129,9 +226,12 @@ const CustomerDetails = ({
             label={key}
             name={key}
             defaultValue={value}
-            register={register}
             section={section}
             isEditable={isEditable}
+            value={formData?.[section]?.[key]}
+            onChange={handleInputChange}
+            customer={customer}
+            isEditing={isEditing}
           />
         );
       } else if (section === 'advancedPrivacy' && key.toLowerCase().includes('satisfaction')) {
@@ -155,18 +255,23 @@ const CustomerDetails = ({
             label={key}
             name={key}
             defaultValue={value}
-            register={register}
             section={section}
             isEditable={isEditable}
+            value={formData?.[section]?.[key]}
+            onChange={handleInputChange}
+            customer={customer}
+            isEditing={isEditing}
           />
         );
       }
     });
-  };
+  }, [formData, isEditing, handleInputChange, customer]);
 
-  const onSubmit = (data) => {
+  const onSubmit = (e) => {
+    e.preventDefault();
+    
     // Transform the form data back to API format
-    const formattedData = transformFormDataToAPI(data, customer);
+    const formattedData = transformFormDataToAPI(formData, customer);
     
     // Call the parent save handler with formatted data
     onSave(formattedData);
@@ -179,76 +284,94 @@ const CustomerDetails = ({
       </div>
 
       <div className="flex-1 p-6 overflow-y-auto">
-        <div className="rounded-lg shadow-sm">
-          {/* Profile Header */}
-          <div className="p-6 border-b border-gray-200 mb-5 bg-white rounded-[20px]">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center">
-                <div className="relative">
-                  <img
-                    src={transformedCustomer?.profileImage || "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"}
-                    alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
-                    className="w-[118px] h-[92px] rounded-lg object-cover"
-                  />
-                </div>
-                <div className="ml-14 w-full">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Details</h2>
-                  
-                  <div className="grid grid-cols-3 gap-x-16 gap-y-6 mb-6">
-                    <FieldItem 
-                      label="First Name" 
-                      name="firstname" 
-                      defaultValue={transformedCustomer?.firstname} 
-                      register={register} 
-                      isEditable={isEditing} 
-                    />
-                    <FieldItem 
-                      label="Last Name" 
-                      name="lastname" 
-                      defaultValue={transformedCustomer?.lastname} 
-                      register={register} 
-                      isEditable={isEditing} 
-                    />
-                    <FieldItem 
-                      label="Mobile Number" 
-                      name="mobileNumber" 
-                      defaultValue={transformedCustomer?.mobileNumber} 
-                      register={register} 
-                      isEditable={isEditing} 
-                    />
-                    <FieldItem 
-                      label="Source" 
-                      name="source" 
-                      defaultValue={transformedCustomer?.source} 
-                      register={register} 
-                      isEditable={isEditing} 
-                    />
-                    <FieldItem 
-                      label="Customer ID" 
-                      name="customerId" 
-                      defaultValue={transformedCustomer?.customerId} 
-                      register={register} 
-                    />
-                    <FieldItem 
-                      label="First Visit" 
-                      name="firstVisit" 
-                      defaultValue={transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : ''} 
-                      register={register} 
+        <form onSubmit={onSubmit}>
+          <div className="rounded-lg shadow-sm">
+            {/* Profile Header */}
+            <div className="p-6 border-b border-gray-200 mb-5 bg-white rounded-[20px]">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center">
+                  <div className="relative">
+                    <img
+                      src={transformedCustomer?.profileImage || "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"}
+                      alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
+                      className="w-[118px] h-[92px] rounded-lg object-cover"
                     />
                   </div>
-
-                  {transformedCustomer?.additionalData && (
-                    <div className="grid grid-cols-3 gap-x-16 gap-y-6">
-                      {renderDynamicFields(transformedCustomer?.additionalData, "additionalData")}
+                  <div className="ml-14 w-full">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Details</h2>
+                    
+                    <div className="grid grid-cols-3 gap-x-16 gap-y-6 mb-6">
+                      <FieldItem 
+                        label="First Name" 
+                        name="firstname" 
+                        defaultValue={transformedCustomer?.firstname} 
+                        isEditable={isEditing}
+                        value={formData?.basic?.firstname}
+                        onChange={handleInputChange}
+                        customer={customer}
+                        isEditing={isEditing}
+                      />
+                      <FieldItem 
+                        label="Last Name" 
+                        name="lastname" 
+                        defaultValue={transformedCustomer?.lastname} 
+                        isEditable={isEditing}
+                        value={formData?.basic?.lastname}
+                        onChange={handleInputChange}
+                        customer={customer}
+                        isEditing={isEditing}
+                      />
+                      <FieldItem 
+                        label="Mobile Number" 
+                        name="mobileNumber" 
+                        defaultValue={transformedCustomer?.mobileNumber} 
+                        isEditable={isEditing}
+                        value={formData?.basic?.mobileNumber}
+                        onChange={handleInputChange}
+                        customer={customer}
+                        isEditing={isEditing}
+                      />
+                      <FieldItem 
+                        label="Source" 
+                        name="source" 
+                        defaultValue={transformedCustomer?.source} 
+                        isEditable={isEditing}
+                        value={formData?.basic?.source}
+                        onChange={handleInputChange}
+                        customer={customer}
+                        isEditing={isEditing}
+                      />
+                      <FieldItem 
+                        label="Customer ID" 
+                        name="customerId" 
+                        defaultValue={transformedCustomer?.customerId}
+                        value={formData?.basic?.customerId}
+                        onChange={handleInputChange}
+                        customer={customer}
+                        isEditing={isEditing}
+                      />
+                      <FieldItem 
+                        label="First Visit" 
+                        name="firstVisit" 
+                        defaultValue={transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : ''}
+                        value={formData?.basic?.firstVisit}
+                        onChange={handleInputChange}
+                        customer={customer}
+                        isEditing={isEditing}
+                      />
                     </div>
-                  )}
+
+                    {transformedCustomer?.additionalData && (
+                      <div className="grid grid-cols-3 gap-x-16 gap-y-6">
+                        {renderDynamicFields(transformedCustomer?.additionalData, "additionalData")}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Main Content */}
-          <form onSubmit={handleSubmit(onSubmit)}>
+            {/* Main Content */}
             <div className="bg-white p-8 rounded-[20px]">
               {/* Tabs */}
               <div className="border-b border-gray-200 bg-white pb-5">
@@ -431,8 +554,8 @@ const CustomerDetails = ({
                 </button>
               </div>
             )}
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
   );
