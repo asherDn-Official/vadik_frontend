@@ -35,6 +35,10 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const [showProductSuggestions, setShowProductSuggestions] = useState({});
   const [currentProductSearches, setCurrentProductSearches] = useState({});
 
+  const [retailerId, setRetailerId] = useState(() => {
+    return localStorage.getItem("retailerId") || "";
+  });
+
   // Initialize product search states
   useEffect(() => {
     const initialSearchStates = {};
@@ -269,7 +273,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
   const handleSubmit = async () => {
     const orderData = {
-      retailerId: "6856350030bcee9b82be4c13",
+      retailerId,
       mobileNumber: formData.phoneNumber,
       firstname: formData.firstName,
       lastname: formData.lastName,
@@ -297,6 +301,39 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         orderData
       );
       console.log("Order saved successfully:", response.data);
+      
+      // Clear form data after successful submission
+      setFormData({
+        phoneNumber: "",
+        firstName: "",
+        lastName: "",
+        gender: "",
+        source: "",
+      });
+      
+      // Reset products to initial state
+      setProducts([
+        {
+          id: 1,
+          name: "",
+          quantity: 1,
+          unitPrice: 0,
+          totalPrice: 0,
+          colors: [],
+          isAutoPopulated: false,
+        },
+      ]);
+      
+      // Reset other form states
+      setDiscount(0);
+      setPaymentStatus("Unpaid");
+      setNewColor("");
+      setSearchResults([]);
+      setShowSuggestions(false);
+      setProductSearchResults({});
+      setShowProductSuggestions({});
+      setCurrentProductSearches({});
+      
     } catch (error) {
       console.error("Error saving order:", error);
     }
