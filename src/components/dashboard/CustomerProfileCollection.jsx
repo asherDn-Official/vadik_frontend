@@ -1,23 +1,45 @@
+import React, { useEffect, useState } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
-
-// Sample customer context
-const customerData = [
-  { day: 19, new: 10, retention: 50 },
-  { day: 12, new: 60, retention: 30 },
-  { day: 13, new: 50, retention: 10 },
-  { day: 14, new: 60, retention: 10 },
-  { day: 15, new: 70, retention: 15 },
-  { day: 16, new: 0, retention: 0 },
-  { day: 17, new: 0, retention: 0 },
-];
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import api from "../../api/apiconfig"; // Adjust path as needed
+import { format } from "date-fns";
 
 function CustomerProfileCollection() {
-  const total = customerData.reduce((sum, d) => sum + d.new + d.retention, 0);
-  const currentDate = new Date().toLocaleDateString("en-US", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  const [data, setData] = useState([]);
+  const [startDate, setStartDate] = useState(
+    new Date(new Date().setDate(new Date().getDate() - 6))
+  );
+  const [endDate, setEndDate] = useState(new Date());
+  const [loading, setLoading] = useState(true);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+
+  const fetchCustomerData = async () => {
+    try {
+      setLoading(true);
+      const formattedStart = format(startDate, "yyyy-MM-dd");
+      const formattedEnd = format(endDate, "yyyy-MM-dd");
+
+      const res = await api.get(
+        `api/dashboard/customerProfileCollection?startDate=${formattedStart}&endDate=${formattedEnd}`
+      );
+
+      setData(res.data || []);
+    } catch (err) {
+      console.error("Failed to fetch customer profile data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomerData();
+  }, [startDate, endDate]);
+
+  const total = data.reduce(
+    (sum, d) => sum + d.newCustomers + d.retentionCustomers,
+    0
+  );
 
   return (
     <div className="dashboard-card bg-white rounded-xl p-6 shadow-md">
@@ -26,9 +48,30 @@ function CustomerProfileCollection() {
         <h2 className="text-xl font-semibold text-[#313166]">
           Customer Profile Collection
         </h2>
+
+        {/* Date Picker */}
         <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-gray-100 text-[#313166] font-medium text-sm">
           <FaCalendarAlt />
-          <span>{currentDate}</span>
+          <DatePicker
+            selected={startDate}
+            onChange={(date) => setStartDate(date)}
+            selectsStart
+            startDate={startDate}
+            endDate={endDate}
+            dateFormat="MMM dd, yyyy"
+            className="bg-transparent focus:outline-none w-[110px]"
+          />
+          <span>-</span>
+          <DatePicker
+            selected={endDate}
+            onChange={(date) => setEndDate(date)}
+            selectsEnd
+            startDate={startDate}
+            endDate={endDate}
+            minDate={startDate}
+            dateFormat="MMM dd, yyyy"
+            className="bg-transparent focus:outline-none w-[110px]"
+          />
         </div>
       </div>
 
@@ -36,42 +79,56 @@ function CustomerProfileCollection() {
       <div className="text-6xl font-bold text-[#313166] mb-6">{total}</div>
 
       {/* Bar Graph */}
-      <div className="flex items-end gap-3 mb-4 justify-between h-40">
-        {customerData.map(({ day, new: newCustomers, retention }) => {
-          const totalHeight = newCustomers + retention;
+      <div className="flex items-end gap-3 mb-4 justify-between h-40 relative">
+        {loading ? (
+          <div className="text-center w-full text-gray-400">Loading...</div>
+        ) : data.length === 0 ? (
+          <div className="text-center w-full text-gray-400">No data</div>
+        ) : (
+          data.map(({ date, newCustomers, retentionCustomers }, index) => {
+            const totalHeight = newCustomers + retentionCustomers;
+            const day = new Date(date).getDate();
 
-          if (totalHeight === 0) {
             return (
-              <div key={day} className="flex flex-col items-center flex-1">
-                <div className="w-3 rounded-full bg-gray-300 h-2 mt-auto mb-1"></div>
-                <span className="text-xs text-[#313166] opacity-60">{day}</span>
+              <div
+                key={date}
+                className="flex flex-col items-center flex-1 relative group"
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+              >
+                {/* Tooltip */}
+                {hoveredIndex === index && totalHeight > 0 && (
+                  <div className="absolute -top-14 z-10 bg-black text-white text-xs px-2 py-1 rounded-md shadow-lg">
+                    <div>New: {newCustomers}</div>
+                    <div>Retention: {retentionCustomers}</div>
+                  </div>
+                )}
+
+                {totalHeight === 0 ? (
+                  <div className="w-6 rounded-full bg-gray-300 h-2 mt-auto mb-1"></div>
+                ) : (
+                  <div className="flex flex-col justify-end w-6 relative">
+                    <div
+                      className="bg-pink-300 rounded-t-md"
+                      style={{ height: `${retentionCustomers}px` }}
+                    />
+                    <div
+                      className="bg-rose-500 rounded-t-md"
+                      style={{
+                        height: `${newCustomers}px`,
+                        marginTop: "-4px",
+                      }}
+                    />
+                  </div>
+                )}
+
+                <span className="text-xs text-[#313166] opacity-60 mt-2">
+                  {day}
+                </span>
               </div>
             );
-          }
-
-          return (
-            <div key={day} className="flex flex-col items-center flex-1">
-              <div className="flex flex-col justify-end w-6 relative">
-                {/* Retention Customers */}
-                <div
-                  className="bg-pink-300 rounded-t-md"
-                  style={{ height: `${retention}px` }}
-                />
-                {/* New Customers */}
-                <div
-                  className="bg-rose-500 rounded-t-md"
-                  style={{
-                    height: `${newCustomers}px`,
-                    marginTop: "-4px",
-                  }}
-                />
-              </div>
-              <span className="text-xs text-[#313166] opacity-60 mt-2">
-                {day}
-              </span>
-            </div>
-          );
-        })}
+          })
+        )}
       </div>
 
       {/* Legend */}

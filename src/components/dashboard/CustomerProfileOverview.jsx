@@ -1,22 +1,41 @@
-import React from 'react';
-import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js';
-import { Doughnut } from 'react-chartjs-2';
+import React, { useEffect, useState } from "react";
+import { Chart as ChartJS, ArcElement, Tooltip } from "chart.js";
+import { Doughnut } from "react-chartjs-2";
+import api from "../../api/apiconfig"; // adjust this path as needed
 
 ChartJS.register(ArcElement, Tooltip);
 
 function CustomerProfileOverview() {
-  const active = 394;
-  const inactive = 156;
+  const [active, setActive] = useState(0);
+  const [inactive, setInactive] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCustomerData = async () => {
+      try {
+        const res = await api.get("api/dashboard/activeInactiveCustomerCount");
+        setActive(res.data.active || 0);
+        setInactive(res.data.inactive || 0);
+      } catch (err) {
+        console.error("Error fetching customer profile data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCustomerData();
+  }, []);
+
   const total = active + inactive;
 
   const data = {
     datasets: [
       {
         data: [active, inactive],
-        backgroundColor: ['#db2777', '#313166'], // pink & dark blue
-        borderColor: '#fff',
+        backgroundColor: ["#db2777", "#313166"], // pink & dark blue
+        borderColor: "#fff",
         borderWidth: 6,
-        cutout: '75%',
+        cutout: "75%",
         borderRadius: 30,
         circumference: 360,
         rotation: -90,
@@ -28,31 +47,37 @@ function CustomerProfileOverview() {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      tooltip: {
-        enabled: false,
-      },
-      legend: {
-        display: false,
-      },
+      tooltip: { enabled: false },
+      legend: { display: false },
     },
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow-md  h-[287px] flex flex-col justify-between">
+    <div className="bg-white p-4 rounded-xl shadow-md h-[287px] flex flex-col justify-between">
       {/* Title */}
       <h2 className="text-center text-lg font-semibold text-[#313166]">
         Customer Profile Overview
       </h2>
 
-      {/* Chart container */}
+      {/* Chart */}
       <div className="relative w-[160px] h-[160px] mx-auto">
-        <Doughnut data={data} options={options} />
-
-        {/* Center text */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-4xl font-extrabold text-[#313166]">{total}</span>
-          <span className="text-xs font-medium text-[#313166]">Total Customers</span>
-        </div>
+        {!loading ? (
+          <>
+            <Doughnut data={data} options={options} />
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-4xl font-extrabold text-[#313166]">
+                {total}
+              </span>
+              <span className="text-xs font-medium text-[#313166]">
+                Total Customers
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+            Loading...
+          </div>
+        )}
       </div>
 
       {/* Legend */}

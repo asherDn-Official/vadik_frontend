@@ -17,10 +17,11 @@ const MyProfile = () => {
     profilePicture: "https://randomuser.me/api/portraits/men/36.jpg",
   });
 
-
   const [uploadError, setUploadError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [retailerId, setRetailerId] = useState(null);
   const fileInputRef = useRef(null);
 
   const { auth } = useAuth();
@@ -32,15 +33,17 @@ const MyProfile = () => {
 
         if (response.data.status === "success") {
           const retailerData = response.data.data[0];
+          setRetailerId(retailerData._id); // Store retailer ID for updates
 
           // Split full name into first and last name
-          const nameParts = retailerData?.fullName?.split(' ') || [];
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-
+          const nameParts = retailerData?.fullName?.split(" ") || [];
+          const firstName = nameParts[0] || "";
+          const lastName = nameParts.slice(1).join(" ") || "";
 
           // Format phone number by removing the '+' from phoneCode
-          const formattedPhone = (retailerData.phoneCode?.replace('+', '') || '') + (retailerData.phone || '');
+          const formattedPhone =
+            (retailerData.phoneCode?.replace("+", "") || "") +
+            (retailerData.phone || "");
 
           setProfile({
             firstName,
@@ -50,7 +53,7 @@ const MyProfile = () => {
             storeName: retailerData.storeName || "",
             role: "Retailer",
             address: retailerData.storeAddress || "",
-            profilePicture: profile.profilePicture
+            profilePicture: profile.profilePicture,
           });
         }
         setLoading(false);
@@ -66,7 +69,6 @@ const MyProfile = () => {
     }
   }, [auth]);
 
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: value }));
@@ -78,31 +80,56 @@ const MyProfile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    setSuccessMessage("");
+
     try {
-      // Extract country code and phone number
+      // Create FormData object for the update
+      const formData = new FormData();
+
+      // Append all profile data
+      formData.append(
+        "fullName",
+        `${profile.firstName} ${profile.lastName}`.trim()
+      );
+      formData.append("email", profile.email);
+
+      // Handle phone number
       const phoneCode = `+${profile.phone.slice(0, 2)}`;
       const phoneNumber = profile.phone.slice(2);
+      formData.append("phoneCode", phoneCode);
+      formData.append("phone", phoneNumber);
 
-      const updatedData = {
-        fullName: `${profile.firstName} ${profile.lastName}`.trim(),
-        email: profile.email,
-        phoneCode,
-        phone: phoneNumber,
-        storeName: profile.storeName,
-        storeAddress: profile.address,
-      };
+      formData.append("storeName", profile.storeName);
+      formData.append("storeAddress", profile.address);
 
-      // Use the same API instance you used for GET
-      const response = await api.put(`api/retailer`, updatedData);
+      // Append profile picture if changed
+      if (
+        profile.profilePicture &&
+        !profile.profilePicture.startsWith("http")
+      ) {
+        const blob = await fetch(profile.profilePicture).then((r) => r.blob());
+        formData.append("profileImage", blob, "profile.jpg");
+      }
+
+      // Make the update request with retailer ID
+      const response = await api.patch(`api/retailer/${retailerId}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       if (response.data.status === "success") {
+        setSuccessMessage("Profile updated successfully!");
         console.log("Profile updated successfully:", response.data);
-        // You might want to show a success message to the user
       }
     } catch (err) {
       console.error("Error updating profile:", err);
-      setError(err.message || "Failed to update profile");
-      // You might want to show an error message to the user
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to update profile. Please try again."
+      );
     }
   };
 
@@ -145,7 +172,9 @@ const MyProfile = () => {
   }
 
   if (error) {
-    return <div className="px-10 py-3 mx-auto text-red-500">Error: {error}</div>;
+    return (
+      <div className="px-10 py-3 mx-auto text-red-500">Error: {error}</div>
+    );
   }
 
   return (
@@ -153,6 +182,16 @@ const MyProfile = () => {
       <h2 className="text-[#313166] text-[14px] font-medium mb-6">
         Admin Profile
       </h2>
+
+      {/* Success/Error messages */}
+      {successMessage && (
+        <div className="mb-4 p-2 bg-green-100 text-green-700 rounded">
+          {successMessage}
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">{error}</div>
+      )}
 
       <div className="flex flex-col md:flex-row gap-10">
         {/* Left side - Form fields */}
@@ -193,11 +232,11 @@ const MyProfile = () => {
                   Phone Number
                 </label>
                 <PhoneInput
-                  country={'in'}
+                  country={"in"}
                   value={profile.phone}
                   onChange={handlePhoneChange}
                   inputClass="w-full p-2 border border-gray-300 rounded text-[#313166]"
-                  inputStyle={{ width: '100%' }}
+                  inputStyle={{ width: "100%" }}
                   dropdownClass="text-gray-700"
                 />
               </div>
