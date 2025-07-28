@@ -22,7 +22,7 @@ const CustomerFieldPreferences = () => {
   const [addError, setAddError] = useState(null);
   const [icons, setIcons] = useState([]);
   const [showIconSelector, setShowIconSelector] = useState(false);
-  
+
   // Map UI tab names to API field names
   const tabToApiFieldMap = {
     "Basic Details": "additionalData",
@@ -139,13 +139,16 @@ const CustomerFieldPreferences = () => {
 
     try {
       const payload = {
-        retailerId,
+        // retailerId,
         additionalData: updatedFields["Basic Details"],
         advancedDetails: updatedFields["Advance Details"],
         advancedPrivacyDetails: updatedFields["Advance Privacy"]
       };
 
-      await api.put(`/api/customer-preferences/${preferenceId}`, payload);
+      await api.put(`/api/customer-preferences/${retailerId}`, payload);
+      fetchPreferences();
+
+
     } catch (err) {
       console.error("Error updating preferences:", err);
       setError("Failed to update preferences. Please try again.");
@@ -240,11 +243,10 @@ const CustomerFieldPreferences = () => {
             {Object.keys(fields).map((tab) => (
               <button
                 key={tab}
-                className={`px-6 py-3 text-sm font-medium ${
-                  activeTab === tab
+                className={`px-6 py-3 text-sm font-medium ${activeTab === tab
                     ? "border-b-2 border-primary text-primary"
                     : "text-gray-500 hover:text-gray-700"
-                }`}
+                  }`}
                 onClick={() => {
                   setActiveTab(tab);
                   setIsAddingField(false);
@@ -287,7 +289,7 @@ const CustomerFieldPreferences = () => {
                     className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary"
                     autoFocus
                   />
-                  
+
                   <div className="relative">
                     <select
                       value={newFieldType}
@@ -300,16 +302,16 @@ const CustomerFieldPreferences = () => {
                     </select>
                     <FiType className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
                   </div>
-                  
+
                   <button
                     onClick={() => setShowIconSelector(!showIconSelector)}
                     className="p-2 bg-gray-200 rounded hover:bg-gray-300"
                     title="Select Icon"
                   >
                     {newFieldIcon ? (
-                      <img 
-                        src={newFieldIcon} 
-                        alt="Selected icon" 
+                      <img
+                        src={newFieldIcon}
+                        alt="Selected icon"
                         className="w-5 h-5 object-contain"
                       />
                     ) : (
@@ -317,7 +319,7 @@ const CustomerFieldPreferences = () => {
                     )}
                   </button>
                 </div>
-                
+
                 {showIconSelector && (
                   <div className="border rounded p-3 bg-white">
                     <div className="grid grid-cols-6 gap-2 max-h-40 overflow-y-auto">
@@ -325,14 +327,13 @@ const CustomerFieldPreferences = () => {
                         <button
                           key={icon.name}
                           onClick={() => selectIcon(icon.dataUrl)}
-                          className={`p-1 border rounded hover:border-primary ${
-                            newFieldIcon === icon.dataUrl ? "border-2 border-primary" : ""
-                          }`}
+                          className={`p-1 border rounded hover:border-primary ${newFieldIcon === icon.dataUrl ? "border-2 border-primary" : ""
+                            }`}
                           title={icon.name}
                         >
-                          <img 
-                            src={icon.dataUrl} 
-                            alt={icon.name} 
+                          <img
+                            src={icon.dataUrl}
+                            alt={icon.name}
                             className="w-6 h-6 mx-auto object-contain"
                           />
                         </button>
@@ -340,7 +341,7 @@ const CustomerFieldPreferences = () => {
                     </div>
                   </div>
                 )}
-                
+
                 <div className="flex justify-end gap-2 mt-2">
                   <button
                     onClick={handleAddField}
@@ -356,7 +357,7 @@ const CustomerFieldPreferences = () => {
                   </button>
                 </div>
               </div>
-              
+
               {addError && (
                 <div className="text-red-500 text-sm mt-2">{addError}</div>
               )}
@@ -387,9 +388,9 @@ const CustomerFieldPreferences = () => {
                           >
                             <div className="flex items-center gap-3">
                               {field.iconUrl && (
-                                <img 
-                                  src={field.iconUrl} 
-                                  alt={field.key} 
+                                <img
+                                  src={field.iconUrl}
+                                  alt={field.key}
                                   className="w-5 h-5 object-contain"
                                 />
                               )}
