@@ -29,10 +29,10 @@ const Login = () => {
     setError(null);
 
     try {
-      const endpoint = loginType === "retailer" 
-        ? "api/auth/retailerLogin" 
+      const endpoint = loginType === "retailer"
+        ? "api/auth/retailerLogin"
         : "api/auth/staffLogin";
-      
+
       const response = await api.post(endpoint, {
         email: credentials.email,
         password: credentials.password,
@@ -42,14 +42,23 @@ const Login = () => {
 
       if (data.token) {
         localStorage.setItem("token", data.token);
-         await checkAuth();   
-          navigate("/dashboard");
-     
+        await checkAuth();
+        navigate("/dashboard");
+
         // Store appropriate ID based on login type
         if (loginType === "retailer" && data.retailer?._id) {
+
+          if (data.retailer.onboarding) {
+            navigate("/dashboard");
+          } else {
+            navigate(`/register/${data.retailer._id}`);
+          }
+
           localStorage.setItem("retailerId", data.retailer._id);
         } else if (loginType === "staff" && data.staff?._id) {
           localStorage.setItem("retailerId", data.staff._id);
+          navigate("/dashboard");
+
         }
 
       }
@@ -78,8 +87,8 @@ const Login = () => {
             <button
               type="button"
               onClick={() => setLoginType("retailer")}
-              className={`px-4 py-2 text-sm font-medium rounded-l-lg ${loginType === "retailer" 
-                ? "bg-[#CB376D] text-white" 
+              className={`px-4 py-2 text-sm font-medium rounded-l-lg ${loginType === "retailer"
+                ? "bg-[#CB376D] text-white"
                 : "bg-white/10 text-white/70 hover:bg-white/20"}`}
             >
               Retailer
@@ -87,8 +96,8 @@ const Login = () => {
             <button
               type="button"
               onClick={() => setLoginType("staff")}
-              className={`px-4 py-2 text-sm font-medium rounded-r-lg ${loginType === "staff" 
-                ? "bg-[#CB376D] text-white" 
+              className={`px-4 py-2 text-sm font-medium rounded-r-lg ${loginType === "staff"
+                ? "bg-[#CB376D] text-white"
                 : "bg-white/10 text-white/70 hover:bg-white/20"}`}
             >
               Staff
