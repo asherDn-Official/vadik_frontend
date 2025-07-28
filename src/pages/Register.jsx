@@ -27,7 +27,7 @@ const Register = ({ formData, updateFormData }) => {
   const getOnBoradingInitialData = async () => {
     try {
       setIsLoading(true);
-      const response = await api.get(`/api/retailer/${id}`);
+      const response = await api.get(`/api/retailer/profile`);
       const data = response.data.data;
       setInitialOnboardingData(data);
       

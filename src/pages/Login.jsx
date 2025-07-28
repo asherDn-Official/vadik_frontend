@@ -51,7 +51,7 @@ const Login = () => {
           if (data.retailer.onboarding) {
             navigate("/dashboard");
           } else {
-            navigate(`/register/${data.retailer._id}`);
+            navigate(`/register/basic/${data.retailer._id}`);
           }
 
           localStorage.setItem("retailerId", data.retailer._id);

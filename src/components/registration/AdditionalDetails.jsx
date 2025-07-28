@@ -108,13 +108,14 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
       if (formData.logo) {
         data.append("storeImage", formData.logo);
       }
-      
+
       // data.append("phone", formData.mobile);
       data.append("email", formData.email);
       // data.append("gender", formData.gender || "Male");
       data.append("notes", "Updated retailer information");
+      data.append("onboarding", true);
 
-      const response = await api.post(`api/retailer/${retailerId}`, data, {
+      const response = await api.patch(`api/retailer/${retailerId}`, data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -134,7 +135,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
       console.error("Registration failed:", error);
       setSubmitError(
         error.response?.data?.message ||
-          "Registration failed. Please try again."
+        "Registration failed. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -173,9 +174,8 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             Upload Store Logo or Photo (optional)
           </label>
           <div
-            className={`border-2 border-dashed rounded-md p-6 text-center transition-colors ${
-              isDragging ? "border-primary bg-primary/10" : "border-gray-300"
-            }`}
+            className={`border-2 border-dashed rounded-md p-6 text-center transition-colors ${isDragging ? "border-primary bg-primary/10" : "border-gray-300"
+              }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -289,9 +289,8 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             name="contactNumber"
             value={formData.contactNumber}
             onChange={handleChange}
-            className={`form-input ${
-              errors.contactNumber ? "border-red-500" : ""
-            }`}
+            className={`form-input ${errors.contactNumber ? "border-red-500" : ""
+              }`}
             placeholder="Store Contact Number"
           />
           {errors.contactNumber && (
@@ -344,9 +343,8 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
         <div className="md:col-span-2 flex justify-center mt-6">
           <button
             type="submit"
-            className={`min-w-[150px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962] ${
-              isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-            }`}
+            className={`min-w-[150px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962] ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+              }`}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
