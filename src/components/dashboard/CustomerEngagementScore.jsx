@@ -1,10 +1,37 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import api from "../../api/apiconfig"; // <-- Make sure your axios instance is here
+import { Tooltip as ReactTooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
 
 function CustomerEngagementScore() {
-  const score = 70; // Hardcoded score
+  const [score, setScore] = useState(0);
+  const [totalCustomers, setTotalCustomers] = useState(0);
+  const [respondedCustomers, setRespondedCustomers] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEngagement = async () => {
+      try {
+        const res = await api.get(
+          "api/performanceTracking/customerEngagementScore"
+        );
+        const data = res.data;
+        setScore(data.engagementPercentage ?? 0);
+        setTotalCustomers(data.totalCustomers ?? 0);
+        setRespondedCustomers(data.respondedCustomers ?? 0);
+      } catch (err) {
+        console.error("Error fetching engagement score:", err);
+        setScore(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEngagement();
+  }, []);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm pl-5 pr-8 pt-5 pb-5 h-[155px] flex flex-col justify-around ">
+    <div className="bg-white rounded-2xl shadow-sm pl-5 pr-8 pt-5 pb-5 h-[155px] flex flex-col justify-around">
       {/* Title */}
       <div className="flex justify-between items-start mb-4">
         <h2 className="text-base sm:text-lg font-semibold text-[#1D1B4F]">
@@ -28,18 +55,26 @@ function CustomerEngagementScore() {
         </button>
       </div>
 
-      {/* Progress and Score */}
+      {/* Progress Bar and Score */}
       <div className="flex items-center gap-4">
-        <div className="relative w-full h-5 sm:h-6 bg-gray-200 rounded-full overflow-hidden">
+        <div
+          className="relative w-full h-5 sm:h-6 bg-gray-200 rounded-full overflow-hidden"
+          data-tooltip-id="engagementTooltip"
+          data-tooltip-content={`${respondedCustomers} of ${totalCustomers} customers responded`}
+        >
           <div
             className="absolute left-0 top-0 h-full bg-gradient-to-r from-pink-300 via-pink-500 to-pink-600 rounded-full transition-all duration-500"
             style={{ width: `${score}%` }}
           ></div>
         </div>
+
         <span className="text-2xl sm:text-3xl font-bold text-indigo-900">
-          {score}%
+          {loading ? "..." : `${score}%`}
         </span>
       </div>
+
+      {/* Tooltip */}
+      <ReactTooltip id="engagementTooltip" place="top" effect="solid" />
     </div>
   );
 }
