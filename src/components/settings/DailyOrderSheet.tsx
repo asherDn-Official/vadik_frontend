@@ -301,6 +301,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         orderData
       );
       console.log("Order saved successfully:", response.data);
+      alert("Order saved successfully")
       
       // Clear form data after successful submission
       setFormData({
