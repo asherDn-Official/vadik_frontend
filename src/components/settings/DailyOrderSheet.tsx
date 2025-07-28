@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Scan, Plus, Trash2, ArrowLeft } from "lucide-react";
 import axios from "axios";
 import api from "../../api/apiconfig";
@@ -34,6 +34,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const [productSearchResults, setProductSearchResults] = useState({});
   const [showProductSuggestions, setShowProductSuggestions] = useState({});
   const [currentProductSearches, setCurrentProductSearches] = useState({});
+  const [dropdownPosition, setDropdownPosition] = useState({});
+  const inputRefs = useRef({});
 
   // Initialize product search states
   useEffect(() => {
@@ -46,11 +48,55 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     setProductSearchResults({});
   }, [products]);
 
+  // Handle scroll events to update dropdown positions
+  useEffect(() => {
+    const handleScroll = () => {
+      Object.keys(showProductSuggestions).forEach(productId => {
+        if (showProductSuggestions[productId]) {
+          calculateDropdownPosition(productId);
+        }
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [showProductSuggestions]);
+
+  const calculateDropdownPosition = (productId) => {
+    const inputElement = inputRefs.current[productId];
+    if (inputElement) {
+      const rect = inputElement.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const dropdownHeight = 240; // max-h-60 = 240px
+      
+      // Check if dropdown would go below viewport
+      const shouldShowAbove = rect.bottom + dropdownHeight > viewportHeight && rect.top > dropdownHeight;
+      
+      setDropdownPosition(prev => ({
+        ...prev,
+        [productId]: {
+          top: shouldShowAbove 
+            ? rect.top + window.scrollY - dropdownHeight 
+            : rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width
+        }
+      }));
+    }
+  };
+
   const searchProducts = async (query, productId) => {
+    console.log("Searching products for:", query, "productId:", productId);
     try {
       const response = await axios.get(
         `https://app.vadik.ai/api/inventory?retailerId=6856350030bcee9b82be4c17&search=${query}`
       );
+      console.log("Product search response:", response.data);
       setProductSearchResults(prev => ({
         ...prev,
         [productId]: response.data.data || []
@@ -59,6 +105,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         ...prev,
         [productId]: true
       }));
+      calculateDropdownPosition(productId);
+      console.log("Set suggestions to show for product:", productId);
     } catch (error) {
       console.error("Error searching products:", error);
       setProductSearchResults(prev => ({
@@ -303,7 +351,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
+    <div className="bg-white rounded-lg shadow-sm relative">
       <div className="flex items-center justify-between p-6 border-b">
         <div className="flex items-center gap-4">
           <button
@@ -472,8 +520,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <tbody>
                 {products.map((product) => (
                   <tr key={product.id} className="border-b border-gray-200">
-                    <td className="px-4 py-3 relative">
+                    <td className="px-4 py-3 relative" style={{ position: 'relative', zIndex: 1 }}>
                       <input
+                        ref={(el) => inputRefs.current[product.id] = el}
                         type="text"
                         value={currentProductSearches[product.id] || product.name}
                         onChange={(e) =>
@@ -486,6 +535,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                             currentProductSearches[product.id]?.length >= 3 &&
                             productSearchResults[product.id]?.length > 0
                           ) {
+                            calculateDropdownPosition(product.id);
                             setShowProductSuggestions(prev => ({
                               ...prev,
                               [product.id]: true,
@@ -501,29 +551,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                           }, 200)
                         }
                       />
-                      {showProductSuggestions[product.id] &&
-                        productSearchResults[product.id]?.length > 0 && (
-                          <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                            {productSearchResults[product.id].map((productResult) => (
-                              <div
-                                key={productResult._id}
-                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-                                onMouseDown={() => // Use onMouseDown instead of onClick for better UX
-                                  selectProduct(product.id, productResult)
-                                }
-                              >
-                                <div className="font-medium text-gray-900">
-                                  {productResult.productname}
-                                </div>
-                                <div className="text-sm text-gray-600 mt-1">
-                                  <span className="font-semibold text-green-600">Unit Price: ₹{productResult.price}</span> |
-                                  <span className="ml-1">Stock: {productResult.stock}</span> |
-                                  <span className="ml-1">Colors: {productResult.colors.join(", ")}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+
                     </td>
                     <td className="px-4 py-3">
                       <input
@@ -630,6 +658,42 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
           </div>
         </div>
 
+        {/* Product Suggestions Dropdown - Positioned outside table */}
+        {Object.keys(showProductSuggestions).map(productId => 
+          showProductSuggestions[productId] &&
+          productSearchResults[productId]?.length > 0 &&
+          dropdownPosition[productId] && (
+            <div
+              key={`dropdown-${productId}`}
+              className="fixed z-[9999]  bg-white border border-gray-300 rounded-md shadow-xl max-h-60 overflow-auto"
+              style={{
+                top: dropdownPosition[productId].top,
+                left: dropdownPosition[productId].left,
+                width: dropdownPosition[productId].width,
+                zIndex: 9999
+              }}
+            >
+              {productSearchResults[productId].map((productResult) => (
+                <div
+                  key={productResult._id}
+                  className="px-4 py-2 min-w-40 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                  onMouseDown={() => // Use onMouseDown instead of onClick for better UX
+                    selectProduct(productId, productResult)
+                  }
+                >
+                  <div className="font-medium text-gray-900">
+                    {productResult.productname}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    <span className="font-semibold text-green-600">Unit Price: ₹{productResult.price}</span> |
+                    <span className="ml-1">Stock: {productResult.stock}</span> |
+                    <span className="ml-1">Colors: {productResult.colors.join(", ")}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        )}
 
         <div className="bg-gray-50 p-6 rounded-lg">
           <h3 className="text-lg font-medium text-gray-800 mb-4">
