@@ -162,14 +162,12 @@ const CustomerDetails = ({
         advancedDetails: transformedCustomer?.advancedDetails || {},
         advancedPrivacyDetails: transformedCustomer?.advancedPrivacyDetails || {},
       };
-      console.log('Setting form data:', newFormData);
       setFormData(newFormData);
     }
   }, [transformedCustomer]);
 
   // Memoized callback for handling input changes
   const handleInputChange = useCallback((section, name, value) => {
-    console.log(`Input change: ${section}.${name} = ${value}`);
     setFormData(prev => ({
       ...prev,
       [section]: {
@@ -379,6 +377,7 @@ const CustomerDetails = ({
                   {tabs.map((tab) => (
                     <button
                       key={tab}
+                      type="button"
                       onClick={() => setActiveTab(tab)}
                       className={`py-4 px-4 border-b-2 font-medium rounded-[10px] text-sm ${
                         activeTab === tab
@@ -392,6 +391,7 @@ const CustomerDetails = ({
                   <div className="flex-1 flex justify-end items-center">
                     {!isEditing ? (
                       <button
+                        type="button"
                         onClick={onEdit}
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center"
                       >
@@ -421,6 +421,7 @@ const CustomerDetails = ({
                         <h3 className="text-lg font-medium text-gray-900">Purchase History</h3>
                         <div className="flex space-x-2">
                           <button
+                            type="button"
                             onClick={() => setShowPurchaseList(!showPurchaseList)}
                             className="p-2 bg-gray-100 rounded hover:bg-gray-200"
                           >
@@ -460,6 +461,7 @@ const CustomerDetails = ({
                           ))}
                           {(transformedCustomer?.purchaseHistory || []).length > 5 && (
                             <button
+                              type="button"
                               onClick={() => setShowAllPurchases(!showAllPurchases)}
                               className="text-pink-600 text-sm font-medium hover:text-pink-700"
                             >
