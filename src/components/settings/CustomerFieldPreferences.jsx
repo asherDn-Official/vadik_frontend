@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { FiPlus, FiTrash2, FiSave, FiX } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiSave, FiX, FiType } from "react-icons/fi";
 import api from "../../api/apiconfig";
 
 const CustomerFieldPreferences = () => {
@@ -10,18 +10,37 @@ const CustomerFieldPreferences = () => {
     "Advance Details": [],
     "Advance Privacy": [],
   });
-  const [isAddingField, setIsAddingField] = useState(false);
-  const [isAddingPreference, setIsAddingPreference] = useState(false);
+  const [isAddingField, setIsAddingField] = useState(true);
   const [newFieldName, setNewFieldName] = useState("");
-  const [newPreferenceName, setNewPreferenceName] = useState("");
+  const [newFieldType, setNewFieldType] = useState("string");
+  const [newFieldIcon, setNewFieldIcon] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [retailerId, setRetailerId] = useState(() => {
-    return localStorage.getItem("retailerId") || "";
-  });
+  const [retailerId] = useState(localStorage.getItem("retailerId") || "");
   const [preferenceId, setPreferenceId] = useState(null);
   const [isCreatingPreference, setIsCreatingPreference] = useState(false);
+  const [addError, setAddError] = useState(null);
+  const [icons, setIcons] = useState([]);
+  const [showIconSelector, setShowIconSelector] = useState(false);
+  
+  // Map UI tab names to API field names
+  const tabToApiFieldMap = {
+    "Basic Details": "additionalData",
+    "Advance Details": "advancedDetails",
+    "Advance Privacy": "advancedPrivacyDetails"
+  };
 
+  const fieldTypes = ["string", "number", "boolean", "array"];
+
+  // Fetch icons from API
+  const fetchIcons = async () => {
+    try {
+      const response = await api.get("/api/icons/all");
+      setIcons(response.data.data || []);
+    } catch (err) {
+      console.error("Error fetching icons:", err);
+    }
+  };
 
   const createInitialPreference = async () => {
     setIsCreatingPreference(true);
@@ -34,7 +53,6 @@ const CustomerFieldPreferences = () => {
       };
 
       const response = await api.post(`/api/customer-preferences`, payload);
-
       setPreferenceId(response.data._id);
       return response.data._id;
     } catch (err) {
@@ -51,37 +69,19 @@ const CustomerFieldPreferences = () => {
     setError(null);
 
     try {
-      // First try to get the preference
       const response = await api.get(`/api/customer-preferences/${retailerId}`);
 
       if (response.data) {
         setPreferenceId(response.data._id);
-        // Transform API data to UI format
-        const transformedFields = {
-          "Basic Details":
-            response.data.additionalData?.map((item, index) => ({
-              id: `basic-${index}-${item.toLowerCase().replace(/\s+/g, "-")}`,
-              label: item,
-            })) || [],
-          "Advance Details":
-            response.data.advancedDetails?.map((item, index) => ({
-              id: `advance-${index}-${item.toLowerCase().replace(/\s+/g, "-")}`,
-              label: item,
-            })) || [],
-          "Advance Privacy":
-            response.data.advancedPrivacyDetails?.map((item, index) => ({
-              id: `privacy-${index}-${item.toLowerCase().replace(/\s+/g, "-")}`,
-              label: item,
-            })) || [],
-        };
-
-        setFields(transformedFields);
+        setFields({
+          "Basic Details": response.data.additionalData || [],
+          "Advance Details": response.data.advancedDetails || [],
+          "Advance Privacy": response.data.advancedPrivacyDetails || []
+        });
       }
     } catch (err) {
       if (err.response && err.response.status === 404) {
-        // Preference not found, create a new one
         await createInitialPreference();
-        // No need to retry fetch here - the effect will run again when preferenceId changes
       } else {
         setError(err.message || "Failed to fetch preferences");
       }
@@ -91,8 +91,11 @@ const CustomerFieldPreferences = () => {
   };
 
   useEffect(() => {
-    fetchPreferences();
-  }, []); // Add preferenceId to dependencies to refetch when it changes
+    if (retailerId) {
+      fetchPreferences();
+      fetchIcons();
+    }
+  }, [retailerId]);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -100,8 +103,7 @@ const CustomerFieldPreferences = () => {
     const sourceTab = result.source.droppableId;
     const destTab = result.destination.droppableId;
     const sourceFields = [...fields[sourceTab]];
-    const destFields =
-      sourceTab === destTab ? sourceFields : [...fields[destTab]];
+    const destFields = sourceTab === destTab ? sourceFields : [...fields[destTab]];
 
     const [removed] = sourceFields.splice(result.source.index, 1);
     destFields.splice(result.destination.index, 0, removed);
@@ -119,21 +121,17 @@ const CustomerFieldPreferences = () => {
   const startAddingField = () => {
     setIsAddingField(true);
     setNewFieldName("");
+    setNewFieldType("string");
+    setNewFieldIcon("");
+    setAddError(null);
   };
 
   const cancelAddingField = () => {
     setIsAddingField(false);
     setNewFieldName("");
-  };
-
-  const startAddingPreference = () => {
-    setIsAddingPreference(true);
-    setNewPreferenceName("");
-  };
-
-  const cancelAddingPreference = () => {
-    setIsAddingPreference(false);
-    setNewPreferenceName("");
+    setNewFieldIcon("");
+    setAddError(null);
+    setShowIconSelector(false);
   };
 
   const updatePreferences = async (updatedFields) => {
@@ -142,14 +140,12 @@ const CustomerFieldPreferences = () => {
     try {
       const payload = {
         retailerId,
-        additionalData: updatedFields["Basic Details"].map((f) => f.label),
-        advancedDetails: updatedFields["Advance Details"].map((f) => f.label),
-        advancedPrivacyDetails: updatedFields["Advance Privacy"].map(
-          (f) => f.label
-        ),
+        additionalData: updatedFields["Basic Details"],
+        advancedDetails: updatedFields["Advance Details"],
+        advancedPrivacyDetails: updatedFields["Advance Privacy"]
       };
 
-      await api.put(`/api/customer-preferences/${retailerId}`, payload);
+      await api.put(`/api/customer-preferences/${preferenceId}`, payload);
     } catch (err) {
       console.error("Error updating preferences:", err);
       setError("Failed to update preferences. Please try again.");
@@ -157,59 +153,56 @@ const CustomerFieldPreferences = () => {
   };
 
   const handleAddField = async () => {
-    if (!newFieldName.trim()) return;
+    if (!newFieldName.trim()) {
+      setAddError("Field name cannot be empty");
+      return;
+    }
+
+    // Check for duplicate field names in the current tab
+    const duplicateExists = fields[activeTab].some(
+      field => field.key.toLowerCase() === newFieldName.trim().toLowerCase()
+    );
+
+    if (duplicateExists) {
+      setAddError("Field name must be unique");
+      return;
+    }
 
     const newField = {
-      id: `field-${Date.now()}`,
-      label: newFieldName.trim(),
+      key: newFieldName.trim(),
+      value: "",
+      type: newFieldType,
+      iconUrl: newFieldIcon,
+      options: newFieldType === "array" ? [] : undefined
     };
 
     const updatedFields = {
       ...fields,
-      [activeTab]: [...fields[activeTab], newField],
+      [activeTab]: [...fields[activeTab], newField]
     };
 
     setFields(updatedFields);
     await updatePreferences(updatedFields);
     setIsAddingField(false);
     setNewFieldName("");
+    setNewFieldIcon("");
+    setShowIconSelector(false);
+    setAddError(null);
   };
 
-  const handleAddPreference = async () => {
-    if (!newPreferenceName.trim()) return;
-
-    try {
-      const newField = {
-        id: `pref-${Date.now()}`,
-        label: newPreferenceName.trim(),
-      };
-
-      const updatedFields = {
-        ...fields,
-        [activeTab]: [...fields[activeTab], newField],
-      };
-
-      setFields(updatedFields);
-      await updatePreferences(updatedFields);
-      setIsAddingPreference(false);
-      setNewPreferenceName("");
-    } catch (err) {
-      console.error("Error adding preference:", err);
-      setError("Failed to add preference. Please try again.");
-    }
-  };
-
-  const handleRemoveField = async (tabName, fieldId) => {
-    const fieldToRemove = fields[tabName].find((f) => f.id === fieldId);
-    if (!fieldToRemove) return;
-
+  const handleRemoveField = async (tabName, fieldKey) => {
     const updatedFields = {
       ...fields,
-      [tabName]: fields[tabName].filter((field) => field.id !== fieldId),
+      [tabName]: fields[tabName].filter(field => field.key !== fieldKey)
     };
 
     setFields(updatedFields);
     await updatePreferences(updatedFields);
+  };
+
+  const selectIcon = (iconUrl) => {
+    setNewFieldIcon(iconUrl);
+    setShowIconSelector(false);
   };
 
   if (isLoading || isCreatingPreference) {
@@ -255,6 +248,7 @@ const CustomerFieldPreferences = () => {
                 onClick={() => {
                   setActiveTab(tab);
                   setIsAddingField(false);
+                  setShowIconSelector(false);
                 }}
               >
                 {tab}
@@ -279,29 +273,93 @@ const CustomerFieldPreferences = () => {
           </div>
 
           {isAddingField && (
-            <div className="flex items-center mb-4 p-3 bg-gray-50 rounded border">
-              <input
-                type="text"
-                value={newFieldName}
-                onChange={(e) => setNewFieldName(e.target.value)}
-                placeholder={`Enter ${activeTab.toLowerCase()} field name`}
-                className="flex-1 p-2 border border-gray-300 rounded-l focus:outline-none focus:ring-1 focus:ring-primary"
-                autoFocus
-              />
-              <button
-                onClick={handleAddField}
-                className="p-2 bg-green-500 text-white hover:bg-green-600"
-                title="Save"
-              >
-                <FiSave />
-              </button>
-              <button
-                onClick={cancelAddingField}
-                className="p-2 bg-red-500 text-white hover:bg-red-600 ml-1"
-                title="Cancel"
-              >
-                <FiX />
-              </button>
+            <div className="mb-4 bg-gray-50 rounded border p-4">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={newFieldName}
+                    onChange={(e) => {
+                      setNewFieldName(e.target.value);
+                      setAddError(null);
+                    }}
+                    placeholder={`Enter ${activeTab.toLowerCase()} field name`}
+                    className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                    autoFocus
+                  />
+                  
+                  <div className="relative">
+                    <select
+                      value={newFieldType}
+                      onChange={(e) => setNewFieldType(e.target.value)}
+                      className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      {fieldTypes.map(type => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
+                    <FiType className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+                  </div>
+                  
+                  <button
+                    onClick={() => setShowIconSelector(!showIconSelector)}
+                    className="p-2 bg-gray-200 rounded hover:bg-gray-300"
+                    title="Select Icon"
+                  >
+                    {newFieldIcon ? (
+                      <img 
+                        src={newFieldIcon} 
+                        alt="Selected icon" 
+                        className="w-5 h-5 object-contain"
+                      />
+                    ) : (
+                      <FiPlus />
+                    )}
+                  </button>
+                </div>
+                
+                {showIconSelector && (
+                  <div className="border rounded p-3 bg-white">
+                    <div className="grid grid-cols-6 gap-2 max-h-40 overflow-y-auto">
+                      {icons.map(icon => (
+                        <button
+                          key={icon.name}
+                          onClick={() => selectIcon(icon.dataUrl)}
+                          className={`p-1 border rounded hover:border-primary ${
+                            newFieldIcon === icon.dataUrl ? "border-2 border-primary" : ""
+                          }`}
+                          title={icon.name}
+                        >
+                          <img 
+                            src={icon.dataUrl} 
+                            alt={icon.name} 
+                            className="w-6 h-6 mx-auto object-contain"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex justify-end gap-2 mt-2">
+                  <button
+                    onClick={handleAddField}
+                    className="flex items-center px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                  >
+                    <FiSave className="mr-1" /> Save
+                  </button>
+                  <button
+                    onClick={cancelAddingField}
+                    className="flex items-center px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    <FiX className="mr-1" /> Cancel
+                  </button>
+                </div>
+              </div>
+              
+              {addError && (
+                <div className="text-red-500 text-sm mt-2">{addError}</div>
+              )}
             </div>
           )}
 
@@ -316,8 +374,8 @@ const CustomerFieldPreferences = () => {
                   {fields[activeTab].length > 0 ? (
                     fields[activeTab].map((field, index) => (
                       <Draggable
-                        key={field.id}
-                        draggableId={field.id}
+                        key={field.key}
+                        draggableId={field.key}
                         index={index}
                       >
                         {(provided) => (
@@ -327,14 +385,24 @@ const CustomerFieldPreferences = () => {
                             {...provided.dragHandleProps}
                             className="flex items-center justify-between p-3 bg-gray-50 rounded border hover:bg-gray-100"
                           >
-                            <div className="flex items-center">
-                              <span className="mr-2 text-gray-400">::</span>
-                              <span>{field.label}</span>
+                            <div className="flex items-center gap-3">
+                              {field.iconUrl && (
+                                <img 
+                                  src={field.iconUrl} 
+                                  alt={field.key} 
+                                  className="w-5 h-5 object-contain"
+                                />
+                              )}
+                              <div>
+                                <div className="font-medium">{field.key}</div>
+                                <div className="text-xs text-gray-500">
+                                  Type: {field.type}
+                                  {field.options && ` (${field.options.length} options)`}
+                                </div>
+                              </div>
                             </div>
                             <button
-                              onClick={() =>
-                                handleRemoveField(activeTab, field.id)
-                              }
+                              onClick={() => handleRemoveField(activeTab, field.key)}
                               className="text-gray-400 hover:text-red-500 p-1"
                               title="Remove field"
                             >
@@ -354,51 +422,6 @@ const CustomerFieldPreferences = () => {
               )}
             </Droppable>
           </DragDropContext>
-
-          <div className="mt-6 space-y-4">
-            {!isAddingPreference && (
-              <button
-                onClick={startAddingPreference}
-                className="flex items-center px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-              >
-                <FiPlus className="mr-2" /> Add New Preference
-              </button>
-            )}
-
-            {isAddingPreference && (
-              <div className="flex items-center p-3 bg-gray-50 rounded border">
-                <input
-                  type="text"
-                  value={newPreferenceName}
-                  onChange={(e) => setNewPreferenceName(e.target.value)}
-                  placeholder={`Enter new ${activeTab.toLowerCase()} preference`}
-                  className="flex-1 p-2 border border-gray-300 rounded-l focus:outline-none focus:ring-1 focus:ring-primary"
-                  autoFocus
-                />
-                <button
-                  onClick={handleAddPreference}
-                  className="p-2 bg-green-500 text-white hover:bg-green-600"
-                  title="Save"
-                >
-                  <FiSave />
-                </button>
-                <button
-                  onClick={cancelAddingPreference}
-                  className="p-2 bg-red-500 text-white hover:bg-red-600 ml-1"
-                  title="Cancel"
-                >
-                  <FiX />
-                </button>
-              </div>
-            )}
-
-            {/* <button
-              onClick={handleUpdatePreferences}
-              className="flex items-center px-6 py-2 bg-primary bg-gradient-to-r from-[#CB376D] to-[#A72962] rounded-md hover:bg-pink-700 text-white w-full justify-center"
-            >
-              <FiSave className="mr-2" /> Update Changes
-            </button> */}
-          </div>
         </div>
       </div>
     </div>
