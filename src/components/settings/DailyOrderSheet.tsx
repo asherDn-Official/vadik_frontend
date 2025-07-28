@@ -43,7 +43,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   // Initialize product search states
   useEffect(() => {
     const initialSearchStates = {};
-    products.forEach(product => {
+    products.forEach((product) => {
       initialSearchStates[product.id] = "";
     });
     setCurrentProductSearches(initialSearchStates);
@@ -56,59 +56,61 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       const response = await axios.get(
         `https://app.vadik.ai/api/inventory?retailerId=6856350030bcee9b82be4c17&search=${query}`
       );
-      setProductSearchResults(prev => ({
+      setProductSearchResults((prev) => ({
         ...prev,
-        [productId]: response.data.data || []
+        [productId]: response.data.data || [],
       }));
-      setShowProductSuggestions(prev => ({
+      setShowProductSuggestions((prev) => ({
         ...prev,
-        [productId]: true
+        [productId]: true,
       }));
     } catch (error) {
       console.error("Error searching products:", error);
-      setProductSearchResults(prev => ({
+      setProductSearchResults((prev) => ({
         ...prev,
-        [productId]: []
+        [productId]: [],
       }));
-      setShowProductSuggestions(prev => ({
+      setShowProductSuggestions((prev) => ({
         ...prev,
-        [productId]: false
+        [productId]: false,
       }));
     }
   };
 
   const selectProduct = (productId, selectedProduct) => {
     // Update product with selected data and mark as auto-populated
-    setProducts(products.map(product => {
-      if (product.id === productId) {
-        const updatedProduct = {
-          ...product,
-          name: selectedProduct.productname,
-          unitPrice: selectedProduct.price,
-          colors: [...selectedProduct.colors],
-          isAutoPopulated: true,
-          totalPrice: product.quantity * selectedProduct.price
-        };
-        return updatedProduct;
-      }
-      return product;
+    setProducts(
+      products.map((product) => {
+        if (product.id === productId) {
+          const updatedProduct = {
+            ...product,
+            name: selectedProduct.productname,
+            unitPrice: selectedProduct.price,
+            colors: [...selectedProduct.colors],
+            isAutoPopulated: true,
+            totalPrice: product.quantity * selectedProduct.price,
+          };
+          return updatedProduct;
+        }
+        return product;
+      })
+    );
+
+    setShowProductSuggestions((prev) => ({
+      ...prev,
+      [productId]: false,
     }));
 
-    setShowProductSuggestions(prev => ({
+    setCurrentProductSearches((prev) => ({
       ...prev,
-      [productId]: false
-    }));
-
-    setCurrentProductSearches(prev => ({
-      ...prev,
-      [productId]: selectedProduct.productname
+      [productId]: selectedProduct.productname,
     }));
   };
 
   const handleProductNameChange = (productId, value) => {
-    setCurrentProductSearches(prev => ({
+    setCurrentProductSearches((prev) => ({
       ...prev,
-      [productId]: value
+      [productId]: value,
     }));
 
     updateProduct(productId, "name", value);
@@ -116,13 +118,13 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     if (value.length >= 3) {
       searchProducts(value, productId);
     } else {
-      setProductSearchResults(prev => ({
+      setProductSearchResults((prev) => ({
         ...prev,
-        [productId]: []
+        [productId]: [],
       }));
-      setShowProductSuggestions(prev => ({
+      setShowProductSuggestions((prev) => ({
         ...prev,
-        [productId]: false
+        [productId]: false,
       }));
     }
   };
@@ -297,13 +299,10 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     };
 
     try {
-      const response = await api.post(
-        "/api/orderHistory/",
-        orderData
-      );
+      const response = await api.post("/api/orderHistory/", orderData);
       console.log("Order saved successfully:", response.data);
-      alert("Order saved successfully")
-      
+      alert("Order saved successfully");
+
       // Clear form data after successful submission
       setFormData({
         phoneNumber: "",
@@ -312,7 +311,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         gender: "",
         source: "",
       });
-      
+
       // Reset products to initial state
       setProducts([
         {
@@ -325,7 +324,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
           isAutoPopulated: false,
         },
       ]);
-      
+
       // Reset other form states
       setDiscount(0);
       setPaymentStatus("Unpaid");
@@ -335,14 +334,16 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       setProductSearchResults({});
       setShowProductSuggestions({});
       setCurrentProductSearches({});
-      
     } catch (error) {
       console.error("Error saving order:", error);
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm" style={{ overflow: 'visible' }}>
+    <div
+      className="bg-white rounded-lg shadow-sm"
+      style={{ overflow: "visible" }}
+    >
       <div className="flex items-center justify-between p-6 border-b">
         <div className="flex items-center gap-4">
           <button
@@ -374,7 +375,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         </div>
       </div>
 
-      <div className="p-6" style={{ overflow: 'visible' }}>
+      <div className="p-6" style={{ overflow: "visible" }}>
         <div className="mb-8">
           <h3 className="text-lg font-medium text-gray-800 mb-4">
             Customer Details
@@ -484,7 +485,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
             </button>
           </div>
 
-          <div className="overflow-x-auto overflow-y-visible">
+          <div className="overflow-y-visible">
             <table className="w-full relative">
               <thead>
                 <tr className="bg-gray-100">
@@ -511,10 +512,15 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <tbody>
                 {products.map((product) => (
                   <tr key={product.id} className="border-b border-gray-200">
-                    <td className="px-4 py-3 relative" style={{ overflow: 'visible' }}>
+                    <td
+                      className="px-4 py-3 relative"
+                      style={{ overflow: "visible" }}
+                    >
                       <input
                         type="text"
-                        value={currentProductSearches[product.id] || product.name}
+                        value={
+                          currentProductSearches[product.id] || product.name
+                        }
                         onChange={(e) =>
                           handleProductNameChange(product.id, e.target.value)
                         }
@@ -525,7 +531,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                             currentProductSearches[product.id]?.length >= 3 &&
                             productSearchResults[product.id]?.length > 0
                           ) {
-                            setShowProductSuggestions(prev => ({
+                            setShowProductSuggestions((prev) => ({
                               ...prev,
                               [product.id]: true,
                             }));
@@ -533,7 +539,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                         }}
                         onBlur={() =>
                           setTimeout(() => {
-                            setShowProductSuggestions(prev => ({
+                            setShowProductSuggestions((prev) => ({
                               ...prev,
                               [product.id]: false,
                             }));
@@ -542,43 +548,49 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                       />
                       {showProductSuggestions[product.id] &&
                         productSearchResults[product.id]?.length > 0 && (
-                          <div className="absolute z-[9999] mt-1 bg-white border border-gray-300 rounded-md shadow-2xl max-h-60 overflow-auto min-w-[400px] left-0"
-                               style={{
-                                 width: 'max-content',
-                                 maxWidth: '500px',
-                                 transform: 'translateY(0)'
-                               }}>
-                            {productSearchResults[product.id].map((productResult) => (
-                              <div
-                                key={productResult._id}
-                                className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  selectProduct(product.id, productResult);
-                                }}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  selectProduct(product.id, productResult);
-                                }}
-                              >
-                                <div className="font-medium text-gray-900 mb-1">
-                                  {productResult.productname}
-                                </div>
-                                <div className="text-sm text-gray-600 flex flex-wrap gap-2">
-                                  <span className="font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">
-                                    ₹{productResult.price}
-                                  </span>
-                                  <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                                    Stock: {productResult.stock}
-                                  </span>
-                                  {productResult.colors && productResult.colors.length > 0 && (
-                                    <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded">
-                                      Colors: {productResult.colors.join(", ")}
+                          <div
+                            className="absolute z-[9999] mt-1 bg-white border border-gray-300 rounded-md shadow-2xl max-h-60 overflow-auto min-w-[400px] left-0"
+                            style={{
+                              width: "max-content",
+                              maxWidth: "500px",
+                              transform: "translateY(0)",
+                            }}
+                          >
+                            {productSearchResults[product.id].map(
+                              (productResult) => (
+                                <div
+                                  key={productResult._id}
+                                  className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    selectProduct(product.id, productResult);
+                                  }}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    selectProduct(product.id, productResult);
+                                  }}
+                                >
+                                  <div className="font-medium text-gray-900 mb-1">
+                                    {productResult.productname}
+                                  </div>
+                                  <div className="text-sm text-gray-600 flex flex-wrap gap-2">
+                                    <span className="font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">
+                                      ₹{productResult.price}
                                     </span>
-                                  )}
+                                    <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                                      Stock: {productResult.stock}
+                                    </span>
+                                    {productResult.colors &&
+                                      productResult.colors.length > 0 && (
+                                        <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded">
+                                          Colors:{" "}
+                                          {productResult.colors.join(", ")}
+                                        </span>
+                                      )}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              )
+                            )}
                           </div>
                         )}
                     </td>
@@ -611,12 +623,17 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                               parseFloat(e.target.value) || 0
                             )
                           }
-                          className={`w-24 px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500 ${product.isAutoPopulated
-                              ? 'border-green-300 bg-green-50'
-                              : 'border-gray-300'
-                            }`}
+                          className={`w-24 px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500 ${
+                            product.isAutoPopulated
+                              ? "border-green-300 bg-green-50"
+                              : "border-gray-300"
+                          }`}
                           placeholder="0.00"
-                          title={product.isAutoPopulated ? "Unit price auto-populated from inventory" : "Enter unit price"}
+                          title={
+                            product.isAutoPopulated
+                              ? "Unit price auto-populated from inventory"
+                              : "Enter unit price"
+                          }
                         />
                         {/* {product.isAutoPopulated && (
                         <div className="absolute -top-2 -right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white" title="Auto-populated from inventory"></div>
@@ -686,7 +703,6 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
             </table>
           </div>
         </div>
-
 
         <div className="bg-gray-50 p-6 rounded-lg">
           <h3 className="text-lg font-medium text-gray-800 mb-4">
