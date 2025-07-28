@@ -10,8 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.10.0",
+    "axios": "^1.11.0",
     "chart.js": "^4.4.2",
+    "dayjs": "^1.11.13",
     "lucide-react": "^0.511.0",
     "next-scratchcard": "^0.0.4",
     "react": "^18.3.1",

@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { extractFieldValue, transformCustomerData, transformFormDataToAPI, formatFieldForDisplay, getInputType, getFieldType } from "../../utils/customerDataUtils";
 
 const CustomerDetails = ({
   customer,
@@ -23,17 +24,20 @@ const CustomerDetails = ({
   onInputChange,
   isLoading,
 }) => {
+  // Transform customer data to handle new nested structure
+  const transformedCustomer = transformCustomerData(customer);
+  
   const { register, handleSubmit } = useForm({
     defaultValues: {
       basic: {
-        firstname: customer.firstname,
-        lastname: customer.lastname,
-        mobileNumber: customer.mobileNumber,
-        source: customer.source,
+        firstname: transformedCustomer?.firstname,
+        lastname: transformedCustomer?.lastname,
+        mobileNumber: transformedCustomer?.mobileNumber,
+        source: transformedCustomer?.source,
       },
-      additionalData: customer.additionalData || {},
-      advancedDetails: customer.advancedDetails || {},
-      advancedPrivacyDetails: customer.advancedPrivacyDetails || {},
+      additionalData: transformedCustomer?.additionalData || {},
+      advancedDetails: transformedCustomer?.advancedDetails || {},
+      advancedPrivacyDetails: transformedCustomer?.advancedPrivacyDetails || {},
     }
   });
 
@@ -45,24 +49,30 @@ const CustomerDetails = ({
   const [showAllPurchases, setShowAllPurchases] = useState(false);
 
   const FieldItem = ({ label, name, defaultValue, register, section = 'basic', isEditable = false }) => {
+    const fieldType = getFieldType(customer, section, name);
+    const inputType = getInputType(fieldType);
+    
     return (
       <div className="mb-4">
         <p className="text-sm text-gray-500 mb-2">{label}</p>
         {isEditing && isEditable ? (
           <input
-            type="text"
+            type={inputType}
             defaultValue={defaultValue || ""}
             {...register(`${section}.${name}`)}
             className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
           />
         ) : (
-          <p className="text-sm font-medium text-gray-900">{defaultValue || "-"}</p>
+          <p className="text-sm font-medium text-gray-900">{formatFieldForDisplay(defaultValue, fieldType)}</p>
         )}
       </div>
     );
   };
 
   const DetailItem = ({ label, name, defaultValue, register, section = 'basic', isEditable = false }) => {
+    const fieldType = getFieldType(customer, section, name);
+    const inputType = getInputType(fieldType);
+    
     return (
       <div className="flex items-center justify-between p-4 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
         <div className="flex items-center">
@@ -70,13 +80,13 @@ const CustomerDetails = ({
             <p className="text-sm font-medium text-gray-900">{label}</p>
             {isEditing && isEditable ? (
               <input
-                type="text"
+                type={inputType}
                 defaultValue={defaultValue || ""}
                 {...register(`${section}.${name}`)}
                 className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
               />
             ) : (
-              <p className="text-sm text-gray-600">{defaultValue || "-"}</p>
+              <p className="text-sm text-gray-600">{formatFieldForDisplay(defaultValue, fieldType)}</p>
             )}
           </div>
         </div>
@@ -124,7 +134,7 @@ const CustomerDetails = ({
             isEditable={isEditable}
           />
         );
-      } else if (section === 'advancedPrivacy' && key === 'satisfactionScore') {
+      } else if (section === 'advancedPrivacy' && key.toLowerCase().includes('satisfaction')) {
         return (
           <div key={key} className="flex items-center p-4 border-b border-gray-100">
             <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
@@ -155,13 +165,8 @@ const CustomerDetails = ({
   };
 
   const onSubmit = (data) => {
-    // Prepare the data in the expected format
-    const formattedData = {
-      basic: data.basic,
-      additionalData: data.additionalData,
-      advancedDetails: data.advancedDetails,
-      advancedPrivacyDetails: data.advancedPrivacyDetails
-    };
+    // Transform the form data back to API format
+    const formattedData = transformFormDataToAPI(data, customer);
     
     // Call the parent save handler with formatted data
     onSave(formattedData);
@@ -181,8 +186,8 @@ const CustomerDetails = ({
               <div className="flex items-center">
                 <div className="relative">
                   <img
-                    src={customer.profileImage || "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"}
-                    alt={`${customer.firstname} ${customer.lastname}`}
+                    src={transformedCustomer?.profileImage || "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"}
+                    alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
                     className="w-[118px] h-[92px] rounded-lg object-cover"
                   />
                 </div>
@@ -193,48 +198,48 @@ const CustomerDetails = ({
                     <FieldItem 
                       label="First Name" 
                       name="firstname" 
-                      defaultValue={customer.firstname} 
+                      defaultValue={transformedCustomer?.firstname} 
                       register={register} 
                       isEditable={isEditing} 
                     />
                     <FieldItem 
                       label="Last Name" 
                       name="lastname" 
-                      defaultValue={customer.lastname} 
+                      defaultValue={transformedCustomer?.lastname} 
                       register={register} 
                       isEditable={isEditing} 
                     />
                     <FieldItem 
                       label="Mobile Number" 
                       name="mobileNumber" 
-                      defaultValue={customer.mobileNumber} 
+                      defaultValue={transformedCustomer?.mobileNumber} 
                       register={register} 
                       isEditable={isEditing} 
                     />
                     <FieldItem 
                       label="Source" 
                       name="source" 
-                      defaultValue={customer.source} 
+                      defaultValue={transformedCustomer?.source} 
                       register={register} 
                       isEditable={isEditing} 
                     />
                     <FieldItem 
                       label="Customer ID" 
                       name="customerId" 
-                      defaultValue={customer.customerId} 
+                      defaultValue={transformedCustomer?.customerId} 
                       register={register} 
                     />
                     <FieldItem 
                       label="First Visit" 
                       name="firstVisit" 
-                      defaultValue={new Date(customer.firstVisit).toLocaleDateString()} 
+                      defaultValue={transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : ''} 
                       register={register} 
                     />
                   </div>
 
-                  {customer.additionalData && (
+                  {transformedCustomer?.additionalData && (
                     <div className="grid grid-cols-3 gap-x-16 gap-y-6">
-                      {renderDynamicFields(customer.additionalData, "additionalData")}
+                      {renderDynamicFields(transformedCustomer?.additionalData, "additionalData")}
                     </div>
                   )}
                 </div>
@@ -279,13 +284,13 @@ const CustomerDetails = ({
               <div className="p-2 bg-white pt-5">
                 {activeTab === "Advanced Details" && (
                   <div className="grid grid-cols-2 gap-4">
-                    {customer.advancedDetails && renderDynamicFields(customer.advancedDetails, "advancedDetails")}
+                    {transformedCustomer?.advancedDetails && renderDynamicFields(transformedCustomer?.advancedDetails, "advancedDetails")}
                   </div>
                 )}
 
                 {activeTab === "Advanced Privacy" && (
                   <div className="space-y-0">
-                    {customer.advancedPrivacyDetails && renderDynamicFields(customer.advancedPrivacyDetails, "advancedPrivacy")}
+                    {transformedCustomer?.advancedPrivacyDetails && renderDynamicFields(transformedCustomer?.advancedPrivacyDetails, "advancedPrivacy")}
                     
                     {/* Purchase History Section */}
                     <div className="p-6 border-t border-gray-200">
@@ -304,7 +309,7 @@ const CustomerDetails = ({
                       {!showPurchaseList ? (
                         <div className="mb-6 h-64">
                           <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={customer.chartData || []}>
+                            <LineChart data={transformedCustomer?.chartData || []}>
                               <CartesianGrid strokeDasharray="3 3" />
                               <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
                               <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
@@ -321,7 +326,7 @@ const CustomerDetails = ({
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {(customer.purchaseHistory || []).slice(0, showAllPurchases ? undefined : 5).map((purchase, index) => (
+                          {(transformedCustomer?.purchaseHistory || []).slice(0, showAllPurchases ? undefined : 5).map((purchase, index) => (
                             <div key={index} className="flex justify-between items-center py-2">
                               <div>
                                 <p className="text-sm font-medium text-gray-900">{purchase.item}</p>
@@ -330,7 +335,7 @@ const CustomerDetails = ({
                               <p className="text-sm font-medium text-gray-900">{purchase.amount}</p>
                             </div>
                           ))}
-                          {(customer.purchaseHistory || []).length > 5 && (
+                          {(transformedCustomer?.purchaseHistory || []).length > 5 && (
                             <button
                               onClick={() => setShowAllPurchases(!showAllPurchases)}
                               className="text-pink-600 text-sm font-medium hover:text-pink-700"
@@ -359,24 +364,24 @@ const CustomerDetails = ({
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {(customer.referralData || []).map((referral, index) => (
+                          {(transformedCustomer?.referralData || []).map((referral, index) => (
                             <tr key={index}>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.vidNo}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.name}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.phoneNumber}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral.joinDate}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral?.vidNo}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral?.name}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral?.phoneNumber}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral?.joinDate}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <span className={`px-2 py-1 rounded text-xs ${
-                                  referral.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                                  referral?.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                                 }`}>
-                                  {referral.couponCode}
+                                  {referral?.couponCode}
                                 </span>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                                  referral.status === "active" ? "bg-green-500" : "bg-red-500"
+                                  referral?.status === "active" ? "bg-green-500" : "bg-red-500"
                                 }`}>
-                                  {referral.status === "active" ? (
+                                  {referral?.status === "active" ? (
                                     <CheckCircle className="w-3 h-3 text-white" />
                                   ) : (
                                     <XCircle className="w-3 h-3 text-white" />
@@ -387,7 +392,7 @@ const CustomerDetails = ({
                           ))}
                         </tbody>
                       </table>
-                      {(customer.referralData || []).length === 0 && (
+                      {(transformedCustomer?.referralData || []).length === 0 && (
                         <div className="text-center py-8 text-gray-500">No referral data available</div>
                       )}
                     </div>

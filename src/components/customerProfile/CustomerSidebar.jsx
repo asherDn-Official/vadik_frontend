@@ -75,7 +75,7 @@ const CustomerSidebar = () => {
     <div className="w-80 bg-white flex flex-col m-2 rounded-[10px]">
       <div className="p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Customer List ({pagination.totalItems})
+          Customer List ({pagination?.totalItems})
         </h2>
         <div className="relative">
           <input
@@ -136,7 +136,7 @@ const CustomerSidebar = () => {
                     {formatName(customer)}
                   </h3>
                   <p className="font-[400] text-[15px] text-[#31316680]">
-                    {customer.mobileNumber}
+                    {customer?.mobileNumber}
                   </p>
                 </div>
               </div>
@@ -150,7 +150,7 @@ const CustomerSidebar = () => {
         <div className="flex justify-between items-center p-4 border-t border-gray-200">
           <button
             onClick={() =>
-              fetchCustomers(pagination.currentPage - 1, searchTerm)
+              fetchCustomers(pagination?.currentPage - 1, searchTerm)
             }
             disabled={pagination.currentPage === 1}
             className="px-3 py-1 rounded-md border disabled:opacity-50"
