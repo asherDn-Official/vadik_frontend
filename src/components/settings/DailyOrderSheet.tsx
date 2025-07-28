@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Scan, Plus, Trash2, ArrowLeft } from "lucide-react";
 import axios from "axios";
+import api from "../../api/apiconfig";
 
 const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const [formData, setFormData] = useState({
@@ -14,11 +15,12 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const [products, setProducts] = useState([
     {
       id: 1,
-      name: "Premium Wireless Headphones",
+      name: "",
       quantity: 1,
-      unitPrice: 249.99,
-      totalPrice: 249.99,
+      unitPrice: 0,
+      totalPrice: 0,
       colors: [],
+      isAutoPopulated: false,
     },
   ]);
 
@@ -71,15 +73,27 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   };
 
   const selectProduct = (productId, selectedProduct) => {
-    updateProduct(productId, "name", selectedProduct.productname);
-    updateProduct(productId, "unitPrice", selectedProduct.price);
-    updateProduct(productId, "colors", [...selectedProduct.colors]);
-    
+    // Update product with selected data and mark as auto-populated
+    setProducts(products.map(product => {
+      if (product.id === productId) {
+        const updatedProduct = {
+          ...product,
+          name: selectedProduct.productname,
+          unitPrice: selectedProduct.price,
+          colors: [...selectedProduct.colors],
+          isAutoPopulated: true,
+          totalPrice: product.quantity * selectedProduct.price
+        };
+        return updatedProduct;
+      }
+      return product;
+    }));
+
     setShowProductSuggestions(prev => ({
       ...prev,
       [productId]: false
     }));
-    
+
     setCurrentProductSearches(prev => ({
       ...prev,
       [productId]: selectedProduct.productname
@@ -91,9 +105,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       ...prev,
       [productId]: value
     }));
-    
+
     updateProduct(productId, "name", value);
-    
+
     if (value.length >= 3) {
       searchProducts(value, productId);
     } else {
@@ -173,6 +187,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       unitPrice: 0,
       totalPrice: 0,
       colors: [],
+      isAutoPopulated: false,
     };
     setProducts([...products, newProduct]);
   };
@@ -183,13 +198,20 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         if (product.id === id) {
           const updated = { ...product, [field]: value };
 
-          if (field === "quantity" || field === "unitPrice") {
+          // If manually editing unit price, remove auto-populated flag
+          if (field === "unitPrice") {
+            updated.isAutoPopulated = false;
+            updated.totalPrice = updated.quantity * updated.unitPrice;
+          }
+
+          if (field === "quantity") {
             updated.totalPrice = updated.quantity * updated.unitPrice;
           }
 
           if (field === "totalPrice") {
             updated.unitPrice =
               updated.quantity > 0 ? updated.totalPrice / updated.quantity : 0;
+            updated.isAutoPopulated = false;
           }
 
           return updated;
@@ -270,8 +292,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     };
 
     try {
-      const response = await axios.post(
-        "https://app.vadik.ai/api/orderHistory/",
+      const response = await api.post(
+        "/api/orderHistory/",
         orderData
       );
       console.log("Order saved successfully:", response.data);
@@ -412,189 +434,201 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         </div>
 
         <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-800">Product Entry</h3>
-          <button
-            onClick={addProduct}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
-          >
-            <Plus size={16} />
-            Add Product
-          </button>
-        </div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-800">Product Entry</h3>
+            <button
+              onClick={addProduct}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+            >
+              <Plus size={16} />
+              Add Product
+            </button>
+          </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  Product Name
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  Quantity
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  Unit Price (₹)
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  Total Price (₹)
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  Colors
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr key={product.id} className="border-b border-gray-200">
-                  <td className="px-4 py-3 relative">
-                    <input
-                      type="text"
-                      value={currentProductSearches[product.id] || product.name}
-                      onChange={(e) =>
-                        handleProductNameChange(product.id, e.target.value)
-                      }
-                      placeholder="Search product"
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
-                      onFocus={() => {
-                        if (
-                          currentProductSearches[product.id]?.length >= 3 &&
-                          productSearchResults[product.id]?.length > 0
-                        ) {
-                          setShowProductSuggestions(prev => ({
-                            ...prev,
-                            [product.id]: true,
-                          }));
-                        }
-                      }}
-                      onBlur={() =>
-                        setTimeout(() => {
-                          setShowProductSuggestions(prev => ({
-                            ...prev,
-                            [product.id]: false,
-                          }));
-                        }, 200)
-                      }
-                    />
-                    {showProductSuggestions[product.id] &&
-                      productSearchResults[product.id]?.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                          {productSearchResults[product.id].map((productResult) => (
-                            <div
-                              key={productResult._id}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onMouseDown={() => // Use onMouseDown instead of onClick for better UX
-                                selectProduct(product.id, productResult)
-                              }
-                            >
-                              <div className="font-medium">
-                                {productResult.productname}
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                ₹{productResult.price} | Stock: {productResult.stock} | Colors: {productResult.colors.join(", ")}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <input
-                      type="number"
-                      min="1"
-                      value={product.quantity}
-                      onChange={(e) =>
-                        updateProduct(
-                          product.id,
-                          "quantity",
-                          parseInt(e.target.value) || 0
-                        )
-                      }
-                      className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={product.unitPrice}
-                      onChange={(e) =>
-                        updateProduct(
-                          product.id,
-                          "unitPrice",
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
-                      className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={product.totalPrice}
-                      onChange={(e) =>
-                        updateProduct(
-                          product.id,
-                          "totalPrice",
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
-                      className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2 items-center">
-                      {product.colors.map((color, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100"
-                        >
-                          {color}
-                          <button
-                            onClick={() => removeColor(product.id, index)}
-                            className="ml-1 text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </span>
-                      ))}
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="text"
-                          value={newColor}
-                          onChange={(e) => setNewColor(e.target.value)}
-                          placeholder="Add color"
-                          className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
-                        />
-                        <button
-                          onClick={() => addColor(product.id)}
-                          className="text-green-600 hover:text-green-800"
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => removeProduct(product.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Product Name
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Quantity
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Unit Price (₹)
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Total Price (₹)
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Colors
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Action
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr key={product.id} className="border-b border-gray-200">
+                    <td className="px-4 py-3 relative">
+                      <input
+                        type="text"
+                        value={currentProductSearches[product.id] || product.name}
+                        onChange={(e) =>
+                          handleProductNameChange(product.id, e.target.value)
+                        }
+                        placeholder="Search product"
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                        onFocus={() => {
+                          if (
+                            currentProductSearches[product.id]?.length >= 3 &&
+                            productSearchResults[product.id]?.length > 0
+                          ) {
+                            setShowProductSuggestions(prev => ({
+                              ...prev,
+                              [product.id]: true,
+                            }));
+                          }
+                        }}
+                        onBlur={() =>
+                          setTimeout(() => {
+                            setShowProductSuggestions(prev => ({
+                              ...prev,
+                              [product.id]: false,
+                            }));
+                          }, 200)
+                        }
+                      />
+                      {showProductSuggestions[product.id] &&
+                        productSearchResults[product.id]?.length > 0 && (
+                          <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                            {productSearchResults[product.id].map((productResult) => (
+                              <div
+                                key={productResult._id}
+                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                onMouseDown={() => // Use onMouseDown instead of onClick for better UX
+                                  selectProduct(product.id, productResult)
+                                }
+                              >
+                                <div className="font-medium text-gray-900">
+                                  {productResult.productname}
+                                </div>
+                                <div className="text-sm text-gray-600 mt-1">
+                                  <span className="font-semibold text-green-600">Unit Price: ₹{productResult.price}</span> |
+                                  <span className="ml-1">Stock: {productResult.stock}</span> |
+                                  <span className="ml-1">Colors: {productResult.colors.join(", ")}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        min="1"
+                        value={product.quantity}
+                        onChange={(e) =>
+                          updateProduct(
+                            product.id,
+                            "quantity",
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                        className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={product.unitPrice}
+                          onChange={(e) =>
+                            updateProduct(
+                              product.id,
+                              "unitPrice",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className={`w-24 px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500 ${product.isAutoPopulated
+                              ? 'border-green-300 bg-green-50'
+                              : 'border-gray-300'
+                            }`}
+                          placeholder="0.00"
+                          title={product.isAutoPopulated ? "Unit price auto-populated from inventory" : "Enter unit price"}
+                        />
+                        {/* {product.isAutoPopulated && (
+                        <div className="absolute -top-2 -right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white" title="Auto-populated from inventory"></div>
+                      )} */}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={product.totalPrice}
+                        onChange={(e) =>
+                          updateProduct(
+                            product.id,
+                            "totalPrice",
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2 items-center">
+                        {product.colors.map((color, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100"
+                          >
+                            {color}
+                            <button
+                              onClick={() => removeColor(product.id, index)}
+                              className="ml-1 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </span>
+                        ))}
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={newColor}
+                            onChange={(e) => setNewColor(e.target.value)}
+                            placeholder="Add color"
+                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                          />
+                          <button
+                            onClick={() => addColor(product.id)}
+                            className="text-green-600 hover:text-green-800"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => removeProduct(product.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
 
         <div className="bg-gray-50 p-6 rounded-lg">
