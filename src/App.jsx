@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route ,Navigate} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import CustomerList from "./pages/CustomerList";
 // import CustomerProfile from "./pages/CustomerProfile";
@@ -16,6 +16,7 @@ import PerformanceTracking from "./pages/PerformanceTracking";
 import CustomerPersonalisation from "./pages/CustomerPersonalisation";
 import CustomerOpportunities from "./pages/CustomerOpportunities";
 import { useAuth } from "./context/AuthContext";
+import CustomerAdd from "./pages/CustomerAdd";
 
 function App() {
 
@@ -72,6 +73,8 @@ function App() {
             <Route path="/" element={<Layout />}>
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="customers" element={<CustomerList />} />
+              <Route path="customers/add" element={<CustomerAdd />} />
+
               {/* <Route path="customers/:id" element={<CustomerProfile />} /> */}
               <Route
                 path="/customer-profile/:customerId"

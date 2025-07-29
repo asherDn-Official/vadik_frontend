@@ -83,6 +83,10 @@ const CustomerList = () => {
     navigate(`/customer-profile/${customerId}`);
   };
 
+  const handleAddNewCustomer = () => {
+    navigate("/customers/add");
+  }
+
   if (error) {
     return (
       <div className="flex h-screen bg-[#F4F5F9] items-center justify-center">
@@ -102,27 +106,32 @@ const CustomerList = () => {
                 ({pagination.totalItems})
               </span>
             </h1>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search by name, mobile or source"
-                defaultValue={searchTerm}
-                onChange={handleSearchChange}
-                className="w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent"
-              />
-              <svg
-                className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            <div className="flex gap-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search by name, mobile or source"
+                  defaultValue={searchTerm}
+                  onChange={handleSearchChange}
+                  className="w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent"
                 />
-              </svg>
+                <svg
+                  className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <button onClick={handleAddNewCustomer} className="ml-4 bg-[#313166] text-white px-4 py-2 rounded-md">
+                Add New Customer
+              </button>
             </div>
           </div>
         </div>
@@ -231,8 +240,8 @@ const CustomerList = () => {
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={pagination.currentPage === 1}
                   className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === 1
-                      ? "bg-[#3131661A] cursor-not-allowed opacity-50"
-                      : "bg-[#3131661A] hover:bg-gray-100"
+                    ? "bg-[#3131661A] cursor-not-allowed opacity-50"
+                    : "bg-[#3131661A] hover:bg-gray-100"
                     }`}
                 >
                   Previous
@@ -243,8 +252,8 @@ const CustomerList = () => {
                       key={page}
                       onClick={() => handlePageChange(page)}
                       className={`px-3 py-1 text-sm border rounded-md mx-1 ${pagination.currentPage === page
-                          ? "bg-[#313166] text-white border-[#313166]"
-                          : "bg-[#3131661A] text-[#313166] hover:bg-gray-100"
+                        ? "bg-[#313166] text-white border-[#313166]"
+                        : "bg-[#3131661A] text-[#313166] hover:bg-gray-100"
                         }`}
                     >
                       {page}
@@ -255,8 +264,8 @@ const CustomerList = () => {
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={pagination.currentPage === pagination.totalPages}
                   className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === pagination.totalPages
-                      ? "bg-[#3131661A] cursor-not-allowed opacity-50"
-                      : "bg-[#3131661A] hover:bg-gray-100"
+                    ? "bg-[#3131661A] cursor-not-allowed opacity-50"
+                    : "bg-[#3131661A] hover:bg-gray-100"
                     }`}
                 >
                   Next
