@@ -10,13 +10,13 @@ const customerData = [
   { name: "Srinivasan", currentValue: "₹24,600.00", futureValue: "₹80,000.00" },
 ];
 
-const CustomerTable = () => {
+const CustomerTable = ({value}) => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
         Top Customer (CLV)
       </h3>
-      <div className="overflow-x-auto max-h-80 overflow-y-auto">
+      <div className="overflow-x-auto max-h-120 overflow-y-auto">
         <table className="w-full">
           <thead className="sticky top-0 bg-white">
             <tr className="border-b border-gray-200">
@@ -32,7 +32,7 @@ const CustomerTable = () => {
             </tr>
           </thead>
           <tbody>
-            {customerData.map((customer, index) => (
+            {value.map((customer, index) => (
               <tr
                 key={index}
                 className="border-b border-gray-100 hover:bg-gray-50"

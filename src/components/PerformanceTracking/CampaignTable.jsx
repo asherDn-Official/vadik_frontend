@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import api from "../../api/apiconfig";
+import { set } from "react-hook-form";
 
 const campaignData = [
   {
@@ -19,6 +21,23 @@ const campaignData = [
 ];
 
 const CampaignTable = () => {
+  const [quize,setQuize]=useState(0)
+    const [spinWheel,setSpinWheel]=useState(0)
+    const [scratchCard,setScratchCard]=useState(0)
+    useEffect(()=>{
+      const fetchData=async()=>{
+        try{
+          const response=await api.get("api/performanceTracking/campaingAnalytics");
+          setQuize(response.data.analytics.quiz)
+          setScratchCard(response.data.analytics.spinWheel)
+          setSpinWheel(response.data.analytics.scratchCard)
+        }catch(error){
+          console.error('Error fetching data:',error);
+        }
+      }
+      fetchData();
+    },[])
+    console.log("getched data of quiz"+quize,spinWheel,scratchCard)
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
       {/* <h3 className="text-lg font-semibold text-gray-900 mb-4">Activities</h3> */}
@@ -44,21 +63,46 @@ const CampaignTable = () => {
             </tr>
           </thead>
           <tbody>
-            {campaignData.map((campaign, index) => (
-              <tr key={index} className="border-b border-gray-100">
-                <td className="py-4 px-4 text-gray-900">{campaign.name}</td>
+         
+              <tr  className="border-b border-gray-100">
+                <td className="py-4 px-4 text-gray-900">{"Spin the Wheel"}</td>
                 <td className="py-4 px-4 text-gray-700">
-                  {campaign.customers}
+                  {spinWheel.totalSent}
                 </td>
-                <td className="py-4 px-4 text-gray-700">{campaign.openRate}</td>
+                <td className="py-4 px-4 text-gray-700">{spinWheel.openRate}</td>
                 <td className="py-4 px-4 text-gray-700">
-                  {campaign.clickRate}
+                  {spinWheel.clickRate}
                 </td>
                 <td className="py-4 px-4 text-gray-700">
-                  {campaign.responded}
+                  {spinWheel.responded}
                 </td>
               </tr>
-            ))}
+    <tr  className="border-b border-gray-100">
+                <td className="py-4 px-4 text-gray-900">{"Quiz"}</td>
+                <td className="py-4 px-4 text-gray-700">
+                  {quize.totalSent}
+                </td>
+                <td className="py-4 px-4 text-gray-700">{quize.openRate}</td>
+                <td className="py-4 px-4 text-gray-700">
+                  {quize.clickRate}
+                </td>
+                <td className="py-4 px-4 text-gray-700">
+                  {quize.responded}
+                </td>
+              </tr>
+                <tr  className="border-b border-gray-100">
+                <td className="py-4 px-4 text-gray-900">{"Scratch Card"}</td>
+                <td className="py-4 px-4 text-gray-700">
+                  {scratchCard.totalSent}
+                </td>
+                <td className="py-4 px-4 text-gray-700">{scratchCard.openRate}</td>
+                <td className="py-4 px-4 text-gray-700">
+                  {scratchCard.clickRate}
+                </td>
+                <td className="py-4 px-4 text-gray-700">
+                  {scratchCard.responded}
+                </td>
+              </tr>
           </tbody>
         </table>
       </div>

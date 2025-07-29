@@ -1,15 +1,32 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Info } from "lucide-react";
-
-const data = [
-  { name: "Converted", value: 40 },
-  { name: "Not Converted", value: 60 },
-];
+import api from "../../api/apiconfig";
 
 const COLORS = ["#E91E63", "#F3F4F6"];
 
 const ConversionChart = () => {
+  const [conversionRate, setConversionRate] = useState(0);
+
+  const data = [
+    { name: "Converted", value: conversionRate },
+    { name: "Not Converted", value: 100 - conversionRate },
+  ];
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await api.get("api/dashboard/customerRetensionRate");
+        const percentage = parseFloat(response.data.retentionPercentage);
+        setConversionRate(percentage);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
       <div className="flex items-center space-x-2 mb-4">
@@ -40,7 +57,9 @@ const ConversionChart = () => {
         </ResponsiveContainer>
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center">
-            <div className="text-3xl font-bold text-gray-900">40%</div>
+            <div className="text-3xl font-bold text-gray-900">
+              {conversionRate.toFixed(0)}%
+            </div>
           </div>
         </div>
       </div>
