@@ -14,7 +14,7 @@ import api from "../../api/apiconfig";
 
 const DailyBillingUpdate = () => {
   const [retailerId, setRetailerId] = useState(() => {
-    return localStorage.getItem("retailerId") || "6856350030bcee9b82be4c13";
+    return localStorage.getItem("retailerId") || "";
   });
 
   // Set default dates to current date
@@ -42,7 +42,7 @@ const DailyBillingUpdate = () => {
 
       // Prepare params object
       const params = {
-        retailerId: "6856350030bcee9b82be4c13",
+        retailerId,
         page: pagination.page,
         limit: pagination.limit,
         ...(startDate && { startDate: startDate }),
@@ -50,7 +50,7 @@ const DailyBillingUpdate = () => {
       };
 
       const response = await api.get(
-        `https://app.vadik.ai/api/orderHistory/gross-total-by-date-range`,
+        `/api/orderHistory/gross-total-by-date-range`,
         {
           params,
         }
@@ -97,9 +97,9 @@ const DailyBillingUpdate = () => {
       setLoading(true);
       setError(null);
 
-      const response = await api.get(`https://app.vadik.ai/api/orderHistory`, {
+      const response = await api.get(`/api/orderHistory`, {
         params: {
-          retailerId: "6856350030bcee9b82be4c13",
+          retailerId,
           page,
           limit: 10,
           singleDate: date,
