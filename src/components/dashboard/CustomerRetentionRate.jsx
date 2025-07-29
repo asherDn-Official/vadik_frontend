@@ -78,7 +78,8 @@ function CustomerRetentionRate() {
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow-md h-[287px] flex flex-col justify-between">
+    <div className="bg-white p-4 rounded-xl shadow-md  h-[100%] flex flex-col justify-between">
+      {/* h-[287px] */}
       <h2 className="text-center text-lg font-semibold text-[#1e1b4b]">
         Customer Retention Rate
       </h2>
