@@ -304,7 +304,7 @@ const CustomerList = () => {
   };
 
   const allSelected =
-    customers.length > 0 && selectedCustomers.length === customers.length;
+    customers?.length > 0 && selectedCustomers?.length === customers?.length;
   const pageCount = Math.ceil(totalCustomers / customersPerPage);
 
   const renderPageNumbers = () => {
@@ -479,7 +479,7 @@ const CustomerList = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {customers.map((customer) => (
+                  {customers?.map((customer) => (
                     <tr
                       key={customer._id}
                       className="hover:bg-gray-50 transition-colors"
