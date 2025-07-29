@@ -33,6 +33,7 @@ const DailyBillingUpdate = () => {
     totalPages: 1,
     totalDocs: 0,
   });
+    
 
   // Fetch billing data with date range
   const fetchBillingData = async () => {

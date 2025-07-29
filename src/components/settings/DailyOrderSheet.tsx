@@ -35,7 +35,6 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const [showProductSuggestions, setShowProductSuggestions] = useState({});
   const [currentProductSearches, setCurrentProductSearches] = useState({});
   const [dropdownPositions, setDropdownPositions] = useState({});
-
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
   });
@@ -163,8 +162,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
   const searchCustomers = async (query) => {
     try {
-      const response = await axios.get(
-        `https://app.vadik.ai/api/customers?retailerId=6856350030bcee9b82be4c17&search=${query}`
+      const response = await api.get(
+        `/api/customers?retailerId=${retailerId}&search=${query}`
       );
       setSearchResults(response.data.data || []);
       setShowSuggestions(true);
