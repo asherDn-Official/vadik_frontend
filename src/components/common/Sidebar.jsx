@@ -1,10 +1,12 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { LogOut } from "lucide-react";
 
 function Sidebar() {
   const location = useLocation();
   const { auth } = useAuth();
   const userRole = auth?.data?.role;
+  const navigate  = useNavigate();
 
   const isActive = (path) => {
     if (path === "/" && location.pathname === "/") return true;
@@ -80,6 +82,13 @@ function Sidebar() {
     },
   ];
 
+  // Handle logout functionality
+  const handleLogout = () => {
+    localStorage.removeItem("retailerId");
+    localStorage.removeItem("token");
+    navigate('/')
+  };
+
   return (
     <aside className="w-[290px] bg-[#313166] text-white flex flex-col">
       <div className="p-6 font-[400] text-[18px] text-center">
@@ -94,16 +103,20 @@ function Sidebar() {
             <NavLink
               key={item.path}
               to={item.path}
-              className={`sidebar-icon flex items-center px-6 py-5 text-white no-underline transition-colors hover:bg-[#3d3b83] ${
-                isActive(item.path) ? "sidebar-active" : ""
-              }`}
+              className={`sidebar-icon flex items-center px-6 py-5 text-white no-underline transition-colors hover:bg-[#3d3b83] ${isActive(item.path) ? "sidebar-active" : ""
+                }`}
             >
               <img src={item.icon} alt={item.label} className="w-5 h-5 mr-3" />
               <span>{item.label}</span>
             </NavLink>
           );
         })}
+        <button onClick={handleLogout} className=" flex flex-1 w-full items-center px-6 py-5 text-white no-underline transition-colors hover:bg-[#3d3b83]">
+          <LogOut size={20} className="mr-3" />
+          Logout
+        </button>
       </nav>
+
     </aside>
   );
 }
