@@ -80,7 +80,7 @@ const CustomerList = () => {
 
   const handleEditClick = (e, customerId) => {
     e.stopPropagation();
-    navigate(`/customers/edit/${customerId}`);
+    navigate(`/customer-profile/${customerId}`);
   };
 
   if (error) {
