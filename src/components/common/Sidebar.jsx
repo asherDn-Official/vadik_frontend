@@ -16,7 +16,7 @@ function Sidebar() {
   const canAccess = (moduleName) => {
     // Retailers get full access
     if (userRole === "retailer") return true;
-    
+
     // Staff permissions check
     if (userRole === "staff" && auth?.user?.permissions) {
       const modulePermission = auth.user.permissions.find(
@@ -24,7 +24,7 @@ function Sidebar() {
       );
       return modulePermission?.canRead || false;
     }
-    
+
     return false;
   };
 
@@ -34,7 +34,7 @@ function Sidebar() {
       path: "/dashboard",
       module: "dashboard",
       icon: "../assets/mage_dashboard-icon.png",
-      label: "Admin Dashboard",
+      label: "Retailer Dashboard",
     },
     {
       path: "/customers",
@@ -89,7 +89,7 @@ function Sidebar() {
       <nav className="flex-1 py-4">
         {sidebarItems.map((item) => {
           if (!canAccess(item.module)) return null;
-          
+
           return (
             <NavLink
               key={item.path}
