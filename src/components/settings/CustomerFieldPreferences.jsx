@@ -264,17 +264,17 @@ const CustomerFieldPreferences = () => {
             <h3 className="text-[15px] text-[#313166] font-medium">
               {activeTab} Management
             </h3>
-            {!isAddingField && (
+            {/* {!isAddingField && ( */}
               <button
                 onClick={startAddingField}
                 className="flex items-center px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
               >
                 <FiPlus className="mr-2" /> Add Field
               </button>
-            )}
+            {/* )} */}
           </div>
 
-          {isAddingField && (
+          {/* {isAddingField && ( */}
             <div className="mb-4 bg-gray-50 rounded border p-4">
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
@@ -362,7 +362,7 @@ const CustomerFieldPreferences = () => {
                 <div className="text-red-500 text-sm mt-2">{addError}</div>
               )}
             </div>
-          )}
+          {/* )} */}
 
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId={activeTab}>
