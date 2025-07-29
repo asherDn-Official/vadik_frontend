@@ -112,7 +112,7 @@ function Sidebar() {
           );
         })}
         <button onClick={handleLogout} className="flex flex-1 w-full items-center px-6 py-5 text-white no-underline transition-colors hover:bg-[#3d3b83]">
-          <LogOut size={20} className="mr-3 w-5 h-5" />
+          <LogOut size={20} className="mr-5 w-5 h-5" />
           Logout
         </button>
       </nav>
