@@ -41,7 +41,7 @@ const Register = ({ formData, updateFormData }) => {
         lastName: lastName,
         email: data.email,
         mobile: data.phone,
-        storeName: data.company,
+        storeName: data.storeName,
       });
     } catch (err) {
       console.error("Error fetching onboarding context:", err);
