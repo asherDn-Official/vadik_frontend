@@ -21,16 +21,16 @@ const CustomerAdd = () => {
         };
 
         try {
-            await api.post('/api/customers', apiData);
+            const response = await api.post('/api/customers', apiData);
+            const newCustomer = response.data;
             alert("Customer added successfully!");
 
-            // Reset the form data
-            setResetForm(true);
-            // Reset the resetForm flag after a brief delay to allow the form to reset
-            setTimeout(() => setResetForm(false), 100);
+            // Navigate to the newly created customer's profile
+            navigate(`/customer-profile/${newCustomer._id}`);
 
         } catch (error) {
             console.error('Error adding customer:', error);
+            alert('Failed to add customer. Please try again.');
         }
 
     };

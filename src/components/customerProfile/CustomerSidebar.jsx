@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/apiconfig";
 
 const CustomerSidebar = () => {
@@ -18,6 +18,7 @@ const CustomerSidebar = () => {
     totalPages: 1,
   });
   const navigate = useNavigate();
+  const { customerId } = useParams();
 
   // Fetch customers data
   const fetchCustomers = async (page = 1, search = "") => {
@@ -40,9 +41,16 @@ const CustomerSidebar = () => {
       setCustomers(data);
       setPagination(pagination);
 
-      // Auto-select first customer if none selected
-      if (data.length > 0 && !selectedCustomer) {
-        handleCustomerSelect(data[0]);
+      // Auto-select current customer from URL if it exists in the list
+      if (customerId && data.length > 0) {
+        const currentCustomer = data.find(customer => customer._id === customerId);
+        if (currentCustomer) {
+          setSelectedCustomer(currentCustomer);
+        }
+      }
+      // Only auto-select first customer if no customer is currently selected and no customerId in URL
+      else if (data.length > 0 && !selectedCustomer && !customerId) {
+        setSelectedCustomer(data[0]);
       }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch customers");
@@ -59,7 +67,7 @@ const CustomerSidebar = () => {
     }, 500);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchTerm, retailerId]);
+  }, [searchTerm, retailerId, customerId]);
 
   const handleCustomerSelect = (customer) => {
     setSelectedCustomer(customer);
