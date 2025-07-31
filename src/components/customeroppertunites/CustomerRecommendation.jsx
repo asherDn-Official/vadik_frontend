@@ -224,7 +224,7 @@ const CustomerRecommendation = () => {
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-6 bg-[#3131660A]">
           {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-80">
               <div className="text-center">
                 <h3 className="text-2xl font-semibold text-slate-800 mb-2">
                   What can I help with?
