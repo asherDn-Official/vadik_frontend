@@ -170,7 +170,7 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
           <div className=" mt-8">
             <PhoneInput
             country={"in"}
-            value={formData.mobile || ""}
+            value={`${formData.phoneCode}${formData.mobile} || ""`}
             onChange={handleMobileChange}
             onBlur={() => handleBlur('mobile')}
             inputProps={{
