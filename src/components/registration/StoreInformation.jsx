@@ -1,208 +1,104 @@
-// import { useState } from "react";
-
-// const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
-//   const [errors, setErrors] = useState({});
-
-//   const handleChange = (e) => {
-//     const { name, value } = e.target;
-//     updateFormData({ [name]: value });
-//   };
-
-//   const validateForm = () => {
-//     const newErrors = {};
-
-//     if (!formData.storeName) newErrors.storeName = "Store name is required";
-//     if (!formData.storeType) newErrors.storeType = "Store type is required";
-//     if (!formData.storeAddress)
-//       newErrors.storeAddress = "Store address is required";
-//     if (!formData.city) newErrors.city = "City/Town is required";
-//     if (!formData.pincode) newErrors.pincode = "Pincode is required";
-
-//     setErrors(newErrors);
-//     return Object.keys(newErrors).length === 0;
-//   };
-
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
-//     if (validateForm()) {
-//       goToNextStep();
-//     }
-//   };
-
-//   const storeTypes = [
-//     "Clothing & Apparel",
-//     "Electronics",
-//     "Grocery",
-//     "Restaurant",
-//     "Beauty & Cosmetics",
-//     "Home & Furniture",
-//     "Books & Stationery",
-//     "Jewelry",
-//     "Toys & Games",
-//     "Sports & Fitness",
-//     "Other",
-//   ];
-
-//   return (
-//     <div className="step-container">
-//       <h2 className="step-header">Store Basic Info</h2>
-//       <p className="step-description">
-//         Tell us about your Store and where it's located.
-//       </p>
-
-//       <form
-//         onSubmit={handleSubmit}
-//         className="grid grid-cols-1 md:grid-cols-2 gap-10"
-//       >
-//         <div>
-//           <label htmlFor="storeName" className="form-label">
-//             Store Name
-//           </label>
-//           <p className="text-[16px] text-[#31316699] mb-1">
-//             Enter your official Store name.
-//           </p>
-//           <input
-//             type="text"
-//             id="storeName"
-//             name="storeName"
-//             value={formData.storeName}
-//             onChange={handleChange}
-//             className={`form-input ${errors.storeName ? "border-red-500" : ""}`}
-//             placeholder="Store Name"
-//           />
-//           {errors.storeName && (
-//             <p className="text-red-500 text-xs mt-1">{errors.storeName}</p>
-//           )}
-//         </div>
-
-//         <div>
-//           <label htmlFor="storeType" className="form-label">
-//             Store Type
-//           </label>
-//           <p className="text-[16px] text-[#31316699] mb-1">
-//             Choose your business type. (Textile, Footwear, etc)
-//           </p>
-//           <select
-//             id="storeType"
-//             name="storeType"
-//             value={formData.storeType}
-//             onChange={handleChange}
-//             className={`form-input ${errors.storeType ? "border-red-500" : ""}`}
-//           >
-//             <option value="">Select Store Type</option>
-//             {storeTypes.map((type) => (
-//               <option key={type} value={type}>
-//                 {type}
-//               </option>
-//             ))}
-//           </select>
-//           {errors.storeType && (
-//             <p className="text-red-500 text-xs mt-1">{errors.storeType}</p>
-//           )}
-//         </div>
-
-//         <div className="md:col-span-2">
-//           <label htmlFor="storeAddress" className="form-label">
-//             Store Address
-//           </label>
-//           <p className="text-[16px] text-[#31316699] mb-1">
-//             Mention the complete address where your Store is located.
-//           </p>
-//           <input
-//             type="text"
-//             id="storeAddress"
-//             name="storeAddress"
-//             value={formData.storeAddress}
-//             onChange={handleChange}
-//             className={`form-input ${
-//               errors.storeAddress ? "border-red-500" : ""
-//             }`}
-//             placeholder="Store Address"
-//           />
-//           {errors.storeAddress && (
-//             <p className="text-red-500 text-xs mt-1">{errors.storeAddress}</p>
-//           )}
-//         </div>
-
-//         <div>
-//           <label htmlFor="city" className="form-label">
-//             City / Town
-//           </label>
-//           <p className="text-[16px] text-[#31316699] mb-1">
-//             Enter your Store's city or town.
-//           </p>
-//           <input
-//             type="text"
-//             id="city"
-//             name="city"
-//             value={formData.city}
-//             onChange={handleChange}
-//             className={`form-input ${errors.city ? "border-red-500" : ""}`}
-//             placeholder="City / Town"
-//           />
-//           {errors.city && (
-//             <p className="text-red-500 text-xs mt-1">{errors.city}</p>
-//           )}
-//         </div>
-
-//         <div>
-//           <label htmlFor="pincode" className="form-label">
-//             Pincode
-//           </label>
-//           <p className="text-[16px] text-[#31316699] mb-1">
-//             Provide the postal code of your Store location.
-//           </p>
-//           <input
-//             type="text"
-//             id="pincode"
-//             name="pincode"
-//             value={formData.pincode}
-//             onChange={handleChange}
-//             className={`form-input ${errors.pincode ? "border-red-500" : ""}`}
-//             placeholder="Pincode"
-//           />
-//           {errors.pincode && (
-//             <p className="text-red-500 text-xs mt-1">{errors.pincode}</p>
-//           )}
-//         </div>
-
-//         <div className="md:col-span-2 flex justify-center mt-6 ">
-//           <button
-//             type="submit"
-//             className="min-w-[150px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962]"
-//           >
-//             Next
-//           </button>
-//         </div>
-//       </form>
-//     </div>
-//   );
-// };
-
-// export default StoreInformation;
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({
+    storeName: false,
+    storeType: false,
+    storeAddress: false,
+    city: false,
+    pincode: false
+  });
+
+  // Real-time validation when inputs change
+  useEffect(() => {
+    if (touched.storeName) validateStoreName();
+    if (touched.storeType) validateStoreType();
+    if (touched.storeAddress) validateStoreAddress();
+    if (touched.city) validateCity();
+    if (touched.pincode) validatePincode();
+  }, [formData, touched]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     updateFormData({ [name]: value });
+    setTouched(prev => ({ ...prev, [name]: true }));
+  };
+
+  const handleBlur = (field) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+  };
+
+  // Individual validation functions
+  const validateStoreName = () => {
+    if (!formData.storeName) {
+      setErrors(prev => ({ ...prev, storeName: "Store name is required" }));
+    } else if (formData.storeName.length < 3) {
+      setErrors(prev => ({ ...prev, storeName: "Minimum 3 characters required" }));
+    } else if (formData.storeName.length > 18) {
+      setErrors(prev => ({ ...prev, storeName: "Maximum 18 characters allowed" }));
+    } else {
+      setErrors(prev => ({ ...prev, storeName: "" }));
+    }
+  };
+
+  const validateStoreType = () => {
+    if (!formData.storeType) {
+      setErrors(prev => ({ ...prev, storeType: "Store type is required" }));
+    } else {
+      setErrors(prev => ({ ...prev, storeType: "" }));
+    }
+  };
+
+  const validateStoreAddress = () => {
+    if (!formData.storeAddress) {
+      setErrors(prev => ({ ...prev, storeAddress: "Store address is required" }));
+    } else if (formData.storeAddress.length < 10) {
+      setErrors(prev => ({ ...prev, storeAddress: "Minimum 10 characters required" }));
+    } else if (formData.storeAddress.length > 40) {
+      setErrors(prev => ({ ...prev, storeAddress: "Maximum 40 characters allowed" }));
+    } else {
+      setErrors(prev => ({ ...prev, storeAddress: "" }));
+    }
+  };
+
+  const validateCity = () => {
+    if (!formData.city) {
+      setErrors(prev => ({ ...prev, city: "City/Town is required" }));
+    } else if (formData.city.length > 18) {
+      setErrors(prev => ({ ...prev, city: "Maximum 18 characters allowed" }));
+    } else {
+      setErrors(prev => ({ ...prev, city: "" }));
+    }
+  };
+
+  const validatePincode = () => {
+    if (!formData.pincode) {
+      setErrors(prev => ({ ...prev, pincode: "Pincode is required" }));
+    } else if (!/^\d{6}$/.test(formData.pincode)) {
+      setErrors(prev => ({ ...prev, pincode: "Must be a 6-digit number" }));
+    } else {
+      setErrors(prev => ({ ...prev, pincode: "" }));
+    }
   };
 
   const validateForm = () => {
-    const newErrors = {};
+    validateStoreName();
+    validateStoreType();
+    validateStoreAddress();
+    validateCity();
+    validatePincode();
 
-    if (!formData.storeName) newErrors.storeName = "Store name is required";
-    if (!formData.storeType) newErrors.storeType = "Store type is required";
-    if (!formData.storeAddress)
-      newErrors.storeAddress = "Store address is required";
-    if (!formData.city) newErrors.city = "City/Town is required";
-    if (!formData.pincode) newErrors.pincode = "Pincode is required";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return !errors.storeName && 
+           !errors.storeType && 
+           !errors.storeAddress && 
+           !errors.city &&
+           !errors.pincode &&
+           formData.storeName &&
+           formData.storeType &&
+           formData.storeAddress &&
+           formData.city &&
+           formData.pincode;
   };
 
   const handleSubmit = (e) => {
@@ -212,7 +108,6 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
     }
   };
 
-  // Use backend keys for values, and labels for user display
   const storeTypes = [
     { label: "Clothing & Apparel", value: "clothingCategory" },
     { label: "Electronics", value: "electronicCategory" },
@@ -244,16 +139,18 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             Store Name
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Enter your official Store name.
+            Enter your official Store name (3-18 characters).
           </p>
           <input
             type="text"
             id="storeName"
             name="storeName"
-            value={formData.storeName}
+            value={formData.storeName || ""}
             onChange={handleChange}
+            onBlur={() => handleBlur('storeName')}
             className={`form-input ${errors.storeName ? "border-red-500" : ""}`}
             placeholder="Store Name"
+            maxLength={18}
           />
           {errors.storeName && (
             <p className="text-red-500 text-xs mt-1">{errors.storeName}</p>
@@ -266,13 +163,14 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             Store Type
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Choose your business type. (Textile, Footwear, etc)
+            Choose your business type.
           </p>
           <select
             id="storeType"
             name="storeType"
-            value={formData.storeType}
+            value={formData.storeType || ""}
             onChange={handleChange}
+            onBlur={() => handleBlur('storeType')}
             className={`form-input ${errors.storeType ? "border-red-500" : ""}`}
           >
             <option value="">Select Store Type</option>
@@ -293,18 +191,20 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             Store Address
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Mention the complete address where your Store is located.
+            Mention the complete address where your Store is located (10-40 characters).
           </p>
           <input
             type="text"
             id="storeAddress"
             name="storeAddress"
-            value={formData.storeAddress}
+            value={formData.storeAddress || ""}
             onChange={handleChange}
+            onBlur={() => handleBlur('storeAddress')}
             className={`form-input ${
               errors.storeAddress ? "border-red-500" : ""
             }`}
             placeholder="Store Address"
+            maxLength={40}
           />
           {errors.storeAddress && (
             <p className="text-red-500 text-xs mt-1">{errors.storeAddress}</p>
@@ -317,16 +217,18 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             City / Town
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Enter your Store's city or town.
+            Enter your Store's city or town (max 18 characters).
           </p>
           <input
             type="text"
             id="city"
             name="city"
-            value={formData.city}
+            value={formData.city || ""}
             onChange={handleChange}
+            onBlur={() => handleBlur('city')}
             className={`form-input ${errors.city ? "border-red-500" : ""}`}
             placeholder="City / Town"
+            maxLength={18}
           />
           {errors.city && (
             <p className="text-red-500 text-xs mt-1">{errors.city}</p>
@@ -339,16 +241,18 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             Pincode
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Provide the postal code of your Store location.
+            6-digit postal code of your Store location.
           </p>
           <input
             type="text"
             id="pincode"
             name="pincode"
-            value={formData.pincode}
+            value={formData.pincode || ""}
             onChange={handleChange}
+            onBlur={() => handleBlur('pincode')}
             className={`form-input ${errors.pincode ? "border-red-500" : ""}`}
             placeholder="Pincode"
+            maxLength={6}
           />
           {errors.pincode && (
             <p className="text-red-500 text-xs mt-1">{errors.pincode}</p>
@@ -356,7 +260,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
         </div>
 
         {/* Submit */}
-        <div className="md:col-span-2 flex justify-center mt-6 ">
+        <div className="md:col-span-2 flex justify-center mt-6">
           <button
             type="submit"
             className="min-w-[150px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962]"

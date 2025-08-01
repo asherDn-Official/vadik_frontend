@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import api from "../../api/apiconfig";
@@ -9,14 +9,30 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [touched, setTouched] = useState({
+    staffCount: false,
+    customerCount: false,
+    contactNumber: false,
+    ownerName: false,
+    gstNumber: false
+  });
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
   const retailerId = localStorage.getItem("retailerId");
-  console.log(retailerId);
+
+  // Real-time validation when inputs change
+  useEffect(() => {
+    if (touched.staffCount) validateStaffCount();
+    if (touched.customerCount) validateCustomerCount();
+    if (touched.contactNumber) validateContactNumber();
+    if (touched.ownerName) validateOwnerName();
+    if (touched.gstNumber && formData.gstNumber) validateGstNumber();
+  }, [formData, touched]);
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
 
     if (type === "file") {
       handleFileUpload(files[0]);
@@ -69,15 +85,71 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
     fileInputRef.current.click();
   };
 
+  const handleBlur = (field) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+  };
+
+  // Individual validation functions
+  const validateStaffCount = () => {
+    if (!formData.staffCount) {
+      setErrors(prev => ({ ...prev, staffCount: "Number of staff is required" }));
+    } else {
+      setErrors(prev => ({ ...prev, staffCount: "" }));
+    }
+  };
+
+  const validateCustomerCount = () => {
+    if (!formData.customerCount) {
+      setErrors(prev => ({ ...prev, customerCount: "Number of customers is required" }));
+    } else {
+      setErrors(prev => ({ ...prev, customerCount: "" }));
+    }
+  };
+
+  const validateContactNumber = () => {
+    if (!formData.contactNumber) {
+      setErrors(prev => ({ ...prev, contactNumber: "Contact number is required" }));
+    } else if (!/^\d{10}$/.test(formData.contactNumber)) {
+      setErrors(prev => ({ ...prev, contactNumber: "Enter a valid 10-digit number" }));
+    } else {
+      setErrors(prev => ({ ...prev, contactNumber: "" }));
+    }
+  };
+
+  const validateOwnerName = () => {
+    if (!formData.ownerName) {
+      setErrors(prev => ({ ...prev, ownerName: "Owner name is required" }));
+    } else if (formData.ownerName.length < 4) {
+      setErrors(prev => ({ ...prev, ownerName: "Minimum 4 characters required" }));
+    } else {
+      setErrors(prev => ({ ...prev, ownerName: "" }));
+    }
+  };
+
+  const validateGstNumber = () => {
+    if (formData.gstNumber && !/^\d{15}$/.test(formData.gstNumber)) {
+      setErrors(prev => ({ ...prev, gstNumber: "GST number must be 15 digits" }));
+    } else {
+      setErrors(prev => ({ ...prev, gstNumber: "" }));
+    }
+  };
+
   const validateForm = () => {
-    const newErrors = {};
+    validateStaffCount();
+    validateCustomerCount();
+    validateContactNumber();
+    validateOwnerName();
+    validateGstNumber();
 
-    if (!formData.contactNumber)
-      newErrors.contactNumber = "Contact number is required";
-    if (!formData.ownerName) newErrors.ownerName = "Owner name is required";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return !errors.staffCount && 
+           !errors.customerCount && 
+           !errors.contactNumber && 
+           !errors.ownerName &&
+           !errors.gstNumber &&
+           formData.staffCount &&
+           formData.customerCount &&
+           formData.contactNumber &&
+           formData.ownerName;
   };
 
   const handleSubmit = async (e) => {
@@ -101,17 +173,15 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
       data.append("storeContactNumber", formData.contactNumber);
       data.append("storeCity", formData.city);
       data.append("storePincode", formData.pincode);
-      data.append("GSTNumber", formData.gstNumber);
+      data.append("GSTNumber", formData.gstNumber || "");
       data.append("numberOfEmployees", formData.staffCount);
-      data.append("numberOfCustomers", formData.customerCount || "1-10");
+      data.append("numberOfCustomers", formData.customerCount);
       data.append("status", "active");
       if (formData.logo) {
         data.append("storeImage", formData.logo);
       }
 
-      // data.append("phone", formData.mobile);
       data.append("email", formData.email);
-      // data.append("gender", formData.gender || "Male");
       data.append("notes", "Updated retailer information");
       data.append("onboarding", true);
 
@@ -122,7 +192,6 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
       });
 
       console.log("Registration successful:", response.data);
-      // Navigate to completion page with success state
       navigate("/completion", {
         state: {
           success: true,
@@ -130,7 +199,6 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
         },
       });
 
-      // localStorage.removeItem('retailerId')
     } catch (error) {
       console.error("Registration failed:", error);
       setSubmitError(
@@ -238,9 +306,10 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
           <select
             id="staffCount"
             name="staffCount"
-            value={formData.staffCount}
+            value={formData.staffCount || ""}
             onChange={handleChange}
-            className="form-input"
+            onBlur={() => handleBlur('staffCount')}
+            className={`form-input ${errors.staffCount ? "border-red-500" : ""}`}
           >
             <option value="">Select Number of Staff</option>
             {staffOptions.map((option) => (
@@ -249,6 +318,9 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
               </option>
             ))}
           </select>
+          {errors.staffCount && (
+            <p className="text-red-500 text-xs mt-1">{errors.staffCount}</p>
+          )}
         </div>
 
         {/* Customer count */}
@@ -262,9 +334,10 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
           <select
             id="customerCount"
             name="customerCount"
-            value={formData.customerCount}
+            value={formData.customerCount || ""}
             onChange={handleChange}
-            className="form-input"
+            onBlur={() => handleBlur('customerCount')}
+            className={`form-input ${errors.customerCount ? "border-red-500" : ""}`}
           >
             <option value="">Select Number of Customers</option>
             {customerOptions.map((option) => (
@@ -273,6 +346,9 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
               </option>
             ))}
           </select>
+          {errors.customerCount && (
+            <p className="text-red-500 text-xs mt-1">{errors.customerCount}</p>
+          )}
         </div>
 
         {/* Contact number */}
@@ -287,11 +363,13 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             type="tel"
             id="contactNumber"
             name="contactNumber"
-            value={formData.contactNumber}
+            value={formData.contactNumber || ""}
             onChange={handleChange}
+            onBlur={() => handleBlur('contactNumber')}
             className={`form-input ${errors.contactNumber ? "border-red-500" : ""
               }`}
             placeholder="Store Contact Number"
+            maxLength={10}
           />
           {errors.contactNumber && (
             <p className="text-red-500 text-xs mt-1">{errors.contactNumber}</p>
@@ -304,14 +382,15 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             Owner Name
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Enter the owner's full name.
+            Enter the owner's full name (minimum 4 characters).
           </p>
           <input
             type="text"
             id="ownerName"
             name="ownerName"
-            value={formData.ownerName}
+            value={formData.ownerName || ""}
             onChange={handleChange}
+            onBlur={() => handleBlur('ownerName')}
             className={`form-input ${errors.ownerName ? "border-red-500" : ""}`}
             placeholder="Owner Name"
           />
@@ -326,17 +405,22 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             GST Number (optional)
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Add your GST number if your Store is registered.
+            Add your GST number if your Store is registered (15 digits).
           </p>
           <input
             type="text"
             id="gstNumber"
             name="gstNumber"
-            value={formData.gstNumber}
+            value={formData.gstNumber || ""}
             onChange={handleChange}
-            className="form-input"
+            onBlur={() => handleBlur('gstNumber')}
+            className={`form-input ${errors.gstNumber ? "border-red-500" : ""}`}
             placeholder="GST Number (optional)"
+            maxLength={15}
           />
+          {errors.gstNumber && (
+            <p className="text-red-500 text-xs mt-1">{errors.gstNumber}</p>
+          )}
         </div>
 
         {/* Submit button */}
