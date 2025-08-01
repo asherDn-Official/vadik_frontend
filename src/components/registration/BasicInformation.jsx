@@ -1,25 +1,101 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 
 const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({
+    firstName: false,
+    lastName: false,
+    mobile: false,
+    email: false
+  });
+
+  // Real-time validation when inputs change
+  useEffect(() => {
+    if (touched.firstName) validateFirstName();
+    if (touched.lastName) validateLastName();
+    if (touched.mobile) validateMobile();
+    if (touched.email) validateEmail();
+  }, [formData, touched]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     updateFormData({ [name]: value });
+    setTouched(prev => ({ ...prev, [name]: true }));
+  };
+
+  const handleMobileChange = (value) => {
+    updateFormData({ mobile: value });
+    setTouched(prev => ({ ...prev, mobile: true }));
+  };
+
+  const handleBlur = (field) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+  };
+
+  // Individual validation functions
+  const validateFirstName = () => {
+    if (!formData.firstName) {
+      setErrors(prev => ({ ...prev, firstName: "First name is required" }));
+    } else if (formData.firstName.length < 3) {
+      setErrors(prev => ({ ...prev, firstName: "Minimum 3 characters required" }));
+    } else if (formData.firstName.length > 8) {
+      setErrors(prev => ({ ...prev, firstName: "Maximum 8 characters allowed" }));
+    } else {
+      setErrors(prev => ({ ...prev, firstName: "" }));
+    }
+  };
+
+  const validateLastName = () => {
+    if (!formData.lastName) {
+      setErrors(prev => ({ ...prev, lastName: "Last name is required" }));
+    } else if (formData.lastName.length < 3) {
+      setErrors(prev => ({ ...prev, lastName: "Minimum 3 characters required" }));
+    } else if (formData.lastName.length > 8) {
+      setErrors(prev => ({ ...prev, lastName: "Maximum 8 characters allowed" }));
+    } else {
+      setErrors(prev => ({ ...prev, lastName: "" }));
+    }
+  };
+
+  const validateMobile = () => {
+    if (!formData.mobile) {
+      setErrors(prev => ({ ...prev, mobile: "Mobile number is required" }));
+    } else {
+      const digits = formData.mobile.replace(/\D/g, "");
+      if (!/^(\+91|91|0)?[6-9]\d{9}$/.test(digits)) {
+        setErrors(prev => ({ ...prev, mobile: "Enter a valid 10-digit Indian mobile number" }));
+      } else {
+        setErrors(prev => ({ ...prev, mobile: "" }));
+      }
+    }
+  };
+
+  const validateEmail = () => {
+    if (!formData.email) {
+      setErrors(prev => ({ ...prev, email: "Email address is required" }));
+    } else if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(formData.email)) {
+      setErrors(prev => ({ ...prev, email: "Enter a valid Gmail address" }));
+    } else {
+      setErrors(prev => ({ ...prev, email: "" }));
+    }
   };
 
   const validateForm = () => {
-    const newErrors = {};
+    validateFirstName();
+    validateLastName();
+    validateMobile();
+    validateEmail();
 
-    if (!formData.firstName) newErrors.firstName = "First name is required";
-    if (!formData.lastName) newErrors.lastName = "Last name is required";
-    if (!formData.mobile) newErrors.mobile = "Mobile number is required";
-    if (!formData.email) newErrors.email = "Email address is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = "Email address is invalid";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return !errors.firstName && 
+           !errors.lastName && 
+           !errors.mobile && 
+           !errors.email &&
+           formData.firstName &&
+           formData.lastName &&
+           formData.mobile &&
+           formData.email;
   };
 
   const handleSubmit = (e) => {
@@ -51,8 +127,9 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
             type="text"
             id="firstName"
             name="firstName"
-            value={formData.firstName}
+            value={formData.firstName || ""}
             onChange={handleChange}
+            onBlur={() => handleBlur('firstName')}
             className={`form-input ${errors.firstName ? "border-red-500" : ""}`}
             placeholder="First Name"
           />
@@ -72,8 +149,9 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
             type="text"
             id="lastName"
             name="lastName"
-            value={formData.lastName}
+            value={formData.lastName || ""}
             onChange={handleChange}
+            onBlur={() => handleBlur('lastName')}
             className={`form-input ${errors.lastName ? "border-red-500" : ""}`}
             placeholder="Last Name"
           />
@@ -89,15 +167,23 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
           <p className="text-[16px] text-[#31316699] mb-1">
             We'll use this to send you OTPs and updates.
           </p>
-          <input
-            type="tel"
-            id="mobile"
-            name="mobile"
-            value={formData.mobile}
-            onChange={handleChange}
-            className={`form-input ${errors.mobile ? "border-red-500" : ""}`}
-            placeholder="Mobile Number"
+          <div className=" mt-8">
+            <PhoneInput
+            country={"in"}
+            value={formData.mobile || ""}
+            onChange={handleMobileChange}
+            onBlur={() => handleBlur('mobile')}
+            inputProps={{
+              name: "mobile",
+              required: true,
+              className: `pl-10 py-3  w-full border border-gray-300 rounded-md w-full outline-none ${
+                errors.mobile ? "border-red-500" : ""
+              }`,
+            }}
+            countryCodeEditable={false}
+            onlyCountries={['in']}
           />
+          </div>
           {errors.mobile && (
             <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>
           )}
@@ -114,8 +200,9 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
             type="email"
             id="email"
             name="email"
-            value={formData.email}
+            value={formData.email || ""}
             onChange={handleChange}
+            onBlur={() => handleBlur('email')}
             className={`form-input ${errors.email ? "border-red-500" : ""}`}
             placeholder="Email Address"
           />
@@ -124,7 +211,7 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
           )}
         </div>
 
-        <div className="md:col-span-2 flex justify-center mt-6 ">
+        <div className="md:col-span-2 flex justify-center mt-6">
           <button
             type="submit"
             className="min-w-[150px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962]"
