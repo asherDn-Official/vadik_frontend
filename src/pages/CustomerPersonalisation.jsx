@@ -11,7 +11,7 @@ const CustomerPersonalisation = () => {
     firstVisit: "",
     source: "All",
     profession: "All", // Will be set to first professional option by FilterPanel
-    incomeLevel: "All",
+    income: "All",
     location: "All",
     favoriteProduct: "All",
     favoriteColour: "All",
@@ -20,6 +20,12 @@ const CustomerPersonalisation = () => {
     lifeStyle: "All",
     interest: "All",
     customerLabel: "All",
+    communicationChannel: "All",
+    typeOfCommunication: "All",
+    privacyNote: "",
+    measurements: "",
+    birthday: "",
+    anniversary: "",
     periodValue: new Date().getFullYear().toString(), // Default to current year
   });
 
@@ -39,15 +45,45 @@ const CustomerPersonalisation = () => {
       firstVisit: "2023-01-01",
       source: "Walk In",
       profession: "Corporate",
-      incomeLevel: "High",
-      location: "Chennai",
-      favoriteProduct: "Jean",
+      income: "High",
+      location: "City",
+      favoriteProduct: "T-Shirts",
       favoriteColour: "Blue",
-      favoriteBrand: "Peter England",
+      favoriteBrand: "Nike",
       specialDays: "Birthday",
-      lifeStyle: "Fitness",
+      lifeStyle: "Fitness enthusiast",
       interest: "Sports",
       customerLabel: "WhatsApp",
+      communicationChannel: "WhatsApp",
+      typeOfCommunication: "Discount offers",
+      privacyNote: "Prefers evening calls",
+      measurements: "L",
+      birthday: "1990-05-15",
+      anniversary: "2020-12-25",
+    },
+    {
+      id: "2",
+      name: "Jane Smith",
+      mobileNumber: "+1234567891",
+      gender: "Female",
+      firstVisit: "2023-02-15",
+      source: "Website",
+      profession: "Student",
+      income: "Low",
+      location: "Suburban",
+      favoriteProduct: "Jeans",
+      favoriteColour: "Red",
+      favoriteBrand: "Levi's",
+      specialDays: "Anniversary",
+      lifeStyle: "Trendsetter",
+      interest: "Fashion",
+      customerLabel: "All",
+      communicationChannel: "Email",
+      typeOfCommunication: "New arrivals",
+      privacyNote: "Email only",
+      measurements: "M",
+      birthday: "1995-08-20",
+      anniversary: "2022-06-10",
     },
     // Add more customers as needed
   ];
@@ -83,7 +119,12 @@ const CustomerPersonalisation = () => {
   };
 
   const appliedFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => value && value !== "All" && value !== ""
+    ([key, value]) => {
+      // Don't count periodValue as an applied filter since it's always set
+      if (key === "periodValue") return false;
+      // Don't count "All" values or empty strings as applied filters
+      return value && value !== "All" && value !== "";
+    }
   ).length;
 
   const clearAllFilters = () => {
@@ -94,7 +135,7 @@ const CustomerPersonalisation = () => {
       firstVisit: "",
       source: "All",
       profession: "All", // Will be reset to first professional option by FilterPanel
-      incomeLevel: "All",
+      income: "All",
       location: "All",
       favoriteProduct: "All",
       favoriteColour: "All",
@@ -103,6 +144,12 @@ const CustomerPersonalisation = () => {
       lifeStyle: "All",
       interest: "All",
       customerLabel: "All",
+      communicationChannel: "All",
+      typeOfCommunication: "All",
+      privacyNote: "",
+      measurements: "",
+      birthday: "",
+      anniversary: "",
       periodValue: new Date().getFullYear().toString(), // Keep current year as default
     });
     // Reset to yearly view
@@ -119,8 +166,8 @@ const CustomerPersonalisation = () => {
       (filters.profession === "All" ||
         customer.profession === filters.profession) &&
       (filters.source === "All" || customer.source === filters.source) &&
-      (filters.incomeLevel === "All" ||
-        customer.incomeLevel === filters.incomeLevel) &&
+      (filters.income === "All" ||
+        customer.income === filters.income) &&
       (filters.location === "All" || customer.location === filters.location) &&
       (filters.favoriteProduct === "All" ||
         customer.favoriteProduct === filters.favoriteProduct) &&
@@ -134,7 +181,15 @@ const CustomerPersonalisation = () => {
         customer.lifeStyle === filters.lifeStyle) &&
       (filters.interest === "All" || customer.interest === filters.interest) &&
       (filters.customerLabel === "All" ||
-        customer.customerLabel === filters.customerLabel)
+        customer.customerLabel === filters.customerLabel) &&
+      (filters.communicationChannel === "All" ||
+        customer.communicationChannel === filters.communicationChannel) &&
+      (filters.typeOfCommunication === "All" ||
+        customer.typeOfCommunication === filters.typeOfCommunication) &&
+      (!filters.privacyNote ||
+        customer.privacyNote?.toLowerCase().includes(filters.privacyNote.toLowerCase())) &&
+      (!filters.measurements ||
+        customer.measurements?.toLowerCase().includes(filters.measurements.toLowerCase()))
     );
   });
 
