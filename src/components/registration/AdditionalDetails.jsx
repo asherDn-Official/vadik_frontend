@@ -127,12 +127,13 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
   };
 
   const validateGstNumber = () => {
-    if (formData.gstNumber && !/^\d{15}$/.test(formData.gstNumber)) {
-      setErrors(prev => ({ ...prev, gstNumber: "GST number must be 15 digits" }));
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}Z[A-Z0-9]{1}$/;
+    if (formData.gstNumber && !gstRegex.test(formData.gstNumber)) {
+      setErrors(prev => ({ ...prev, gstNumber: "Invalid GST number format" }));
     } else {
       setErrors(prev => ({ ...prev, gstNumber: "" }));
     }
-  };
+  }
 
   const validateForm = () => {
     validateStaffCount();
@@ -141,15 +142,15 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
     validateOwnerName();
     validateGstNumber();
 
-    return !errors.staffCount && 
-           !errors.customerCount && 
-           !errors.contactNumber && 
-           !errors.ownerName &&
-           !errors.gstNumber &&
-           formData.staffCount &&
-           formData.customerCount &&
-           formData.contactNumber &&
-           formData.ownerName;
+    return !errors.staffCount &&
+      !errors.customerCount &&
+      !errors.contactNumber &&
+      !errors.ownerName &&
+      !errors.gstNumber &&
+      formData.staffCount &&
+      formData.customerCount &&
+      formData.contactNumber &&
+      formData.ownerName;
   };
 
   const handleSubmit = async (e) => {
