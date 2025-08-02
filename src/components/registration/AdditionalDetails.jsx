@@ -126,14 +126,38 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
     }
   };
 
-  const validateGstNumber = () => {
-    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}Z[A-Z0-9]{1}$/;
-    if (formData.gstNumber && !gstRegex.test(formData.gstNumber)) {
-      setErrors(prev => ({ ...prev, gstNumber: "Invalid GST number format" }));
-    } else {
-      setErrors(prev => ({ ...prev, gstNumber: "" }));
-    }
+//   const validateGstNumber = () => {
+//   const gst = formData.gstNumber?.trim();
+
+//   if (gst && gst.length !== 15) {
+//     setErrors((prev) => ({ ...prev, gstNumber: "GST number must be 15 characters" }));
+//   } else {
+//     setErrors((prev) => {
+//       const { gstNumber, ...rest } = prev;
+//       return rest;
+//     });
+//   }
+// };
+
+const validateGstNumber = () => {
+  const gst = formData.gstNumber?.trim().toUpperCase();
+  const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+
+  if (!gst) {
+    setErrors((prev) => ({ ...prev, gstNumber: "GST number is required" }));
+  } else if (gst.length !== 15) {
+    setErrors((prev) => ({ ...prev, gstNumber: "GST number must be 15 characters" }));
+  } else if (!gstRegex.test(gst)) {
+    setErrors((prev) => ({ ...prev, gstNumber: "Invalid GST number format" }));
+  } else {
+    setErrors((prev) => {
+      const { gstNumber, ...rest } = prev;
+      return rest;
+    });
+    updateFormData({ gstNumber: gst }); // ensures stored value is uppercase
   }
+};
+
 
   const validateForm = () => {
     validateStaffCount();
