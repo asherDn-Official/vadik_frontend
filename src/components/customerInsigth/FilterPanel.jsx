@@ -14,9 +14,29 @@ const FilterPanel = ({
 }) => {
   const [expandedFilter, setExpandedFilter] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showPeriodPicker, setShowPeriodPicker] = useState(false);
   const [datePickerType, setDatePickerType] = useState("");
   const [apiFilterOptions, setApiFilterOptions] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Initialize defaults on component mount
+  React.useEffect(() => {
+    // Set default period to Yearly if not already set
+    if (!selectedPeriod) {
+      onPeriodChange("Yearly");
+    }
+    
+    // Set default year to current year if not already set
+    if (!filters.periodValue && selectedPeriod === "Yearly") {
+      const currentYear = new Date().getFullYear().toString();
+      onFilterChange("periodValue", currentYear);
+    }
+    
+    // Set default profession to first professional option if not already set
+    if (!filters.profession || filters.profession === "All") {
+      // We'll set this after API data loads
+    }
+  }, [selectedPeriod, filters.periodValue, filters.profession, onPeriodChange, onFilterChange]);
 
   // Fetch customer preferences from API
   useEffect(() => {
@@ -195,6 +215,14 @@ const FilterPanel = ({
         console.log("Processed Filter Options:", processedOptions);
 
         setApiFilterOptions(processedOptions);
+
+        // Set default profession to first professional option (not "All")
+        if (Array.isArray(processedOptions.profession) && processedOptions.profession.length > 1) {
+          const firstProfession = processedOptions.profession.find(p => p !== "All");
+          if (firstProfession && (!filters.profession || filters.profession === "All")) {
+            onFilterChange("profession", firstProfession);
+          }
+        }
       } catch (error) {
         console.error("Error fetching customer preferences:", error);
 
@@ -215,7 +243,7 @@ const FilterPanel = ({
           console.error("Error:", error.message);
         }
         // Fallback to static options
-        setApiFilterOptions({
+        const fallbackOptions = {
           gender: ["All", "Male", "Female", "Others"],
           profession: [
             "All",
@@ -269,7 +297,15 @@ const FilterPanel = ({
             "4 Stars",
             "5 Stars",
           ],
-        });
+        };
+        
+        setApiFilterOptions(fallbackOptions);
+
+        // Set default profession to first professional option (not "All")
+        const firstProfession = fallbackOptions.profession.find(p => p !== "All");
+        if (firstProfession && (!filters.profession || filters.profession === "All")) {
+          onFilterChange("profession", firstProfession);
+        }
       } finally {
         setLoading(false);
       }
@@ -357,11 +393,10 @@ const FilterPanel = ({
               return (
                 <button
                   key={option}
-                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${
-                    isActive
+                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${isActive
                       ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
                       : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
-                  }`}
+                    }`}
                   onClick={() => onFilterChange(filterKey, option)}
                 >
                   {option}
@@ -440,10 +475,172 @@ const FilterPanel = ({
     );
   };
 
+  // Handle period selection
+  const handlePeriodSelect = (period) => {
+    if (selectedPeriod === "Yearly") {
+      // For yearly, we just need the year
+      onFilterChange("periodValue", period.getFullYear().toString());
+    } else if (selectedPeriod === "Quarterly") {
+      // For quarterly, we need quarter number (1-4)
+      const month = period.getMonth();
+      const quarter = Math.floor(month / 3) + 1;
+      onFilterChange("periodValue", `Q${quarter}`);
+    } else if (selectedPeriod === "Monthly") {
+      // For monthly, we need month number (01-12)
+      const month = period.getMonth() + 1;
+      onFilterChange("periodValue", month.toString().padStart(2, "0"));
+    }
+    setShowPeriodPicker(false);
+  };
+
+  // Render period picker based on selected period type
+  const renderPeriodPicker = () => {
+    if (selectedPeriod === "Yearly") {
+      const currentYear = new Date().getFullYear();
+      const selectedYear = filters.periodValue ? parseInt(filters.periodValue) : currentYear;
+      const years = [];
+      
+      // Generate years from 2020 to current year + 5
+      for (let year = 2020; year <= currentYear + 5; year++) {
+        years.push(year);
+      }
+      
+      return (
+        <div className="bg-white p-4 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          <h3 className="text-sm font-medium mb-3 text-[#313166]">Select Year</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {years.map((year) => (
+              <button
+                key={year}
+                className={`p-2 rounded-md text-sm transition-colors ${selectedYear === year
+                    ? "bg-[#313166] text-white"
+                    : "bg-gray-100 text-[#313166] hover:bg-gray-200"
+                  }`}
+                onClick={() => {
+                  onFilterChange("periodValue", year.toString());
+                  setShowPeriodPicker(false);
+                }}
+              >
+                {year}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    } else if (selectedPeriod === "Quarterly") {
+      const quarters = ["Q1", "Q2", "Q3", "Q4"];
+      return (
+        <div className="bg-white p-4 rounded-lg shadow-lg">
+          <div className="grid grid-cols-2 gap-2">
+            {quarters.map((quarter) => (
+              <button
+                key={quarter}
+                className={`p-2 rounded-md ${filters.periodValue === quarter
+                    ? "bg-[#2e2d5f] text-white"
+                    : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
+                  }`}
+                onClick={() => {
+                  onFilterChange("periodValue", quarter);
+                  setShowPeriodPicker(false);
+                }}
+              >
+                {quarter}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    } else if (selectedPeriod === "Monthly") {
+      const months = [
+        { name: "Jan", value: "01" },
+        { name: "Feb", value: "02" },
+        { name: "Mar", value: "03" },
+        { name: "Apr", value: "04" },
+        { name: "May", value: "05" },
+        { name: "Jun", value: "06" },
+        { name: "Jul", value: "07" },
+        { name: "Aug", value: "08" },
+        { name: "Sep", value: "09" },
+        { name: "Oct", value: "10" },
+        { name: "Nov", value: "11" },
+        { name: "Dec", value: "12" },
+      ];
+      return (
+        <div className="bg-white p-4 rounded-lg shadow-lg">
+          <div className="grid grid-cols-3 gap-2">
+            {months.map((month) => (
+              <button
+                key={month.value}
+                className={`p-2 rounded-md text-sm ${filters.periodValue === month.value
+                    ? "bg-[#2e2d5f] text-white"
+                    : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
+                  }`}
+                onClick={() => {
+                  onFilterChange("periodValue", month.value);
+                  setShowPeriodPicker(false);
+                }}
+              >
+                {month.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+  };
+
+  // Get display value for the period button
+  const getPeriodButtonDisplay = () => {
+    if (!filters.periodValue) {
+      return (
+        <>
+          <Calendar size={18} className="text-[#313166]" />
+          <span>Select {selectedPeriod}</span>
+        </>
+      );
+    }
+
+    if (selectedPeriod === "Yearly") {
+      return (
+        <>
+          <Calendar size={18} className="text-[#313166]" />
+          <span>Year {filters.periodValue}</span>
+        </>
+      );
+    } else if (selectedPeriod === "Quarterly") {
+      return (
+        <>
+          <Calendar size={18} className="text-[#313166]" />
+          <span>{filters.periodValue} {new Date().getFullYear()}</span>
+        </>
+      );
+    } else if (selectedPeriod === "Monthly") {
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      const monthIndex = parseInt(filters.periodValue, 10) - 1;
+      const monthName = monthNames[monthIndex] || filters.periodValue;
+      return (
+        <>
+          <Calendar size={18} className="text-[#313166]" />
+          <span>{monthName} {new Date().getFullYear()}</span>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Calendar size={18} className="text-[#313166]" />
+        <span>Select {selectedPeriod}</span>
+      </>
+    );
+  };
+
   return (
     <div className="bg-white rounded-tl-[20px] rounded-bl-[20px] shadow-sm h-full overflow-hidden flex flex-col">
       {/* Filter Header with Applied Count & Clear */}
-      <div className="flex items-center justify-between  p-4 border-b">
+      <div className="flex items-center justify-between p-4 border-b">
         <h2 className="font-semibold">Filter</h2>
         <div className="flex gap-1">
           <div className="flex items-center bg-[#3131661A] font-[500] px-2 py-1 rounded-[5px] text-[#313166] text-[12px]">
@@ -460,33 +657,59 @@ const FilterPanel = ({
       </div>
 
       {/* Period Selection with Standalone Calendar Button */}
-      <div className="flex items-center justify-between p-4 border-b mb-2">
-        <div className="flex gap-2 h-8 w-full justify-between">
+      <div className="p-4 border-b mb-2">
+        {/* Period Type Selection */}
+        <div className="flex gap-2 h-8 w-full justify-between mb-3">
           {["Yearly", "Quarterly", "Monthly"].map((period) => (
             <button
               key={period}
-              className={`px-1.5 py-1 rounded text-[13px] transition-colors ${
-                selectedPeriod === period
+              className={`px-1.5 py-1 rounded text-[13px] transition-colors ${selectedPeriod === period
                   ? "bg-[#313166] text-white"
                   : "text-gray-600 hover:bg-gray-100"
-              }`}
-              onClick={() => onPeriodChange(period)}
+                }`}
+              onClick={() => {
+                onPeriodChange(period);
+                // Set default values when changing period type
+                if (period === "Yearly" && !filters.periodValue) {
+                  onFilterChange("periodValue", new Date().getFullYear().toString());
+                } else if (period !== "Yearly") {
+                  onFilterChange("periodValue", "");
+                }
+              }}
             >
               {period}
             </button>
           ))}
-          {/* Standalone Calendar Button */}
+        </div>
+        
+        {/* Standalone Calendar Button */}
+        <div className="w-full">
           <button
-            className=" rounded text-[13px] text-gray-600  flex items-center gap-1"
-            onClick={() => {
-              setDatePickerType("custom");
-              setShowDatePicker(true);
-            }}
+            className="w-full rounded-lg text-[14px] text-[#313166] flex items-center justify-center gap-2 hover:bg-gray-50 px-3 py-2 border border-[#313166] bg-white transition-colors font-medium"
+            onClick={() => setShowPeriodPicker(true)}
+            title={`Select ${selectedPeriod} Period`}
           >
-            <img src="../assets/calendar-icon.png" alt="" />
+            {getPeriodButtonDisplay()}
           </button>
         </div>
       </div>
+
+      {/* Period Picker Modal */}
+      {showPeriodPicker && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg">
+            {renderPeriodPicker()}
+            <div className="text-right mt-2">
+              <button
+                className="px-2 py-0 text-sm bg-[#313166] text-white rounded"
+                onClick={() => setShowPeriodPicker(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Date Picker Modal */}
       {showDatePicker && (
@@ -497,8 +720,8 @@ const FilterPanel = ({
                 datePickerType === "firstVisit"
                   ? filters.firstVisit || new Date()
                   : datePickerType === "custom"
-                  ? filters.customDate || new Date()
-                  : selectedPeriod
+                    ? filters.customDate || new Date()
+                    : selectedPeriod
               }
               onChange={(date) => {
                 if (datePickerType === "firstVisit") {
@@ -514,6 +737,7 @@ const FilterPanel = ({
         </div>
       )}
 
+      {/* Rest of the filter components remain the same */}
       {/* Filter Groups */}
       <div className="space-y-2 overflow-y-auto flex-1">
         {/* Name Filter */}
@@ -571,11 +795,10 @@ const FilterPanel = ({
                 return (
                   <button
                     key={option}
-                    className={`px-2 py-0.5 rounded-md border transition-colors duration-200 ${
-                      isActive
+                    className={`px-2 py-0.5 rounded-md border transition-colors duration-200 ${isActive
                         ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
                         : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
-                    }`}
+                      }`}
                     onClick={() => onFilterChange("gender", option)}
                   >
                     {option}
@@ -627,11 +850,10 @@ const FilterPanel = ({
               return (
                 <button
                   key={option}
-                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${
-                    isActive
+                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${isActive
                       ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
                       : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
-                  }`}
+                    }`}
                   onClick={() => onFilterChange("source", option)}
                 >
                   {option}
@@ -711,16 +933,14 @@ const FilterPanel = ({
                   <button
                     key={option}
                     onClick={() => onFilterChange("favoriteColour", option)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-all duration-200 ${
-                      isSelected
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm transition-all duration-200 ${isSelected
                         ? "bg-[#f1f1fb] text-[#2e2d5f] border-[#2e2d5f]"
                         : "bg-white text-[#2e2d5f] border-[#2e2d5f]"
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`w-2.5 h-2.5 rounded-full border ${
-                        isWhite ? "border-gray-400" : ""
-                      }`}
+                      className={`w-2.5 h-2.5 rounded-full border ${isWhite ? "border-gray-400" : ""
+                        }`}
                       style={{ backgroundColor: dotColor }}
                     />
                     {option}
@@ -779,11 +999,10 @@ const FilterPanel = ({
                 return (
                   <button
                     key={option}
-                    className={`px-2 py-1 rounded border text-xs transition ${
-                      isSelected
+                    className={`px-2 py-1 rounded border text-xs transition ${isSelected
                         ? "bg-[#313166] text-white border-[#313166]"
                         : "bg-white text-[#313166] border-[#313166]"
-                    }`}
+                      }`}
                     onClick={() => onFilterChange("specialDays", option)}
                   >
                     {option}
@@ -818,8 +1037,8 @@ const FilterPanel = ({
                 </svg>
                 {filters.specialDaysStart
                   ? new Date(filters.specialDaysStart).toLocaleDateString(
-                      "en-GB"
-                    )
+                    "en-GB"
+                  )
                   : "DD/MM/YYYY"}
               </button>
 
@@ -896,11 +1115,10 @@ const FilterPanel = ({
               return (
                 <button
                   key={option}
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                    isActive
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition ${isActive
                       ? "bg-[#2e2d5f] text-white"
                       : "bg-gray-100 text-[#2e2d5f]"
-                  }`}
+                    }`}
                   onClick={() => onFilterChange("customerLabel", option)}
                 >
                   {/* WhatsApp icon conditionally rendered */}
@@ -942,11 +1160,10 @@ const FilterPanel = ({
               return (
                 <button
                   key={option}
-                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${
-                    isActive
+                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${isActive
                       ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
                       : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
-                  }`}
+                    }`}
                   onClick={() => onFilterChange("active", option)}
                 >
                   {option}
@@ -968,11 +1185,10 @@ const FilterPanel = ({
               return (
                 <button
                   key={option}
-                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${
-                    isActive
+                  className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${isActive
                       ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
                       : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
-                  }`}
+                    }`}
                   onClick={() => onFilterChange("churnRole", option)}
                 >
                   {option}
@@ -999,26 +1215,25 @@ const FilterPanel = ({
               return (
                 <button
                   key={option}
-                  className={`flex items-center gap-0.5 px-3 py-1 rounded-md border transition-colors duration-200 text-[12px] ${
-                    isActive
+                  className={`flex items-center gap-0.5 px-3 py-1 rounded-md border transition-colors duration-200 text-[12px] ${isActive
                       ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
                       : "bg-white text-[#2e2d5f] border-[#2e2d5f]"
-                  }`}
+                    }`}
                   onClick={() => onFilterChange("ratingFilter", option)}
                 >
                   {option === "All"
                     ? "All"
                     : [...Array(stars)].map((_, i) => (
-                        <svg
-                          key={i}
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-3.5 w-3.5 text-[#facc15]" // Tailwind amber-400
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.138 3.498a1 1 0 00.95.69h3.676c.969 0 1.371 1.24.588 1.81l-2.975 2.163a1 1 0 00-.364 1.118l1.139 3.498c.3.921-.755 1.688-1.54 1.118l-2.976-2.163a1 1 0 00-1.176 0l-2.976 2.163c-.784.57-1.838-.197-1.539-1.118l1.138-3.498a1 1 0 00-.364-1.118L2.21 8.925c-.783-.57-.38-1.81.588-1.81h3.675a1 1 0 00.951-.69l1.138-3.498z" />
-                        </svg>
-                      ))}
+                      <svg
+                        key={i}
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3.5 w-3.5 text-[#facc15]" // Tailwind amber-400
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.138 3.498a1 1 0 00.95.69h3.676c.969 0 1.371 1.24.588 1.81l-2.975 2.163a1 1 0 00-.364 1.118l1.139 3.498c.3.921-.755 1.688-1.54 1.118l-2.976-2.163a1 1 0 00-1.176 0l-2.976 2.163c-.784.57-1.838-.197-1.539-1.118l1.138-3.498a1 1 0 00-.364-1.118L2.21 8.925c-.783-.57-.38-1.81.588-1.81h3.675a1 1 0 00.951-.69l1.138-3.498z" />
+                      </svg>
+                    ))}
                 </button>
               );
             })}
@@ -1047,9 +1262,8 @@ const FilterPanel = ({
                 renderTrack={(props, state) => (
                   <div
                     {...props}
-                    className={`absolute top-0 h-1.5 rounded-full ${
-                      state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
-                    }`}
+                    className={`absolute top-0 h-1.5 rounded-full ${state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
+                      }`}
                   />
                 )}
                 renderThumb={(props) => (
@@ -1106,9 +1320,8 @@ const FilterPanel = ({
               renderTrack={(props, state) => (
                 <div
                   {...props}
-                  className={`absolute top-0 h-1.5 rounded-full ${
-                    state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
-                  }`}
+                  className={`absolute top-0 h-1.5 rounded-full ${state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
+                    }`}
                 />
               )}
               renderThumb={(props) => (
@@ -1163,9 +1376,8 @@ const FilterPanel = ({
               renderTrack={(props, state) => (
                 <div
                   {...props}
-                  className={`absolute top-0 h-1.5 rounded-full ${
-                    state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
-                  }`}
+                  className={`absolute top-0 h-1.5 rounded-full ${state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
+                    }`}
                 />
               )}
               renderThumb={(props) => (
@@ -1224,9 +1436,8 @@ const FilterPanel = ({
                 renderTrack={(props, state) => (
                   <div
                     {...props}
-                    className={`absolute top-0 h-1.5 rounded-full ${
-                      state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
-                    }`}
+                    className={`absolute top-0 h-1.5 rounded-full ${state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
+                      }`}
                   />
                 )}
                 renderThumb={(props) => (
@@ -1268,9 +1479,8 @@ const FilterPanel = ({
                 renderTrack={(props, state) => (
                   <div
                     {...props}
-                    className={`absolute top-0 h-1.5 rounded-full ${
-                      state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
-                    }`}
+                    className={`absolute top-0 h-1.5 rounded-full ${state.index === 1 ? "bg-[#2e2d5f]" : "bg-[#e5e5eb]"
+                      }`}
                   />
                 )}
                 renderThumb={(props) => (

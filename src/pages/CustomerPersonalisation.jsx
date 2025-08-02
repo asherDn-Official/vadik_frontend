@@ -10,7 +10,7 @@ const CustomerPersonalisation = () => {
     gender: "All",
     firstVisit: "",
     source: "All",
-    profession: "All",
+    profession: "All", // Will be set to first professional option by FilterPanel
     incomeLevel: "All",
     location: "All",
     favoriteProduct: "All",
@@ -20,6 +20,7 @@ const CustomerPersonalisation = () => {
     lifeStyle: "All",
     interest: "All",
     customerLabel: "All",
+    periodValue: new Date().getFullYear().toString(), // Default to current year
   });
 
   const [selectedPeriod, setSelectedPeriod] = useState("Yearly");
@@ -92,7 +93,7 @@ const CustomerPersonalisation = () => {
       gender: "All",
       firstVisit: "",
       source: "All",
-      profession: "All",
+      profession: "All", // Will be reset to first professional option by FilterPanel
       incomeLevel: "All",
       location: "All",
       favoriteProduct: "All",
@@ -102,7 +103,10 @@ const CustomerPersonalisation = () => {
       lifeStyle: "All",
       interest: "All",
       customerLabel: "All",
+      periodValue: new Date().getFullYear().toString(), // Keep current year as default
     });
+    // Reset to yearly view
+    setSelectedPeriod("Yearly");
   };
 
   const filteredCustomers = customers.filter((customer) => {
@@ -182,7 +186,7 @@ const CustomerPersonalisation = () => {
             appliedFiltersCount={appliedFiltersCount}
             clearAllFilters={clearAllFilters}
           />
-        </div>
+        </div>  
 
         {/* Customer List Section */}
         <div className="col-span-12 md:col-span-8 lg:col-span-9 p-5">
