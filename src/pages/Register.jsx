@@ -80,18 +80,18 @@ const Register = ({ formData, updateFormData }) => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background-light flex items-center justify-center">
-        <div className="text-center">
-          <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full" role="status">
-            {/* <span className="visually-hidden">Loading...</span> */}
-          </div>
-          <p className="mt-4">Loading your information...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="min-h-screen bg-background-light flex items-center justify-center">
+  //       <div className="text-center">
+  //         <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full" role="status">
+  //           {/* <span className="visually-hidden">Loading...</span> */}
+  //         </div>
+  //         <p className="mt-4">Loading your information...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-background-light m-10">
