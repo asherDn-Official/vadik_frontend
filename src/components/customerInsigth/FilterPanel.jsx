@@ -20,7 +20,7 @@ import {
   FileText,
   Filter
 } from "lucide-react";
-import DatePicker from "./DatePicker";
+
 import ReactSlider from "react-slider";
 import api from "../../api/apiconfig";
 
@@ -33,12 +33,12 @@ const FilterPanel = ({
   clearAllFilters,
 }) => {
   const [expandedFilter, setExpandedFilter] = useState(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showPeriodPicker, setShowPeriodPicker] = useState(false);
-  const [datePickerType, setDatePickerType] = useState("");
   const [apiFilterOptions, setApiFilterOptions] = useState(null);
   const [dynamicFilterData, setDynamicFilterData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  console.log("Peroids",selectedPeriod)  
 
   // Helper function to convert display name to filter key
   const getFilterKey = (displayName) => {
@@ -142,12 +142,7 @@ const FilterPanel = ({
     setExpandedFilter((prev) => (prev === key ? null : key));
   };
 
-  const handleDateSelect = (date) => {
-    if (datePickerType) {
-      onFilterChange(datePickerType, date);
-    }
-    setShowDatePicker(false);
-  };
+
 
   const renderFilterInput = (filterKey, filterConfig) => {
     if (Array.isArray(filterConfig)) {
@@ -176,7 +171,7 @@ const FilterPanel = ({
           <input
             type="text"
             placeholder={`Enter ${filterKey.replace(/([A-Z])/g, " $1").toLowerCase()}`}
-            className="w-full p-2 pl-8 border rounded-[10px] text-sm"
+            className="w-full p-2 pl-8 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
             value={filters[filterKey] || ""}
             onChange={(e) => onFilterChange(filterKey, e.target.value)}
           />
@@ -189,7 +184,7 @@ const FilterPanel = ({
           <input
             type="number"
             placeholder={`Enter ${filterKey.replace(/([A-Z])/g, " $1").toLowerCase()}`}
-            className="w-full p-2 pl-8 border rounded-[10px] text-sm"
+            className="w-full p-2 pl-8 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
             value={filters[filterKey] || ""}
             onChange={(e) => onFilterChange(filterKey, e.target.value)}
             min="0"
@@ -199,23 +194,22 @@ const FilterPanel = ({
       );
     } else if (filterConfig?.type === "date") {
       return (
-        <div className="mt-2">
-          <button
-            className="w-full p-2 border rounded text-sm text-left flex items-center justify-between"
-            onClick={() => {
-              setDatePickerType(filterKey);
-              if (!filters[filterKey]) {
-                const today = new Date();
-                onFilterChange(filterKey, today);
+        <div className="mt-2 relative">
+          <input
+            type="date"
+            className="w-full p-2 pr-8 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
+            value={filters[filterKey] ? new Date(filters[filterKey]).toISOString().split('T')[0] : ""}
+            onChange={(e) => {
+              if (e.target.value) {
+                const selectedDate = new Date(e.target.value);
+                onFilterChange(filterKey, selectedDate);
+              } else {
+                onFilterChange(filterKey, "");
               }
-              setShowDatePicker(true);
             }}
-          >
-            {filters[filterKey]
-              ? new Date(filters[filterKey]).toLocaleDateString()
-              : "Select date"}
-            <Calendar size={16} className="text-gray-400" />
-          </button>
+            placeholder="Select date"
+          />
+          <Calendar size={16} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         </div>
       );
     }
@@ -467,31 +461,7 @@ const FilterPanel = ({
         </div>
       )}
 
-      {/* Date Picker Modal */}
-      {showDatePicker && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded-lg">
-            <DatePicker
-              selected={
-                datePickerType === "firstVisit"
-                  ? filters.firstVisit || new Date()
-                  : datePickerType === "custom"
-                    ? filters.customDate || new Date()
-                    : selectedPeriod
-              }
-              onChange={(date) => {
-                if (datePickerType === "firstVisit") {
-                  onFilterChange("firstVisit", date);
-                } else if (datePickerType === "custom") {
-                  onFilterChange("customDate", date);
-                }
-                setShowDatePicker(false);
-              }}
-              onClose={() => setShowDatePicker(false)}
-            />
-          </div>
-        </div>
-      )}
+
 
       {/* Filter Groups */}
       <div className="space-y-2 overflow-y-auto flex-1">
