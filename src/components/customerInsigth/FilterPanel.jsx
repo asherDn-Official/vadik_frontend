@@ -1,5 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, Search, Plus, Minus, X } from "lucide-react";
+import { 
+  Calendar, 
+  Search, 
+  Plus, 
+  Minus, 
+  X, 
+  User, 
+  Phone, 
+  MapPin, 
+  ShoppingCart, 
+  Star, 
+  Palette, 
+  Ruler, 
+  Gift, 
+  Activity, 
+  Heart, 
+  MessageCircle, 
+  Tag, 
+  FileText,
+  Filter
+} from "lucide-react";
 import DatePicker from "./DatePicker";
 import ReactSlider from "react-slider";
 import api from "../../api/apiconfig";
@@ -17,14 +37,46 @@ const FilterPanel = ({
   const [showPeriodPicker, setShowPeriodPicker] = useState(false);
   const [datePickerType, setDatePickerType] = useState("");
   const [apiFilterOptions, setApiFilterOptions] = useState(null);
+  const [dynamicFilterData, setDynamicFilterData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Helper function to convert display name to filter key
+  const getFilterKey = (displayName) => {
+    return displayName
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/[^a-z0-9]/g, '');
+  };
+
+  // Icon mapping function
+  const getIconComponent = (iconName) => {
+    const iconMap = {
+      person: <User size={16} />,
+      phone: <Phone size={16} />,
+      location: <MapPin size={16} />,
+      cart: <ShoppingCart size={16} />,
+      star: <Star size={16} />,
+      color: <Palette size={16} />,
+      measurement: <Ruler size={16} />,
+      birthday: <Gift size={16} />,
+      calendor: <Calendar size={16} />,
+      calendar: <Calendar size={16} />,
+      sit: <Activity size={16} />,
+      like: <Heart size={16} />,
+      tag: <Tag size={16} />,
+      price: <Tag size={16} />,
+      filter: <Filter size={16} />
+    };
+    
+    return iconMap[iconName] || <Filter size={16} />;
+  };
 
   // Initialize defaults on component mount
   React.useEffect(() => {
     if (!selectedPeriod) {
       onPeriodChange("Yearly");
     }
-    
+
     if (!filters.periodValue && selectedPeriod === "Yearly") {
       const currentYear = new Date().getFullYear().toString();
       onFilterChange("periodValue", currentYear);
@@ -38,7 +90,13 @@ const FilterPanel = ({
         setLoading(true);
         const response = await api.get("/api/customer-preferences/688c7981ed36e50360334689");
         const apiData = response.data;
-        
+
+        const mergedData = {
+          allData: [...apiData?.additionalData, ...apiData?.advancedDetails, ...apiData?.advancedPrivacyDetails]
+        };
+
+        console.log("Original API Data:", mergedData.allData);
+
         // Process API data to create filter options
         const processedOptions = {
           // Static filters
@@ -47,75 +105,29 @@ const FilterPanel = ({
           gender: ["All", "Male", "Female", "Others"],
           firstVisit: { type: "date" },
           source: ["All", "Walk In", "Website", "Social Media"],
-          // active: ["All", "Active", "Inactive"],
-          // churnRole: ["All", "High Risk", "Medium Risk", "Low Risk"],
-          // ratingFilter: ["All", "1 Star", "2 Stars", "3 Stars", "4 Stars", "5 Stars"],
-          // customerLabel: ["All", "WhatsApp"],
-          // specialDays: ["All", "Birthday", "Anniversary", "Festival"],
-          // satisfactionScore: [0, 100],
-          // engagementScore: [0, 100],
-          // loyaltyPoints: [0, 100],
-          // currentBusinessValue: [0, 100000],
-          // predictedFutureValue: [0, 200000],
         };
 
-        // Process additionalData from API
-        // apiData.additionalData?.forEach((item) => {
-        //   let key = item.key.toLowerCase().replace(/\s+/g, '');
-        //   if (item.key === "Income Level") key = "income";
-          
-        //   if (item.type === "options" && item.options) {
-        //     processedOptions[key] = ["All", ...item.options];
-        //   } else if (item.type === "string") {
-        //     processedOptions[key] = { type: "string" };
-        //   } else if (item.type === "date") {
-        //     processedOptions[key] = { type: "date" };
-        //   }
-        // });
-
-        // Process advancedDetails from API
-        // apiData.advancedDetails?.forEach((item) => {
-        //   let key = item.key.toLowerCase().replace(/\s+/g, '');
-          
-        //   if (item.key === "Favourite Products") key = "favoriteProduct";
-        //   if (item.key === "Favourite Brands") key = "favoriteBrand";
-        //   if (item.key === "Favourite Colours") key = "favoriteColour";
-        //   if (item.key === "Interests") key = "interest";
-        //   if (item.key === "Lifestyle") key = "lifeStyle";
-          
-        //   if (item.type === "options" && item.options) {
-        //     processedOptions[key] = ["All", ...item.options];
-        //   } else if (item.type === "string") {
-        //     processedOptions[key] = { type: "string" };
-        //   } else if (item.type === "date") {
-        //     processedOptions[key] = { type: "date" };
-        //   }
-        // });
-
-        // Process advancedPrivacyDetails from API
-        // apiData.advancedPrivacyDetails?.forEach((item) => {
-        //   let key = item.key.toLowerCase().replace(/\s+/g, '');
-          
-        //   if (item.key === "Communication Channel") key = "communicationChannel";
-        //   if (item.key === "Type of Communication") key = "typeOfCommunication";
-        //   if (item.key === "Privacy Note") key = "privacyNote";
-          
-        //   if (item.type === "options" && item.options) {
-        //     processedOptions[key] = ["All", ...item.options];
-        //   } else if (item.type === "string") {
-        //     processedOptions[key] = { type: "string" };
-        //   }
-        // });
-
-        setApiFilterOptions(processedOptions);
-        
-        // Set default profession if not already set
-        if (Array.isArray(processedOptions.profession) && processedOptions.profession.length > 1) {
-          const firstProfession = processedOptions.profession.find(p => p !== "All");
-          if (firstProfession && (!filters.profession || filters.profession === "All")) {
-            onFilterChange("profession", firstProfession);
-          }
+        // Process dynamic filters from mergedData.allData
+        if (mergedData.allData && Array.isArray(mergedData.allData)) {
+          mergedData.allData.forEach(item => {
+            const filterKey = getFilterKey(item.key);
+            
+            if (item.type === "options" && item.options) {
+              // Add "All" option at the beginning for multi-select filters
+              processedOptions[filterKey] = ["All", ...item.options];
+            } else if (item.type === "string") {
+              processedOptions[filterKey] = { type: "string" };
+            } else if (item.type === "date") {
+              processedOptions[filterKey] = { type: "date" };
+            }
+          });
         }
+
+
+        console.log("Processed Filter Options:", processedOptions);
+        
+        setApiFilterOptions(processedOptions);
+        setDynamicFilterData(mergedData.allData || []);
       } catch (error) {
         console.error("Error fetching filter options:", error);
       } finally {
@@ -131,12 +143,8 @@ const FilterPanel = ({
   };
 
   const handleDateSelect = (date) => {
-    if (datePickerType === "specialDaysStart") {
-      onFilterChange("specialDaysStart", date);
-    } else if (datePickerType === "specialDaysEnd") {
-      onFilterChange("specialDaysEnd", date);
-    } else if (datePickerType === "anniversary") {
-      onFilterChange("anniversary", date);
+    if (datePickerType) {
+      onFilterChange(datePickerType, date);
     }
     setShowDatePicker(false);
   };
@@ -151,8 +159,8 @@ const FilterPanel = ({
               <button
                 key={option}
                 className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${isActive
-                    ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
-                    : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
+                  ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
+                  : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
                   }`}
                 onClick={() => onFilterChange(filterKey, option)}
               >
@@ -222,11 +230,11 @@ const FilterPanel = ({
       const currentYear = new Date().getFullYear();
       const selectedYear = filters.periodValue ? parseInt(filters.periodValue) : currentYear;
       const years = [];
-      
+
       for (let year = 1999; year <= currentYear + 5; year++) {
         years.push(year);
       }
-      
+
       return (
         <div className="bg-white p-4 rounded-lg shadow-lg max-h-60 overflow-y-auto">
           <h3 className="text-sm font-medium mb-3 text-[#313166]">Select Year</h3>
@@ -235,8 +243,8 @@ const FilterPanel = ({
               <button
                 key={year}
                 className={`p-2 rounded-md text-sm transition-colors ${selectedYear === year
-                    ? "bg-[#313166] text-white"
-                    : "bg-gray-100 text-[#313166] hover:bg-gray-200"
+                  ? "bg-[#313166] text-white"
+                  : "bg-gray-100 text-[#313166] hover:bg-gray-200"
                   }`}
                 onClick={() => {
                   onFilterChange("periodValue", year.toString());
@@ -258,8 +266,8 @@ const FilterPanel = ({
               <button
                 key={quarter}
                 className={`p-2 rounded-md ${filters.periodValue === quarter
-                    ? "bg-[#2e2d5f] text-white"
-                    : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
+                  ? "bg-[#2e2d5f] text-white"
+                  : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
                   }`}
                 onClick={() => {
                   onFilterChange("periodValue", quarter);
@@ -288,8 +296,8 @@ const FilterPanel = ({
               <button
                 key={month.value}
                 className={`p-2 rounded-md text-sm ${filters.periodValue === month.value
-                    ? "bg-[#2e2d5f] text-white"
-                    : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
+                  ? "bg-[#2e2d5f] text-white"
+                  : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
                   }`}
                 onClick={() => {
                   onFilterChange("periodValue", month.value);
@@ -354,29 +362,32 @@ const FilterPanel = ({
 
   // Map all filter options to FilterItem components
   const renderFilterItems = () => {
-    if (!apiFilterOptions) return null;
+    if (!apiFilterOptions || !dynamicFilterData) return null;
 
     // Define the order of static filters
     const staticFilters = [
-      { key: "name", name: "Name" },
-      { key: "mobileNumber", name: "Mobile Number" },
-      { key: "gender", name: "Gender" },
-      { key: "firstVisit", name: "First Visit" },
-      { key: "source", name: "Source" },
+      { key: "name", name: "Name", iconName: "person" },
+      { key: "mobileNumber", name: "Mobile Number", iconName: "phone" },
+      { key: "gender", name: "Gender", iconName: "person" },
+      { key: "firstVisit", name: "First Visit", iconName: "calendar" },
+      { key: "source", name: "Source", iconName: "location" },
     ];
 
-    // Get all other filters (excluding static ones)
-    const otherFilters = Object.keys(apiFilterOptions)
-      .filter(key => !staticFilters.some(f => f.key === key))
-      .map(key => ({ key, name: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()) }));
+    // Get dynamic filters from API data
+    const dynamicFilters = dynamicFilterData.map(item => ({
+      key: getFilterKey(item.key),
+      name: item.key,
+      iconName: item.iconName || "filter"
+    }));
 
-    // Combine static filters with other filters
-    const allFilters = [...staticFilters, ...otherFilters];
+    // Combine static filters with dynamic filters
+    const allFilters = [...staticFilters, ...dynamicFilters];
 
-    return allFilters.map(({ key, name }) => (
+    return allFilters.map(({ key, name, iconName }) => (
       <FilterItem
         key={key}
         name={name}
+        icon={getIconComponent(iconName)}
         expanded={expandedFilter === key}
         onToggle={() => toggleFilter(key)}
       >
@@ -411,8 +422,8 @@ const FilterPanel = ({
             <button
               key={period}
               className={`px-1.5 py-1 rounded text-[13px] transition-colors ${selectedPeriod === period
-                  ? "bg-[#313166] text-white"
-                  : "text-gray-600 hover:bg-gray-100"
+                ? "bg-[#313166] text-white"
+                : "text-gray-600 hover:bg-gray-100"
                 }`}
               onClick={() => {
                 onPeriodChange(period);
@@ -427,7 +438,7 @@ const FilterPanel = ({
             </button>
           ))}
         </div>
-        
+
         <div className="w-full">
           <button
             className="w-full rounded-lg text-[14px] text-[#313166] flex items-center justify-center gap-2 hover:bg-gray-50 px-3 py-2 border border-[#313166] bg-white transition-colors font-medium"
