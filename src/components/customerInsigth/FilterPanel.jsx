@@ -38,7 +38,6 @@ const FilterPanel = ({
   const [dynamicFilterData, setDynamicFilterData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  console.log("Peroids",selectedPeriod)  
 
   // Helper function to convert display name to filter key
   const getFilterKey = (displayName) => {
@@ -74,7 +73,6 @@ const FilterPanel = ({
           allData: [...apiData?.additionalData, ...apiData?.advancedDetails, ...apiData?.advancedPrivacyDetails]
         };
 
-        console.log("Original API Data:", mergedData.allData);
 
         // Process API data to create filter options
         const processedOptions = {
@@ -103,7 +101,6 @@ const FilterPanel = ({
         }
 
 
-        console.log("Processed Filter Options:", processedOptions);
         
         setApiFilterOptions(processedOptions);
         setDynamicFilterData(mergedData.allData || []);
