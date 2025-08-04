@@ -22,31 +22,58 @@ const CustomerPersonalisation = () => {
 
   // Fetch customer data with filters and pagination
   const fetchCustomers = async () => {
-    try {
-      setLoading(true);
-      const params = {
-        page: currentPage,
-        limit: pagination.limit,
-        ...filters
-      };
+  try {
+    setLoading(true);
+    
+    // Prepare filters array - exclude period-related filters
+    const filtersArray = Object.entries(filters)
+      .filter(([name, value]) => {
+        // Exclude periodValue and any other period-related fields
+        return value !== "" && 
+               value !== null && 
+               value !== undefined &&
+               name !== 'periodValue';
+      })
+      .map(([name, value]) => ({ name, value }));
 
-      // Remove empty filters
-      Object.keys(params).forEach(key => {
-        if (params[key] === "" || params[key] === null) {
-          delete params[key];
-        }
-      });
+    // Prepare the request payload
+    const payload = {
+      page: currentPage,
+      // limit: pagination.limit,
+      filters: filtersArray.length > 0 ? filtersArray : undefined,
+      // Period filters (handled separately)
+      ...(selectedPeriod === "Yearly" && filters.periodValue && { 
+        year: parseInt(filters.periodValue) 
+      }),
+      ...(selectedPeriod === "Monthly" && filters.periodValue && { 
+        year: new Date().getFullYear(),
+        month: parseInt(filters.periodValue) 
+      }),
+      ...(selectedPeriod === "Quarterly" && filters.periodValue && { 
+        year: new Date().getFullYear(),
+        quarter: filters.periodValue 
+      })
+    };
 
-      const response = await api.get('/api/personilizationInsights', { params });
-      
-      setFilteredData(response.data.data);
-      setPagination(response.data.pagination);
-    } catch (error) {
-      console.error("Error fetching customers:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Remove undefined parameters
+    Object.keys(payload).forEach(key => {
+      if (payload[key] === undefined) {
+        delete payload[key];
+      }
+    });
+
+    console.log('API Payload:', payload);
+
+    const response = await api.post('/api/personilizationInsights', payload);
+    
+    setFilteredData(response.data.data);
+    setPagination(response.data.pagination);
+  } catch (error) {
+    console.error("Error fetching customers:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchCustomers();
