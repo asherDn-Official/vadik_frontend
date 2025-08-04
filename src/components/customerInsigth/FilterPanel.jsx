@@ -48,28 +48,7 @@ const FilterPanel = ({
       .replace(/[^a-z0-9]/g, '');
   };
 
-  // Icon mapping function
-  const getIconComponent = (iconName) => {
-    const iconMap = {
-      person: <User size={16} />,
-      phone: <Phone size={16} />,
-      location: <MapPin size={16} />,
-      cart: <ShoppingCart size={16} />,
-      star: <Star size={16} />,
-      color: <Palette size={16} />,
-      measurement: <Ruler size={16} />,
-      birthday: <Gift size={16} />,
-      calendor: <Calendar size={16} />,
-      calendar: <Calendar size={16} />,
-      sit: <Activity size={16} />,
-      like: <Heart size={16} />,
-      tag: <Tag size={16} />,
-      price: <Tag size={16} />,
-      filter: <Filter size={16} />
-    };
-    
-    return iconMap[iconName] || <Filter size={16} />;
-  };
+  
 
   // Initialize defaults on component mount
   React.useEffect(() => {
@@ -381,7 +360,7 @@ const FilterPanel = ({
       <FilterItem
         key={key}
         name={name}
-        icon={getIconComponent(iconName)}
+        // icon={getIconComponent(iconName)}
         expanded={expandedFilter === key}
         onToggle={() => toggleFilter(key)}
       >
@@ -483,7 +462,7 @@ const FilterItem = ({ name, expanded, onToggle, children, icon }) => {
         onClick={onToggle}
       >
         <div className="flex items-center">
-          {icon && <span className="mr-2">{icon}</span>}
+          {/* {icon && <span className="mr-2">{icon}</span>} */}
           <span>{name}</span>
         </div>
         <span className="text-[#313166]">
