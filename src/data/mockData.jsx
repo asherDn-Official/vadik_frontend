@@ -136,7 +136,7 @@ export const products = [
     id: 1,
     name: "Premium Leather Sneakers",
     category: "Footwear",
-    price: "€129.99",
+    price: "₹129.99",
     status: "In Stock",
     stock: "42 units",
     image:
@@ -146,7 +146,7 @@ export const products = [
     id: 2,
     name: "Premium Denim Jeans",
     category: "Clothing",
-    price: "€59.99",
+    price: "₹59.99",
     status: "In Stock",
     stock: "42 units",
     image:
@@ -156,7 +156,7 @@ export const products = [
     id: 3,
     name: "Performance Running Shoes",
     category: "Footwear",
-    price: "€45.50",
+    price: "₹45.50",
     status: "Out of Stock",
     stock: "0 units",
     image:
@@ -166,7 +166,7 @@ export const products = [
     id: 4,
     name: "Organic Cotton T-Shirt",
     category: "Clothing",
-    price: "€24.99",
+    price: "₹24.99",
     status: "In Stock",
     stock: "42 units",
     image:
@@ -176,7 +176,7 @@ export const products = [
     id: 5,
     name: "Classic Formal Shoes",
     category: "Footwear",
-    price: "€179.99",
+    price: "₹179.99",
     status: "Low Stock",
     stock: "42 units",
     image:
@@ -186,7 +186,7 @@ export const products = [
     id: 6,
     name: "Wool Blend Sweater",
     category: "Clothing",
-    price: "€18.50",
+    price: "₹18.50",
     status: "In Stock",
     stock: "42 units",
     image:

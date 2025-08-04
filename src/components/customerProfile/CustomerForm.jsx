@@ -220,8 +220,9 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
                         className={`w-full p-2 border ${errors.source ? 'border-red-500' : 'border-gray-300'} rounded text-[#313166] bg-white`}
                     >
                         <option value="walk-in">Walk-in</option>
-                        <option value="online">Online</option>
-                        <option value="order">Order</option>
+                        <option value="website">Website</option>
+                        <option value="social-media">Social Media</option>
+                        <option value="others">Others</option>
                     </select>
                     {errors.source && <p className="text-red-500 text-xs">{errors.source}</p>}
                 </div>

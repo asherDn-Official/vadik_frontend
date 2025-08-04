@@ -1,28 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { FiArrowLeft, FiSearch, FiPlusCircle, FiX, FiUpload } from "react-icons/fi";
+import {
+  FiArrowLeft,
+  FiSearch,
+  FiPlusCircle,
+  FiX,
+  FiUpload,
+} from "react-icons/fi";
 import api from "../../api/apiconfig";
 
 export const createProduct = async (formData) => {
   try {
-    const response = await api.post('/api/inventory', formData);
+    const response = await api.post("/api/inventory", formData);
     return response.data;
   } catch (error) {
-    console.error('Error creating product:', error);
+    console.error("Error creating product:", error);
     throw error;
   }
 };
 
 export const updateProduct = async (productId, formData) => {
   try {
-
     const response = await api.patch(`/api/inventory/${productId}`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
-        },
+        "Content-Type": "multipart/form-data",
+      },
     });
     return response.data;
   } catch (error) {
-    console.error('Error updating product:', error);
+    console.error("Error updating product:", error);
     throw error;
   }
 };
@@ -32,7 +37,7 @@ export const getProduct = async (productId) => {
     const response = await api.get(`api/inventory/${productId}`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching product:', error);
+    console.error("Error fetching product:", error);
     throw error;
   }
 };
@@ -103,8 +108,9 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     const newImageFiles = [...imageFiles];
     const newImagePreviews = [...imagePreviews];
 
-    files.forEach(file => {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    files.forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB limit
         setError("File size should be less than 5MB");
         return;
       }
@@ -121,13 +127,12 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     setImageFiles(newImageFiles);
   };
 
-  
   const removeImage = (index) => {
     const newImagePreviews = [...imagePreviews];
     const removedImage = newImagePreviews[index];
-    
+
     // If this is an existing image (has URL), add to imagesToRemove
-    if (typeof removedImage === 'string' && removedImage.startsWith('http')) {
+    if (typeof removedImage === "string" && removedImage.startsWith("http")) {
       setImagesToRemove([...imagesToRemove, removedImage]);
     }
     // If this is a newly added file (not yet uploaded), remove from imageFiles
@@ -136,7 +141,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
       newImageFiles.splice(index, 1);
       setImageFiles(newImageFiles);
     }
-    
+
     newImagePreviews.splice(index, 1);
     setImagePreviews(newImagePreviews);
   };
@@ -149,38 +154,38 @@ const AddProduct = ({ onBack, product: editProduct }) => {
   };
 
   const handleRemoveColor = (colorToRemove) => {
-    setColors(colors.filter(color => color !== colorToRemove));
+    setColors(colors.filter((color) => color !== colorToRemove));
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setProductData(prev => ({ ...prev, [name]: value }));
+    setProductData((prev) => ({ ...prev, [name]: value }));
   };
 
-   const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
       const formData = new FormData();
-      formData.append('retailerId', retailerId);
-      formData.append('productname', productData.productname);
-      formData.append('description', productData.description);
-      formData.append('price', productData.price);
-      formData.append('status', productData.status);
-      formData.append('category', productData.category);
-      formData.append('stock', productData.stock);
-      formData.append('colors', colors.join(','));
+      formData.append("retailerId", retailerId);
+      formData.append("productname", productData.productname);
+      formData.append("description", productData.description);
+      formData.append("price", productData.price);
+      formData.append("status", productData.status);
+      formData.append("category", productData.category);
+      formData.append("stock", productData.stock);
+      formData.append("colors", colors.join(","));
 
       // Add images to remove
-      imagesToRemove.forEach(imageUrl => {
-        formData.append('removeImages', imageUrl);
+      imagesToRemove.forEach((imageUrl) => {
+        formData.append("removeImages", imageUrl);
       });
 
       // Add new images
-      imageFiles.forEach(file => {
-        formData.append('images', file);
+      imageFiles.forEach((file) => {
+        formData.append("images", file);
       });
 
       if (editProduct) {
@@ -197,7 +202,6 @@ const AddProduct = ({ onBack, product: editProduct }) => {
       setLoading(false);
     }
   };
-
 
   const handleSearch = () => {
     setShowSearchResults(true);
@@ -287,7 +291,10 @@ const AddProduct = ({ onBack, product: editProduct }) => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           {imagePreviews.length > 0 ? (
             imagePreviews.map((preview, index) => (
-              <div key={index} className="relative border border-gray-300 rounded-md h-40">
+              <div
+                key={index}
+                className="relative border border-gray-300 rounded-md h-40"
+              >
                 <img
                   src={preview}
                   alt={`Preview ${index}`}
@@ -330,7 +337,10 @@ const AddProduct = ({ onBack, product: editProduct }) => {
           )}
 
           {Array.from({ length: 4 - imagePreviews.length }).map((_, index) => (
-            <div key={index} className="border border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center p-6 h-40">
+            <div
+              key={index}
+              className="border border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center p-6 h-40"
+            >
               <label className="cursor-pointer text-center">
                 <div className="text-gray-400 mb-2">
                   <FiPlusCircle size={24} />
@@ -466,7 +476,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                 Price*
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2">€</span>
+                <span className="absolute left-3 top-2">₹</span>
                 <input
                   type="number"
                   name="price"
@@ -528,7 +538,9 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                   required
                   className="w-full p-2 border border-gray-300 rounded-md appearance-none"
                 >
-                  <option value="" disabled>Choose categories</option>
+                  <option value="" disabled>
+                    Choose categories
+                  </option>
                   <option value="Clothing">Clothing</option>
                   <option value="Footwear">Footwear</option>
                   <option value="Electronics">Electronics</option>
@@ -586,7 +598,13 @@ const AddProduct = ({ onBack, product: editProduct }) => {
             className="px-6 py-2 bg-primary bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-md hover:bg-pink-700 transition disabled:opacity-50"
             disabled={loading}
           >
-            {loading ? (editProduct ? "Updating..." : "Saving...") : (editProduct ? "Update" : "Save")}
+            {loading
+              ? editProduct
+                ? "Updating..."
+                : "Saving..."
+              : editProduct
+              ? "Update"
+              : "Save"}
           </button>
         </div>
       </div>

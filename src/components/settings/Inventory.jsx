@@ -12,7 +12,7 @@ import api from "../../api/apiconfig";
 // Get all products
 export const getProducts = async (retailerId, params = {}) => {
   try {
-    const response = await api.get('/api/inventory', {
+    const response = await api.get("/api/inventory", {
       params: {
         retailerId,
         ...params,
@@ -20,7 +20,7 @@ export const getProducts = async (retailerId, params = {}) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error("Error fetching products:", error);
     throw error;
   }
 };
@@ -31,7 +31,7 @@ export const getProduct = async (productId) => {
     const response = await api.get(`/${productId}`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching product:', error);
+    console.error("Error fetching product:", error);
     throw error;
   }
 };
@@ -40,25 +40,25 @@ export const getProduct = async (productId) => {
 export const createProduct = async (retailerId, productData) => {
   try {
     const formData = new FormData();
-    Object.keys(productData).forEach(key => {
-      if (key === 'colors' && Array.isArray(productData[key])) {
-        productData[key].forEach(color => formData.append('colors', color));
-      } else if (key === 'image' && productData[key]) {
-        formData.append('image', productData[key]);
+    Object.keys(productData).forEach((key) => {
+      if (key === "colors" && Array.isArray(productData[key])) {
+        productData[key].forEach((color) => formData.append("colors", color));
+      } else if (key === "image" && productData[key]) {
+        formData.append("image", productData[key]);
       } else {
         formData.append(key, productData[key]);
       }
     });
-    formData.append('retailerId', retailerId);
+    formData.append("retailerId", retailerId);
 
-    const response = await api.post('', formData, {
+    const response = await api.post("", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
   } catch (error) {
-    console.error('Error creating product:', error);
+    console.error("Error creating product:", error);
     throw error;
   }
 };
@@ -67,11 +67,11 @@ export const createProduct = async (retailerId, productData) => {
 export const updateProduct = async (productId, productData) => {
   try {
     const formData = new FormData();
-    Object.keys(productData).forEach(key => {
-      if (key === 'colors' && Array.isArray(productData[key])) {
-        productData[key].forEach(color => formData.append('colors', color));
-      } else if (key === 'image' && productData[key]) {
-        formData.append('image', productData[key]);
+    Object.keys(productData).forEach((key) => {
+      if (key === "colors" && Array.isArray(productData[key])) {
+        productData[key].forEach((color) => formData.append("colors", color));
+      } else if (key === "image" && productData[key]) {
+        formData.append("image", productData[key]);
       } else if (productData[key] !== undefined) {
         formData.append(key, productData[key]);
       }
@@ -79,12 +79,12 @@ export const updateProduct = async (productId, productData) => {
 
     const response = await api.patch(`/${productId}`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
   } catch (error) {
-    console.error('Error updating product:', error);
+    console.error("Error updating product:", error);
     throw error;
   }
 };
@@ -95,14 +95,12 @@ export const deleteProduct = async (productId) => {
     const response = await api.delete(`/api/inventory/${productId}`);
     return response.data;
   } catch (error) {
-    console.error('Error deleting product:', error);
+    console.error("Error deleting product:", error);
     throw error;
   }
 };
 
-
 const Inventory = () => {
-
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
   });
@@ -163,7 +161,15 @@ const Inventory = () => {
     if (retailerId) {
       fetchProducts();
     }
-  }, [retailerId, searchTerm, categoryFilter, statusFilter, sortBy, sortOrder, pagination.page]);
+  }, [
+    retailerId,
+    searchTerm,
+    categoryFilter,
+    statusFilter,
+    sortBy,
+    sortOrder,
+    pagination.page,
+  ]);
 
   const handleEdit = (product) => {
     setEditProduct(product);
@@ -330,7 +336,7 @@ const Inventory = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3">{product.category}</td>
-                    <td className="px-4 py-3">€{product.price?.toFixed(2)}</td>
+                    <td className="px-4 py-3">₹{product.price?.toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <span style={{ color: getStatusColor(product.status) }}>
                         {product.status}
@@ -355,7 +361,10 @@ const Inventory = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="px-4 py-6 text-center text-gray-500">
+                  <td
+                    colSpan="6"
+                    className="px-4 py-6 text-center text-gray-500"
+                  >
                     No products found matching your criteria
                   </td>
                 </tr>
@@ -380,37 +389,42 @@ const Inventory = () => {
               &lt;
             </button>
 
-            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-              let pageNum;
-              if (pagination.totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (pagination.page <= 3) {
-                pageNum = i + 1;
-              } else if (pagination.page >= pagination.totalPages - 2) {
-                pageNum = pagination.totalPages - 4 + i;
-              } else {
-                pageNum = pagination.page - 2 + i;
-              }
+            {Array.from(
+              { length: Math.min(5, pagination.totalPages) },
+              (_, i) => {
+                let pageNum;
+                if (pagination.totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (pagination.page <= 3) {
+                  pageNum = i + 1;
+                } else if (pagination.page >= pagination.totalPages - 2) {
+                  pageNum = pagination.totalPages - 4 + i;
+                } else {
+                  pageNum = pagination.page - 2 + i;
+                }
 
-              return (
-                <button
-                  key={pageNum}
-                  className={`px-3 py-1 border rounded-md ${pagination.page === pageNum
-                      ? "bg-sidebar text-white"
-                      : "border-gray-300 hover:bg-gray-100"
+                return (
+                  <button
+                    key={pageNum}
+                    className={`px-3 py-1 border rounded-md ${
+                      pagination.page === pageNum
+                        ? "bg-sidebar text-white"
+                        : "border-gray-300 hover:bg-gray-100"
                     }`}
-                  onClick={() => handlePageChange(pageNum)}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-
-            {pagination.totalPages > 5 && pagination.page < pagination.totalPages - 2 && (
-              <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-                ...
-              </button>
+                    onClick={() => handlePageChange(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              }
             )}
+
+            {pagination.totalPages > 5 &&
+              pagination.page < pagination.totalPages - 2 && (
+                <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
+                  ...
+                </button>
+              )}
 
             <button
               className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50"
