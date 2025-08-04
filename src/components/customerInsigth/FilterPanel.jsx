@@ -38,7 +38,7 @@ const FilterPanel = ({
   const [showPeriodPicker, setShowPeriodPicker] = useState(false);
   const [apiFilterOptions, setApiFilterOptions] = useState(null);
   const [dynamicFilterData, setDynamicFilterData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [filteredData, setFilteredData] = useState([]); // Local state for filtered data
 
   console.log(filteredData)
@@ -67,7 +67,7 @@ const FilterPanel = ({
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
-        setLoading(true);
+        // setLoading(true);
         const response = await api.get("/api/customer-preferences/688c7981ed36e50360334689");
         const apiData = response.data;
 
@@ -109,7 +109,7 @@ const FilterPanel = ({
       } catch (error) {
         console.error("Error fetching filter options:", error);
       } finally {
-        setLoading(false);
+        // setLoading(false);
       }
     };
 
@@ -121,44 +121,44 @@ const FilterPanel = ({
   };
 
   // Function to apply filters and update filtered data
-  const applyFilters = async () => {
-    try {
-      setLoading(true);
-      // Construct query parameters from filters
-      const queryParams = new URLSearchParams();
+  // const applyFilters = async () => {
+  //   try {
+  //     // setLoading(true);
+  //     // Construct query parameters from filters
+  //     const queryParams = new URLSearchParams();
 
-      for (const [key, value] of Object.entries(filters)) {
-        if (value) {
-          queryParams.append(key, value);
-        }
-      }
+  //     for (const [key, value] of Object.entries(filters)) {
+  //       if (value) {
+  //         queryParams.append(key, value);
+  //       }
+  //     }
 
-      // Add period filter
-      if (selectedPeriod && filters.periodValue) {
-        queryParams.append('period', selectedPeriod);
-        queryParams.append('periodValue', filters.periodValue);
-      }
+  //     // Add period filter
+  //     if (selectedPeriod && filters.periodValue) {
+  //       queryParams.append('period', selectedPeriod);
+  //       queryParams.append('periodValue', filters.periodValue);
+  //     }
 
-      // Make API call with filters
-      const response = await api.get(`/api/customers?${queryParams.toString()}`);
+  //     // Make API call with filters
+  //     const response = await api.get(`/api/customers?${queryParams.toString()}`);
 
-      // Update local filtered data state
-      setFilteredData(response.data);
+  //     // Update local filtered data state
+  //     setFilteredData(response.data);
 
-      // Notify parent component about filtered data
-      if (onFilteredDataChange) {
-        onFilteredDataChange(response.data);
-      }
-    } catch (error) {
-      console.error("Error applying filters:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     // Notify parent component about filtered data
+  //     if (onFilteredDataChange) {
+  //       onFilteredDataChange(response.data);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error applying filters:", error);
+  //   } finally {
+  //     // setLoading(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    applyFilters();
-  }, [filters, selectedPeriod]);
+  // useEffect(() => {
+  //   applyFilters();
+  // }, [filters, selectedPeriod]);
 
 
 
@@ -491,8 +491,9 @@ const FilterPanel = ({
 
       {/* Filter Groups */}
       <div className="space-y-2 overflow-y-auto flex-1">
-        {loading ? (
-          <div className="p-4 text-center">Loading filters...</div>
+        {false ? (
+          // <div className="p-4 text-center">Loading filters...</div>
+          <></>
         ) : (
           renderFilterItems()
         )}
