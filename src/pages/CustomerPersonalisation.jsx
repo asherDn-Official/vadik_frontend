@@ -12,6 +12,7 @@ const CustomerPersonalisation = () => {
   const [showExport, setShowExport] = useState(false);
   const [appliedFiltersCount, setAppliedFiltersCount] = useState(0);
   const [filteredData, setFilteredData] = useState([]);
+  
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,

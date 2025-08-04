@@ -40,6 +40,9 @@ const FilterPanel = ({
   const [dynamicFilterData, setDynamicFilterData] = useState(null);
   // const [loading, setLoading] = useState(true);
   const [filteredData, setFilteredData] = useState([]); // Local state for filtered data
+  const [retailerId, setRetailerId] = useState(() => {
+      return localStorage.getItem("retailerId") || "";
+    });
 
   console.log(filteredData)
 
@@ -68,7 +71,7 @@ const FilterPanel = ({
     const fetchFilterOptions = async () => {
       try {
         // setLoading(true);
-        const response = await api.get("/api/customer-preferences/688c7981ed36e50360334689");
+        const response = await api.get(`/api/customer-preferences/${retailerId}`);
         const apiData = response.data;
 
         const mergedData = {

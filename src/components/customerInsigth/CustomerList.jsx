@@ -19,6 +19,9 @@ const CustomerList = ({
     "firstVisit",
     "source"
   ]);
+  const [retailerId, setRetailerId] = useState(() => {
+    return localStorage.getItem("retailerId") || "";
+  });
 
   // Function to safely get nested values from customer object
   const getNestedValue = (obj, path) => {
@@ -31,7 +34,7 @@ const CustomerList = ({
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
-        const response = await api.get("/api/customer-preferences/688c7981ed36e50360334689");
+        const response = await api.get(`/api/customer-preferences/${retailerId}`);
         const apiData = response.data;
         const mergedData = {
           allData: [...apiData?.additionalData, ...apiData?.advancedDetails, ...apiData?.advancedPrivacyDetails]
@@ -166,7 +169,7 @@ const CustomerList = ({
             </thead>
             <tbody className="divide-y divide-gray-200">
               {customers.map((customer) => {
-                
+
                 return(
                 <tr
                   key={customer._id}
