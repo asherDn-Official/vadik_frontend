@@ -36,7 +36,7 @@ function Sidebar() {
       path: "/dashboard",
       module: "dashboard",
       icon: "../assets/mage_dashboard-icon.png",
-      label: "Retailer Dashboard",
+      label: "Dashboard",
     },
     {
       path: "/customers",
@@ -72,7 +72,7 @@ function Sidebar() {
       path: "/kyc",
       module: "kyc",
       icon: "../assets/kyc-icon.png",
-      label: "KYC",
+      label: "Quick Search",
     },
     {
       path: "/settings",

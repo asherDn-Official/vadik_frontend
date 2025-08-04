@@ -1,5 +1,4 @@
 // ParentComponent.jsx
-
 import { ArrowLeft } from "lucide-react";
 import CustomerForm from "../components/customerProfile/CustomerForm";
 import { useNavigate } from "react-router-dom";
