@@ -26,31 +26,31 @@ const mockPhoneHistory = [
     date: "May 12, 2025",
     product: "Premium Wireless Headphones",
     quantity: 1,
-    amount: "€249.99",
+    amount: "₹249.99",
   },
   {
     date: "May 5, 2025",
     product: "Smartphone Charging Stand",
     quantity: 2,
-    amount: "€59.98",
+    amount: "₹59.98",
   },
   {
     date: "April 28, 2025",
     product: "Bluetooth Smart Speaker",
     quantity: 1,
-    amount: "€179.99",
+    amount: "₹179.99",
   },
   {
     date: "April 15, 2025",
     product: "Wireless Keyboard and Mouse Combo",
     quantity: 2,
-    amount: "€349.99",
+    amount: "₹349.99",
   },
   {
     date: "April 3, 2025",
     product: "Ultra HD Monitor 27-inch",
     quantity: 1,
-    amount: "€159.99",
+    amount: "₹159.99",
   },
 ];
 
