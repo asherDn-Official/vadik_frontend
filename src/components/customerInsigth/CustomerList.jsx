@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import api from "../../api/apiconfig";
 
 const CustomerList = ({
   customers,
@@ -11,13 +12,85 @@ const CustomerList = ({
   currentPage,
   onPageChange
 }) => {
+  const [tableHeaders, setTableHeaders] = useState([
+    "name",
+    "mobileNumber",
+    "gender",
+    "firstVisit",
+    "source"
+  ]);
+
   // Function to safely get nested values from customer object
   const getNestedValue = (obj, path) => {
     return path.split('.').reduce((o, p) => (o || {})[p], obj) || '';
   };
 
-  const allSelected = customers.length > 0 && 
-                      selectedCustomers.length === customers.length;
+  const allSelected = customers.length > 0 &&
+    selectedCustomers.length === customers.length;
+
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const response = await api.get("/api/customer-preferences/688c7981ed36e50360334689");
+        const apiData = response.data;
+        const mergedData = {
+          allData: [...apiData?.additionalData, ...apiData?.advancedDetails, ...apiData?.advancedPrivacyDetails]
+        };
+        
+        // Extract all unique keys from the API data
+        const keysArray = mergedData.allData.map(item => item.key);
+        
+        // Combine with default headers and remove duplicates
+        const allHeaders = [
+          ...new Set([
+            "name",
+            "mobileNumber",
+            "gender",
+            "firstVisit",
+            "source",
+            ...keysArray
+          ])
+        ];
+        
+        setTableHeaders(allHeaders);
+      } catch (error) {
+        console.error("Error fetching filter options:", error);
+      }
+    };
+
+    fetchFilterOptions();
+  }, []);
+
+  // Format header names for display
+  const formatHeaderName = (header) => {
+    return header
+      .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+      .replace(/(^|\s)\S/g, l => l.toUpperCase()) // Capitalize first letters
+      .trim();
+  };
+
+  // Render cell content based on header
+  const renderCellContent = (customer, header) => {
+    switch(header) {
+      case 'name':
+        return `${customer.firstname || ''} ${customer.lastname || ''}`.trim();
+      case 'mobileNumber':
+        return customer.mobileNumber || '';
+      case 'gender':
+        return customer.gender || '';
+      case 'firstVisit':
+        return customer.firstVisit ? 
+          new Date(customer.firstVisit).toLocaleDateString() : '';
+      case 'source':
+        return customer.source ? customer.source.charAt(0).toUpperCase() + customer.source.slice(1) : '';
+      default:
+        // Check nested properties
+        const nestedValue = getNestedValue(customer, `additionalData.${header}.value`) || 
+                          getNestedValue(customer, `advancedDetails.${header}.value`) ||
+                          getNestedValue(customer, `advancedPrivacyDetails.${header}.value`);
+        return nestedValue || '';
+    }
+  };
 
   const renderPageNumbers = () => {
     const pages = [];
@@ -81,34 +154,20 @@ const CustomerList = ({
                     className="rounded border-gray-300 text-[#7E57C2] focus:ring-[#7E57C2]"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
-                  ID.No
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
-                  Name
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
-                  Mobile
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
-                  Source
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
-                  Profession
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
-                  Location
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
-                  Income
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
-                  First Visit
-                </th>
+                {tableHeaders.map(header => (
+                  <th 
+                    key={header}
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap"
+                  >
+                    {formatHeaderName(header)}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {customers.map((customer) => (
+              {customers.map((customer) => {
+                
+                return(
                 <tr
                   key={customer._id}
                   className="hover:bg-gray-50 transition-colors"
@@ -121,34 +180,17 @@ const CustomerList = ({
                       className="rounded border-gray-300 text-[#7E57C2] focus:ring-[#7E57C2]"
                     />
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                    {customer.customerId}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
-                    {customer.firstname} {customer.lastname}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                    {customer.mobileNumber}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap capitalize">
-                    {customer.source}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                    {getNestedValue(customer, 'additionalData.profession.value')}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                    {getNestedValue(customer, 'additionalData.location.value')}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                    {getNestedValue(customer, 'additionalData.income.value') || 
-                     getNestedValue(customer, 'advancedDetails.income.value')}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                    {customer.firstVisit ? 
-                      new Date(customer.firstVisit).toLocaleDateString() : ''}
-                  </td>
+                  
+                  {tableHeaders.map(header => (
+                    <td 
+                      key={`${customer._id}-${header}`}
+                      className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap"
+                    >
+                      {renderCellContent(customer, header)}
+                    </td>
+                  ))}
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
@@ -178,7 +220,7 @@ const CustomerList = ({
             {renderPageNumbers()}
 
             <button
-              onClick={() => 
+              onClick={() =>
                 currentPage < pagination.totalPages && onPageChange(currentPage + 1)
               }
               disabled={currentPage === pagination.totalPages}
