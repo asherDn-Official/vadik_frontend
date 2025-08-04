@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Calendar, 
-  Search, 
-  Plus, 
-  Minus, 
-  X, 
-  User, 
-  Phone, 
-  MapPin, 
-  ShoppingCart, 
-  Star, 
-  Palette, 
-  Ruler, 
-  Gift, 
-  Activity, 
-  Heart, 
-  MessageCircle, 
-  Tag, 
+import {
+  Calendar,
+  Search,
+  Plus,
+  Minus,
+  X,
+  User,
+  Phone,
+  MapPin,
+  ShoppingCart,
+  Star,
+  Palette,
+  Ruler,
+  Gift,
+  Activity,
+  Heart,
+  MessageCircle,
+  Tag,
   FileText,
   Filter
 } from "lucide-react";
@@ -31,13 +31,17 @@ const FilterPanel = ({
   onPeriodChange,
   appliedFiltersCount,
   clearAllFilters,
+  onFilteredDataChange, // New prop to pass filtered data to parent
+
 }) => {
   const [expandedFilter, setExpandedFilter] = useState(null);
   const [showPeriodPicker, setShowPeriodPicker] = useState(false);
   const [apiFilterOptions, setApiFilterOptions] = useState(null);
   const [dynamicFilterData, setDynamicFilterData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [filteredData, setFilteredData] = useState([]); // Local state for filtered data
 
+  console.log(filteredData)
 
   // Helper function to convert display name to filter key
   const getFilterKey = (displayName) => {
@@ -46,8 +50,6 @@ const FilterPanel = ({
       .replace(/\s+/g, '')
       .replace(/[^a-z0-9]/g, '');
   };
-
-  
 
   // Initialize defaults on component mount
   React.useEffect(() => {
@@ -88,7 +90,7 @@ const FilterPanel = ({
         if (mergedData.allData && Array.isArray(mergedData.allData)) {
           mergedData.allData.forEach(item => {
             const filterKey = getFilterKey(item.key);
-            
+
             if (item.type === "options" && item.options) {
               // Add "All" option at the beginning for multi-select filters
               processedOptions[filterKey] = ["All", ...item.options];
@@ -101,7 +103,7 @@ const FilterPanel = ({
         }
 
 
-        
+
         setApiFilterOptions(processedOptions);
         setDynamicFilterData(mergedData.allData || []);
       } catch (error) {
@@ -117,6 +119,47 @@ const FilterPanel = ({
   const toggleFilter = (key) => {
     setExpandedFilter((prev) => (prev === key ? null : key));
   };
+
+  // Function to apply filters and update filtered data
+  const applyFilters = async () => {
+    try {
+      setLoading(true);
+      // Construct query parameters from filters
+      const queryParams = new URLSearchParams();
+
+      for (const [key, value] of Object.entries(filters)) {
+        if (value) {
+          queryParams.append(key, value);
+        }
+      }
+
+      // Add period filter
+      if (selectedPeriod && filters.periodValue) {
+        queryParams.append('period', selectedPeriod);
+        queryParams.append('periodValue', filters.periodValue);
+      }
+
+      // Make API call with filters
+      const response = await api.get(`/api/customers?${queryParams.toString()}`);
+
+      // Update local filtered data state
+      setFilteredData(response.data);
+
+      // Notify parent component about filtered data
+      if (onFilteredDataChange) {
+        onFilteredDataChange(response.data);
+      }
+    } catch (error) {
+      console.error("Error applying filters:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    applyFilters();
+  }, [filters, selectedPeriod]);
+
 
 
 
@@ -369,13 +412,20 @@ const FilterPanel = ({
   return (
     <div className="bg-white rounded-tl-[20px] rounded-bl-[20px] shadow-sm h-full overflow-hidden flex flex-col">
       {/* Filter Header with Applied Count & Clear */}
+
       <div className="flex items-center justify-between p-4 border-b">
         <h2 className="font-semibold">Filter</h2>
         <div className="flex gap-1">
           <div className="flex items-center bg-[#3131661A] font-[500] px-2 py-1 rounded-[5px] text-[#313166] text-[12px]">
             <span className="mr-2">{appliedFiltersCount} applied</span>
             <button
-              onClick={clearAllFilters}
+              onClick={() => {
+                clearAllFilters();
+                setFilteredData([]); // Clear filtered data when clearing filters
+                if (onFilteredDataChange) {
+                  onFilteredDataChange([]);
+                }
+              }}
               className="text-[#313166] text-[14px] font-[700] hover:text-gray-800 focus:outline-none"
               aria-label="Clear filters"
             >

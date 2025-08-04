@@ -4,36 +4,16 @@ import CustomerList from "../../src/components/customerInsigth/CustomerList";
 import * as XLSX from "xlsx";
 
 const CustomerPersonalisation = () => {
-  const [filters, setFilters] = useState({
-    name: "",
-    mobileNumber: "",
-    gender: "All",
-    firstVisit: "",
-    source: "All",
-    profession: "All", // Will be set to first professional option by FilterPanel
-    income: "All",
-    location: "All",
-    favoriteProduct: "All",
-    favoriteColour: "All",
-    favoriteBrand: "All",
-    specialDays: "All",
-    lifeStyle: "All",
-    interest: "All",
-    customerLabel: "All",
-    communicationChannel: "All",
-    typeOfCommunication: "All",
-    privacyNote: "",
-    measurements: "",
-    birthday: "",
-    anniversary: "",
-    periodValue: new Date().getFullYear().toString(), // Default to current year
-  });
+  const [filters, setFilters] = useState({});
+  console.log("Filters:",filters);
 
   const [selectedPeriod, setSelectedPeriod] = useState("Yearly");
   const [selectedCustomers, setSelectedCustomers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showExport, setShowExport] = useState(false);
   const customersPerPage = 10;
+  const [appliedFiltersCount, setAppliedFiltersCount] = useState(0);
+  const [filteredData, setFilteredData] = useState([]); // State to store filtered data
 
   // Mock context - replace with your actual context import
   const customers = [
@@ -93,8 +73,8 @@ const CustomerPersonalisation = () => {
     const dataToExport =
       selectedCustomers.length > 0
         ? filteredCustomers.filter((customer) =>
-            selectedCustomers.includes(customer.id)
-          )
+          selectedCustomers.includes(customer.id)
+        )
         : filteredCustomers;
 
     // Create a worksheet
@@ -111,49 +91,28 @@ const CustomerPersonalisation = () => {
     setShowExport(false);
   };
 
-  const handleFilterChange = (filterName, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [filterName]: value,
-    }));
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => {
+      const newFilters = { ...prev, [key]: value };
+      // Calculate applied filters count
+      const count = Object.values(newFilters).filter(v => v !== undefined && v !== '').length;
+      setAppliedFiltersCount(count);
+      return newFilters;
+    });
   };
 
-  const appliedFiltersCount = Object.entries(filters).filter(
-    ([key, value]) => {
-      // Don't count periodValue as an applied filter since it's always set
-      if (key === "periodValue") return false;
-      // Don't count "All" values or empty strings as applied filters
-      return value && value !== "All" && value !== "";
-    }
-  ).length;
+  // const appliedFiltersCount = Object.entries(filters).filter(
+  //   ([key, value]) => {
+  //     // Don't count periodValue as an applied filter since it's always set
+  //     if (key === "periodValue") return false;
+  //     // Don't count "All" values or empty strings as applied filters
+  //     return value && value !== "All" && value !== "";
+  //   }
+  // ).length;
 
   const clearAllFilters = () => {
-    setFilters({
-      name: "",
-      mobileNumber: "",
-      gender: "All",
-      firstVisit: "",
-      source: "All",
-      profession: "All", // Will be reset to first professional option by FilterPanel
-      income: "All",
-      location: "All",
-      favoriteProduct: "All",
-      favoriteColour: "All",
-      favoriteBrand: "All",
-      specialDays: "All",
-      lifeStyle: "All",
-      interest: "All",
-      customerLabel: "All",
-      communicationChannel: "All",
-      typeOfCommunication: "All",
-      privacyNote: "",
-      measurements: "",
-      birthday: "",
-      anniversary: "",
-      periodValue: new Date().getFullYear().toString(), // Keep current year as default
-    });
-    // Reset to yearly view
-    setSelectedPeriod("Yearly");
+    setFilters({});
+    setAppliedFiltersCount(0);
   };
 
   const filteredCustomers = customers.filter((customer) => {
@@ -240,8 +199,9 @@ const CustomerPersonalisation = () => {
             onPeriodChange={setSelectedPeriod}
             appliedFiltersCount={appliedFiltersCount}
             clearAllFilters={clearAllFilters}
+            onFilteredDataChange={setFilteredData} // Pass callback to receive filtered data
           />
-        </div>  
+        </div>
 
         {/* Customer List Section */}
         <div className="col-span-12 md:col-span-8 lg:col-span-9 p-5">
