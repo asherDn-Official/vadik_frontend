@@ -53,7 +53,20 @@ const CustomerRecommendation = () => {
       const response = await axios.get(
         `${BASE_URL}/api/customerChat/get-all-threads?userid=${retailerId}`
       );
-      setThreads(response.data.threads);
+      const fetchedThreads = response.data.threads;
+      setThreads(fetchedThreads);
+      
+      // Auto-select the most recent thread if no thread is currently selected
+      if (fetchedThreads.length > 0 && !currentThreadId) {
+        // Sort threads by lastActivity to find the most recent one
+        const sortedThreads = [...fetchedThreads].sort((a, b) => 
+          new Date(b.lastActivity) - new Date(a.lastActivity)
+        );
+        const mostRecentThread = sortedThreads[0];
+        
+        // Automatically load the most recent thread
+        fetchThreadMessages(mostRecentThread._id);
+      }
     } catch (error) {
       console.error("Error fetching threads:", error);
     }
