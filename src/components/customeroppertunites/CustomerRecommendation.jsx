@@ -97,7 +97,7 @@ const CustomerRecommendation = () => {
 
   const deleteThread = async (threadId, e) => {
     e.stopPropagation(); // Prevent thread selection when clicking delete
-    
+
     if (!confirm("Are you sure you want to delete this thread?")) {
       return;
     }
@@ -526,7 +526,7 @@ const CustomerRecommendation = () => {
                       {new Date(thread.lastActivity).toLocaleDateString()}
                     </div>
                   </div>
-                  <div 
+                  <div
                     className=" text-red-300 hover:text-red-500 cursor-pointer p-1"
                     onClick={(e) => deleteThread(thread._id, e)}
                   >
@@ -626,13 +626,15 @@ const CustomerRecommendation = () => {
         {/* Input Area */}
         <div className="p-4 border-t border-gray-200 bg-[#3131660A]">
           <div className="flex items-center space-x-3">
-            <input
+            <textarea
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type your message"
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+              // className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+              // className="w-full resize-none bg-transparent focus:outline-none rounded-lg text-gray-800 placeholder-gray-500 min-h-[100px] focus:ring-2 focus:ring-pink-500"
+              className="w-full resize-none px-4 py-3 bg-white focus:outline-none text-gray-800 placeholder-gray-500 min-h-[100px]"
               disabled={isStreaming || !currentThreadId}
             />
             <button
