@@ -48,7 +48,7 @@ const CustomerRecommendation = () => {
     }
   }, [retailerId]);
 
-  const fetchAllThreads = async () => {
+  const fetchAllThreads = async (selectMostRecent = false) => {
     try {
       const response = await axios.get(
         `${BASE_URL}/api/customerChat/get-all-threads?userid=${retailerId}`
@@ -56,8 +56,8 @@ const CustomerRecommendation = () => {
       const fetchedThreads = response.data.threads;
       setThreads(fetchedThreads);
       
-      // Auto-select the most recent thread if no thread is currently selected
-      if (fetchedThreads.length > 0 && !currentThreadId) {
+      // Auto-select the most recent thread if no thread is currently selected OR if explicitly requested
+      if (fetchedThreads.length > 0 && (!currentThreadId || selectMostRecent)) {
         // Sort threads by lastActivity to find the most recent one
         const sortedThreads = [...fetchedThreads].sort((a, b) => 
           new Date(b.lastActivity) - new Date(a.lastActivity)
@@ -84,11 +84,13 @@ const CustomerRecommendation = () => {
         }
       );
 
-      setCurrentThreadId(response.data.threadId);
+      // Clear current state
       setMessages([]);
       setShowNewChatModal(false);
       setNewChatTitle("");
-      fetchAllThreads();
+      
+      // Refresh threads and auto-select the most recent one (which will be the newly created thread)
+      fetchAllThreads(true);
     } catch (error) {
       console.error("Error creating thread:", error);
     }
