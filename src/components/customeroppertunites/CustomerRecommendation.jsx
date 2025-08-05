@@ -108,117 +108,115 @@ const CustomerRecommendation = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !currentThreadId) return;
+  if (!inputMessage.trim() || !currentThreadId) return;
 
-    const userMessage = {
-      id: Date.now(),
-      type: "user",
-      content: inputMessage,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInputMessage("");
-
-    try {
-      setIsStreaming(true);
-      const response = await fetch(
-        `${BASE_URL}/api/customerChat/chat-stream/${currentThreadId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: retailerId,
-            message: inputMessage,
-          }),
-        }
-      );
-
-
-      if (!response.body) {
-        throw new Error("ReadableStream not supported");
-      }
-
-      const reader = response.body.getReader();
-
-      console.log(reader)
-
-      const decoder = new TextDecoder();
-      let aiMessage = {
-        id: Date.now() + 1,
-        type: "ai",
-        content: "",
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
-
-      const processStream = async () => {
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-              setIsStreaming(false);
-              fetchAllThreads(); // Refresh threads to update last activity
-              return;
-            }
-
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split("\n").filter((line) => line.trim() !== "");
-
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                const data = line.replace("data: ", "");
-                if (data === "[DONE]") {
-                  setIsStreaming(false);
-                  fetchAllThreads(); // Refresh threads to update last activity
-                  return;
-                }
-
-                try {
-                  const parsed = JSON.parse(data);
-                  if (parsed.done) {
-                    setIsStreaming(false);
-                    fetchAllThreads(); // Refresh threads to update last activity
-                    return;
-                  }
-
-                  if (parsed.content) {
-                    setMessages((prev) => {
-                      const lastMessage = prev[prev.length - 1];
-                      if (lastMessage.type === "ai") {
-                        return [
-                          ...prev.slice(0, -1),
-                          {
-                            ...lastMessage,
-                            content: lastMessage.content + parsed.content,
-                          },
-                        ];
-                      }
-                      return prev;
-                    });
-                  }
-                } catch (e) {
-                  console.error("Error parsing stream data:", e);
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.error("Error reading stream:", error);
-          setIsStreaming(false);
-        }
-      };
-
-      processStream();
-    } catch (error) {
-      console.error("Error sending message:", error);
-      setIsStreaming(false);
-    }
+  // Create user message
+  const userMessage = {
+    id: Date.now(),
+    type: "user",
+    content: inputMessage,
+    timestamp: new Date(),
   };
 
+  // Create AI message placeholder
+  const aiMessageId = Date.now() + 1;
+  const aiMessage = {
+    id: aiMessageId,
+    type: "ai",
+    content: "",
+    timestamp: new Date(),
+  };
+
+  // Update messages state
+  setMessages((prev) => [...prev, userMessage, aiMessage]);
+  setInputMessage("");
+
+  try {
+    setIsStreaming(true);
+    
+    const response = await fetch(
+      `${BASE_URL}/api/customerChat/chat-stream/${currentThreadId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: retailerId,
+          message: inputMessage,
+        }),
+      }
+    );
+
+    if (!response.ok) throw new Error("Stream request failed");
+    if (!response.body) throw new Error("ReadableStream not supported");
+
+    const reader = response.body
+      .pipeThrough(new TextDecoderStream())
+      .getReader();
+    
+    let assistantText = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      // Process the streamed chunks
+      const chunks = value
+        .replaceAll(/^data: /gm, "") // Remove "data: " prefix
+        .split("\n") // Split into individual chunks
+        .filter((c) => Boolean(c.length) && c !== "[DONE]") // Remove empty chunks and "[DONE]"
+        .map((c) => {
+          try {
+            return JSON.parse(c); // Parse each chunk as JSON
+          } catch (err) {
+            console.error("Failed to parse chunk:", c);
+            return null;
+          }
+        })
+        .filter((c) => c !== null && c.content); // Remove invalid chunks and get only content
+
+      // Append new content to the assistant text
+      chunks.forEach((chunk) => {
+        if (chunk.content) {
+          assistantText += chunk.content;
+        }
+      });
+
+      // Update the AI message with new content
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === aiMessageId ? { ...msg, content: assistantText } : msg
+        )
+      );
+    }
+
+    // Finalize the AI message
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === aiMessageId ? { ...msg, content: assistantText } : msg
+      )
+    );
+
+  } catch (error) {
+    console.error("Error during streaming:", error);
+    // Update the AI message with error state
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === aiMessageId
+          ? {
+              ...msg,
+              content: "Error processing request. Please try again.",
+            }
+          : msg
+      )
+    );
+  } finally {
+    setIsStreaming(false);
+    // fetchAllThreads(); // Refresh threads to update last activity
+  }
+};
+  
   const handleSidebarItemClick = async (item) => {
     if (!currentThreadId) {
       alert("Please create or select a thread first");
@@ -557,7 +555,7 @@ const CustomerRecommendation = () => {
                     }`}
                   >
                     <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
+                      className={` min-w-10 min-h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
                         message.type === "user" ? "bg-gray-600" : "bg-pink-600"
                       }`}
                     >
