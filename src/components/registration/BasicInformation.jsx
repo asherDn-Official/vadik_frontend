@@ -40,8 +40,8 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
       setErrors(prev => ({ ...prev, firstName: "First name is required" }));
     } else if (formData.firstName.length < 3) {
       setErrors(prev => ({ ...prev, firstName: "Minimum 3 characters required" }));
-    } else if (formData.firstName.length > 8) {
-      setErrors(prev => ({ ...prev, firstName: "Maximum 8 characters allowed" }));
+    } else if (formData.firstName.length > 15) {
+      setErrors(prev => ({ ...prev, firstName: "Maximum 15 characters allowed" }));
     } else {
       setErrors(prev => ({ ...prev, firstName: "" }));
     }
@@ -50,10 +50,10 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
   const validateLastName = () => {
     if (!formData.lastName) {
       setErrors(prev => ({ ...prev, lastName: "Last name is required" }));
-    } else if (formData.lastName.length < 3) {
-      setErrors(prev => ({ ...prev, lastName: "Minimum 3 characters required" }));
-    } else if (formData.lastName.length > 8) {
-      setErrors(prev => ({ ...prev, lastName: "Maximum 8 characters allowed" }));
+    } else if (formData.lastName.length < 1) {
+      setErrors(prev => ({ ...prev, lastName: "Minimum 1 characters required" }));
+    } else if (formData.lastName.length > 15) {
+      setErrors(prev => ({ ...prev, lastName: "Maximum 15 characters allowed" }));
     } else {
       setErrors(prev => ({ ...prev, lastName: "" }));
     }
