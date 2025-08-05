@@ -2,11 +2,39 @@ import React, { useEffect, useState } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import api from "../../api/apiconfig"; // Adjust path as needed
+import api from "../../api/apiconfig";
 import { format } from "date-fns";
 
 function CustomerProfileCollection() {
-  const [data, setData] = useState([]);
+const [data, setData] = useState([
+  {
+    date: new Date().toISOString(),
+    newCustomers: 52,
+    retentionCustomers: 58,
+  },
+  {
+    date: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
+    newCustomers: 10,
+    retentionCustomers: 44,
+  },
+  {
+    date: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
+    newCustomers: 19,
+    retentionCustomers: 84,
+  },
+  {
+    date: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString(), // changed
+    newCustomers: 50,
+    retentionCustomers: 45,
+  },
+  {
+    date: new Date(new Date().setDate(new Date().getDate() - 4)).toISOString(), // changed
+    newCustomers: 70,
+    retentionCustomers: 89,
+  },
+]);
+
+
   const [startDate, setStartDate] = useState(
     new Date(new Date().setDate(new Date().getDate() - 6))
   );
@@ -14,9 +42,16 @@ function CustomerProfileCollection() {
   const [loading, setLoading] = useState(true);
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchCustomerData();
+    }, 1000); // Delay actual data load by 3 sec
+
+    return () => clearTimeout(timer);
+  }, [startDate, endDate]);
+
   const fetchCustomerData = async () => {
     try {
-      setLoading(true);
       const formattedStart = format(startDate, "yyyy-MM-dd");
       const formattedEnd = format(endDate, "yyyy-MM-dd");
 
@@ -31,10 +66,6 @@ function CustomerProfileCollection() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchCustomerData();
-  }, [startDate, endDate]);
 
   const total = data.reduce(
     (sum, d) => sum + d.newCustomers + d.retentionCustomers,
@@ -80,11 +111,7 @@ function CustomerProfileCollection() {
 
       {/* Bar Graph */}
       <div className="flex items-end gap-3 mb-4 justify-between h-40 relative">
-        {loading ? (
-          <div className="text-center w-full text-gray-400">Loading...</div>
-        ) : data.length === 0 ? (
-          <div className="text-center w-full text-gray-400">No data</div>
-        ) : (
+        { (
           data.map(({ date, newCustomers, retentionCustomers }, index) => {
             const totalHeight = newCustomers + retentionCustomers;
             const day = new Date(date).getDate();
@@ -96,7 +123,6 @@ function CustomerProfileCollection() {
                 onMouseEnter={() => setHoveredIndex(index)}
                 onMouseLeave={() => setHoveredIndex(null)}
               >
-                {/* Tooltip */}
                 {hoveredIndex === index && totalHeight > 0 && (
                   <div className="absolute -top-14 z-10 bg-black text-white text-xs px-2 py-1 rounded-md shadow-lg">
                     <div>New: {newCustomers}</div>

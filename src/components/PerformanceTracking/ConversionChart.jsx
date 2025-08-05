@@ -6,14 +6,16 @@ import api from "../../api/apiconfig";
 const COLORS = ["#E91E63", "#F3F4F6"];
 
 const ConversionChart = () => {
-  const [conversionRate, setConversionRate] = useState(0);
+  const [conversionRate, setConversionRate] = useState(64); // default mock value
+
 
   const data = [
     { name: "Converted", value: conversionRate },
     { name: "Not Converted", value: 100 - conversionRate },
   ];
 
-  useEffect(() => {
+useEffect(() => {
+  const timer = setTimeout(() => {
     const fetchData = async () => {
       try {
         const response = await api.get("api/dashboard/customerRetensionRate");
@@ -25,7 +27,11 @@ const ConversionChart = () => {
     };
 
     fetchData();
-  }, []);
+  }, 1000); // ⏱ 1 second delay
+
+  return () => clearTimeout(timer);
+}, []);
+
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">

@@ -89,9 +89,9 @@ const FilterPanel = ({
           firstname: { type: "string" },
           lastname: { type: "string" },
           mobileNumber: { type: "number" },
-          gender: ["All", "Male", "Female", "Others"],
+          gender: [ "Male", "Female", "Others"],
           firstVisit: { type: "date" },
-          source: ["All", "Walk In", "Website", "Social Media"],
+          source: [ "Walk In", "Website", "Social Media"],
         };
 
         // Process dynamic filters from mergedData.allData
@@ -101,7 +101,7 @@ const FilterPanel = ({
 
             if (item.type === "options" && item.options) {
               // Add "All" option at the beginning for multi-select filters
-              processedOptions[filterKey] = ["All", ...item.options];
+              processedOptions[filterKey] = [ ...item.options];
             } else if (item.type === "string") {
               processedOptions[filterKey] = { type: "string" };
             } else if (item.type === "date") {

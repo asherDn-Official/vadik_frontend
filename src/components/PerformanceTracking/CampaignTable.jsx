@@ -21,22 +21,43 @@ const campaignData = [
 ];
 
 const CampaignTable = () => {
-  const [quize,setQuize]=useState(0)
-    const [spinWheel,setSpinWheel]=useState(0)
-    const [scratchCard,setScratchCard]=useState(0)
-    useEffect(()=>{
-      const fetchData=async()=>{
-        try{
-          const response=await api.get("api/performanceTracking/campaingAnalytics");
-          setQuize(response.data.analytics.quiz)
-          setScratchCard(response.data.analytics.spinWheel)
-          setSpinWheel(response.data.analytics.scratchCard)
-        }catch(error){
-          console.error('Error fetching data:',error);
-        }
+ const [quize, setQuize] = useState({
+  totalSent: 120,
+  openRate: 82,
+  clickRate: 68,
+  responded: 24,
+});
+const [spinWheel, setSpinWheel] = useState({
+  totalSent: 100,
+  openRate: 74,
+  clickRate: 62,
+  responded: 30,
+});
+const [scratchCard, setScratchCard] = useState({
+  totalSent: 50,
+  openRate: 38,
+  clickRate: 24,
+  responded: 12,
+});
+
+useEffect(() => {
+  const timer = setTimeout(() => {
+    const fetchData = async () => {
+      try {
+        const response = await api.get("api/performanceTracking/campaingAnalytics");
+        setQuize(response.data.analytics.quiz);
+        setScratchCard(response.data.analytics.scratchCard);
+        setSpinWheel(response.data.analytics.spinWheel);
+      } catch (error) {
+        console.error("Error fetching campaign data:", error);
       }
-      fetchData();
-    },[])
+    };
+    fetchData();
+  }, 1000); // 1-second delay
+
+  return () => clearTimeout(timer);
+}, []);
+
     console.log("getched data of quiz"+quize,spinWheel,scratchCard)
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">

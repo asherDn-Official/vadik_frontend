@@ -92,7 +92,7 @@ function Sidebar() {
   return (
     <aside className="w-[290px] bg-[#313166] text-white flex flex-col">
       <div className="p-6 font-[400] text-[18px] text-center">
-        Vaadikkayalar Ai
+        Vadik AI
       </div>
 
       <nav className="flex-1 py-4">

@@ -6,11 +6,12 @@ import api from "../../api/apiconfig"; // adjust this path as needed
 ChartJS.register(ArcElement, Tooltip);
 
 function CustomerProfileOverview() {
-  const [active, setActive] = useState(0);
-  const [inactive, setInactive] = useState(0);
+  const [active, setActive] = useState(250);
+  const [inactive, setInactive] = useState(12);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+useEffect(() => {
+  const timer = setTimeout(() => {
     const fetchCustomerData = async () => {
       try {
         const res = await api.get("api/dashboard/activeInactiveCustomerCount");
@@ -24,7 +25,11 @@ function CustomerProfileOverview() {
     };
 
     fetchCustomerData();
-  }, []);
+  }, 1000); // Delay by 1 second
+
+  return () => clearTimeout(timer); // Cleanup on unmount
+}, []);
+
 
   const total = active + inactive;
 
@@ -62,7 +67,7 @@ function CustomerProfileOverview() {
 
       {/* Chart */}
       <div className="relative w-[160px] h-[160px] mx-auto">
-        {!loading ? (
+        
           <>
             <Doughnut data={data} options={options} />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -74,11 +79,8 @@ function CustomerProfileOverview() {
               </span>
             </div>
           </>
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-            Loading...
-          </div>
-        )}
+        
+        
       </div>
 
       {/* Legend */}

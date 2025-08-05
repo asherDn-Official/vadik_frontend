@@ -29,18 +29,16 @@ const MyProfile = () => {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const response = await api.get(`api/retailer`);
+        const response = await api.get(`api/retailer/profile`);
 
         if (response.data.status === "success") {
-          const retailerData = response.data.data[0];
-          setRetailerId(retailerData._id); // Store retailer ID for updates
+          const retailerData = response.data.data;
+          const id = retailerData._id;
+          setRetailerId(id);
 
-          // Split full name into first and last name
-          const nameParts = retailerData?.fullName?.split(" ") || [];
-          const firstName = nameParts[0] || "";
-          const lastName = nameParts.slice(1).join(" ") || "";
-
-          // Format phone number by removing the '+' from phoneCode
+          const [firstName, ...lastParts] =
+            retailerData?.fullName?.split(" ") || [];
+          const lastName = lastParts.join(" ");
           const formattedPhone =
             (retailerData.phoneCode?.replace("+", "") || "") +
             (retailerData.phone || "");
@@ -53,14 +51,15 @@ const MyProfile = () => {
             storeName: retailerData.storeName || "",
             role: "Retailer",
             address: retailerData.storeAddress || "",
-            profilePicture: profile.profilePicture,
+            profilePicture:
+               retailerData.storeImage,
           });
         }
+
         setLoading(false);
       } catch (err) {
         setError(err.message || "Failed to fetch profile data");
         setLoading(false);
-        console.error("Error fetching profile data:", err);
       }
     };
 
@@ -74,7 +73,7 @@ const MyProfile = () => {
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handlePhoneChange = (value, country) => {
+  const handlePhoneChange = (value) => {
     setProfile((prev) => ({ ...prev, phone: value }));
   };
 
@@ -84,17 +83,13 @@ const MyProfile = () => {
     setSuccessMessage("");
 
     try {
-      // Create FormData object for the update
       const formData = new FormData();
-
-      // Append all profile data
       formData.append(
         "fullName",
         `${profile.firstName} ${profile.lastName}`.trim()
       );
       formData.append("email", profile.email);
 
-      // Handle phone number
       const phoneCode = `+${profile.phone.slice(0, 2)}`;
       const phoneNumber = profile.phone.slice(2);
       formData.append("phoneCode", phoneCode);
@@ -103,16 +98,14 @@ const MyProfile = () => {
       formData.append("storeName", profile.storeName);
       formData.append("storeAddress", profile.address);
 
-      // Append profile picture if changed
       if (
         profile.profilePicture &&
         !profile.profilePicture.startsWith("http")
       ) {
         const blob = await fetch(profile.profilePicture).then((r) => r.blob());
-        formData.append("profileImage", blob, "profile.jpg");
+        formData.append("avatar", blob, "profile.jpg"); // renamed field
       }
 
-      // Make the update request with retailer ID
       const response = await api.patch(`api/retailer/${retailerId}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -121,10 +114,16 @@ const MyProfile = () => {
 
       if (response.data.status === "success") {
         setSuccessMessage("Profile updated successfully!");
-        console.log("Profile updated successfully:", response.data);
+
+        // Optional: update profile picture from response
+        if (response.data.data?.avatarUrl) {
+          setProfile((prev) => ({
+            ...prev,
+            profilePicture: response.data.data.avatarUrl,
+          }));
+        }
       }
     } catch (err) {
-      console.error("Error updating profile:", err);
       setError(
         err.response?.data?.message ||
           err.message ||
@@ -137,13 +136,11 @@ const MyProfile = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Check file type
     if (!file.type.match("image.*")) {
       setUploadError("Please upload an image file (jpg, png)");
       return;
     }
 
-    // Check file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       setUploadError("File size too large (max 2MB)");
       return;
@@ -183,7 +180,6 @@ const MyProfile = () => {
         Admin Profile
       </h2>
 
-      {/* Success/Error messages */}
       {successMessage && (
         <div className="mb-4 p-2 bg-green-100 text-green-700 rounded">
           {successMessage}
@@ -194,7 +190,6 @@ const MyProfile = () => {
       )}
 
       <div className="flex flex-col md:flex-row gap-10">
-        {/* Left side - Form fields */}
         <div className="flex-1">
           <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -309,7 +304,6 @@ const MyProfile = () => {
           </form>
         </div>
 
-        {/* Right side - Profile picture */}
         <div className="md:w-64 flex flex-col items-center bg-[#F4F5F9] p-5 rounded-[10px] justify-evenly h-[315px]">
           <div className="text-center mb-4">
             <h3 className="font-medium mb-1 text-[#313166] text-[14px]">

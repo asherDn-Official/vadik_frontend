@@ -29,7 +29,7 @@ const CustomerAdd = () => {
 
         } catch (error) {
             console.error('Error adding customer:', error);
-            alert('Failed to add customer. Please try again.');
+            // alert('Failed to add customer. Please try again.');
         }
 
     };

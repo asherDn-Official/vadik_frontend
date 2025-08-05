@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css"; // make sure this is imported
 
 const CustomerForm = ({ onSubmit, resetForm }) => {
-  // Initialize form state
   const initialFormData = {
     firstname: "",
     lastname: "",
@@ -23,7 +23,6 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
     firstVisit: false,
   });
 
-  // Reset form when resetForm prop changes
   useEffect(() => {
     if (resetForm) {
       setFormData(initialFormData);
@@ -39,11 +38,14 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
     }
   }, [resetForm]);
 
-  // Real-time validation
+  // Real-time validation for showing error messages as you type
   useEffect(() => {
+    setErrors(validateForm());
+  }, [formData, isTouched]);
+
+  const validateForm = () => {
     const newErrors = {};
 
-    // First Name validation
     if (isTouched.firstname) {
       if (!formData.firstname.trim()) {
         newErrors.firstname = "First Name is required";
@@ -52,100 +54,94 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
       }
     }
 
-    // Last Name validation
     if (isTouched.lastname) {
       if (!formData.lastname.trim()) {
         newErrors.lastname = "Last Name is required";
-      } else if (formData.lastname.trim().length < 1) {
-        newErrors.lastname = "Last Name must be at least 1 characters";
       }
     }
 
-    // Mobile Number validation
     if (isTouched.mobileNumber) {
       if (!formData.mobileNumber) {
         newErrors.mobileNumber = "Mobile Number is required";
       } else {
         const digits = formData.mobileNumber.replace(/\D/g, "");
-        if (digits.length !== 12 && digits.length !== 10) {
+        if (digits.length !== 10 && digits.length !== 12) {
           newErrors.mobileNumber = "Mobile Number must be 10 digits";
         }
       }
     }
 
-    // Source validation
     if (isTouched.source && !formData.source) {
       newErrors.source = "Source is required";
     }
 
-    // Gender validation
     if (isTouched.gender && !formData.gender) {
       newErrors.gender = "Gender is required";
     }
 
-    // First Visit validation
-    if (isTouched.firstVisit && !formData.firstVisit) {
-      newErrors.firstVisit = "First Visit date is required";
-    } else if (isTouched.firstVisit && formData.firstVisit) {
-      const selectedDate = new Date(formData.firstVisit);
-      const today = new Date();
-      if (selectedDate > today) {
-        newErrors.firstVisit = "First Visit date cannot be in the future";
+    if (isTouched.firstVisit) {
+      if (!formData.firstVisit) {
+        newErrors.firstVisit = "First Visit date is required";
+      } else {
+        const selectedDate = new Date(formData.firstVisit);
+        const today = new Date();
+        if (selectedDate > today) {
+          newErrors.firstVisit = "First Visit date cannot be in the future";
+        }
       }
     }
 
-    setErrors(newErrors);
-  }, [formData, isTouched]);
+    return newErrors;
+  };
 
-  // Handle field blur
   const handleBlur = (field) => {
     setIsTouched((prev) => ({ ...prev, [field]: true }));
   };
 
-  // Handle text input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle phone input changes
   const handlePhoneChange = (value) => {
     setFormData((prev) => ({ ...prev, mobileNumber: value }));
     setIsTouched((prev) => ({ ...prev, mobileNumber: true }));
   };
 
-  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Mark all fields as touched to trigger validation
-    setIsTouched({
+    // Touch all fields
+    const allTouched = {
       firstname: true,
       lastname: true,
       mobileNumber: true,
       source: true,
       gender: true,
       firstVisit: true,
+    };
+    setIsTouched(allTouched);
+
+    const validationErrors = validateForm();
+    setErrors(validationErrors);
+
+    // if (Object.keys(validationErrors).length > 0) {
+    //   alert("Please fill all required fields correctly before submitting.");
+    //   return;
+    // }
+
+    const formattedMobile = formData.mobileNumber.replace(/\D/g, "");
+    const formattedDate = formData.firstVisit
+      ? `${formData.firstVisit}T00:00:00Z`
+      : "";
+
+    onSubmit({
+      ...formData,
+      mobileNumber: formattedMobile,
+      firstVisit: formattedDate,
     });
-
-    // Check if there are any errors
-    const hasErrors = Object.values(errors).some((error) => error);
-    if (!hasErrors) {
-      // Format phone number for payload (ensure it includes country code)
-      const formattedMobile = formData.mobileNumber.replace(/\D/g, "");
-      const formattedDate = formData.firstVisit
-        ? `${formData.firstVisit}T00:00:00Z`
-        : "";
-
-      onSubmit({
-        ...formData,
-        mobileNumber: formattedMobile,
-        firstVisit: formattedDate,
-      });
-    }
   };
 
-  // Get today's date in YYYY-MM-DD format for the date input max attribute
   const today = new Date().toISOString().split("T")[0];
 
   return (
@@ -190,9 +186,7 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="block text-sm text-[#31316680]">
-            Mobile Number *
-          </label>
+          <label className="block text-sm text-[#31316680]">Mobile Number *</label>
           <PhoneInput
             international
             defaultCountry="IN"

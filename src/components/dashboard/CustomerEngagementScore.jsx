@@ -4,12 +4,14 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 
 function CustomerEngagementScore() {
-  const [score, setScore] = useState(0);
-  const [totalCustomers, setTotalCustomers] = useState(0);
-  const [respondedCustomers, setRespondedCustomers] = useState(0);
+  const [score, setScore] = useState(68); // default mock percentage
+const [totalCustomers, setTotalCustomers] = useState(120); // mock
+const [respondedCustomers, setRespondedCustomers] = useState(80); // mock
+
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+useEffect(() => {
+  const timer = setTimeout(() => {
     const fetchEngagement = async () => {
       try {
         const res = await api.get(
@@ -28,7 +30,11 @@ function CustomerEngagementScore() {
     };
 
     fetchEngagement();
-  }, []);
+  }, 1000); // 1 second delay
+
+  return () => clearTimeout(timer);
+}, []);
+
 
   return (
     <div className="bg-white rounded-2xl shadow-sm pl-5 pr-8 pt-5 pb-5 h-[155px] flex flex-col justify-around">

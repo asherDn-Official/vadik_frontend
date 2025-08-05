@@ -8,25 +8,30 @@ ChartJS.register(ArcElement, Tooltip);
 function ChurnRate() {
   const chartRef = useRef(null);
   const [gradient, setGradient] = useState(null);
-  const [churn, setChurn] = useState(0);
+  const [churn, setChurn] = useState(88);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchChurn = async () => {
-      try {
-        const res = await api.get("api/dashboard/churnRate");
-        const churnValue = parseFloat(res.data.churnRate.replace("%", ""));
-        setChurn(churnValue || 0);
-      } catch (err) {
-        console.error("Error fetching churn rate:", err);
-        setChurn(0);
-      } finally {
-        setLoading(false);
-      }
-    };
+useEffect(() => {
+  const fetchChurn = async () => {
+    try {
+      const res = await api.get("api/dashboard/churnRate");
+      const churnValue = parseFloat(res.data.churnRate.replace("%", ""));
+      setChurn(churnValue);
+    } catch (err) {
+      console.error("Error fetching churn rate:", err);
+      setChurn(0);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const timer = setTimeout(() => {
     fetchChurn();
-  }, []);
+  }, 1000); // Delay API call by 3 seconds
+
+  return () => clearTimeout(timer); // cleanup if component unmounts
+}, []);
+
 
   useEffect(() => {
     if (chartRef.current && chartRef.current.canvas) {
@@ -92,7 +97,7 @@ function ChurnRate() {
       <h2 className="text-lg font-semibold text-[#1e1b4b] mb-4">Churn Rate</h2>
 
       <div className="relative w-full h-48">
-        {!loading && (
+        { (
           <>
             <Doughnut ref={chartRef} data={data} options={options} />
 
@@ -117,11 +122,7 @@ function ChurnRate() {
           </>
         )}
 
-        {loading && (
-          <div className="flex items-center justify-center h-full text-sm text-gray-400">
-            Loading...
-          </div>
-        )}
+
       </div>
     </div>
   );

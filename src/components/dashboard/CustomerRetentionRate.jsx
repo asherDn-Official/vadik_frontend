@@ -7,11 +7,12 @@ ChartJS.register(ArcElement, Tooltip);
 
 function CustomerRetentionRate() {
   const chartRef = useRef(null);
-  const [retention, setRetention] = useState(null);
+  const [retention, setRetention] = useState(75);
   const [gradient, setGradient] = useState(null);
 
   // Fetch retention data
-  useEffect(() => {
+useEffect(() => {
+  const timer = setTimeout(() => {
     const fetchRetention = async () => {
       try {
         const res = await api.get("api/dashboard/customerRetensionRate");
@@ -24,7 +25,11 @@ function CustomerRetentionRate() {
     };
 
     fetchRetention();
-  }, []);
+  }, 500); // ⏱ 1 second delay
+
+  return () => clearTimeout(timer);
+}, []);
+
 
   // Create gradient after data is loaded
   useLayoutEffect(() => {

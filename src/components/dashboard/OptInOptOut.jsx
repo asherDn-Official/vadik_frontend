@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import api from "../../api/apiconfig";
 
 function OptInOptOut() {
-  const [optIn, setOptIn] = useState(0);
-  const [optOut, setOptOut] = useState(0);
+const [optIn, setOptIn] = useState(60); // Mock opt-in %
+const [optOut, setOptOut] = useState(40); // Mock opt-out %
+
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+useEffect(() => {
+  const timer = setTimeout(() => {
     const fetchOptInOut = async () => {
       try {
         const res = await api.get("api/dashboard/optinOutRate");
@@ -25,7 +27,11 @@ function OptInOptOut() {
     };
 
     fetchOptInOut();
-  }, []);
+  }, 1000); // Delay for 1 second
+
+  return () => clearTimeout(timer); // Cleanup if component unmounts
+}, []);
+
 
   return (
     <div className="bg-white rounded-xl shadow-md px-5 py-4">
@@ -33,9 +39,7 @@ function OptInOptOut() {
         Opt-In/Opt-Out
       </h2>
 
-      {loading ? (
-        <p className="text-sm text-gray-500">Loading...</p>
-      ) : (
+      
         <>
           {/* Opt-out */}
           <div className="flex items-center gap-3 mb-3">
@@ -75,7 +79,7 @@ function OptInOptOut() {
             </div>
           </div>
         </>
-      )}
+      
     </div>
   );
 }
