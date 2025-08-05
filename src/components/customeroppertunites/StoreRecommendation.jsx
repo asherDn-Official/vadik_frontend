@@ -1,45 +1,24 @@
-import React, { useState } from "react";
-import { Plus, Send, Store, Trash2 } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Plus, Send, Heart, CalendarDays, Delete, Trash } from "lucide-react";
+import axios from "axios";
+import api from "../../api/apiconfig";
 
 const StoreRecommendation = () => {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      type: "ai",
-      content: "Denim jeans are hot selling, need to maintain the stock !",
-      timestamp: new Date(),
-    },
-    {
-      id: 2,
-      type: "user",
-      content: "Are there any new dress arrivals this week?",
-      timestamp: new Date(),
-    },
-    {
-      id: 3,
-      type: "ai",
-      content:
-        "Yes! We just received a new collection of floral and casual dresses. They are available in various colors and sizes. Would you like me to send you some photos or details?",
-      timestamp: new Date(),
-    },
-    {
-      id: 4,
-      type: "user",
-      content: "Please send me details about the floral dresses.",
-      timestamp: new Date(),
-    },
-    {
-      id: 5,
-      type: "ai",
-      content:
-        "Sure! The floral dresses start at $50 and come in sizes XS to XL. They feature lightweight fabric perfect for spring. I can also help you place an order if you want.",
-      timestamp: new Date(),
-    },
-  ]);
+  const [retailerId, setRetailerId] = useState(() => {
+    return localStorage.getItem("retailerId") || "";
+  });
+  const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState([]);
-  const [activeChatId, setActiveChatId] = useState(null);
+  const [selectedButton, setSelectedButton] = useState(null);
   const [activeSidebarItem, setActiveSidebarItem] = useState(null);
+  const [threads, setThreads] = useState([]);
+  const [currentThreadId, setCurrentThreadId] = useState(null);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [newChatTitle, setNewChatTitle] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const BASE_URL = "https://app.vadik.ai";
 
   const sidebarItems = [
     "Store Stocks",
@@ -47,25 +26,246 @@ const StoreRecommendation = () => {
     "Current Stock Availability",
     "Store Opening Hours",
     "Bulk Stock Purchase",
-    "Previous 7 Days",
     "Seasonal Textile ...",
     "Anniversary Special Offers",
     "Upcoming Birthday ...",
     "Birthday Gifts",
   ];
 
-  const handleSidebarItemClick = (item) => {
-    setActiveSidebarItem(item);
+  // Scroll to bottom of messages
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
-    // Check if this chat already exists
-    const existingChat = chatHistory.find((chat) => chat.title === item);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-    if (existingChat) {
-      // Load existing chat
-      setMessages(existingChat.messages);
-      setActiveChatId(existingChat.id);
+  // Fetch all threads on component mount
+  useEffect(() => {
+    if (retailerId) {
+      fetchAllThreads();
+    }
+  }, [retailerId]);
+
+  const fetchAllThreads = async (selectMostRecent = false) => {
+    try {
+      const response = await api.get(
+        `/api/staffChat/get-all-threads?userid=${retailerId}`
+      );
+      const fetchedThreads = response.data.threads;
+      setThreads(fetchedThreads);
+
+      // Auto-select the most recent thread if no thread is currently selected OR if explicitly requested
+      if (fetchedThreads.length > 0 && (!currentThreadId || selectMostRecent)) {
+        // Sort threads by lastActivity to find the most recent one
+        const sortedThreads = [...fetchedThreads].sort((a, b) =>
+          new Date(b.lastActivity) - new Date(a.lastActivity)
+        );
+        const mostRecentThread = sortedThreads[0];
+
+        // Automatically load the most recent thread
+        fetchThreadMessages(mostRecentThread._id);
+      }
+    } catch (error) {
+      console.error("Error fetching threads:", error);
+    }
+  };
+
+  const createNewThread = async () => {
+    if (!newChatTitle.trim()) return;
+
+    try {
+      const response = await api.post(
+        `/api/staffChat/create-thread`,
+        {
+          userId: retailerId,
+          title: newChatTitle,
+        }
+      );
+
+      // Clear current state
+      setMessages([]);
+      setShowNewChatModal(false);
+      setNewChatTitle("");
+
+      // Refresh threads and auto-select the most recent one (which will be the newly created thread)
+      fetchAllThreads(true);
+    } catch (error) {
+      console.error("Error creating thread:", error);
+    }
+  };
+
+  const deleteThread = async (threadId, e) => {
+    e.stopPropagation(); // Prevent thread selection when clicking delete
+
+    if (!confirm("Are you sure you want to delete this thread?")) {
       return;
     }
+
+    try {
+      await api.delete(
+        `/api/staffChat/delete-thread/${threadId}?userId=${retailerId}`
+      );
+
+      // If the deleted thread was the current one, clear the current state
+      if (currentThreadId === threadId) {
+        setCurrentThreadId(null);
+        setMessages([]);
+      }
+
+      // Refresh threads list
+      fetchAllThreads();
+    } catch (error) {
+      console.error("Error deleting thread:", error);
+      alert("Failed to delete thread. Please try again.");
+    }
+  };
+
+  const fetchThreadMessages = async (threadId) => {
+    try {
+      const response = await api.get(
+        `/api/staffChat/get-thread-messages/${threadId}?userId=${retailerId}`
+
+      );
+      setMessages(
+        response.data.messages.map((msg) => ({
+          id: Date.now() + Math.random(),
+          type: msg.role === "user" ? "user" : "ai",
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+        }))
+      );
+      setCurrentThreadId(threadId);
+      setActiveSidebarItem(null);
+      setSelectedButton(null);
+    } catch (error) {
+      console.error("Error fetching thread messages:", error);
+    }
+  };
+
+  const handleNewChat = () => {
+    setShowNewChatModal(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !currentThreadId) return;
+
+    // Create user message
+    const userMessage = {
+      id: Date.now(),
+      type: "user",
+      content: inputMessage,
+      timestamp: new Date(),
+    };
+
+    // Create AI message placeholder
+    const aiMessageId = Date.now() + 1;
+    const aiMessage = {
+      id: aiMessageId,
+      type: "ai",
+      content: "",
+      timestamp: new Date(),
+    };
+
+    // Update messages state
+    setMessages((prev) => [...prev, userMessage, aiMessage]);
+    setInputMessage("");
+
+    try {
+      setIsStreaming(true);
+
+      const response = await api.post(
+        `/api/staffChat/chat-stream/${currentThreadId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: retailerId,
+            message: inputMessage,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Stream request failed");
+      if (!response.body) throw new Error("ReadableStream not supported");
+
+      const reader = response.body
+        .pipeThrough(new TextDecoderStream())
+        .getReader();
+
+      let assistantText = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        // Process the streamed chunks
+        const chunks = value
+          .replaceAll(/^data: /gm, "") // Remove "data: " prefix
+          .split("\n") // Split into individual chunks
+          .filter((c) => Boolean(c.length) && c !== "[DONE]") // Remove empty chunks and "[DONE]"
+          .map((c) => {
+            try {
+              return JSON.parse(c); // Parse each chunk as JSON
+            } catch (err) {
+              console.error("Failed to parse chunk:", c);
+              return null;
+            }
+          })
+          .filter((c) => c !== null && c.content); // Remove invalid chunks and get only content
+
+        // Append new content to the assistant text
+        chunks.forEach((chunk) => {
+          if (chunk.content) {
+            assistantText += chunk.content;
+          }
+        });
+
+        // Update the AI message with new content
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === aiMessageId ? { ...msg, content: assistantText } : msg
+          )
+        );
+      }
+
+      // Finalize the AI message
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === aiMessageId ? { ...msg, content: assistantText } : msg
+        )
+      );
+
+    } catch (error) {
+      console.error("Error during streaming:", error);
+      // Update the AI message with error state
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === aiMessageId
+            ? {
+              ...msg,
+              content: "Error processing request. Please try again.",
+            }
+            : msg
+        )
+      );
+    } finally {
+      setIsStreaming(false);
+      // fetchAllThreads(); // Refresh threads to update last activity
+    }
+  };
+
+  const handleSidebarItemClick = async (item) => {
+    if (!currentThreadId) {
+      alert("Please create or select a thread first");
+      return;
+    }
+
+    setActiveSidebarItem(item);
+    setSelectedButton(null);
 
     const userMessage = {
       id: Date.now(),
@@ -74,176 +274,224 @@ const StoreRecommendation = () => {
       timestamp: new Date(),
     };
 
-    let aiResponse;
-    switch (item) {
-      case "Store Stocks":
-        aiResponse = {
-          id: Date.now() + 1,
-          type: "ai",
-          content:
-            "Current stock levels:\n\n• Denim Jeans: 142 units (Low stock)\n• T-Shirts: 356 units\n• Dresses: 189 units\n• Accessories: 420 units\n\nWould you like to generate a restock order?",
-          timestamp: new Date(),
-        };
-        break;
-      case "Birthday Invites":
-        aiResponse = {
-          id: Date.now() + 1,
-          type: "ai",
-          content:
-            "Birthday campaign options:\n\n1. 15% discount for birthday customers\n2. Free gift with $50+ purchase\n3. VIP early access to new collections\n\nWhich would you like to implement?",
-          timestamp: new Date(),
-        };
-        break;
-      default:
-        aiResponse = {
-          id: Date.now() + 1,
-          type: "ai",
-          content: `I'll analyze our ${item} data and provide specific recommendations. Please give me a moment...`,
-          timestamp: new Date(),
-        };
+    setMessages((prev) => [...prev, userMessage]);
+
+    try {
+      setIsStreaming(true);
+      const response = await api.post(
+        `/api/staffChat/chat-stream/${currentThreadId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: retailerId,
+            message: item,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Stream request failed");
+      if (!response.body) throw new Error("ReadableStream not supported");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let aiMessage = {
+        id: Date.now() + 1,
+        type: "ai",
+        content: "",
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+
+      const processStream = async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              setIsStreaming(false);
+              fetchAllThreads(); // Refresh threads to update last activity
+              return;
+            }
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n").filter((line) => line.trim() !== "");
+
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const data = line.replace("data: ", "");
+                if (data === "[DONE]") {
+                  setIsStreaming(false);
+                  fetchAllThreads(); // Refresh threads to update last activity
+                  return;
+                }
+
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.done) {
+                    setIsStreaming(false);
+                    fetchAllThreads(); // Refresh threads to update last activity
+                    return;
+                  }
+
+                  if (parsed.content) {
+                    setMessages((prev) => {
+                      const lastMessage = prev[prev.length - 1];
+                      if (lastMessage.type === "ai") {
+                        return [
+                          ...prev.slice(0, -1),
+                          {
+                            ...lastMessage,
+                            content: lastMessage.content + parsed.content,
+                          },
+                        ];
+                      }
+                      return prev;
+                    });
+                  }
+                } catch (e) {
+                  console.error("Error parsing stream data:", e);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error reading stream:", error);
+          setIsStreaming(false);
+        }
+      };
+
+      processStream();
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setIsStreaming(false);
     }
-
-    const newChat = {
-      id: Date.now(),
-      title: item,
-      messages: [userMessage, aiResponse],
-      timestamp: new Date(),
-    };
-
-    setMessages([userMessage, aiResponse]);
-    setActiveChatId(newChat.id);
-    setChatHistory((prev) => [
-      newChat,
-      ...prev.filter((chat) => chat.title !== item),
-    ]);
   };
 
-  const handleAboutStoresClick = () => {
-    const title = "About Our Stores";
-    const existingChat = chatHistory.find((chat) => chat.title === title);
-
-    if (existingChat) {
-      setMessages(existingChat.messages);
-      setActiveChatId(existingChat.id);
-      setActiveSidebarItem(null);
+  const handleQuickButtonClick = async (buttonId) => {
+    if (!currentThreadId) {
+      alert("Please create or select a thread first");
       return;
     }
 
-    const userMessage = {
-      id: Date.now(),
-      type: "user",
-      content: title,
-      timestamp: new Date(),
-    };
-
-    const aiResponse = {
-      id: Date.now() + 1,
-      type: "ai",
-      content:
-        "Here's an overview of our store performance:\n\n• Total Stores: 12 locations\n• Top Performing Store: Downtown Branch (35% of total sales)\n• Inventory Status: 85% stocked across all locations\n• Customer Satisfaction: 4.7/5 average rating\n• Monthly Growth: +12% compared to last month\n\nWould you like detailed insights about any specific store or metric?",
-      timestamp: new Date(),
-    };
-
-    const newChat = {
-      id: Date.now(),
-      title: title,
-      messages: [userMessage, aiResponse],
-      timestamp: new Date(),
-    };
-
-    setMessages([userMessage, aiResponse]);
-    setActiveChatId(newChat.id);
-    setChatHistory((prev) => [
-      newChat,
-      ...prev.filter((chat) => chat.title !== title),
-    ]);
+    setSelectedButton(buttonId);
     setActiveSidebarItem(null);
-  };
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
-
+    const messageContent =
+      buttonId === "special-days" ? "Special Days" : "Event Reminders";
     const userMessage = {
       id: Date.now(),
       type: "user",
-      content: inputMessage,
+      content: messageContent,
       timestamp: new Date(),
     };
 
-    const aiResponse = {
-      id: Date.now() + 1,
-      type: "ai",
-      content:
-        "I'll analyze your store context and provide insights based on your request. Let me gather the relevant information about inventory, sales trends, and customer preferences to give you actionable recommendations.",
-      timestamp: new Date(),
-    };
+    setMessages((prev) => [...prev, userMessage]);
 
-    const newMessages = [...messages, userMessage, aiResponse];
-    setMessages(newMessages);
-    setInputMessage("");
-
-    if (activeChatId) {
-      // Update existing chat
-      setChatHistory((prev) =>
-        prev.map((chat) =>
-          chat.id === activeChatId
-            ? { ...chat, messages: newMessages, timestamp: new Date() }
-            : chat
-        )
+    try {
+      setIsStreaming(true);
+      const response = await api.post(
+        `/api/staffChat/chat-stream/${currentThreadId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: retailerId,
+            message: messageContent,
+          }),
+        }
       );
-    } else {
-      // Create new chat from user input
-      const title =
-        inputMessage.slice(0, 20) + (inputMessage.length > 20 ? "..." : "");
-      const newChat = {
-        id: Date.now(),
-        title: title,
-        messages: [userMessage, aiResponse],
+
+      if (!response.ok) throw new Error("Stream request failed");
+      if (!response.body) throw new Error("ReadableStream not supported");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let aiMessage = {
+        id: Date.now() + 1,
+        type: "ai",
+        content: "",
         timestamp: new Date(),
       };
-      setActiveChatId(newChat.id);
-      setChatHistory((prev) => [
-        newChat,
-        ...prev.filter((chat) => chat.title !== title),
-      ]);
+
+      setMessages((prev) => [...prev, aiMessage]);
+
+      const processStream = async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              setIsStreaming(false);
+              fetchAllThreads(); // Refresh threads to update last activity
+              return;
+            }
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n").filter((line) => line.trim() !== "");
+
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const data = line.replace("data: ", "");
+                if (data === "[DONE]") {
+                  setIsStreaming(false);
+                  fetchAllThreads(); // Refresh threads to update last activity
+                  return;
+                }
+
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.done) {
+                    setIsStreaming(false);
+                    fetchAllThreads(); // Refresh threads to update last activity
+                    return;
+                  }
+
+                  if (parsed.content) {
+                    setMessages((prev) => {
+                      const lastMessage = prev[prev.length - 1];
+                      if (lastMessage.type === "ai") {
+                        return [
+                          ...prev.slice(0, -1),
+                          {
+                            ...lastMessage,
+                            content: lastMessage.content + parsed.content,
+                          },
+                        ];
+                      }
+                      return prev;
+                    });
+                  }
+                } catch (e) {
+                  console.error("Error parsing stream data:", e);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error reading stream:", error);
+          setIsStreaming(false);
+        }
+      };
+
+      processStream();
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setIsStreaming(false);
     }
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !isStreaming) {
       handleSendMessage();
     }
   };
 
-  const handleNewChat = () => {
-    setMessages([]);
-    setActiveSidebarItem(null);
-    setActiveChatId(null);
-    setInputMessage("");
-  };
-
-  const loadChatFromHistory = (chat) => {
-    setMessages(chat.messages);
-    setActiveChatId(chat.id);
-    setActiveSidebarItem(null);
-  };
-
-  const removeChatFromHistory = (chatId, e) => {
-    e.stopPropagation();
-    setChatHistory((prev) => prev.filter((chat) => chat.id !== chatId));
-    if (activeChatId === chatId) {
-      setMessages([]);
-      setActiveChatId(null);
-    }
-  };
-
-  // Get unique chats sorted by timestamp (newest first)
-  const uniqueChatHistory = Array.from(
-    new Map(chatHistory.map((chat) => [chat.title, chat])).values()
-  ).sort((a, b) => b.timestamp - a.timestamp);
-
   return (
-    <div className="max-w-7xl mx-auto flex h-[calc(100vh-200px)]">
+    <div className="rounded-[40px] mx-auto flex h-[calc(100vh-200px)]">
       {/* Sidebar */}
       <div className="w-80 bg-[#3131660A] border-r border-gray-200 flex flex-col">
         {/* New Chat Button */}
@@ -257,97 +505,84 @@ const StoreRecommendation = () => {
           </button>
         </div>
 
-        {/* Chat History */}
+        {/* Threads List */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Recent Chats
-            </h4>
-            {uniqueChatHistory.map((chat) => (
+            <h3 className="text-sm font-semibold text-gray-500 mb-2">
+              Previous Chats
+            </h3>
+            {threads.map((thread) => (
               <div
-                key={chat.id}
-                onClick={() => loadChatFromHistory(chat)}
-                className={`group py-2 px-3 text-sm rounded cursor-pointer mb-1 flex justify-between items-center ${
-                  activeChatId === chat.id
-                    ? "bg-blue-100 text-blue-800"
-                    : "text-slate-600 hover:bg-gray-50"
-                }`}
+                key={thread._id}
+                onClick={() => fetchThreadMessages(thread._id)}
+                className={`py-2 px-3 text-sm rounded cursor-pointer mb-1 ${currentThreadId === thread._id
+                  ? "bg-pink-100 text-pink-600"
+                  : "text-slate-600 hover:bg-gray-50"
+                  }`}
               >
-                <div>
-                  <div className="truncate max-w-[180px]">{chat.title}</div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    {new Date(chat.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                <div className=" flex items-center justify-between">
+                  <div>
+                    <div className="font-medium truncate">{thread.title}</div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(thread.lastActivity).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div
+                    className=" text-red-300 hover:text-red-500 cursor-pointer p-1"
+                    onClick={(e) => deleteThread(thread._id, e)}
+                  >
+                    <Trash className=" w-5 h-5" />
                   </div>
                 </div>
-                <button
-                  onClick={(e) => removeChatFromHistory(chat.id, e)}
-                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
               </div>
             ))}
           </div>
 
-          {/* Recent Chats (previously Quick Actions) */}
-          <div className="p-4 border-t border-gray-200">
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Store Stocks
-            </h4>
-            {sidebarItems.map((item, index) => (
-              <div
-                key={index}
-                onClick={() => handleSidebarItemClick(item)}
-                className={`py-2 px-3 text-sm rounded cursor-pointer mb-1 ${
-                  activeSidebarItem === item
-                    ? "bg-pink-100 text-pink-600"
-                    : "text-slate-600 hover:bg-gray-50"
-                }`}
-              >
-                {item}
-              </div>
-            ))}
-          </div>
+          {/* Sidebar Items */}
+          {/* <div className="p-4 border-t border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-500 mb-2">
+                Quick Actions
+              </h3>
+              {sidebarItems.map((item, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleSidebarItemClick(item)}
+                  className={`py-2 px-3 text-sm rounded cursor-pointer ${
+                    activeSidebarItem === item
+                      ? "bg-pink-100 text-pink-600"
+                      : "text-slate-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {item}
+                </div>
+              ))}
+            </div> */}
         </div>
       </div>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
-        {/* Chat Header */}
-        <div className="p-4 border-b border-gray-200 bg-[#3131660A]">
-          <div className="flex items-center">
-            <button
-              onClick={handleAboutStoresClick}
-              className={`flex items-center px-4 py-2 rounded-lg border transition-colors ${
-                activeSidebarItem === null && activeChatId
-                  ? "bg-yellow-100 text-yellow-700 border-yellow-200"
-                  : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
-              }`}
-            >
-              {/* <Store className="w-4 h-4 mr-2" /> */}
-              <img
-                src="../assets/about-our-story-icon.png"
-                alt=""
-                className="w-7 h-7 mr-2"
-              />
-              About Our Stores
-            </button>
-          </div>
-        </div>
-
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-6 bg-[#3131660A]">
-          {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
+          {messages.length === 0 && !currentThreadId ? (
+            <div className="flex items-center justify-center h-80">
               <div className="text-center">
                 <h3 className="text-2xl font-semibold text-slate-800 mb-2">
-                  Start a new conversation
+                  Start a new chat
                 </h3>
                 <p className="text-gray-600">
-                  Select a recent chat or type your message below
+                  Select "New Chat" to begin a conversation
+                </p>
+              </div>
+            </div>
+          ) : messages.length === 0 && currentThreadId ? (
+            <div className="flex items-center justify-center h-80">
+              <div className="text-center">
+                <h3 className="text-2xl font-semibold text-slate-800 mb-2">
+                  What can I help with?
+                </h3>
+                <p className="text-gray-600">
+                  Select a quick action or type your message below
                 </p>
               </div>
             </div>
@@ -356,43 +591,35 @@ const StoreRecommendation = () => {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${
-                    message.type === "user" ? "justify-end" : "justify-start"
-                  }`}
+                  className={`flex ${message.type === "user" ? "justify-end" : "justify-start"
+                    }`}
                 >
                   <div
-                    className={`flex items-start space-x-3 max-w-2xl ${
-                      message.type === "user"
-                        ? "flex-row-reverse space-x-reverse"
-                        : ""
-                    }`}
+                    className={`flex items-start space-x-3 max-w-2xl ${message.type === "user"
+                      ? "flex-row-reverse space-x-reverse"
+                      : ""
+                      }`}
                   >
                     <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
-                        message.type === "user" ? "bg-gray-600" : "bg-pink-600"
-                      }`}
+                      className={` min-w-10 min-h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold ${message.type === "user" ? "bg-gray-600" : "bg-pink-600"
+                        }`}
                     >
                       {message.type === "user" ? "Me" : "V"}
                     </div>
                     <div
-                      className={`px-4 py-3 rounded-lg ${
-                        message.type === "user"
-                          ? "bg-gray-100 text-gray-800"
-                          : "bg-white border border-gray-200 text-gray-800"
-                      }`}
+                      className={`px-4 py-3 rounded-lg ${message.type === "user"
+                        ? "bg-gray-100 text-gray-800"
+                        : "bg-white border border-gray-200 text-gray-800"
+                        }`}
                     >
                       <div className="whitespace-pre-line">
                         {message.content}
                       </div>
-                      {message.type === "ai" && message.id === 1 && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Vadik Ai
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
           )}
         </div>
@@ -400,23 +627,66 @@ const StoreRecommendation = () => {
         {/* Input Area */}
         <div className="p-4 border-t border-gray-200 bg-[#3131660A]">
           <div className="flex items-center space-x-3">
-            <input
+            <textarea
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type your message"
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+              // className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+              // className="w-full resize-none bg-transparent focus:outline-none rounded-lg text-gray-800 placeholder-gray-500 min-h-[100px] focus:ring-2 focus:ring-pink-500"
+              className="w-full resize-none px-4 py-3 bg-white focus:outline-none text-gray-800 placeholder-gray-500 min-h-[100px]"
+              disabled={isStreaming || !currentThreadId}
             />
             <button
               onClick={handleSendMessage}
-              className="p-3 bg-[#004AAC] text-white rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={isStreaming || !currentThreadId}
+              className={`p-3 rounded-lg transition-colors ${isStreaming || !currentThreadId
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-pink-600 hover:bg-pink-700 text-white"
+                }`}
             >
               <Send className="w-5 h-5" />
             </button>
           </div>
         </div>
       </div>
+
+      {/* New Chat Modal */}
+      {showNewChatModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">Create New Chat</h3>
+            <input
+              type="text"
+              value={newChatTitle}
+              onChange={(e) => setNewChatTitle(e.target.value)}
+              placeholder="Enter chat title"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+              onKeyPress={(e) => {
+                if (e.key === "Enter") createNewThread();
+              }}
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => {
+                  setShowNewChatModal(false);
+                  setNewChatTitle("");
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createNewThread}
+                className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
