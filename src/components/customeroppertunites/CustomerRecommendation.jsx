@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Plus, Send, Heart, CalendarDays } from "lucide-react";
+import { Plus, Send, Heart, CalendarDays, Delete, Trash } from "lucide-react";
 import axios from "axios";
-import api from "../../api/apiconfig";
 
 const CustomerRecommendation = () => {
   const [retailerId, setRetailerId] = useState(() => {
@@ -55,15 +54,15 @@ const CustomerRecommendation = () => {
       );
       const fetchedThreads = response.data.threads;
       setThreads(fetchedThreads);
-      
+
       // Auto-select the most recent thread if no thread is currently selected OR if explicitly requested
       if (fetchedThreads.length > 0 && (!currentThreadId || selectMostRecent)) {
         // Sort threads by lastActivity to find the most recent one
-        const sortedThreads = [...fetchedThreads].sort((a, b) => 
+        const sortedThreads = [...fetchedThreads].sort((a, b) =>
           new Date(b.lastActivity) - new Date(a.lastActivity)
         );
         const mostRecentThread = sortedThreads[0];
-        
+
         // Automatically load the most recent thread
         fetchThreadMessages(mostRecentThread._id);
       }
@@ -88,11 +87,37 @@ const CustomerRecommendation = () => {
       setMessages([]);
       setShowNewChatModal(false);
       setNewChatTitle("");
-      
+
       // Refresh threads and auto-select the most recent one (which will be the newly created thread)
       fetchAllThreads(true);
     } catch (error) {
       console.error("Error creating thread:", error);
+    }
+  };
+
+  const deleteThread = async (threadId, e) => {
+    e.stopPropagation(); // Prevent thread selection when clicking delete
+    
+    if (!confirm("Are you sure you want to delete this thread?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(
+        `${BASE_URL}/api/customerChat/delete-thread/${threadId}?userId=${retailerId}`
+      );
+
+      // If the deleted thread was the current one, clear the current state
+      if (currentThreadId === threadId) {
+        setCurrentThreadId(null);
+        setMessages([]);
+      }
+
+      // Refresh threads list
+      fetchAllThreads();
+    } catch (error) {
+      console.error("Error deleting thread:", error);
+      alert("Failed to delete thread. Please try again.");
     }
   };
 
@@ -123,115 +148,115 @@ const CustomerRecommendation = () => {
   };
 
   const handleSendMessage = async () => {
-  if (!inputMessage.trim() || !currentThreadId) return;
+    if (!inputMessage.trim() || !currentThreadId) return;
 
-  // Create user message
-  const userMessage = {
-    id: Date.now(),
-    type: "user",
-    content: inputMessage,
-    timestamp: new Date(),
-  };
+    // Create user message
+    const userMessage = {
+      id: Date.now(),
+      type: "user",
+      content: inputMessage,
+      timestamp: new Date(),
+    };
 
-  // Create AI message placeholder
-  const aiMessageId = Date.now() + 1;
-  const aiMessage = {
-    id: aiMessageId,
-    type: "ai",
-    content: "",
-    timestamp: new Date(),
-  };
+    // Create AI message placeholder
+    const aiMessageId = Date.now() + 1;
+    const aiMessage = {
+      id: aiMessageId,
+      type: "ai",
+      content: "",
+      timestamp: new Date(),
+    };
 
-  // Update messages state
-  setMessages((prev) => [...prev, userMessage, aiMessage]);
-  setInputMessage("");
+    // Update messages state
+    setMessages((prev) => [...prev, userMessage, aiMessage]);
+    setInputMessage("");
 
-  try {
-    setIsStreaming(true);
-    
-    const response = await fetch(
-      `${BASE_URL}/api/customerChat/chat-stream/${currentThreadId}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: retailerId,
-          message: inputMessage,
-        }),
-      }
-    );
+    try {
+      setIsStreaming(true);
 
-    if (!response.ok) throw new Error("Stream request failed");
-    if (!response.body) throw new Error("ReadableStream not supported");
-
-    const reader = response.body
-      .pipeThrough(new TextDecoderStream())
-      .getReader();
-    
-    let assistantText = "";
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-
-      // Process the streamed chunks
-      const chunks = value
-        .replaceAll(/^data: /gm, "") // Remove "data: " prefix
-        .split("\n") // Split into individual chunks
-        .filter((c) => Boolean(c.length) && c !== "[DONE]") // Remove empty chunks and "[DONE]"
-        .map((c) => {
-          try {
-            return JSON.parse(c); // Parse each chunk as JSON
-          } catch (err) {
-            console.error("Failed to parse chunk:", c);
-            return null;
-          }
-        })
-        .filter((c) => c !== null && c.content); // Remove invalid chunks and get only content
-
-      // Append new content to the assistant text
-      chunks.forEach((chunk) => {
-        if (chunk.content) {
-          assistantText += chunk.content;
+      const response = await fetch(
+        `${BASE_URL}/api/customerChat/chat-stream/${currentThreadId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: retailerId,
+            message: inputMessage,
+          }),
         }
-      });
+      );
 
-      // Update the AI message with new content
+      if (!response.ok) throw new Error("Stream request failed");
+      if (!response.body) throw new Error("ReadableStream not supported");
+
+      const reader = response.body
+        .pipeThrough(new TextDecoderStream())
+        .getReader();
+
+      let assistantText = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        // Process the streamed chunks
+        const chunks = value
+          .replaceAll(/^data: /gm, "") // Remove "data: " prefix
+          .split("\n") // Split into individual chunks
+          .filter((c) => Boolean(c.length) && c !== "[DONE]") // Remove empty chunks and "[DONE]"
+          .map((c) => {
+            try {
+              return JSON.parse(c); // Parse each chunk as JSON
+            } catch (err) {
+              console.error("Failed to parse chunk:", c);
+              return null;
+            }
+          })
+          .filter((c) => c !== null && c.content); // Remove invalid chunks and get only content
+
+        // Append new content to the assistant text
+        chunks.forEach((chunk) => {
+          if (chunk.content) {
+            assistantText += chunk.content;
+          }
+        });
+
+        // Update the AI message with new content
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === aiMessageId ? { ...msg, content: assistantText } : msg
+          )
+        );
+      }
+
+      // Finalize the AI message
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === aiMessageId ? { ...msg, content: assistantText } : msg
         )
       );
-    }
 
-    // Finalize the AI message
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === aiMessageId ? { ...msg, content: assistantText } : msg
-      )
-    );
-
-  } catch (error) {
-    console.error("Error during streaming:", error);
-    // Update the AI message with error state
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === aiMessageId
-          ? {
+    } catch (error) {
+      console.error("Error during streaming:", error);
+      // Update the AI message with error state
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === aiMessageId
+            ? {
               ...msg,
               content: "Error processing request. Please try again.",
             }
-          : msg
-      )
-    );
-  } finally {
-    setIsStreaming(false);
-    // fetchAllThreads(); // Refresh threads to update last activity
-  }
-};
-  
+            : msg
+        )
+      );
+    } finally {
+      setIsStreaming(false);
+      // fetchAllThreads(); // Refresh threads to update last activity
+    }
+  };
+
   const handleSidebarItemClick = async (item) => {
     if (!currentThreadId) {
       alert("Please create or select a thread first");
@@ -252,7 +277,7 @@ const CustomerRecommendation = () => {
 
     try {
       setIsStreaming(true);
-      const response = await  api.post(
+      const response = await fetch(
         `${BASE_URL}/api/customerChat/chat-stream/${currentThreadId}`,
         {
           method: "POST",
@@ -266,9 +291,8 @@ const CustomerRecommendation = () => {
         }
       );
 
-      if (!response.body) {
-        throw new Error("ReadableStream not supported");
-      }
+      if (!response.ok) throw new Error("Stream request failed");
+      if (!response.body) throw new Error("ReadableStream not supported");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -367,7 +391,7 @@ const CustomerRecommendation = () => {
 
     try {
       setIsStreaming(true);
-      const response = await api.post(
+      const response = await fetch(
         `${BASE_URL}/api/customerChat/chat-stream/${currentThreadId}`,
         {
           method: "POST",
@@ -381,9 +405,8 @@ const CustomerRecommendation = () => {
         }
       );
 
-      if (!response.body) {
-        throw new Error("ReadableStream not supported");
-      }
+      if (!response.ok) throw new Error("Stream request failed");
+      if (!response.body) throw new Error("ReadableStream not supported");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -491,22 +514,31 @@ const CustomerRecommendation = () => {
               <div
                 key={thread._id}
                 onClick={() => fetchThreadMessages(thread._id)}
-                className={`py-2 px-3 text-sm rounded cursor-pointer mb-1 ${
-                  currentThreadId === thread._id
-                    ? "bg-pink-100 text-pink-600"
-                    : "text-slate-600 hover:bg-gray-50"
-                }`}
+                className={`py-2 px-3 text-sm rounded cursor-pointer mb-1 ${currentThreadId === thread._id
+                  ? "bg-pink-100 text-pink-600"
+                  : "text-slate-600 hover:bg-gray-50"
+                  }`}
               >
-                <div className="font-medium truncate">{thread.title}</div>
-                <div className="text-xs text-gray-500">
-                  {new Date(thread.lastActivity).toLocaleDateString()}
+                <div className=" flex items-center justify-between">
+                  <div>
+                    <div className="font-medium truncate">{thread.title}</div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(thread.lastActivity).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div 
+                    className=" text-red-300 hover:text-red-500 cursor-pointer p-1"
+                    onClick={(e) => deleteThread(thread._id, e)}
+                  >
+                    <Trash className=" w-5 h-5" />
+                  </div>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Sidebar Items */}
-            {/* <div className="p-4 border-t border-gray-200">
+          {/* <div className="p-4 border-t border-gray-200">
               <h3 className="text-sm font-semibold text-gray-500 mb-2">
                 Quick Actions
               </h3>
@@ -558,30 +590,26 @@ const CustomerRecommendation = () => {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${
-                    message.type === "user" ? "justify-end" : "justify-start"
-                  }`}
+                  className={`flex ${message.type === "user" ? "justify-end" : "justify-start"
+                    }`}
                 >
                   <div
-                    className={`flex items-start space-x-3 max-w-2xl ${
-                      message.type === "user"
-                        ? "flex-row-reverse space-x-reverse"
-                        : ""
-                    }`}
+                    className={`flex items-start space-x-3 max-w-2xl ${message.type === "user"
+                      ? "flex-row-reverse space-x-reverse"
+                      : ""
+                      }`}
                   >
                     <div
-                      className={` min-w-10 min-h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
-                        message.type === "user" ? "bg-gray-600" : "bg-pink-600"
-                      }`}
+                      className={` min-w-10 min-h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold ${message.type === "user" ? "bg-gray-600" : "bg-pink-600"
+                        }`}
                     >
                       {message.type === "user" ? "Me" : "V"}
                     </div>
                     <div
-                      className={`px-4 py-3 rounded-lg ${
-                        message.type === "user"
-                          ? "bg-gray-100 text-gray-800"
-                          : "bg-white border border-gray-200 text-gray-800"
-                      }`}
+                      className={`px-4 py-3 rounded-lg ${message.type === "user"
+                        ? "bg-gray-100 text-gray-800"
+                        : "bg-white border border-gray-200 text-gray-800"
+                        }`}
                     >
                       <div className="whitespace-pre-line">
                         {message.content}
@@ -610,11 +638,10 @@ const CustomerRecommendation = () => {
             <button
               onClick={handleSendMessage}
               disabled={isStreaming || !currentThreadId}
-              className={`p-3 rounded-lg transition-colors ${
-                isStreaming || !currentThreadId
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-pink-600 hover:bg-pink-700 text-white"
-              }`}
+              className={`p-3 rounded-lg transition-colors ${isStreaming || !currentThreadId
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-pink-600 hover:bg-pink-700 text-white"
+                }`}
             >
               <Send className="w-5 h-5" />
             </button>
