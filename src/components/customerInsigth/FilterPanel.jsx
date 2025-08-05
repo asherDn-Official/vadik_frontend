@@ -18,7 +18,7 @@ import {
   MessageCircle,
   Tag,
   FileText,
-  Filter
+  Filter,
 } from "lucide-react";
 
 import ReactSlider from "react-slider";
@@ -32,7 +32,6 @@ const FilterPanel = ({
   appliedFiltersCount,
   clearAllFilters,
   onFilteredDataChange, // New prop to pass filtered data to parent
-
 }) => {
   const [expandedFilter, setExpandedFilter] = useState(null);
   const [showPeriodPicker, setShowPeriodPicker] = useState(false);
@@ -41,17 +40,17 @@ const FilterPanel = ({
   // const [loading, setLoading] = useState(true);
   const [filteredData, setFilteredData] = useState([]); // Local state for filtered data
   const [retailerId, setRetailerId] = useState(() => {
-      return localStorage.getItem("retailerId") || "";
-    });
+    return localStorage.getItem("retailerId") || "";
+  });
 
-  console.log(filteredData)
+  console.log(filteredData);
 
   // Helper function to convert display name to filter key
   const getFilterKey = (displayName) => {
     return displayName
       .toLowerCase()
-      .replace(/\s+/g, '')
-      .replace(/[^a-z0-9]/g, '');
+      .replace(/\s+/g, "")
+      .replace(/[^a-z0-9]/g, "");
   };
 
   // Initialize defaults on component mount
@@ -71,18 +70,24 @@ const FilterPanel = ({
     const fetchFilterOptions = async () => {
       try {
         // setLoading(true);
-        const response = await api.get(`/api/customer-preferences/${retailerId}`);
+        const response = await api.get(
+          `/api/customer-preferences/${retailerId}`
+        );
         const apiData = response.data;
 
         const mergedData = {
-          allData: [...apiData?.additionalData, ...apiData?.advancedDetails, ...apiData?.advancedPrivacyDetails]
+          allData: [
+            ...apiData?.additionalData,
+            ...apiData?.advancedDetails,
+            ...apiData?.advancedPrivacyDetails,
+          ],
         };
-
 
         // Process API data to create filter options
         const processedOptions = {
           // Static filters
-          name: { type: "string" },
+          firstname: { type: "string" },
+          lastname: { type: "string" },
           mobileNumber: { type: "number" },
           gender: ["All", "Male", "Female", "Others"],
           firstVisit: { type: "date" },
@@ -91,7 +96,7 @@ const FilterPanel = ({
 
         // Process dynamic filters from mergedData.allData
         if (mergedData.allData && Array.isArray(mergedData.allData)) {
-          mergedData.allData.forEach(item => {
+          mergedData.allData.forEach((item) => {
             const filterKey = getFilterKey(item.key);
 
             if (item.type === "options" && item.options) {
@@ -104,8 +109,6 @@ const FilterPanel = ({
             }
           });
         }
-
-
 
         setApiFilterOptions(processedOptions);
         setDynamicFilterData(mergedData.allData || []);
@@ -163,9 +166,6 @@ const FilterPanel = ({
   //   applyFilters();
   // }, [filters, selectedPeriod]);
 
-
-
-
   const renderFilterInput = (filterKey, filterConfig) => {
     if (Array.isArray(filterConfig)) {
       return (
@@ -175,10 +175,11 @@ const FilterPanel = ({
             return (
               <button
                 key={option}
-                className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${isActive
-                  ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
-                  : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
-                  }`}
+                className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${
+                  isActive
+                    ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
+                    : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
+                }`}
                 onClick={() => onFilterChange(filterKey, option)}
               >
                 {option}
@@ -192,12 +193,17 @@ const FilterPanel = ({
         <div className="mt-2 relative">
           <input
             type="text"
-            placeholder={`Enter ${filterKey.replace(/([A-Z])/g, " $1").toLowerCase()}`}
+            placeholder={`Enter ${filterKey
+              .replace(/([A-Z])/g, " $1")
+              .toLowerCase()}`}
             className="w-full p-2 pl-8 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
             value={filters[filterKey] || ""}
             onChange={(e) => onFilterChange(filterKey, e.target.value)}
           />
-          <Search size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={16}
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
+          />
         </div>
       );
     } else if (filterConfig?.type === "number") {
@@ -205,13 +211,18 @@ const FilterPanel = ({
         <div className="mt-2 relative">
           <input
             type="number"
-            placeholder={`Enter ${filterKey.replace(/([A-Z])/g, " $1").toLowerCase()}`}
+            placeholder={`Enter ${filterKey
+              .replace(/([A-Z])/g, " $1")
+              .toLowerCase()}`}
             className="w-full p-2 pl-8 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
             value={filters[filterKey] || ""}
             onChange={(e) => onFilterChange(filterKey, e.target.value)}
             min="0"
           />
-          <Search size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={16}
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
+          />
         </div>
       );
     } else if (filterConfig?.type === "date") {
@@ -220,7 +231,11 @@ const FilterPanel = ({
           <input
             type="date"
             className="w-full p-2 pr-8 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
-            value={filters[filterKey] ? new Date(filters[filterKey]).toISOString().split('T')[0] : ""}
+            value={
+              filters[filterKey]
+                ? new Date(filters[filterKey]).toISOString().split("T")[0]
+                : ""
+            }
             onChange={(e) => {
               if (e.target.value) {
                 const selectedDate = new Date(e.target.value);
@@ -231,7 +246,10 @@ const FilterPanel = ({
             }}
             placeholder="Select date"
           />
-          <Calendar size={16} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <Calendar
+            size={16}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+          />
         </div>
       );
     }
@@ -244,7 +262,9 @@ const FilterPanel = ({
   const renderPeriodPicker = () => {
     if (selectedPeriod === "Yearly") {
       const currentYear = new Date().getFullYear();
-      const selectedYear = filters.periodValue ? parseInt(filters.periodValue) : currentYear;
+      const selectedYear = filters.periodValue
+        ? parseInt(filters.periodValue)
+        : currentYear;
       const years = [];
 
       for (let year = 1999; year <= currentYear + 5; year++) {
@@ -253,15 +273,18 @@ const FilterPanel = ({
 
       return (
         <div className="bg-white p-4 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          <h3 className="text-sm font-medium mb-3 text-[#313166]">Select Year</h3>
+          <h3 className="text-sm font-medium mb-3 text-[#313166]">
+            Select Year
+          </h3>
           <div className="grid grid-cols-3 gap-2">
             {years.map((year) => (
               <button
                 key={year}
-                className={`p-2 rounded-md text-sm transition-colors ${selectedYear === year
-                  ? "bg-[#313166] text-white"
-                  : "bg-gray-100 text-[#313166] hover:bg-gray-200"
-                  }`}
+                className={`p-2 rounded-md text-sm transition-colors ${
+                  selectedYear === year
+                    ? "bg-[#313166] text-white"
+                    : "bg-gray-100 text-[#313166] hover:bg-gray-200"
+                }`}
                 onClick={() => {
                   onFilterChange("periodValue", year.toString());
                   setShowPeriodPicker(false);
@@ -281,10 +304,11 @@ const FilterPanel = ({
             {quarters.map((quarter) => (
               <button
                 key={quarter}
-                className={`p-2 rounded-md ${filters.periodValue === quarter
-                  ? "bg-[#2e2d5f] text-white"
-                  : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
-                  }`}
+                className={`p-2 rounded-md ${
+                  filters.periodValue === quarter
+                    ? "bg-[#2e2d5f] text-white"
+                    : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
+                }`}
                 onClick={() => {
                   onFilterChange("periodValue", quarter);
                   setShowPeriodPicker(false);
@@ -298,12 +322,18 @@ const FilterPanel = ({
       );
     } else if (selectedPeriod === "Monthly") {
       const months = [
-        { name: "Jan", value: "01" }, { name: "Feb", value: "02" },
-        { name: "Mar", value: "03" }, { name: "Apr", value: "04" },
-        { name: "May", value: "05" }, { name: "Jun", value: "06" },
-        { name: "Jul", value: "07" }, { name: "Aug", value: "08" },
-        { name: "Sep", value: "09" }, { name: "Oct", value: "10" },
-        { name: "Nov", value: "11" }, { name: "Dec", value: "12" },
+        { name: "Jan", value: "01" },
+        { name: "Feb", value: "02" },
+        { name: "Mar", value: "03" },
+        { name: "Apr", value: "04" },
+        { name: "May", value: "05" },
+        { name: "Jun", value: "06" },
+        { name: "Jul", value: "07" },
+        { name: "Aug", value: "08" },
+        { name: "Sep", value: "09" },
+        { name: "Oct", value: "10" },
+        { name: "Nov", value: "11" },
+        { name: "Dec", value: "12" },
       ];
       return (
         <div className="bg-white p-4 rounded-lg shadow-lg">
@@ -311,10 +341,11 @@ const FilterPanel = ({
             {months.map((month) => (
               <button
                 key={month.value}
-                className={`p-2 rounded-md text-sm ${filters.periodValue === month.value
-                  ? "bg-[#2e2d5f] text-white"
-                  : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
-                  }`}
+                className={`p-2 rounded-md text-sm ${
+                  filters.periodValue === month.value
+                    ? "bg-[#2e2d5f] text-white"
+                    : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
+                }`}
                 onClick={() => {
                   onFilterChange("periodValue", month.value);
                   setShowPeriodPicker(false);
@@ -350,20 +381,34 @@ const FilterPanel = ({
       return (
         <>
           <Calendar size={18} className="text-[#313166]" />
-          <span>{filters.periodValue} {new Date().getFullYear()}</span>
+          <span>
+            {filters.periodValue} {new Date().getFullYear()}
+          </span>
         </>
       );
     } else if (selectedPeriod === "Monthly") {
       const monthNames = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
       ];
       const monthIndex = parseInt(filters.periodValue, 10) - 1;
       const monthName = monthNames[monthIndex] || filters.periodValue;
       return (
         <>
           <Calendar size={18} className="text-[#313166]" />
-          <span>{monthName} {new Date().getFullYear()}</span>
+          <span>
+            {monthName} {new Date().getFullYear()}
+          </span>
         </>
       );
     }
@@ -382,7 +427,8 @@ const FilterPanel = ({
 
     // Define the order of static filters
     const staticFilters = [
-      { key: "name", name: "Name", iconName: "person" },
+      { key: "firstname", name: "FirstName", iconName: "person" },
+      { key: "lastname", name: "LastName", iconName: "person" },
       { key: "mobileNumber", name: "Mobile Number", iconName: "phone" },
       { key: "gender", name: "Gender", iconName: "person" },
       { key: "firstVisit", name: "First Visit", iconName: "calendar" },
@@ -390,10 +436,10 @@ const FilterPanel = ({
     ];
 
     // Get dynamic filters from API data
-    const dynamicFilters = dynamicFilterData.map(item => ({
+    const dynamicFilters = dynamicFilterData.map((item) => ({
       key: getFilterKey(item.key),
       name: item.key,
-      iconName: item.iconName || "filter"
+      iconName: item.iconName || "filter",
     }));
 
     // Combine static filters with dynamic filters
@@ -444,14 +490,18 @@ const FilterPanel = ({
           {["Yearly", "Quarterly", "Monthly"].map((period) => (
             <button
               key={period}
-              className={`px-1.5 py-1 rounded text-[13px] transition-colors ${selectedPeriod === period
-                ? "bg-[#313166] text-white"
-                : "text-gray-600 hover:bg-gray-100"
-                }`}
+              className={`px-1.5 py-1 rounded text-[13px] transition-colors ${
+                selectedPeriod === period
+                  ? "bg-[#313166] text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
               onClick={() => {
                 onPeriodChange(period);
                 if (period === "Yearly" && !filters.periodValue) {
-                  onFilterChange("periodValue", new Date().getFullYear().toString());
+                  onFilterChange(
+                    "periodValue",
+                    new Date().getFullYear().toString()
+                  );
                 } else if (period !== "Yearly") {
                   onFilterChange("periodValue", "");
                 }
@@ -489,8 +539,6 @@ const FilterPanel = ({
           </div>
         </div>
       )}
-
-
 
       {/* Filter Groups */}
       <div className="space-y-2 overflow-y-auto flex-1">
