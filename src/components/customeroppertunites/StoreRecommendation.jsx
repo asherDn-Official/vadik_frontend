@@ -178,16 +178,10 @@ const StoreRecommendation = () => {
       const response = await api.post(
         `/api/staffChat/chat-stream/${currentThreadId}`,
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: retailerId,
-            message: inputMessage,
-          }),
-        }
-      );
+          userId: retailerId,
+          message: inputMessage,
+        });
+
 
       if (!response.ok) throw new Error("Stream request failed");
       if (!response.body) throw new Error("ReadableStream not supported");
@@ -281,14 +275,8 @@ const StoreRecommendation = () => {
       const response = await api.post(
         `/api/staffChat/chat-stream/${currentThreadId}`,
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: retailerId,
-            message: item,
-          }),
+          userId: retailerId,
+          message: item,
         }
       );
 
@@ -393,18 +381,11 @@ const StoreRecommendation = () => {
     try {
       setIsStreaming(true);
       const response = await api.post(
-        `/api/staffChat/chat-stream/${currentThreadId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+        `/api/staffChat/chat-stream/${currentThreadId}`,{
             userId: retailerId,
             message: messageContent,
-          }),
-        }
-      );
+          });
+    
 
       if (!response.ok) throw new Error("Stream request failed");
       if (!response.body) throw new Error("ReadableStream not supported");
