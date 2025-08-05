@@ -8,7 +8,8 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
         lastname: '',
         mobileNumber: '',
         source: 'walk-in',
-        gender: ''
+        gender: '',
+        firstVisit: ""
     };
     
     const [formData, setFormData] = useState(initialFormData);
@@ -18,7 +19,8 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
         lastname: false,
         mobileNumber: false,
         source: false,
-        gender: false
+        gender: false,
+        firstVisit: false
     });
 
     // Reset form when resetForm prop changes
@@ -31,7 +33,8 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
                 lastname: false,
                 mobileNumber: false,
                 source: false,
-                gender: false
+                gender: false,
+                firstVisit: false
             });
         }
     }, [resetForm]);
@@ -80,6 +83,17 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
             newErrors.gender = 'Gender is required';
         }
         
+        // First Visit validation
+        if (isTouched.firstVisit && !formData.firstVisit) {
+            newErrors.firstVisit = 'First Visit date is required';
+        } else if (isTouched.firstVisit && formData.firstVisit) {
+            const selectedDate = new Date(formData.firstVisit);
+            const today = new Date();
+            if (selectedDate > today) {
+                newErrors.firstVisit = 'First Visit date cannot be in the future';
+            }
+        }
+        
         setErrors(newErrors);
     }, [formData, isTouched]);
 
@@ -110,7 +124,8 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
             lastname: true,
             mobileNumber: true,
             source: true,
-            gender: true
+            gender: true,
+            firstVisit: true
         });
 
         // Check if there are any errors
@@ -128,6 +143,9 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
             });
         }
     };
+
+    // Get today's date in YYYY-MM-DD format for the date input max attribute
+    const today = new Date().toISOString().split('T')[0];
 
     return (
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6">
@@ -225,6 +243,22 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
                         <option value="others">Others</option>
                     </select>
                     {errors.source && <p className="text-red-500 text-xs">{errors.source}</p>}
+                </div>
+
+                <div className="space-y-2">
+                    <label className="block text-sm text-[#31316680]">
+                        First Visit Date *
+                    </label>
+                    <input
+                        type="date"
+                        name="firstVisit"
+                        value={formData.firstVisit}
+                        onChange={handleChange}
+                        onBlur={() => handleBlur('firstVisit')}
+                        max={today}
+                        className={`w-full p-2 border ${errors.firstVisit ? 'border-red-500' : 'border-gray-300'} rounded text-[#313166]`}
+                    />
+                    {errors.firstVisit && <p className="text-red-500 text-xs">{errors.firstVisit}</p>}
                 </div>
             </div>
 
