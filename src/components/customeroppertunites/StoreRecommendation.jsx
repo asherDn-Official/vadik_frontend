@@ -18,7 +18,6 @@ const StoreRecommendation = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const BASE_URL = "https://app.vadik.ai";
 
   const sidebarItems = [
     "Store Stocks",
