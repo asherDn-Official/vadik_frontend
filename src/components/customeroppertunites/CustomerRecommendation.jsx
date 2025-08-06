@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Plus, Send, Heart, CalendarDays, Delete, Trash } from "lucide-react";
 import axios from "axios";
+import api from "../../api/apiconfig";
 
 const CustomerRecommendation = () => {
   const [retailerId, setRetailerId] = useState(() => {
@@ -17,7 +18,6 @@ const CustomerRecommendation = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const BASE_URL = "https://app.vadik.ai";
 
   const sidebarItems = [
     "Store Stocks",
@@ -49,8 +49,8 @@ const CustomerRecommendation = () => {
 
   const fetchAllThreads = async (selectMostRecent = false) => {
     try {
-      const response = await axios.get(
-        `${BASE_URL}/api/customerChat/get-all-threads?userId=${retailerId}`
+      const response = await api.get(
+        `/api/customerChat/get-all-threads?userId=${retailerId}`
       );
       const fetchedThreads = response.data.threads;
       setThreads(fetchedThreads);
@@ -75,8 +75,8 @@ const CustomerRecommendation = () => {
     if (!newChatTitle.trim()) return;
 
     try {
-      const response = await axios.post(
-        `${BASE_URL}/api/customerChat/create-thread`,
+      const response = await api.post(
+        `/api/customerChat/create-thread`,
         {
           userId: retailerId,
           title: newChatTitle,
@@ -103,8 +103,8 @@ const CustomerRecommendation = () => {
     }
 
     try {
-      await axios.delete(
-        `${BASE_URL}/api/customerChat/delete-thread/${threadId}?userId=${retailerId}`
+      await api.delete(
+        `/api/customerChat/delete-thread/${threadId}?userId=${retailerId}`
       );
 
       // If the deleted thread was the current one, clear the current state
@@ -123,8 +123,8 @@ const CustomerRecommendation = () => {
 
   const fetchThreadMessages = async (threadId) => {
     try {
-      const response = await axios.get(
-        `${BASE_URL}/api/customerChat/get-thread-messages/${threadId}?userId=${retailerId}`
+      const response = await api.get(
+        `$/api/customerChat/get-thread-messages/${threadId}?userId=${retailerId}`
 
       );
       setMessages(
@@ -174,17 +174,11 @@ const CustomerRecommendation = () => {
     try {
       setIsStreaming(true);
 
-      const response = await fetch(
-        `${BASE_URL}/api/customerChat/chat-stream/${currentThreadId}`,
+      const response = await api.post(
+        `/api/customerChat/chat-stream/${currentThreadId}`,
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: retailerId,
-            message: inputMessage,
-          }),
+          userId: retailerId,
+          message: inputMessage,
         }
       );
 
@@ -277,17 +271,11 @@ const CustomerRecommendation = () => {
 
     try {
       setIsStreaming(true);
-      const response = await fetch(
-        `${BASE_URL}/api/customerChat/chat-stream/${currentThreadId}`,
+      const response = await api.post(
+        `/api/customerChat/chat-stream/${currentThreadId}`,
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: retailerId,
-            message: item,
-          }),
+          userId: retailerId,
+          message: item,
         }
       );
 
@@ -391,18 +379,12 @@ const CustomerRecommendation = () => {
 
     try {
       setIsStreaming(true);
-      const response = await fetch(
-        `${BASE_URL}/api/customerChat/chat-stream/${currentThreadId}`,
+      const response = await api.post(
+        `/api/customerChat/chat-stream/${currentThreadId}`,
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
             userId: retailerId,
             message: messageContent,
-          }),
-        }
+          }
       );
 
       if (!response.ok) throw new Error("Stream request failed");
