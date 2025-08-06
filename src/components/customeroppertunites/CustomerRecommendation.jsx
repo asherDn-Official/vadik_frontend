@@ -50,7 +50,7 @@ const CustomerRecommendation = () => {
   const fetchAllThreads = async (selectMostRecent = false) => {
     try {
       const response = await axios.get(
-        `${BASE_URL}/api/customerChat/get-all-threads?userid=${retailerId}`
+        `${BASE_URL}/api/customerChat/get-all-threads?userId=${retailerId}`
       );
       const fetchedThreads = response.data.threads;
       setThreads(fetchedThreads);

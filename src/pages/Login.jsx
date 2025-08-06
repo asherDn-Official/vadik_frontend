@@ -100,7 +100,7 @@ const Login = () => {
                 ? "bg-[#CB376D] text-white"
                 : "bg-white/10 text-white/70 hover:bg-white/20"}`}
             >
-              Staff
+              Team
             </button>
           </div>
         </div>

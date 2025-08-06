@@ -427,7 +427,7 @@ const validateGstNumber = () => {
         {/* GST number */}
         <div className="md:col-span-2">
           <label htmlFor="gstNumber" className="form-label">
-            GST Number (optional)
+            GST Number 
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
             Add your GST number if your Store is registered (15 digits).
@@ -440,7 +440,7 @@ const validateGstNumber = () => {
             onChange={handleChange}
             onBlur={() => handleBlur('gstNumber')}
             className={`form-input ${errors.gstNumber ? "border-red-500" : ""}`}
-            placeholder="GST Number (optional)"
+            placeholder="GST Number"
             maxLength={15}
           />
           {errors.gstNumber && (

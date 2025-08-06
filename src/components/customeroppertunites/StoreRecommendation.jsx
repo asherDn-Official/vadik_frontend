@@ -51,7 +51,7 @@ const StoreRecommendation = () => {
   const fetchAllThreads = async (selectMostRecent = false) => {
     try {
       const response = await api.get(
-        `/api/staffChat/get-all-threads?userid=${retailerId}`
+        `/api/staffChat/get-all-threads?userId=${retailerId}`
       );
       const fetchedThreads = response.data.threads;
       setThreads(fetchedThreads);
