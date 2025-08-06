@@ -17,9 +17,9 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className=" max-w-[1600px] mx-auto">
+      <div className=" ">
         <div className="bg-white p-4">
-          <header className="flex justify-between items-center">
+          <header className="flex justify-between items-center  px-6 ">
             <h1 className="text-2xl font-semibold text-gray-800">
               Welcome, Admin
             </h1>
@@ -47,37 +47,8 @@ function Dashboard() {
           </header>
         </div>
 
-        {/* <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-12 md:col-span-4">
-            <CustomerProfileCollection />
-          </div>
 
-          <div className="col-span-12 md:col-span-4">
-            <CustomerProfileOverview />
-          </div>
-
-          <div className="col-span-12 md:col-span-4">
-            <CustomerRetentionRate />
-          </div>
-
-          <div className="col-span-12 md:col-span-4">
-            <ChurnRate />
-          </div>
-
-          <div className="col-span-1 md:col-span-8">
-            <CustomerEngagementScore />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-              <div className="h-full">
-                <OptInOptOut />
-              </div>
-              <div className="h-full">
-                <CustomerSatisfactionScore />
-              </div>
-            </div>
-          </div>
-        </div> */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 max-w-[1600px] mx-auto">
           {/* First Column */}
           <div className="space-y-6">
             <CustomerProfileCollection />
@@ -85,7 +56,7 @@ function Dashboard() {
           </div>
 
           {/* Second Column */}
-          <div className="space-y-6">
+          <div className="space-y-8 ">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <CustomerProfileOverview />
               <CustomerRetentionRate />
