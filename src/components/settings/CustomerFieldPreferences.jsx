@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { FiPlus, FiTrash2, FiSave, FiX, FiType } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiSave, FiX, FiType, FiList, FiMove } from "react-icons/fi";
 import api from "../../api/apiconfig";
+import { X } from "lucide-react";
 
 const CustomerFieldPreferences = () => {
   const [activeTab, setActiveTab] = useState("Basic Details");
@@ -14,6 +15,9 @@ const CustomerFieldPreferences = () => {
   const [newFieldName, setNewFieldName] = useState("");
   const [newFieldType, setNewFieldType] = useState("string");
   const [newFieldIcon, setNewFieldIcon] = useState("");
+  const [newFieldIconName, setNewFieldIconName] = useState("");
+  const [newFieldOptions, setNewFieldOptions] = useState([]);
+  const [currentOption, setCurrentOption] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retailerId] = useState(localStorage.getItem("retailerId") || "");
@@ -30,7 +34,7 @@ const CustomerFieldPreferences = () => {
     "Advance Privacy": "advancedPrivacyDetails"
   };
 
-  const fieldTypes = ["string", "number", "boolean", "array"];
+  const fieldTypes = ["string", "number", "options", "date"];
 
   // Fetch icons from API
   const fetchIcons = async () => {
@@ -123,6 +127,9 @@ const CustomerFieldPreferences = () => {
     setNewFieldName("");
     setNewFieldType("string");
     setNewFieldIcon("");
+    setNewFieldIconName("");
+    setNewFieldOptions([]);
+    setCurrentOption("");
     setAddError(null);
   };
 
@@ -130,6 +137,9 @@ const CustomerFieldPreferences = () => {
     setIsAddingField(false);
     setNewFieldName("");
     setNewFieldIcon("");
+    setNewFieldIconName("");
+    setNewFieldOptions([]);
+    setCurrentOption("");
     setAddError(null);
     setShowIconSelector(false);
   };
@@ -171,12 +181,19 @@ const CustomerFieldPreferences = () => {
       return;
     }
 
+    // Validate options for options type
+    if (newFieldType === "options" && newFieldOptions.length === 0) {
+      setAddError("Please add at least one option for options field type");
+      return;
+    }
+
     const newField = {
       key: newFieldName.trim(),
       value: "",
       type: newFieldType,
       iconUrl: newFieldIcon,
-      options: newFieldType === "array" ? [] : undefined
+      iconName: newFieldIconName,
+      options: newFieldType === "options" ? newFieldOptions : undefined
     };
 
     const updatedFields = {
@@ -186,11 +203,7 @@ const CustomerFieldPreferences = () => {
 
     setFields(updatedFields);
     await updatePreferences(updatedFields);
-    setIsAddingField(false);
-    setNewFieldName("");
-    setNewFieldIcon("");
-    setShowIconSelector(false);
-    setAddError(null);
+    cancelAddingField();
   };
 
   const handleRemoveField = async (tabName, fieldKey) => {
@@ -203,9 +216,34 @@ const CustomerFieldPreferences = () => {
     await updatePreferences(updatedFields);
   };
 
-  const selectIcon = (iconUrl) => {
+  const selectIcon = (iconUrl, iconName) => {
     setNewFieldIcon(iconUrl);
+    setNewFieldIconName(iconName);
     setShowIconSelector(false);
+  };
+
+  const addOption = () => {
+    if (!currentOption.trim()) return;
+
+    if (newFieldOptions.includes(currentOption.trim())) {
+      setAddError("Option already exists");
+      return;
+    }
+
+    setNewFieldOptions([...newFieldOptions, currentOption.trim()]);
+    setCurrentOption("");
+    setAddError(null);
+  };
+
+  const removeOption = (optionToRemove) => {
+    setNewFieldOptions(newFieldOptions.filter(option => option !== optionToRemove));
+  };
+
+  const handleOptionKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addOption();
+    }
   };
 
   if (isLoading || isCreatingPreference) {
@@ -232,20 +270,17 @@ const CustomerFieldPreferences = () => {
   }
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-medium mb-6 text-[#313166]">
-        Customer Field Preferences
-      </h2>
+    <div className="p-6 max-w-7xl mx-auto">
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="border-b">
+      <div className="bg-white   overflow-hidden">
+        <div className="border-b  ">
           <div className="flex">
             {Object.keys(fields).map((tab) => (
               <button
                 key={tab}
-                className={`px-6 py-3 text-sm font-medium ${activeTab === tab
-                    ? "border-b-2 border-primary text-primary"
-                    : "text-gray-500 hover:text-gray-700"
+                className={`px-6 py-4 text-sm font-semibold transition-all duration-200 ${activeTab === tab
+                    ? "text-primary bg-white border-b-2 border-gray-900 relative"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                   }`}
                 onClick={() => {
                   setActiveTab(tab);
@@ -254,30 +289,42 @@ const CustomerFieldPreferences = () => {
                 }}
               >
                 {tab}
+                {activeTab === tab && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
+                )}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[15px] text-[#313166] font-medium">
-              {activeTab} Management
-            </h3>
-            {/* {!isAddingField && ( */}
+        <div className="p-8">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h3 className="text-xl font-semibold text-[#313166] mb-1">
+                {activeTab} Management
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Manage custom fields for {activeTab.toLowerCase()} section
+              </p>
+            </div>
+            {!isAddingField && (
               <button
                 onClick={startAddingField}
-                className="flex items-center px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
+                className="flex items-center px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 <FiPlus className="mr-2" /> Add Field
               </button>
-            {/* )} */}
+            )}
           </div>
 
           {/* {isAddingField && ( */}
-            <div className="mb-4 bg-gray-50 rounded border p-4">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
+          <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-6">
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Field Name
+                  </label>
                   <input
                     type="text"
                     value={newFieldName}
@@ -286,82 +333,179 @@ const CustomerFieldPreferences = () => {
                       setAddError(null);
                     }}
                     placeholder={`Enter ${activeTab.toLowerCase()} field name`}
-                    className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     autoFocus
                   />
+                </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Field Type
+                  </label>
                   <div className="relative">
                     <select
                       value={newFieldType}
-                      onChange={(e) => setNewFieldType(e.target.value)}
-                      className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                      onChange={(e) => {
+                        setNewFieldType(e.target.value);
+                        if (e.target.value !== "options") {
+                          setNewFieldOptions([]);
+                          setCurrentOption("");
+                        }
+                      }}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
                     >
                       {fieldTypes.map(type => (
-                        <option key={type} value={type}>{type}</option>
+                        <option key={type} value={type}>
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </option>
                       ))}
                     </select>
-                    <FiType className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+                    <FiType className="absolute right-3 top-4 text-gray-400 pointer-events-none" />
                   </div>
-
-                  <button
-                    onClick={() => setShowIconSelector(!showIconSelector)}
-                    className="p-2 bg-gray-200 rounded hover:bg-gray-300"
-                    title="Select Icon"
-                  >
-                    {newFieldIcon ? (
-                      <img
-                        src={newFieldIcon}
-                        alt="Selected icon"
-                        className="w-5 h-5 object-contain"
-                      />
-                    ) : (
-                      <FiPlus />
-                    )}
-                  </button>
-                </div>
-
-                {showIconSelector && (
-                  <div className="border rounded p-3 bg-white">
-                    <div className="grid grid-cols-6 gap-2 max-h-40 overflow-y-auto">
-                      {icons.map(icon => (
-                        <button
-                          key={icon.name}
-                          onClick={() => selectIcon(icon.dataUrl)}
-                          className={`p-1 border rounded hover:border-primary ${newFieldIcon === icon.dataUrl ? "border-2 border-primary" : ""
-                            }`}
-                          title={icon.name}
-                        >
-                          <img
-                            src={icon.dataUrl}
-                            alt={icon.name}
-                            className="w-6 h-6 mx-auto object-contain"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-2 mt-2">
-                  <button
-                    onClick={handleAddField}
-                    className="flex items-center px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                  >
-                    <FiSave className="mr-1" /> Save
-                  </button>
-                  <button
-                    onClick={cancelAddingField}
-                    className="flex items-center px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                  >
-                    <FiX className="mr-1" /> Cancel
-                  </button>
                 </div>
               </div>
 
-              {addError && (
-                <div className="text-red-500 text-sm mt-2">{addError}</div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Icon (Optional)
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowIconSelector(!showIconSelector)}
+                    className="flex items-center gap-2 p-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    title="Select Icon"
+                  >
+                    {newFieldIcon ? (
+                      <>
+                        <img
+                          src={newFieldIcon}
+                          alt="Selected icon"
+                          className="w-5 h-5 object-contain"
+                        />
+                        <span className="text-sm text-gray-600">{newFieldIconName}</span>
+                      </>
+                    ) : (
+                      <>
+                        <FiPlus className="w-5 h-5" />
+                        <span className="text-sm text-gray-600">Select Icon</span>
+                      </>
+                    )}
+                  </button>
+                  {newFieldIcon && (
+                    <button
+                      onClick={() => {
+                        setNewFieldIcon("");
+                        setNewFieldIconName("");
+                      }}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                      title="Remove Icon"
+                    >
+                      <FiX />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {showIconSelector && (
+                <div className="border rounded-lg p-4 bg-white shadow-sm">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Select an Icon</h4>
+                  <div className="grid grid-cols-8 gap-2 max-h-48 overflow-y-auto">
+                    {icons.map(icon => (
+                      <button
+                        key={icon.name}
+                        onClick={() => selectIcon(icon.dataUrl, icon.name)}
+                        className={`p-2 border rounded-lg hover:border-primary transition-colors ${newFieldIcon === icon.dataUrl ? "border-2 border-primary bg-primary/10" : "border-gray-200"
+                          }`}
+                        title={icon.name}
+                      >
+                        <img
+                          src={icon.dataUrl}
+                          alt={icon.name}
+                          className="w-6 h-6 mx-auto object-contain"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
+
+              {newFieldType === "options" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Options
+                  </label>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={currentOption}
+                        onChange={(e) => {
+                          setCurrentOption(e.target.value);
+                          setAddError(null);
+                        }}
+                        onKeyPress={handleOptionKeyPress}
+                        placeholder="Enter option name"
+                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
+                      <button
+                        onClick={addOption}
+                        disabled={!currentOption.trim()}
+                        className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <FiPlus />
+                      </button>
+                    </div>
+
+                    {newFieldOptions.length > 0 && (
+                      <div className="bg-white rounded-lg border border-gray-200 p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FiList className="text-gray-500" />
+                          <span className="text-sm font-medium text-gray-700">
+                            Options ({newFieldOptions.length})
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {newFieldOptions.map((option, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded border">
+                              <span className="text-sm">{option}</span>
+                              <button
+                                onClick={() => removeOption(option)}
+                                className="text-red-500 hover:bg-red-50 p-1 rounded"
+                                title="Remove option"
+                              >
+                                <FiX size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  onClick={cancelAddingField}
+                  className="flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  <FiX className="mr-2" /> Cancel
+                </button>
+                <button
+                  onClick={handleAddField}
+                  className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  <FiSave className="mr-2" /> Save Field
+                </button>
+              </div>
             </div>
+
+            {addError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="text-red-700 text-sm">{addError}</div>
+              </div>
+            )}
+          </div>
           {/* )} */}
 
           <DragDropContext onDragEnd={handleDragEnd}>
@@ -370,7 +514,7 @@ const CustomerFieldPreferences = () => {
                 <div
                   {...provided.droppableProps}
                   ref={provided.innerRef}
-                  className="space-y-2"
+                  className="space-y-4"
                 >
                   {fields[activeTab].length > 0 ? (
                     fields[activeTab].map((field, index) => (
@@ -383,39 +527,86 @@ const CustomerFieldPreferences = () => {
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded border hover:bg-gray-100"
+                            className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
                           >
-                            <div className="flex items-center gap-3">
-                              {field.iconUrl && (
-                                <img
-                                  src={field.iconUrl}
-                                  alt={field.key}
-                                  className="w-5 h-5 object-contain"
-                                />
-                              )}
-                              <div>
-                                <div className="font-medium">{field.key}</div>
-                                <div className="text-xs text-gray-500">
-                                  Type: {field.type}
-                                  {field.options && ` (${field.options.length} options)`}
+                            <div className="flex items-center justify-between p-4">
+                              <div className="flex items-center gap-4">
+
+                                {field.iconUrl && (
+                                  <div className="flex-shrink-0">
+                                    <img
+                                      src={field.iconUrl}
+                                      alt={field.key}
+                                      className="w-12 h-12 object-contain p-1 "
+                                    />
+                                  </div>
+                                )}
+
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-semibold text-gray-900">{field.key}</h4>
+                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${field.type === 'string' ? 'bg-blue-100 text-blue-800' :
+                                        field.type === 'number' ? 'bg-green-100 text-green-800' :
+                                          field.type === 'options' ? 'bg-purple-100 text-purple-800' :
+                                            field.type === 'date' ? 'bg-orange-100 text-orange-800' :
+                                              'bg-gray-100 text-gray-800'
+                                      }`}>
+                                      {field.type}
+                                    </span>
+                                  </div>
+
+                                  {field.options && field.options.length > 0 && (
+                                    <div className="mt-2">
+                                      <div className="text-xs text-gray-500 mb-1">
+                                        Options ({field.options.length}):
+                                      </div>
+                                      <div className="flex flex-wrap gap-1">
+                                        {field.options.slice(0, 3).map((option, idx) => (
+                                          <span
+                                            key={idx}
+                                            className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded border"
+                                          >
+                                            {option}
+                                          </span>
+                                        ))}
+                                        {field.options.length > 3 && (
+                                          <span className="px-2 py-1 text-xs text-gray-500">
+                                            +{field.options.length - 3} more
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
+
+                              <button
+                                onClick={() => handleRemoveField(activeTab, field.key)}
+                                className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Remove field"
+                              >
+                                <X size={18} />
+                              </button>
                             </div>
-                            <button
-                              onClick={() => handleRemoveField(activeTab, field.key)}
-                              className="text-gray-400 hover:text-red-500 p-1"
-                              title="Remove field"
-                            >
-                              <FiTrash2 />
-                            </button>
                           </div>
                         )}
                       </Draggable>
                     ))
                   ) : (
-                    <div className="p-4 text-center text-gray-500">
-                      No fields added yet
+                    <div className="text-center py-12">
+                      <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <FiType className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No fields added yet</h3>
+                      <p className="text-gray-500 mb-4">
+                        Start by adding custom fields for {activeTab.toLowerCase()}
+                      </p>
+                      <button
+                        onClick={startAddingField}
+                        className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+                      >
+                        <FiPlus className="mr-2" /> Add Your First Field
+                      </button>
                     </div>
                   )}
                   {provided.placeholder}
