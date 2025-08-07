@@ -128,7 +128,7 @@ const CustomerSidebar = () => {
               onClick={() => handleCustomerSelect(customer)}
               className={`p-4 border-b border-gray-100 cursor-pointer transition-colors duration-200 ${
                 selectedCustomer?._id === customer._id
-                  ? "bg-purple-50 border-l-4 border-purple-500"
+                  ? "bg-[#3131660F] border-l-4  rounded-sm"
                   : "hover:bg-gray-50"
               }`}
             >
