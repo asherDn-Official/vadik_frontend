@@ -72,7 +72,7 @@ const CustomerSidebar = () => {
 
   const handleCustomerSelect = (customer) => {
     setSelectedCustomer(customer);
-    navigate(`/customer-profile/${customer._id}`);
+    navigate(`/customers/customer-profile/${customer._id}`);
   };
 
   // Format customer name
