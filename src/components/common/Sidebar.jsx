@@ -1,6 +1,7 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { LogOut } from "lucide-react";
+// import icon from '../../../public/assets'
 
 function Sidebar() {
   const location = useLocation();
@@ -35,49 +36,49 @@ function Sidebar() {
     {
       path: "/dashboard",
       module: "dashboard",
-      icon: "../assets/mage_dashboard-icon.png",
+      icon: "../../../public/assets/mage_dashboard-icon.png",
       label: "Dashboard",
     },
     {
       path: "/customers",
       module: "customers",
-      icon: "../assets/bi_person-fill-icon.png",
+      icon: "../../../public/assets/bi_person-fill-icon.png",
       label: "Customer Profile",
     },
     {
       path: "/personalisation",
       module: "personalisation",
-      icon: "../assets/fluent-insights.png",
+      icon: "../../../public/assets/fluent-insights.png",
       label: "Personalisation Insight",
     },
     {
       path: "/customeropportunities",
       module: "customerOpportunities",
-      icon: "../assets/user-check-icon.png",
+      icon: "../../../public/assets/user-check-icon.png",
       label: "Customer Opportunities",
     },
     {
       path: "/performance",
       module: "performance",
-      icon: "../assets/mdi_performance-icon.png",
+      icon: "../../../public/assets/mdi_performance-icon.png",
       label: "Performance Tracking",
     },
     {
       path: "/integration",
       module: "integration",
-      icon: "../assets/integration-icon.png",
+      icon: "../../../public/assets/integration-icon.png",
       label: "Integration Management",
     },
     {
       path: "/kyc",
       module: "kyc",
-      icon: "../assets/kyc-icon.png",
+      icon: "../../../public/assets/kyc-icon.png",
       label: "Quick Search",
     },
     {
       path: "/settings",
       module: "settings",
-      icon: "../assets/settings-icon.png",
+      icon: "../../../public/assets/settings-icon.png",
       label: "Settings",
     },
   ];
