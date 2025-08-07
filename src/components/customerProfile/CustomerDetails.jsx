@@ -27,10 +27,17 @@ const FieldItem = React.memo(({
   customer,
   isEditing
 }) => {
-  const fieldType = getFieldType(customer, section, name);
+  // Get field data from the nested structure
+  const fieldData = customer?.[section]?.[name] || {};
+  const fieldType = fieldData.type || getFieldType(customer, section, name);
   const inputType = getInputType(fieldType);
+  const options = fieldData.options || [];
 
   const handleInputChange = useCallback((e) => {
+    onChange(section, name, e.target.value);
+  }, [onChange, section, name]);
+
+  const handleSelectChange = useCallback((e) => {
     onChange(section, name, e.target.value);
   }, [onChange, section, name]);
 
@@ -38,17 +45,32 @@ const FieldItem = React.memo(({
     <div className="mb-4">
       <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">{label}</p>
       {isEditing && isEditable ? (
-        <input
-          type={inputType}
-          value={value || ''}
-          onChange={handleInputChange}
-          className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-          placeholder={`Enter ${label.toLowerCase()}`}
-          autoComplete="off"
-        />
+        fieldType === 'options' ? (
+          <select
+            value={value || ''}
+            onChange={handleSelectChange}
+            className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+          >
+            <option value="">Select an option</option>
+            {options.map((option, index) => (
+              <option key={index} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type={inputType}
+            value={value || ''}
+            onChange={handleInputChange}
+            className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+            placeholder={`Enter ${label.toLowerCase()}`}
+            autoComplete="off"
+          />
+        )
       ) : (
         <p className="font-medium text-[16px] leading-[30px] tracking-normal text-[#313166]">
-          {formatFieldForDisplay(defaultValue, fieldType)}
+          {formatFieldForDisplay(fieldData.value || defaultValue, fieldType)}
         </p>
       )}
     </div>
@@ -67,31 +89,57 @@ const DetailItem = React.memo(({
   customer,
   isEditing
 }) => {
-  const fieldType = getFieldType(customer, section, name);
+  // Get field data from the nested structure
+  const fieldData = customer?.[section]?.[name] || {};
+  const fieldType = fieldData.type || getFieldType(customer, section, name);
   const inputType = getInputType(fieldType);
+  const options = fieldData.options || [];
+
+  console.log(fieldData)
 
   const handleInputChange = useCallback((e) => {
     onChange(section, name, e.target.value);
   }, [onChange, section, name]);
 
+  const handleSelectChange = useCallback((e) => {
+    onChange(section, name, e.target.value);
+  }, [onChange, section, name]);
+
   return (
     <div className="flex items-center justify-between p-4 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
-      <div className="flex items-center  gap-x-3">
-        {/* <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDkiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OSA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iMC42MjEwOTQiIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgcng9IjI0IiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXJfMjEwMl80NjQ2KSIgZmlsbC1vcGFjaXR5PSIwLjE1Ii8+CjxyZWN0IHg9IjcuNDY0ODQiIHk9IjYuODU5MzgiIHdpZHRoPSIzNC4yODU3IiBoZWlnaHQ9IjM0LjI4NTciIHJ4PSIxNy4xNDI5IiBmaWxsPSIjRUMzOTZGIi8+CjxyZWN0IHg9IjcuNDY0ODQiIHk9IjYuODU5MzgiIHdpZHRoPSIzNC4yODU3IiBoZWlnaHQ9IjM0LjI4NTciIHJ4PSIxNy4xNDI5IiBmaWxsPSJ1cmwoI3BhaW50MV9saW5lYXJfMjEwMl80NjQ2KSIvPgo8cmVjdCB4PSI3LjQ2NDg0IiB5PSI2Ljg1OTM4IiB3aWR0aD0iMzQuMjg1NyIgaGVpZ2h0PSIzNC4yODU3IiByeD0iMTcuMTQyOSIgZmlsbD0idXJsKCNwYWludDJfbGluZWFyXzIxMDJfNDY0NikiLz4KPHJlY3QgeD0iNy40NjQ4NCIgeT0iNi44NTkzOCIgd2lkdGg9IjM0LjI4NTciIGhlaWdodD0iMzQuMjg1NyIgcng9IjE3LjE0MjkiIGZpbGw9IiNFQzM5NkYiIGZpbGwtb3BhY2l0eT0iMC41Ii8+CjxwYXRoIGQ9Ik0yNy40IDE2QzI3LjU5NTkgMTYgMjcuNzg1MSAxNi4wNzIgMjcuOTMxNSAxNi4yMDIyQzI4LjA3NzkgMTYuMzMyNCAyOC4xNzE1IDE2LjUxMTggMjguMTk0NCAxNi43MDY0TDI4LjIgMTYuOFYxNy42SDI5QzI5LjYxMjIgMTcuNiAzMC4yMDEyIDE3LjgzMzkgMzAuNjQ2NiAxOC4yNTM4QzMxLjA5MiAxOC42NzM4IDMxLjM2MDEgMTkuMjQ4MSAzMS4zOTYgMTkuODU5MkwzMS40IDIwVjI5LjZDMzEuNCAzMC4yMTIyIDMxLjE2NjEgMzAuODAxMiAzMC43NDYyIDMxLjI0NjZDMzAuMzI2MiAzMS42OTIgMjkuNzUxOSAzMS45NjAxIDI5LjE0MDggMzEuOTk2TDI5IDMySDE5LjRDMTguNzg3OCAzMiAxOC4xOTg4IDMxLjc2NjEgMTcuNzUzNCAzMS4zNDYyQzE3LjMwOCAzMC45MjYyIDE3LjAzOTkgMzAuMzUxOSAxNy4wMDQgMjkuNzQwOEwxNyAyOS42VjIwQzE3IDE5LjM4NzggMTcuMjMzOSAxOC43OTg4IDE3LjY1MzggMTguMzUzNEMxOC4wNzM4IDE3LjkwOCAxOC42NDgxIDE3LjYzOTkgMTkuMjU5MiAxNy42MDRMMTkuNCAxNy42SDIwLjJWMTYuOEMyMC4yMDAyIDE2LjU5NjEgMjAuMjc4MyAxNi40IDIwLjQxODMgMTYuMjUxN0MyMC41NTgzIDE2LjEwMzQgMjAuNzQ5NiAxNi4wMTQyIDIwLjk1MzEgMTYuMDAyM0MyMS4xNTY3IDE1Ljk5MDMgMjEuMzU3MSAxNi4wNTY1IDIxLjUxMzUgMTYuMTg3NEMyMS42Njk4IDE2LjMxODMgMjEuNzcwMyAxNi41MDM5IDIxLjc5NDQgMTYuNzA2NEwyMS44IDE2LjhWMTcuNkgyNi42VjE2LjhDMjYuNiAxNi41ODc4IDI2LjY4NDMgMTYuMzg0MyAyNi44MzQzIDE2LjIzNDNDMjYuOTg0MyAxNi4wODQzIDI3LjE4NzggMTYgMjcuNCAxNlpNMjkuOCAyMS42SDE4LjZWMjkuM0MxOC42IDI5Ljg2NCAxOC45MDg4IDMwLjMyODggMTkuMzA2NCAzMC4zOTI4TDE5LjQgMzAuNEgyOUMyOS40MTA0IDMwLjQgMjkuNzQ4OCAyOS45NzYgMjkuNzk0NCAyOS40MjhMMjkuOCAyOS4zVjIxLjZaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMjQuMjAwNyAyNEMyNC4zOTY2IDI0IDI0LjU4NTcgMjQuMDcyIDI0LjczMjIgMjQuMjAyMkMyNC44Nzg2IDI0LjMzMjQgMjQuOTcyMiAyNC41MTE4IDI0Ljk5NTEgMjQuNzA2NEwyNS4wMDA3IDI0LjhWMjcuMkMyNS4wMDA1IDI3LjQwMzkgMjQuOTIyNCAyNy42IDI0Ljc4MjQgMjcuNzQ4M0MyNC42NDI0IDI3Ljg5NjYgMjQuNDUxMSAyNy45ODU4IDI0LjI0NzYgMjcuOTk3N0MyNC4wNDQgMjguMDA5NyAyMy44NDM2IDI3Ljk0MzUgMjMuNjg3MiAyNy44MTI2QzIzLjUzMDggMjcuNjgxNyAyMy40MzA0IDI3LjQ5NjEgMjMuNDA2MyAyNy4yOTM2TDIzLjQwMDcgMjcuMlYyNS42QzIzLjE5NjggMjUuNTk5OCAyMy4wMDA3IDI1LjUyMTcgMjIuODUyNCAyNS4zODE3QzIyLjcwNDEgMjUuMjQxNyAyMi42MTQ5IDI1LjA1MDQgMjIuNjAyOSAyNC44NDY5QzIyLjU5MSAyNC42NDMzIDIyLjY1NzIgMjQuNDQyOSAyMi43ODgxIDI0LjI4NjVDMjIuOTE5IDI0LjEzMDIgMjMuMTA0NiAyNC4wMjk3IDIzLjMwNzEgMjQuMDA1NkwyMy40MDA3IDI0SDI0LjIwMDdaIiBmaWxsPSJ3aGl0ZSIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyXzIxMDJfNDY0NiIgeDE9Ii0zMS4zNzg5IiB5MT0iMjMuNDY2NyIgeDI9IjExNC4wOSIgeTI9IjIzLjQ2NjciIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iIzMxMzE2NiIvPgo8c3RvcCBvZmZzZXQ9IjAuOTYzNTAyIiBzdG9wLWNvbG9yPSIjRUMzOTZGIi8+CjwvbGluZWFyR3JhZGllbnQ+CjxsaW5lYXJHcmFkaWVudCBpZD0icGFpbnQxX2xpbmVhcl8yMTAyXzQ2NDYiIHgxPSItMTUuMzkyMyIgeTE9IjIzLjYyMTMiIHgyPSI4OC41MTQ0IiB5Mj0iMjMuNjIxMyIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjMzEzMTY2Ii8+CjxzdG9wIG9mZnNldD0iMC45NjM1MDIiIHN0b3AtY29sb3I9IiNFQzM5NkYiLz4KPC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDJfbGluZWFyXzIxMDJfNDY0NiIgeDE9Ii0zOC43MTU5IiB5MT0iLTM0LjI4MzUiIHgyPSI3My45Nzk2IiB5Mj0iLTI4Ljc5ODkiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iIzMxMzE2NiIvPgo8c3RvcCBvZmZzZXQ9IjAuOTYzNTAyIiBzdG9wLWNvbG9yPSIjRUMzOTZGIi8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPC9zdmc+Cg==" alt="" /> */}
+      <div className="flex items-center gap-x-3">
+        {fieldData.iconUrl && (
+          <img src={fieldData.iconUrl} alt={label} className="w-12 h-12" />
+        )}
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-900">{label}</p>
           {isEditing && isEditable ? (
-            <input
-              type={inputType}
-              value={value || ''}
-              onChange={handleInputChange}
-              className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-              placeholder={`Enter ${label.toLowerCase()}`}
-              autoComplete="off"
-            />
+            fieldType === 'options' ? (
+              <select
+                value={value || ''}
+                onChange={handleSelectChange}
+                className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+              >
+                <option value="">Select an option</option>
+                {options.map((option, index) => (
+                  <option key={index} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type={inputType}
+                value={value || ''}
+                onChange={handleInputChange}
+                className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+                placeholder={`Enter ${label.toLowerCase()}`}
+                autoComplete="off"
+              />
+            )
           ) : (
             <p className="text-sm text-gray-600">
-              {formatFieldForDisplay(defaultValue, fieldType)}
+              {formatFieldForDisplay(fieldData.value || defaultValue, fieldType)}
             </p>
           )}
         </div>
@@ -118,6 +166,8 @@ const CustomerDetails = ({
 }) => {
   // Transform customer data to handle new nested structure
   const transformedCustomer = useMemo(() => transformCustomerData(customer), [customer]);
+
+  console.log(transformedCustomer);
 
   // Initialize form data with proper default values
   const [formData, setFormData] = useState(() => {
@@ -237,7 +287,7 @@ const CustomerDetails = ({
             isEditing={isEditing}
           />
         );
-      } else if (section === 'advancedPrivacy' && key.toLowerCase().includes('satisfaction')) {
+      } else if (section === 'advancedPrivacyDetails' && key.toLowerCase().includes('satisfaction')) {
         return (
           <div key={key} className="flex items-center p-4 border-b border-gray-100">
             <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
@@ -416,7 +466,7 @@ const CustomerDetails = ({
 
                 {activeTab === "Advanced Privacy" && (
                   <div className="space-y-0">
-                    {transformedCustomer?.advancedPrivacyDetails && renderDynamicFields(transformedCustomer?.advancedPrivacyDetails, "advancedPrivacy")}
+                    {transformedCustomer?.advancedPrivacyDetails && renderDynamicFields(transformedCustomer?.advancedPrivacyDetails, "advancedPrivacyDetails")}
 
                     {/* Purchase History Section */}
                     <div className="p-6 border-t border-gray-200">
