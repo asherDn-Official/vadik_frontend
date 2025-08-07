@@ -43,7 +43,6 @@ const FilterPanel = ({
     return localStorage.getItem("retailerId") || "";
   });
 
-  console.log(filteredData);
 
   // Helper function to convert display name to filter key
   const getFilterKey = (displayName) => {

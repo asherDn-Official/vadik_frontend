@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import FilterPanel from "../../src/components/customerInsigth/FilterPanel";
 import CustomerList from "../../src/components/customerInsigth/CustomerList";
 import * as XLSX from "xlsx";
@@ -12,7 +12,9 @@ const CustomerPersonalisation = () => {
   const [showExport, setShowExport] = useState(false);
   const [appliedFiltersCount, setAppliedFiltersCount] = useState(0);
   const [filteredData, setFilteredData] = useState([]);
-  
+  const dropdownRef = useRef(null);
+
+
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -23,62 +25,76 @@ const CustomerPersonalisation = () => {
 
   // Fetch customer data with filters and pagination
   const fetchCustomers = async () => {
-  try {
-    setLoading(true);
-    
-    // Prepare filters array - exclude period-related filters
-    const filtersArray = Object.entries(filters)
-      .filter(([name, value]) => {
-        // Exclude periodValue and any other period-related fields
-        return value !== "" && 
-               value !== null && 
-               value !== undefined &&
-               name !== 'periodValue';
-      })
-      .map(([name, value]) => ({ name, value }));
+    try {
+      setLoading(true);
 
-    // Prepare the request payload
-    const payload = {
-      page: currentPage,
-      // limit: pagination.limit,
-      filters: filtersArray.length > 0 ? filtersArray : undefined,
-      // Period filters (handled separately)
-      ...(selectedPeriod === "Yearly" && filters.periodValue && { 
-        year: parseInt(filters.periodValue) 
-      }),
-      ...(selectedPeriod === "Monthly" && filters.periodValue && { 
-        year: new Date().getFullYear(),
-        month: parseInt(filters.periodValue) 
-      }),
-      ...(selectedPeriod === "Quarterly" && filters.periodValue && { 
-        year: new Date().getFullYear(),
-        quarter: filters.periodValue 
-      })
-    };
+      // Prepare filters array - exclude period-related filters
+      const filtersArray = Object.entries(filters)
+        .filter(([name, value]) => {
+          // Exclude periodValue and any other period-related fields
+          return value !== "" &&
+            value !== null &&
+            value !== undefined &&
+            name !== 'periodValue';
+        })
+        .map(([name, value]) => ({ name, value }));
 
-    // Remove undefined parameters
-    Object.keys(payload).forEach(key => {
-      if (payload[key] === undefined) {
-        delete payload[key];
-      }
-    });
+      // Prepare the request payload
+      const payload = {
+        page: currentPage,
+        // limit: pagination.limit,
+        filters: filtersArray.length > 0 ? filtersArray : undefined,
+        // Period filters (handled separately)
+        ...(selectedPeriod === "Yearly" && filters.periodValue && {
+          year: parseInt(filters.periodValue)
+        }),
+        ...(selectedPeriod === "Monthly" && filters.periodValue && {
+          year: new Date().getFullYear(),
+          month: parseInt(filters.periodValue)
+        }),
+        ...(selectedPeriod === "Quarterly" && filters.periodValue && {
+          year: new Date().getFullYear(),
+          quarter: filters.periodValue
+        })
+      };
 
-    console.log('API Payload:', payload);
+      // Remove undefined parameters
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === undefined) {
+          delete payload[key];
+        }
+      });
 
-    const response = await api.post('/api/personilizationInsights', payload);
-    
-    setFilteredData(response.data.data);
-    setPagination(response.data.pagination);
-  } catch (error) {
-    console.error("Error fetching customers:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+      console.log('API Payload:', payload);
+
+      const response = await api.post('/api/personilizationInsights', payload);
+
+      setFilteredData(response.data.data);
+      setPagination(response.data.pagination);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchCustomers();
   }, [currentPage, filters]);
+
+  
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowExport(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => {
@@ -129,8 +145,8 @@ const CustomerPersonalisation = () => {
   // Toggle all customers on current page
   const toggleAllCustomers = () => {
     const allCurrentPageCustomerIds = filteredData.map(customer => customer._id);
-    if (selectedCustomers.length === filteredData.length && 
-        selectedCustomers.every(id => allCurrentPageCustomerIds.includes(id))) {
+    if (selectedCustomers.length === filteredData.length &&
+      selectedCustomers.every(id => allCurrentPageCustomerIds.includes(id))) {
       setSelectedCustomers([]);
     } else {
       setSelectedCustomers(allCurrentPageCustomerIds);
@@ -161,7 +177,7 @@ const CustomerPersonalisation = () => {
                 Customer List ({pagination.total})
               </h1>
             </div>
-            <div className="flex gap-4 relative">
+            <div className="flex gap-4 relative" ref={dropdownRef}>
               <button
                 className="px-4 bg-[#3131661A] py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
                 onClick={() => setShowExport(!showExport)}
@@ -185,7 +201,7 @@ const CustomerPersonalisation = () => {
               </button>
 
               {showExport && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                <div className="absolute right-0 mt-12 w-48 bg-white rounded-md shadow-lg  z-40 border border-gray-200">
                   <div
                     className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                     onClick={handleExport}
@@ -198,7 +214,7 @@ const CustomerPersonalisation = () => {
               )}
             </div>
           </div>
-          
+
           <CustomerList
             customers={filteredData}
             loading={loading}
