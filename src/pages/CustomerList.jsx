@@ -75,12 +75,12 @@ const CustomerList = () => {
   };
 
   const handleCustomerClick = (customerId) => {
-    navigate(`/customer-profile/${customerId}`);
+    navigate(`customer-profile/${customerId}`);
   };
 
   const handleEditClick = (e, customerId) => {
     e.stopPropagation();
-    navigate(`/customer-profile/${customerId}`);
+    navigate(`customer-profile/${customerId}`);
   };
 
   const handleAddNewCustomer = () => {

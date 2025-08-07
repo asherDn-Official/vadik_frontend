@@ -77,7 +77,7 @@ function App() {
 
               {/* <Route path="customers/:id" element={<CustomerProfile />} /> */}
               <Route
-                path="/customer-profile/:customerId"
+                path="customers/customer-profile/:customerId"
                 element={<CustomerProfile />}
               />
               <Route path="personalisation" element={<CustomerPersonalisation />} />{" "}
