@@ -10,6 +10,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { extractFieldValue, transformCustomerData, transformFormDataToAPI, formatFieldForDisplay, getInputType, getFieldType } from "../../utils/customerDataUtils";
+import EditIcon from '../../../public/assets/edit-icon.png'
+
 
 // Memoized FieldItem component to prevent unnecessary re-renders
 const FieldItem = React.memo(({ 
@@ -395,7 +397,7 @@ const CustomerDetails = ({
                         onClick={onEdit}
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center"
                       >
-                        <img src="../assets/edit-icon.png" className="w-4 h-4 mr-2" alt="Edit" />
+                        <img src={EditIcon} className="w-4 h-4 mr-2" alt="Edit" />
                         Edit
                       </button>
                     ) : null}
