@@ -246,14 +246,14 @@ const CustomerFieldPreferences = () => {
     }
   };
 
-  if (isLoading || isCreatingPreference) {
-    return (
-      <div className="p-6 text-center">
-        <p>Loading preferences...</p>
-        {isCreatingPreference && <p>Creating new preference set...</p>}
-      </div>
-    );
-  }
+  // if (isLoading || isCreatingPreference) {
+  //   return (
+  //     <div className="p-6 text-center">
+  //       <p>Loading preferences...</p>
+  //       {isCreatingPreference && <p>Creating new preference set...</p>}
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (
@@ -421,7 +421,7 @@ const CustomerFieldPreferences = () => {
                         <img
                           src={icon.dataUrl}
                           alt={icon.name}
-                          className="w-6 h-6 mx-auto object-contain"
+                          className="w-10 h-10 mx-auto object-contain"
                         />
                       </button>
                     ))}
