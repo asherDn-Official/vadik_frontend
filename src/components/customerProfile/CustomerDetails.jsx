@@ -10,31 +10,33 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { extractFieldValue, transformCustomerData, transformFormDataToAPI, formatFieldForDisplay, getInputType, getFieldType } from "../../utils/customerDataUtils";
-import EditIcon from '../../../public/assets/edit-icon.png'
+import EditIcon from '../../../public/assets/edit-icon.png';
+import profileImg from '../../../public/assets/profile.png';
+
 
 
 // Memoized FieldItem component to prevent unnecessary re-renders
-const FieldItem = React.memo(({ 
-  label, 
-  name, 
-  defaultValue, 
-  section = 'basic', 
-  isEditable = false, 
-  value, 
-  onChange, 
-  customer, 
-  isEditing 
+const FieldItem = React.memo(({
+  label,
+  name,
+  defaultValue,
+  section = 'basic',
+  isEditable = false,
+  value,
+  onChange,
+  customer,
+  isEditing
 }) => {
   const fieldType = getFieldType(customer, section, name);
   const inputType = getInputType(fieldType);
-  
+
   const handleInputChange = useCallback((e) => {
     onChange(section, name, e.target.value);
   }, [onChange, section, name]);
-  
+
   return (
     <div className="mb-4">
-      <p className="text-sm text-gray-500 mb-2">{label}</p>
+      <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">{label}</p>
       {isEditing && isEditable ? (
         <input
           type={inputType}
@@ -45,7 +47,7 @@ const FieldItem = React.memo(({
           autoComplete="off"
         />
       ) : (
-        <p className="text-sm font-medium text-gray-900">
+        <p className="font-medium text-[16px] leading-[30px] tracking-normal text-[#313166]">
           {formatFieldForDisplay(defaultValue, fieldType)}
         </p>
       )}
@@ -54,24 +56,24 @@ const FieldItem = React.memo(({
 });
 
 // Memoized DetailItem component to prevent unnecessary re-renders
-const DetailItem = React.memo(({ 
-  label, 
-  name, 
-  defaultValue, 
-  section = 'basic', 
-  isEditable = false, 
-  value, 
-  onChange, 
-  customer, 
-  isEditing 
+const DetailItem = React.memo(({
+  label,
+  name,
+  defaultValue,
+  section = 'basic',
+  isEditable = false,
+  value,
+  onChange,
+  customer,
+  isEditing
 }) => {
   const fieldType = getFieldType(customer, section, name);
   const inputType = getInputType(fieldType);
-  
+
   const handleInputChange = useCallback((e) => {
     onChange(section, name, e.target.value);
   }, [onChange, section, name]);
-  
+
   return (
     <div className="flex items-center justify-between p-4 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
       <div className="flex items-center">
@@ -115,7 +117,7 @@ const CustomerDetails = ({
 }) => {
   // Transform customer data to handle new nested structure
   const transformedCustomer = useMemo(() => transformCustomerData(customer), [customer]);
-  
+
   // Initialize form data with proper default values
   const [formData, setFormData] = useState(() => {
     if (transformedCustomer) {
@@ -134,13 +136,13 @@ const CustomerDetails = ({
       };
     }
     return {
-      basic: { 
-        firstname: '', 
-        lastname: '', 
-        mobileNumber: '', 
-        source: '', 
-        customerId: '', 
-        firstVisit: '' 
+      basic: {
+        firstname: '',
+        lastname: '',
+        mobileNumber: '',
+        source: '',
+        customerId: '',
+        firstVisit: ''
       },
       additionalData: {},
       advancedDetails: {},
@@ -215,10 +217,10 @@ const CustomerDetails = ({
   // Memoized function to render dynamic fields
   const renderDynamicFields = useCallback((fields, section) => {
     if (!fields) return null;
-    
+
     return Object.entries(fields).map(([key, value]) => {
       const isEditable = isEditing;
-      
+
       if (section === 'additionalData') {
         return (
           <FieldItem
@@ -269,10 +271,10 @@ const CustomerDetails = ({
 
   const onSubmit = (e) => {
     e.preventDefault();
-    
+
     // Transform the form data back to API format
     const formattedData = transformFormDataToAPI(formData, customer);
-    
+
     // Call the parent save handler with formatted data
     onSave(formattedData);
   };
@@ -293,79 +295,78 @@ const CustomerDetails = ({
                   <div className="relative">
                     <img
                       src={transformedCustomer?.profileImage || "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"}
+                      // src={profileImg}
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
-                      className="w-[118px] h-[92px] rounded-lg object-cover"
+                      className="w-[148px] h-[212px] rounded-lg  object-contain"
                     />
                   </div>
                   <div className="ml-14 w-full">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-6">Basic Details</h2>
-                    
-                    <div className="grid grid-cols-3 gap-x-16 gap-y-6 mb-6">
-                      <FieldItem 
-                        label="First Name" 
-                        name="firstname" 
-                        defaultValue={transformedCustomer?.firstname} 
+                    <h2 className=" font-bold text-[18px] leading-[30px] tracking-normal mb-6 text-[#313166] underline font-poppins">Basic Details</h2>
+
+                    <div className="flex flex-wrap  gap-x-10 gap-y-6  mb-6">
+                      <FieldItem
+                        label="First Name"
+                        name="firstname"
+                        defaultValue={transformedCustomer?.firstname}
                         isEditable={isEditing}
                         value={formData?.basic?.firstname}
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
                       />
-                      <FieldItem 
-                        label="Last Name" 
-                        name="lastname" 
-                        defaultValue={transformedCustomer?.lastname} 
+                      <FieldItem
+                        label="Last Name"
+                        name="lastname"
+                        defaultValue={transformedCustomer?.lastname}
                         isEditable={isEditing}
                         value={formData?.basic?.lastname}
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
                       />
-                      <FieldItem 
-                        label="Mobile Number" 
-                        name="mobileNumber" 
-                        defaultValue={transformedCustomer?.mobileNumber} 
+                      <FieldItem
+                        label="Mobile Number"
+                        name="mobileNumber"
+                        defaultValue={transformedCustomer?.mobileNumber}
                         isEditable={isEditing}
                         value={formData?.basic?.mobileNumber}
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
                       />
-                      <FieldItem 
-                        label="Source" 
-                        name="source" 
-                        defaultValue={transformedCustomer?.source} 
+                      <FieldItem
+                        label="Source"
+                        name="source"
+                        defaultValue={transformedCustomer?.source}
                         isEditable={isEditing}
                         value={formData?.basic?.source}
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
                       />
-                      <FieldItem 
-                        label="Customer ID" 
-                        name="customerId" 
+                      <FieldItem
+                        label="Customer ID"
+                        name="customerId"
                         defaultValue={transformedCustomer?.customerId}
                         value={formData?.basic?.customerId}
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
                       />
-                      <FieldItem 
-                        label="First Visit" 
-                        name="firstVisit" 
+                      <FieldItem
+                        label="First Visit"
+                        name="firstVisit"
                         defaultValue={transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : ''}
                         value={formData?.basic?.firstVisit}
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
                       />
+
+                      {renderDynamicFields(transformedCustomer?.additionalData, "additionalData")}
                     </div>
 
-                    {transformedCustomer?.additionalData && (
-                      <div className="grid grid-cols-3 gap-x-16 gap-y-6">
-                        {renderDynamicFields(transformedCustomer?.additionalData, "additionalData")}
-                      </div>
-                    )}
+            
                   </div>
                 </div>
               </div>
@@ -381,11 +382,10 @@ const CustomerDetails = ({
                       key={tab}
                       type="button"
                       onClick={() => setActiveTab(tab)}
-                      className={`py-4 px-4 border-b-2 font-medium rounded-[10px] text-sm ${
-                        activeTab === tab
+                      className={`py-4 px-4 border-b-2 font-medium rounded-[10px] text-sm ${activeTab === tab
                           ? "bg-[#EC396F1A] text-[#EC396F]"
                           : "border-transparent text-gray-500 hover:text-[#EC396F] hover:bg-[#EC396F1A]"
-                      }`}
+                        }`}
                     >
                       {tab}
                     </button>
@@ -416,7 +416,7 @@ const CustomerDetails = ({
                 {activeTab === "Advanced Privacy" && (
                   <div className="space-y-0">
                     {transformedCustomer?.advancedPrivacyDetails && renderDynamicFields(transformedCustomer?.advancedPrivacyDetails, "advancedPrivacy")}
-                    
+
                     {/* Purchase History Section */}
                     <div className="p-6 border-t border-gray-200">
                       <div className="flex items-center justify-between mb-4">
@@ -498,16 +498,14 @@ const CustomerDetails = ({
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral?.phoneNumber}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral?.joinDate}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <span className={`px-2 py-1 rounded text-xs ${
-                                  referral?.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                                }`}>
+                                <span className={`px-2 py-1 rounded text-xs ${referral?.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                                  }`}>
                                   {referral?.couponCode}
                                 </span>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                                  referral?.status === "active" ? "bg-green-500" : "bg-red-500"
-                                }`}>
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${referral?.status === "active" ? "bg-green-500" : "bg-red-500"
+                                  }`}>
                                   {referral?.status === "active" ? (
                                     <CheckCircle className="w-3 h-3 text-white" />
                                   ) : (
