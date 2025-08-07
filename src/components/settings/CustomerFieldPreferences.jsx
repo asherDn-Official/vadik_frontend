@@ -318,7 +318,7 @@ const CustomerFieldPreferences = () => {
           </div>
 
           {/* {isAddingField && ( */}
-          <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-6">
+          <div className="mb-6   rounded-lg border bg-gray-100 p-6">
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
