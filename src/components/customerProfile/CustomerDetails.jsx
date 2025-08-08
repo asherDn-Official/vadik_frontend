@@ -230,7 +230,7 @@ const CustomerDetails = ({
     }));
   }, []);
 
-  const tabs = ["Advanced Details", "Advanced Privacy", "Referral"];
+  const tabs = ["AdditionalData","Advanced Details", "Advanced Privacy", "Referral"];
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
   const [recipientNumber, setRecipientNumber] = useState("");
   const [messageType, setMessageType] = useState("birthday");
@@ -270,22 +270,7 @@ const CustomerDetails = ({
     return Object.entries(fields).map(([key, value]) => {
       const isEditable = isEditing;
 
-      if (section === 'additionalData') {
-        return (
-          <FieldItem
-            key={key}
-            label={key}
-            name={key}
-            defaultValue={value}
-            section={section}
-            isEditable={isEditable}
-            value={formData?.[section]?.[key]}
-            onChange={handleInputChange}
-            customer={customer}
-            isEditing={isEditing}
-          />
-        );
-      } else if (section === 'advancedPrivacyDetails' && key.toLowerCase().includes('satisfaction')) {
+      if (section === 'advancedPrivacyDetails' && key.toLowerCase().includes('satisfaction')) {
         return (
           <div key={key} className="flex items-center p-4 border-b border-gray-100">
             <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
@@ -411,8 +396,6 @@ const CustomerDetails = ({
                         customer={customer}
                         isEditing={isEditing}
                       />
-
-                      {renderDynamicFields(transformedCustomer?.additionalData, "additionalData")}
                     </div>
 
             
@@ -524,6 +507,19 @@ const CustomerDetails = ({
                     </div>
                   </div>
                 )}
+
+                {activeTab === "AdditionalData" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    {transformedCustomer?.additionalData && Object.keys(transformedCustomer.additionalData).length > 0 ? (
+                      renderDynamicFields(transformedCustomer?.additionalData, "additionalData")
+                    ) : (
+                      <div className="col-span-2 text-center py-8 text-gray-500">
+                        No additional data available
+                      </div>
+                    )}
+                  </div>
+                )}
+
 
                 {activeTab === "Referral" && (
                   <div className="p-6">

@@ -32,7 +32,7 @@ const CustomerSidebar = () => {
           params: {
             retailerId,
             search,
-            // page,
+            page,
           },
         }
       );
