@@ -25,7 +25,7 @@ const CustomerAdd = () => {
             alert("Customer added successfully!");
 
             // Navigate to the newly created customer's profile
-            navigate(`/customer-profile/${newCustomer._id}`);
+            navigate(`/customers/customer-profile/${newCustomer._id}`);
 
         } catch (error) {
             console.error('Error adding customer:', error);
