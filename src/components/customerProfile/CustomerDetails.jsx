@@ -323,7 +323,7 @@ const CustomerDetails = ({
 
     // Transform the form data back to API format
     const formattedData = transformFormDataToAPI(formData, customer);
-
+    
     // Call the parent save handler with formatted data
     onSave(formattedData);
   };

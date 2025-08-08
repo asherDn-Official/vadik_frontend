@@ -48,11 +48,11 @@ const CustomerProfile = () => {
         advancedPrivacyDetails: formData.advancedPrivacyDetails || {}
       };
 
-      // const response = await api.patch(
-      //   `/api/customers/${selectedCustomer._id}`,
-      //   payload
-      // );
-      console.log(payload);
+
+      const response = await api.patch(
+        `/api/customers/${selectedCustomer._id}`,
+        formData
+      );
 
       const updatedCustomer = response.data;
       setSelectedCustomer(updatedCustomer);

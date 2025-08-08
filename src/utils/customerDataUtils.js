@@ -80,74 +80,53 @@ export const transformCustomerData = (customer) => {
  * @returns {Object} - Transformed data for API
  */
 export const transformFormDataToAPI = (formData, originalCustomer) => {
-  const transformed = {
-    basic: formData.basic,
+  const apiData = {
+    ...originalCustomer,
+    firstname: formData.basic.firstname,
+    lastname: formData.basic.lastname,
+    mobileNumber: formData.basic.mobileNumber,
+    source: formData.basic.source,
+    customerId: formData.basic.customerId,
+    firstVisit: formData.basic.firstVisit,
     additionalData: {},
     advancedDetails: {},
     advancedPrivacyDetails: {}
   };
-  
-  // Transform additionalData back to API format
-  if (formData.additionalData && originalCustomer.additionalData) {
-    Object.keys(formData.additionalData).forEach(key => {
-      const originalField = originalCustomer.additionalData[key];
-      const newValue = formData.additionalData[key];
-      
-      if (originalField && typeof originalField === 'object' && originalField.hasOwnProperty('type')) {
-        transformed.additionalData[key] = {
-          value: newValue,
-          type: originalField.type
-        };
-      } else {
-        transformed.additionalData[key] = {
-          value: newValue,
-          type: 'string' // default type
-        };
-      }
-    });
+
+  // Handle additionalData
+  if (formData.additionalData) {
+    apiData.additionalData = Object.keys(formData.additionalData).reduce((acc, key) => {
+      acc[key] = {
+        ...originalCustomer.additionalData?.[key],
+        value: formData.additionalData[key]
+      };
+      return acc;
+    }, {});
   }
-  
-  // Transform advancedDetails back to API format
-  if (formData.advancedDetails && originalCustomer.advancedDetails) {
-    Object.keys(formData.advancedDetails).forEach(key => {
-      const originalField = originalCustomer.advancedDetails[key];
-      const newValue = formData.advancedDetails[key];
-      
-      if (originalField && typeof originalField === 'object' && originalField.hasOwnProperty('type')) {
-        transformed.advancedDetails[key] = {
-          value: newValue,
-          type: originalField.type
-        };
-      } else {
-        transformed.advancedDetails[key] = {
-          value: newValue,
-          type: 'string' // default type
-        };
-      }
-    });
+
+  // Handle advancedDetails
+  if (formData.advancedDetails) {
+    apiData.advancedDetails = Object.keys(formData.advancedDetails).reduce((acc, key) => {
+      acc[key] = {
+        ...originalCustomer.advancedDetails?.[key],
+        value: formData.advancedDetails[key]
+      };
+      return acc;
+    }, {});
   }
-  
-  // Transform advancedPrivacyDetails back to API format
-  if (formData.advancedPrivacyDetails && originalCustomer.advancedPrivacyDetails) {
-    Object.keys(formData.advancedPrivacyDetails).forEach(key => {
-      const originalField = originalCustomer.advancedPrivacyDetails[key];
-      const newValue = formData.advancedPrivacyDetails[key];
-      
-      if (originalField && typeof originalField === 'object' && originalField.hasOwnProperty('type')) {
-        transformed.advancedPrivacyDetails[key] = {
-          value: newValue,
-          type: originalField.type
-        };
-      } else {
-        transformed.advancedPrivacyDetails[key] = {
-          value: newValue,
-          type: 'string' // default type
-        };
-      }
-    });
+
+  // Handle advancedPrivacyDetails
+  if (formData.advancedPrivacyDetails) {
+    apiData.advancedPrivacyDetails = Object.keys(formData.advancedPrivacyDetails).reduce((acc, key) => {
+      acc[key] = {
+        ...originalCustomer.advancedPrivacyDetails?.[key],
+        value: formData.advancedPrivacyDetails[key]
+      };
+      return acc;
+    }, {});
   }
-  
-  return transformed;
+
+  return apiData;
 };
 
 /**
