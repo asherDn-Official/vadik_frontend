@@ -7,6 +7,7 @@ import {
   FiUpload,
 } from "react-icons/fi";
 import api from "../../api/apiconfig";
+import { useAuth } from "../../context/AuthContext";
 
 export const createProduct = async (formData) => {
   try {
@@ -42,15 +43,14 @@ export const getProduct = async (productId) => {
   }
 };
 
-// import { useAuth } from "../context/AuthContext";
-
 const AddProduct = ({ onBack, product: editProduct }) => {
-  // const { user } = useAuth();
+  const { auth } = useAuth();
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
   const [imagePreviews, setImagePreviews] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
   const [imagesToRemove, setImagesToRemove] = useState([]); // Track images to remove
@@ -68,6 +68,80 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     category: "",
     stock: "",
   });
+
+  // Authentication check
+  useEffect(() => {
+    if (!auth) {
+      setError("You must be logged in to access this page");
+      return;
+    }
+  }, [auth]);
+
+  // Validation functions
+  const validateForm = () => {
+    const errors = {};
+
+    // Image validation - at least one image required
+    if (imagePreviews.length === 0 && imageFiles.length === 0) {
+      errors.images = "At least one product image is required";
+    }
+
+    // Product name validation
+    if (!productData.productname.trim()) {
+      errors.productname = "Product name is required";
+    } else if (productData.productname.trim().length < 2) {
+      errors.productname = "Product name must be at least 2 characters long";
+    }
+
+    // Description validation
+    if (!productData.description.trim()) {
+      errors.description = "Product description is required";
+    } else if (productData.description.trim().length < 10) {
+      errors.description = "Product description must be at least 10 characters long";
+    }
+
+    // Price validation
+    if (!productData.price) {
+      errors.price = "Price is required";
+    } else if (parseFloat(productData.price) <= 0) {
+      errors.price = "Price must be greater than 0";
+    }
+
+    // Category validation
+    if (!productData.category) {
+      errors.category = "Product category is required";
+    }
+
+    // Stock validation
+    if (!productData.stock) {
+      errors.stock = "Stock quantity is required";
+    } else if (parseInt(productData.stock) < 0) {
+      errors.stock = "Stock quantity cannot be negative";
+    }
+
+    // Status validation
+    if (!productData.status) {
+      errors.status = "Product status is required";
+    }
+
+    // Colors validation
+    if (colors.length === 0) {
+      errors.colors = "At least one color is required";
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearValidationError = (field) => {
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
 
   useEffect(() => {
     if (editProduct) {
@@ -109,6 +183,12 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     const newImagePreviews = [...imagePreviews];
 
     files.forEach((file) => {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError("Only image files are allowed");
+        return;
+      }
+
       if (file.size > 5 * 1024 * 1024) {
         // 5MB limit
         setError("File size should be less than 5MB");
@@ -125,6 +205,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     });
 
     setImageFiles(newImageFiles);
+    clearValidationError('images');
   };
 
   const removeImage = (index) => {
@@ -150,6 +231,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     if (newColor.trim() && !colors.includes(newColor.trim())) {
       setColors([...colors, newColor.trim()]);
       setNewColor("");
+      clearValidationError('colors');
     }
   };
 
@@ -160,18 +242,32 @@ const AddProduct = ({ onBack, product: editProduct }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProductData((prev) => ({ ...prev, [name]: value }));
+    clearValidationError(name);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+
+    // Check authentication
+    if (!auth) {
+      setError("You must be logged in to perform this action");
+      return;
+    }
+
+    // Validate form
+    if (!validateForm()) {
+      setError("Please fix the validation errors before submitting");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const formData = new FormData();
       formData.append("retailerId", retailerId);
-      formData.append("productname", productData.productname);
-      formData.append("description", productData.description);
+      formData.append("productname", productData.productname.trim());
+      formData.append("description", productData.description.trim());
       formData.append("price", productData.price);
       formData.append("status", productData.status);
       formData.append("category", productData.category);
@@ -203,23 +299,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     }
   };
 
-  const handleSearch = () => {
-    setShowSearchResults(true);
-    // In a real implementation, you would call an API here
-  };
-
-  const handleSelectSearchResult = (result) => {
-    setSearchTerm(result);
-    setShowSearchResults(false);
-  };
-
-  // Mock search results - replace with API call in real implementation
-  const searchResults = [
-    "Shirt for men",
-    "Shirt for women",
-    "Black Shirt",
-    "Shirt combo",
-  ];
+  
 
   return (
     <div>
@@ -382,6 +462,12 @@ const AddProduct = ({ onBack, product: editProduct }) => {
           </div>
         )}
 
+        {validationErrors.images && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
+            {validationErrors.images}
+          </div>
+        )}
+
         <div className="mb-8">
           <h3 className="text-lg font-medium mb-6">General Information</h3>
 
@@ -397,11 +483,18 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                 value={productData.productname}
                 onChange={handleInputChange}
                 required
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className={`w-full p-2 border rounded-md ${validationErrors.productname ? 'border-red-500' : 'border-gray-300'
+                  }`}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                A product name is required and recommended to be unique
-              </p>
+              {validationErrors.productname ? (
+                <p className="text-xs text-red-500 mt-1">
+                  {validationErrors.productname}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  A product name is required and recommended to be unique
+                </p>
+              )}
             </div>
 
             <div>
@@ -415,13 +508,20 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                 onChange={handleInputChange}
                 rows="4"
                 required
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className={`w-full p-2 border rounded-md ${validationErrors.description ? 'border-red-500' : 'border-gray-300'
+                  }`}
               ></textarea>
-              <p className="text-xs text-gray-500 mt-1">
-                Add detailed information about the product, including usage,
-                benefits, and features. This helps users make informed
-                decisions.
-              </p>
+              {validationErrors.description ? (
+                <p className="text-xs text-red-500 mt-1">
+                  {validationErrors.description}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  Add detailed information about the product, including usage,
+                  benefits, and features. This helps users make informed
+                  decisions.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -430,9 +530,10 @@ const AddProduct = ({ onBack, product: editProduct }) => {
           <h3 className="text-lg font-medium mb-6">Addition Information</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Colors Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Colors
+                Colors*
               </label>
               <div className="flex">
                 <input
@@ -440,7 +541,8 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                   value={newColor}
                   onChange={(e) => setNewColor(e.target.value)}
                   placeholder="Add color"
-                  className="flex-1 p-2 border border-gray-300 rounded-l-md"
+                  className={`flex-1 p-2 border rounded-l-md ${validationErrors.colors ? 'border-red-500' : 'border-gray-300'
+                    }`}
                 />
                 <button
                   type="button"
@@ -469,8 +571,14 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                   ))}
                 </div>
               )}
+              {validationErrors.colors && (
+                <p className="text-xs text-red-500 mt-1">
+                  {validationErrors.colors}
+                </p>
+              )}
             </div>
 
+            {/* Price Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Price*
@@ -486,11 +594,22 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                   min="0"
                   step="0.01"
                   required
-                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-md"
+                  className={`w-full pl-8 pr-4 py-2 border rounded-md ${validationErrors.price ? 'border-red-500' : 'border-gray-300'
+                    }`}
                 />
               </div>
+              {validationErrors.price ? (
+                <p className="text-xs text-red-500 mt-1">
+                  {validationErrors.price}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter the product price in INR
+                </p>
+              )}
             </div>
 
+            {/* Status Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Status*
@@ -501,7 +620,8 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                   value={productData.status}
                   onChange={handleInputChange}
                   required
-                  className="w-full p-2 border border-gray-300 rounded-md appearance-none"
+                  className={`w-full p-2 border rounded-md appearance-none ${validationErrors.status ? 'border-red-500' : 'border-gray-300'
+                    }`}
                 >
                   <option value="In Stock">In Stock</option>
                   <option value="Out of Stock">Out of Stock</option>
@@ -524,8 +644,14 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                   </svg>
                 </div>
               </div>
+              {validationErrors.status && (
+                <p className="text-xs text-red-500 mt-1">
+                  {validationErrors.status}
+                </p>
+              )}
             </div>
 
+            {/* Category Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Product categories*
@@ -536,7 +662,8 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                   value={productData.category}
                   onChange={handleInputChange}
                   required
-                  className="w-full p-2 border border-gray-300 rounded-md appearance-none"
+                  className={`w-full p-2 border rounded-md appearance-none ${validationErrors.category ? 'border-red-500' : 'border-gray-300'
+                    }`}
                 >
                   <option value="" disabled>
                     Choose categories
@@ -563,8 +690,18 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                   </svg>
                 </div>
               </div>
+              {validationErrors.category ? (
+                <p className="text-xs text-red-500 mt-1">
+                  {validationErrors.category}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  Select the appropriate category
+                </p>
+              )}
             </div>
 
+            {/* Stock Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Stock*
@@ -577,8 +714,18 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                 onChange={handleInputChange}
                 min="0"
                 required
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className={`w-full p-2 border rounded-md ${validationErrors.stock ? 'border-red-500' : 'border-gray-300'
+                  }`}
               />
+              {validationErrors.stock ? (
+                <p className="text-xs text-red-500 mt-1">
+                  {validationErrors.stock}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter available quantity in stock
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -603,8 +750,8 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                 ? "Updating..."
                 : "Saving..."
               : editProduct
-              ? "Update"
-              : "Save"}
+                ? "Update"
+                : "Save"}
           </button>
         </div>
       </div>

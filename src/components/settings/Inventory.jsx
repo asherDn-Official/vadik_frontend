@@ -213,9 +213,9 @@ const Inventory = () => {
     return <AddProduct onBack={handleBack} product={editProduct} />;
   }
 
-  if (loading && !products.length) {
-    return <div className="text-center py-8">Loading products...</div>;
-  }
+  // if (loading && !products.length) {
+  //   return <div className="text-center py-8">Loading products...</div>;
+  // }
 
   if (error) {
     return <div className="text-center py-8 text-red-500">{error}</div>;

@@ -103,7 +103,7 @@ const MyProfile = () => {
         !profile.profilePicture.startsWith("http")
       ) {
         const blob = await fetch(profile.profilePicture).then((r) => r.blob());
-        formData.append("avatar", blob, "profile.jpg"); // renamed field
+        formData.append("storeImage", blob, "profile.jpg"); // renamed field
       }
 
       const response = await api.patch(`api/retailer/${retailerId}`, formData, {
