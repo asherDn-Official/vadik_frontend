@@ -95,7 +95,6 @@ const DetailItem = React.memo(({
   const inputType = getInputType(fieldType);
   const options = fieldData.options || [];
 
-  console.log(fieldData)
 
   const handleInputChange = useCallback((e) => {
     onChange(section, name, e.target.value);
@@ -167,7 +166,6 @@ const CustomerDetails = ({
   // Transform customer data to handle new nested structure
   const transformedCustomer = useMemo(() => transformCustomerData(customer), [customer]);
 
-  console.log(transformedCustomer);
 
   // Initialize form data with proper default values
   const [formData, setFormData] = useState(() => {
@@ -465,7 +463,7 @@ const CustomerDetails = ({
                 )}
 
                 {activeTab === "Advanced Privacy" && (
-                  <div className="space-y-0">
+                  <div className="space-y-6">
                     {transformedCustomer?.advancedPrivacyDetails && renderDynamicFields(transformedCustomer?.advancedPrivacyDetails, "advancedPrivacyDetails")}
 
                     {/* Purchase History Section */}
