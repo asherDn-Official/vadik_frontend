@@ -126,26 +126,22 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
     }
   };
 
-//   const validateGstNumber = () => {
-//   const gst = formData.gstNumber?.trim();
-
-//   if (gst && gst.length !== 15) {
-//     setErrors((prev) => ({ ...prev, gstNumber: "GST number must be 15 characters" }));
-//   } else {
-//     setErrors((prev) => {
-//       const { gstNumber, ...rest } = prev;
-//       return rest;
-//     });
-//   }
-// };
-
-const validateGstNumber = () => {
+  const validateGstNumber = () => {
   const gst = formData.gstNumber?.trim().toUpperCase();
   const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
+  // If empty, clear error and skip validation
   if (!gst) {
-    setErrors((prev) => ({ ...prev, gstNumber: "GST number is required" }));
-  } else if (gst.length !== 15) {
+    setErrors((prev) => {
+      const { gstNumber, ...rest } = prev;
+      return rest;
+    });
+    updateFormData({ gstNumber: "" });
+    return;
+  }
+
+  // Validate only when GST is provided
+  if (gst.length !== 15) {
     setErrors((prev) => ({ ...prev, gstNumber: "GST number must be 15 characters" }));
   } else if (!gstRegex.test(gst)) {
     setErrors((prev) => ({ ...prev, gstNumber: "Invalid GST number format" }));
@@ -198,7 +194,7 @@ const validateGstNumber = () => {
       data.append("storeContactNumber", formData.contactNumber);
       data.append("storeCity", formData.city);
       data.append("storePincode", formData.pincode);
-      data.append("GSTNumber", formData.gstNumber || "");
+      if(formData?.gstNumber) data.append("GSTNumber", formData.gstNumber || "");
       data.append("numberOfEmployees", formData.staffCount);
       data.append("numberOfCustomers", formData.customerCount);
       data.append("status", "active");

@@ -75,12 +75,18 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
   const validateEmail = () => {
     if (!formData.email) {
       setErrors(prev => ({ ...prev, email: "Email address is required" }));
-    } else if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(formData.email)) {
-      setErrors(prev => ({ ...prev, email: "Enter a valid Gmail address" }));
+    }
+    // Exclude common free email providers
+    else if (
+      !/^[a-zA-Z0-9._%+-]+@(?!gmail\.com$|yahoo\.com$|hotmail\.com$)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i
+        .test(formData.email)
+    ) {
+      setErrors(prev => ({ ...prev, email: "Enter a valid corporate email address" }));
     } else {
       setErrors(prev => ({ ...prev, email: "" }));
     }
   };
+
 
   const validateForm = () => {
     validateFirstName();
@@ -88,14 +94,14 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
     validateMobile();
     validateEmail();
 
-    return !errors.firstName && 
-           !errors.lastName && 
-           !errors.mobile && 
-           !errors.email &&
-           formData.firstName &&
-           formData.lastName &&
-           formData.mobile &&
-           formData.email;
+    return !errors.firstName &&
+      !errors.lastName &&
+      !errors.mobile &&
+      !errors.email &&
+      formData.firstName &&
+      formData.lastName &&
+      formData.mobile &&
+      formData.email;
   };
 
   const handleSubmit = (e) => {
@@ -169,20 +175,19 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
           </p>
           <div className=" mt-8">
             <PhoneInput
-            country={"in"}
-            value={`${formData.phoneCode}${formData.mobile} || ""`}
-            onChange={handleMobileChange}
-            onBlur={() => handleBlur('mobile')}
-            inputProps={{
-              name: "mobile",
-              required: true,
-              className: `pl-10 py-3  w-full border border-gray-300 rounded-md w-full outline-none ${
-                errors.mobile ? "border-red-500" : ""
-              }`,
-            }}
-            countryCodeEditable={false}
-            onlyCountries={['in']}
-          />
+              country={"in"}
+              value={`${formData.phoneCode}${formData.mobile} || ""`}
+              onChange={handleMobileChange}
+              onBlur={() => handleBlur('mobile')}
+              inputProps={{
+                name: "mobile",
+                required: true,
+                className: `pl-10 py-3  w-full border border-gray-300 rounded-md w-full outline-none ${errors.mobile ? "border-red-500" : ""
+                  }`,
+              }}
+              countryCodeEditable={false}
+              onlyCountries={['in']}
+            />
           </div>
           {errors.mobile && (
             <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>
