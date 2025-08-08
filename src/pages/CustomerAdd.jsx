@@ -4,6 +4,7 @@ import CustomerForm from "../components/customerProfile/CustomerForm";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import api from "../api/apiconfig";
+import showToast from "../utils/ToastNotification";
 
 const CustomerAdd = () => {
     const navigate = useNavigate();
@@ -22,13 +23,15 @@ const CustomerAdd = () => {
         try {
             const response = await api.post('/api/customers', apiData);
             const newCustomer = response.data;
-            alert("Customer added successfully!");
+            showToast('Customer added successfully!', 'success');
 
             // Navigate to the newly created customer's profile
             navigate(`/customers/customer-profile/${newCustomer._id}`);
 
         } catch (error) {
-            console.error('Error adding customer:', error);
+            console.error(error.response.data.error);
+            showToast(error.response.data.error, 'error');
+
             // alert('Failed to add customer. Please try again.');
         }
 

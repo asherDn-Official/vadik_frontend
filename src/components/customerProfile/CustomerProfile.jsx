@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import CustomerSidebar from "./CustomerSidebar";
 import CustomerDetails from "./CustomerDetails";
 import api from "../../api/apiconfig";
+import showToast from "../../utils/ToastNotification";
+
 
 const CustomerProfile = () => {
   const { customerId } = useParams();
@@ -53,13 +55,13 @@ const CustomerProfile = () => {
         `/api/customers/${selectedCustomer._id}`,
         formData
       );
-
+      showToast('Customer data updated successfully!','success');
       const updatedCustomer = response.data;
       setSelectedCustomer(updatedCustomer);
       setIsEditing(false);
-      alert("Customer data updated successfully!");
     } catch (error) {
-      console.error("Error updating customer:", error);
+      // console.error("Error updating customer:", error);
+      showToast('Failed to update customer. Please try again','error');
       alert("Failed to update customer. Please try again.");
     } finally {
       setIsLoading(false);
