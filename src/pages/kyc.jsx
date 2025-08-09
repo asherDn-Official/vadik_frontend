@@ -1,115 +1,580 @@
-import React, { useState } from "react";
-import SearchBar from "../components/KYC/SearchBar";
-import CustomerInfo from "../components/KYC/CustomerInfo";
-import CouponSearchResults from "../components/KYC/CouponSearchResults";
-import PhoneSearchResults from "../components/KYC/PhoneSearchResults";
-
-const mockCustomer = {
-  name: "Kiran Ravichandran",
-  email: "rkkiran662001@gmail.com",
-  phone: "+91 9876543210",
-};
-
-const mockCouponHistory = [
-  {
-    vidNo: "01",
-    name: "Dhamaraj mani prakash",
-    phoneNumber: "9988776655",
-    joinDate: "02/02/2025",
-    couponCode: "Dha01ab",
-    status: "Verify",
-  },
-];
-
-const mockPhoneHistory = [
-  {
-    date: "May 12, 2025",
-    product: "Premium Wireless Headphones",
-    quantity: 1,
-    amount: "₹249.99",
-  },
-  {
-    date: "May 5, 2025",
-    product: "Smartphone Charging Stand",
-    quantity: 2,
-    amount: "₹59.98",
-  },
-  {
-    date: "April 28, 2025",
-    product: "Bluetooth Smart Speaker",
-    quantity: 1,
-    amount: "₹179.99",
-  },
-  {
-    date: "April 15, 2025",
-    product: "Wireless Keyboard and Mouse Combo",
-    quantity: 2,
-    amount: "₹349.99",
-  },
-  {
-    date: "April 3, 2025",
-    product: "Ultra HD Monitor 27-inch",
-    quantity: 1,
-    amount: "₹159.99",
-  },
-];
+import React, { useState, useEffect } from "react";
+import { FiChevronDown, FiChevronUp, FiFilter, FiX } from "react-icons/fi";
+import api from "../api/apiconfig";
+import showToast from "../utils/ToastNotification";
 
 const KYCPage = () => {
-  const [searchType, setSearchType] = useState(null);
-  const [showResults, setShowResults] = useState(false);
+  const [searchType, setSearchType] = useState("phone");
   const [searchQuery, setSearchQuery] = useState("");
-
-  const handleSearch = (query, type) => {
+  const [customerData, setCustomerData] = useState(null);
+  const [orderHistory, setOrderHistory] = useState([]);
+  const [statistics, setStatistics] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [totalPages, setTotalPages] = useState(1);
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    minAmount: "",
+    maxAmount: "",
+    dateFrom: "",
+    dateTo: "",
+    productName: ""
+  });
+  
+  const handleSearch = async (query, type) => {
+    if (!query.trim()) {
+      showToast("Please enter a search query", "warning");
+      return;
+    }
+    
     setSearchType(type);
     setSearchQuery(query);
-    setShowResults(true);
+    setCurrentPage(1);
+    fetchCustomerData(query);
   };
-
-  const getFilteredResults = () => {
-    if (searchType === "coupon") {
-      return mockCouponHistory.filter(
-        (item) => item.couponCode.toLowerCase() === searchQuery.toLowerCase()
-      );
-    } else if (searchType === "phone") {
-      return mockPhoneHistory.filter(
-        () => searchQuery === mockCustomer.phone.replace(/\s/g, "")
-      );
-    } else if (searchType === "email") {
-      return mockPhoneHistory.filter(
-        () => searchQuery.toLowerCase() === mockCustomer.email.toLowerCase()
-      );
-    } else if (searchType === "name") {
-      return mockPhoneHistory.filter(
-        () => searchQuery.toLowerCase() === mockCustomer.name.toLowerCase()
-      );
+  
+  const fetchCustomerData = async (query) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get("/api/customerQuickSearch", {
+        params: {
+          search: query,
+          page: currentPage,
+          limit: itemsPerPage,
+        }
+      });
+      
+      const { customer, statistics, orderHistory } = response.data.data;
+      setCustomerData(customer);
+      setStatistics(statistics);
+      setOrderHistory(orderHistory.orders);
+      setTotalPages(orderHistory.pagination.totalPages);
+      showToast("Customer data loaded", "success");
+    } catch (err) {
+      console.error("Error fetching customer data:", err);
+      setError(err.response?.data?.message || "Failed to fetch customer data");
+      showToast("Failed to fetch customer data", "error");
+    } finally {
+      setLoading(false);
     }
-    return [];
   };
-
-  const filteredResults = getFilteredResults();
+  
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const applyFilters = () => {
+    setCurrentPage(1);
+    fetchCustomerData(searchQuery);
+  };
+  
+  const clearFilters = () => {
+    setFilters({
+      minAmount: "",
+      maxAmount: "",
+      dateFrom: "",
+      dateTo: "",
+      productName: ""
+    });
+    fetchCustomerData(searchQuery);
+  };
+  
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+  
+  useEffect(() => {
+    if (searchQuery) {
+      fetchCustomerData(searchQuery);
+    }
+  }, [currentPage, itemsPerPage]);
+  
+  const filteredOrders = orderHistory.filter(order => {
+    // Apply filters
+    if (filters.minAmount && order.orderSummary.grandTotal < parseFloat(filters.minAmount)) {
+      return false;
+    }
+    if (filters.maxAmount && order.orderSummary.grandTotal > parseFloat(filters.maxAmount)) {
+      return false;
+    }
+    if (filters.dateFrom && new Date(order.createdAt) < new Date(filters.dateFrom)) {
+      return false;
+    }
+    if (filters.dateTo && new Date(order.createdAt) > new Date(filters.dateTo)) {
+      return false;
+    }
+    if (filters.productName && 
+        !order.products.some(p => 
+          p.productName.toLowerCase().includes(filters.productName.toLowerCase())
+        )) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="p-8">
-      <h1 className="text-[#313166] font-[20px] text-[20px] mb-6">KYC</h1>
-
-      <SearchBar onSearch={handleSearch} />
-
-      {showResults && (
+      <h1 className="text-[#313166] font-bold text-xl mb-6">KYC</h1>
+      
+      <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
+        <div className="flex flex-wrap gap-2 mb-4">
+          {["phone", "name", "email"].map(type => (
+            <button
+              key={type}
+              onClick={() => setSearchType(type)}
+              className={`px-4 py-2 rounded-full capitalize ${
+                searchType === type
+                  ? "bg-[#313166] text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
+        
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder={`Search by ${searchType}...`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+          <button
+            onClick={() => handleSearch(searchQuery, searchType)}
+            className="px-6 py-3 bg-[#313166] text-white rounded-lg hover:bg-gray-800 transition-colors"
+            disabled={loading}
+          >
+            {loading ? "Searching..." : "Search"}
+          </button>
+        </div>
+      </div>
+      
+      {loading && <SkeletonLoader />}
+      
+      {error && (
+        <div className="p-4 mb-6 bg-red-50 border border-red-200 rounded-lg">
+          <div className="text-red-700">{error}</div>
+          <button
+            onClick={() => fetchCustomerData(searchQuery)}
+            className="mt-2 px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      
+      {customerData && !loading && (
         <>
-          <CustomerInfo customer={mockCustomer} />
-
-          {searchType === "coupon" && (
-            <CouponSearchResults history={filteredResults} />
-          )}
-          {(searchType === "phone" ||
-            searchType === "name" ||
-            searchType === "email") && (
-            <PhoneSearchResults history={filteredResults} />
-          )}
+          {/* Customer Info Section */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="border-r border-gray-200 pr-6">
+                <h2 className="text-lg font-semibold text-[#313166] mb-4">Customer Details</h2>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-gray-500">Name</p>
+                    <p className="font-medium">{customerData.firstname} {customerData.lastname}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Mobile</p>
+                    <p className="font-medium">{customerData.mobileNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Customer ID</p>
+                    <p className="font-medium">{customerData.customerId}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">First Visit</p>
+                    <p className="font-medium">
+                      {new Date(customerData.firstVisit).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="border-r border-gray-200 pr-6">
+                <h2 className="text-lg font-semibold text-[#313166] mb-4">Shopping Statistics</h2>
+                {statistics ? (
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-500">Total Visits</p>
+                      <p className="font-medium">{statistics.totalVisits}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Total Spend</p>
+                      <p className="font-medium">₹{statistics.totalSpend.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Avg. Purchase</p>
+                      <p className="font-medium">₹{statistics.averagePurchase.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Highest Purchase</p>
+                      <p className="font-medium">₹{statistics.highestPurchase.toFixed(2)}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p>No statistics available</p>
+                )}
+              </div>
+              
+              <div>
+                <h2 className="text-lg font-semibold text-[#313166] mb-4">Favorites</h2>
+                {statistics?.mostPurchasedProduct ? (
+                  <div>
+                    <p className="text-sm text-gray-500">Most Purchased Product</p>
+                    <p className="font-medium">
+                      {statistics.mostPurchasedProduct.name} 
+                      (x{statistics.mostPurchasedProduct.quantity})
+                    </p>
+                  </div>
+                ) : (
+                  <p>No favorite products</p>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Filters Section */}
+          <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                <FiFilter className="mr-2" /> 
+                Filters 
+                {showFilters ? <FiChevronUp className="ml-1" /> : <FiChevronDown className="ml-1" />}
+              </button>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Items per page:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="p-2 border border-gray-300 rounded-lg text-sm"
+                >
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
+            </div>
+            
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4 pt-4 border-t border-gray-200">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Min Amount</label>
+                  <input
+                    type="number"
+                    name="minAmount"
+                    value={filters.minAmount}
+                    onChange={handleFilterChange}
+                    placeholder="₹0"
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Max Amount</label>
+                  <input
+                    type="number"
+                    name="maxAmount"
+                    value={filters.maxAmount}
+                    onChange={handleFilterChange}
+                    placeholder="₹10000"
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+                  <input
+                    type="date"
+                    name="dateFrom"
+                    value={filters.dateFrom}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+                  <input
+                    type="date"
+                    name="dateTo"
+                    value={filters.dateTo}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
+                  <input
+                    type="text"
+                    name="productName"
+                    value={filters.productName}
+                    onChange={handleFilterChange}
+                    placeholder="Search products..."
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                
+                <div className="flex items-end gap-2">
+                  <button
+                    onClick={applyFilters}
+                    className="px-4 py-2 bg-[#313166] text-white rounded-lg hover:bg-gray-800"
+                  >
+                    Apply Filters
+                  </button>
+                  <button
+                    onClick={clearFilters}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Order History Section */}
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="p-6">
+              <h2 className="text-lg font-semibold text-[#313166] mb-4">Order History</h2>
+              
+              {filteredOrders.length > 0 ? (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredOrders.map(order => (
+                          <tr key={order._id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {order.orderId}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900">
+                              <div className="flex flex-wrap gap-1">
+                                {order.products.map((product, idx) => (
+                                  <span 
+                                    key={idx} 
+                                    className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
+                                  >
+                                    {product.productName}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {order.products.reduce((sum, product) => sum + product.quantity, 0)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              ₹{order.orderSummary.grandTotal.toFixed(2)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                order.orderSummary.paymentStatus === 'Paid' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {order.orderSummary.paymentStatus}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  {/* Pagination */}
+                  <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`px-4 py-2 rounded-lg ${
+                        currentPage === 1 
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-700">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              currentPage === pageNum
+                                ? "bg-[#313166] text-white"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                      
+                      {totalPages > 5 && (
+                        <span className="px-2 text-gray-500">...</span>
+                      )}
+                    </div>
+                    
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`px-4 py-2 rounded-lg ${
+                        currentPage === totalPages 
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <FiX className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
+                  <p className="text-gray-500 mb-4">
+                    This customer doesn't have any orders matching your filters.
+                  </p>
+                  <button
+                    onClick={clearFilters}
+                    className="inline-flex items-center px-4 py-2 bg-[#313166] text-white rounded-lg hover:bg-[#252451] transition-colors"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </>
       )}
     </div>
   );
 };
+
+const SkeletonLoader = () => (
+  <div className="space-y-6">
+    <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[...Array(3)].map((_, i) => (
+          <div key={i}>
+            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="space-y-3">
+              {[...Array(4)].map((_, j) => (
+                <div key={j} className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+    
+    <div className="bg-white rounded-lg shadow-sm p-4">
+      <div className="flex justify-between">
+        <div className="h-10 bg-gray-200 rounded w-32"></div>
+        <div className="flex items-center gap-2">
+          <div className="h-4 bg-gray-200 rounded w-24"></div>
+          <div className="h-10 bg-gray-200 rounded w-20"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="p-6">
+        <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                {[...Array(6)].map((_, i) => (
+                  <th key={i} className="px-6 py-3">
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {[...Array(3)].map((_, i) => (
+                <tr key={i}>
+                  {[...Array(6)].map((_, j) => (
+                    <td key={j} className="px-6 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+          <div className="h-10 bg-gray-200 rounded w-24"></div>
+          <div className="flex gap-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="w-10 h-10 bg-gray-200 rounded-full"></div>
+            ))}
+          </div>
+          <div className="h-10 bg-gray-200 rounded w-24"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 export default KYCPage;
