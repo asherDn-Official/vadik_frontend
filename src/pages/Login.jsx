@@ -118,7 +118,7 @@ const Login = () => {
               name="email"
               value={credentials.email}
               onChange={handleChange}
-              placeholder={`Enter ${loginType === "retailer" ? "Retailer" : "Staff"} Email address`}
+              placeholder={`Enter ${loginType === "retailer" ? "Business Admin" : "Team Member"} Email address`}
               className="w-full px-4 py-3 rounded-md bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
               required
             />

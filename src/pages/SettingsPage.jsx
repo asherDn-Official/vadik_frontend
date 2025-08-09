@@ -7,12 +7,14 @@ import {
   FiUsers,
   FiSettings,
 } from "react-icons/fi";
+import { LuTicketPercent } from "react-icons/lu";
 import MyProfile from "../components/settings/MyProfile";
 import Inventory from "../components/settings/Inventory";
 import DailyBillingUpdate from "../components/settings/DailyBillingUpdate";
 import CustomerFieldPreferences from "../components/settings/CustomerFieldPreferences";
 import RolesAndPermissions from "../components/settings/RolesAndPermissions";
 import AddProduct from "../components/settings/AddProduct";
+import Coupon from "../components/settings/Coupon";
 
 const SettingsPage = () => {
   const { tab } = useParams();
@@ -68,6 +70,12 @@ const SettingsPage = () => {
             isActive={activeTab === "roles-permissions"}
             onClick={() => handleTabChange("roles-permissions")}
           />
+                 <SettingsTab
+            icon={<LuTicketPercent />}
+            text="Coupons"
+            isActive={activeTab === "coupon"}
+            onClick={() => handleTabChange("coupon")}
+          />
         </div>
       </div>
 
@@ -83,6 +91,7 @@ const SettingsPage = () => {
         {activeTab === "daily-billing" && <DailyBillingUpdate />}
         {activeTab === "customer-preferences" && <CustomerFieldPreferences />}
         {activeTab === "roles-permissions" && <RolesAndPermissions />}
+        {activeTab === "coupon" && <Coupon />}
       </div>
     </div>
   );
