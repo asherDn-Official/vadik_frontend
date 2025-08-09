@@ -8,7 +8,11 @@ import {
   FiPercent, 
   FiGift,
   FiEdit,
-  FiTrash2
+  FiTrash2,
+  FiFilter,
+  FiSearch,
+  FiChevronDown,
+  FiChevronUp
 } from "react-icons/fi";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
@@ -21,7 +25,23 @@ const CouponManagement = () => {
   const [editingCouponId, setEditingCouponId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+    // New states for pagination, sorting, filtering, and search
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCoupons, setTotalCoupons] = useState(0);
+  const [sortField, setSortField] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    isActive: "",
+    couponType: "",
+    expiryDate: "",
+    productId: "",
+    discount: "",
+    conditionType: ""
+  });
   const initialCouponData = {
     code: "",
     discount: 0,
@@ -42,8 +62,26 @@ const CouponManagement = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get("/api/coupons/all");
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        sortField,
+        sortOrder,
+        search: searchQuery,
+        ...filters
+      };
+      
+      // Remove empty filters
+      Object.keys(params).forEach(key => {
+        if (params[key] === "" || params[key] === undefined) {
+          delete params[key];
+        }
+      });
+      
+      const response = await api.get("/api/coupons/all", { params });
       setCoupons(response.data.data);
+      setTotalCoupons(response.data.pagination.total);
+      setTotalPages(response.data.pagination.totalPages);
     } catch (err) {
       console.error("Error fetching coupons:", err);
       setError("Failed to fetch coupons. Please try again.");
@@ -55,7 +93,7 @@ const CouponManagement = () => {
 
   useEffect(() => {
     fetchCoupons();
-  }, []);
+  }, [currentPage, itemsPerPage, sortField, sortOrder, filters, searchQuery]);
 
   const startAddingCoupon = () => {
     setIsAddingCoupon(true);
@@ -175,7 +213,42 @@ const CouponManagement = () => {
       setIsDeleting(false);
     }
   };
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("desc");
+    }
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      isActive: "",
+      couponType: "",
+      expiryDate: "",
+      productId: "",
+      discount: "",
+      conditionType: ""
+    });
+    setSearchQuery("");
+    setCurrentPage(1);
+  };
   const getCouponIcon = (type) => {
     switch (type) {
       case "amount":
@@ -454,7 +527,204 @@ const CouponManagement = () => {
               </div>
             </div>
           )}
-
+     {/* Search and Filter Section */}
+             <div className="mb-6 bg-gray-50 rounded-lg p-4">
+               <div className="flex flex-wrap gap-4 items-center">
+                 <div className="relative flex-1 min-w-[200px]">
+                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                   <input
+                     type="text"
+                     placeholder="Search coupons..."
+                     value={searchQuery}
+                     onChange={(e) => {
+                       setSearchQuery(e.target.value);
+                       setCurrentPage(1);
+                     }}
+                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                   />
+                 </div>
+                 
+                 <button 
+                   onClick={() => setShowFilters(!showFilters)}
+                   className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                 >
+                   <FiFilter className="mr-2" /> 
+                   Filters 
+                   {showFilters ? <FiChevronUp className="ml-1" /> : <FiChevronDown className="ml-1" />}
+                 </button>
+                 
+                 <button 
+                   onClick={clearFilters}
+                   className="px-4 py-2 text-gray-600 hover:text-gray-900"
+                 >
+                   Clear All
+                 </button>
+               </div>
+               
+               {showFilters && (
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
+                   {/* Status Filter */}
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                       Status
+                     </label>
+                     <select
+                       name="isActive"
+                       value={filters.isActive}
+                       onChange={handleFilterChange}
+                       className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                     >
+                       <option value="">All Statuses</option>
+                       <option value="true">Active</option>
+                       <option value="false">Inactive</option>
+                     </select>
+                   </div>
+                   
+                   {/* Coupon Type Filter */}
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                       Coupon Type
+                     </label>
+                     <select
+                       name="couponType"
+                       value={filters.couponType}
+                       onChange={handleFilterChange}
+                       className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                     >
+                       <option value="">All Types</option>
+                       <option value="amount">Amount</option>
+                       <option value="percentage">Percentage</option>
+                       <option value="product">Product</option>
+                     </select>
+                   </div>
+                   
+                   {/* Condition Type Filter */}
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                       Condition Type
+                     </label>
+                     <select
+                       name="conditionType"
+                       value={filters.conditionType}
+                       onChange={handleFilterChange}
+                       className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                     >
+                       <option value="">All Conditions</option>
+                       <option value="greater">Greater than</option>
+                       <option value="lesser">Less than</option>
+                       <option value="equal">Equal to</option>
+                     </select>
+                   </div>
+                   
+                   {/* Expiry Date Filter */}
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                       Expiry Before
+                     </label>
+                     <input
+                       type="date"
+                       name="expiryDate"
+                       value={filters.expiryDate}
+                       onChange={handleFilterChange}
+                       className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                     />
+                   </div>
+                   
+                   {/* Product ID Filter */}
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                       Product ID
+                     </label>
+                     <input
+                       type="text"
+                       name="productId"
+                       value={filters.productId}
+                       onChange={handleFilterChange}
+                       placeholder="Enter product ID"
+                       className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                     />
+                   </div>
+                   
+                   {/* Discount Filter */}
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                       Discount Amount
+                     </label>
+                     <input
+                       type="number"
+                       name="discount"
+                       value={filters.discount}
+                       onChange={handleFilterChange}
+                       placeholder="Enter discount amount"
+                       min="0"
+                       className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                     />
+                   </div>
+                 </div>
+               )}
+             </div>
+             
+             {/* Sorting Controls */}
+             <div className="flex flex-wrap gap-4 mb-4">
+               <span className="text-sm text-gray-700 font-medium">Sort by:</span>
+               
+               <button 
+                 onClick={() => handleSort("createdAt")}
+                 className={`px-3 py-1 rounded-full text-sm ${
+                   sortField === "createdAt" 
+                     ? "bg-[#313166] text-white" 
+                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                 }`}
+               >
+                 Created Date {sortField === "createdAt" && (
+                   sortOrder === "asc" ? "↑" : "↓"
+                 )}
+               </button>
+               
+               <button 
+                 onClick={() => handleSort("expiryDate")}
+                 className={`px-3 py-1 rounded-full text-sm ${
+                   sortField === "expiryDate" 
+                     ? "bg-[#313166] text-white" 
+                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                 }`}
+               >
+                 Expiry Date {sortField === "expiryDate" && (
+                   sortOrder === "asc" ? "↑" : "↓"
+                 )}
+               </button>
+               
+               <button 
+                 onClick={() => handleSort("discount")}
+                 className={`px-3 py-1 rounded-full text-sm ${
+                   sortField === "discount" 
+                     ? "bg-[#313166] text-white" 
+                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                 }`}
+               >
+                 Discount Amount {sortField === "discount" && (
+                   sortOrder === "asc" ? "↑" : "↓"
+                 )}
+               </button>
+             </div>
+             
+             {/* Items Per Page Selector */}
+             <div className="flex items-center gap-2 mb-4">
+               <span className="text-sm text-gray-700">Items per page:</span>
+               <select
+                 value={itemsPerPage}
+                 onChange={(e) => {
+                   setItemsPerPage(Number(e.target.value));
+                   setCurrentPage(1);
+                 }}
+                 className="p-2 border border-gray-300 rounded-lg text-sm"
+               >
+                 <option value="5">5</option>
+                 <option value="10">10</option>
+                 <option value="20">20</option>
+                 <option value="50">50</option>
+               </select>
+             </div>
           <div className="space-y-4">
             {coupons.length > 0 ? (
               coupons.map((coupon) => (
@@ -544,6 +814,66 @@ const CouponManagement = () => {
               </div>
             )}
           </div>
+            {totalPages > 1 && (
+            <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`px-4 py-2 rounded-lg ${
+                  currentPage === 1 
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                Previous
+              </button>
+              
+              <div className="flex items-center gap-2">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        currentPage === pageNum
+                          ? "bg-[#313166] text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                {totalPages > 5 && (
+                  <span className="px-2 text-gray-500">...</span>
+                )}
+              </div>
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`px-4 py-2 rounded-lg ${
+                  currentPage === totalPages 
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
