@@ -124,7 +124,7 @@ const KYCPage = () => {
 
   return (
     <div className="p-8">
-      <h1 className="text-[#313166] font-bold text-xl mb-6">KYC</h1>
+      <h1 className="text-[#313166] font-bold text-xl mb-6">Quick Search</h1>
       
       <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
         <div className="flex flex-wrap gap-2 mb-4">
@@ -576,5 +576,6 @@ const SkeletonLoader = () => (
     </div>
   </div>
 );
+
 
 export default KYCPage;
