@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import QuizList from "./QuizList";
 import QuizForm from "./QuizForm";
 import { ArrowLeft } from "lucide-react";
+import api from "../../api/apiconfig";
+import showToast from "../../utils/ToastNotification";
 
 const Quiz = () => {
   const [quizzes, setQuizzes] = useState([
@@ -11,7 +13,7 @@ const Quiz = () => {
   ]);
   const [showForm, setShowForm] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState(null);
-
+  
   const handleCreate = () => {
     setEditingQuiz(null);
     setShowForm(true);
@@ -48,10 +50,10 @@ const Quiz = () => {
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back
           </button>
-          <QuizForm 
-            quiz={editingQuiz} 
-            onSave={handleSave} 
-            onCancel={() => setShowForm(false)} 
+          <QuizForm
+            quiz={editingQuiz}
+            onSave={handleSave}
+            onCancel={() => setShowForm(false)}
           />
         </div>
       </div>
@@ -71,10 +73,10 @@ const Quiz = () => {
           Create Quiz
         </button>
       </div>
-      <QuizList 
-        activities={quizzes} 
-        onEdit={handleEdit} 
-        onDelete={handleDelete} 
+      <QuizList
+        activities={quizzes}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     </div>
   );

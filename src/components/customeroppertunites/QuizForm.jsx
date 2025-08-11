@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Plus, X, Check } from "lucide-react";
 import QuestionTypeDropdown from "../common/QuestionTypeDropdown";
 import AddOption from "../common/AddOption";
+import api from "../../api/apiconfig";
 
 const QuizForm = ({ campaign, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,27 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
       },
     ],
   });
+  const [retailerId, setRetailerId] = useState(() => {
+    return localStorage.getItem("retailerId") || "";
+  });
+  const [perference, setPerference] = useState([]);
+
+  async function getPerferences() {
+    try {
+      const response = await api.get(`/api/customer-preferences/${retailerId}`)
+      const perference = response?.data
+      console.log('perference', perference);
+      setPerference(perference);
+    } catch (error) {
+      showToast(error.response.data.message, 'error');
+    }
+  }
+
+  useEffect(() => {
+    // Fetch quizzes data from the API and update state here
+    getPerferences();
+  }, []);
+
 
   useEffect(() => {
     if (campaign) {
@@ -56,11 +78,11 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
       questions: prev.questions.map((q) =>
         q.id === questionId
           ? {
-              ...q,
-              options: q.options.map((opt, idx) =>
-                idx === optionIndex ? value : opt
-              ),
-            }
+            ...q,
+            options: q.options.map((opt, idx) =>
+              idx === optionIndex ? value : opt
+            ),
+          }
           : q
       ),
     }));
