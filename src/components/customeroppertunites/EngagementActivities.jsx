@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Quiz from "./Quiz";
-// import SpinWheel from "./SpinWheel";
-// import ScratchCard from "./ScratchCard";
+import SpinWheel from "./SpinWheel";
+import ScratchCard from "./ScratchCard";
 
 const EngagementActivities = () => {
   const [selectedCampaign, setSelectedCampaign] = useState("quiz");
@@ -31,8 +31,8 @@ const EngagementActivities = () => {
       </div>
 
       {selectedCampaign === "quiz" && <Quiz />}
-      {/* {selectedCampaign === "spinwheel" && <SpinWheel />}
-      {selectedCampaign === "scratchcard" && <ScratchCard />} */}
+      {selectedCampaign === "spinwheel" && <SpinWheel />}
+      {selectedCampaign === "scratchcard" && <ScratchCard />}
     </div>
   );
 };
