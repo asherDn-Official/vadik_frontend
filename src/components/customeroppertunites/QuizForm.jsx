@@ -27,6 +27,7 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
   const [allPreferences, setAllPreferences] = useState([]);
   const [isPreferenceDropdownOpen, setIsPreferenceDropdownOpen] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
 
   async function getPerferences() {
     try {
@@ -66,26 +67,48 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
     if (selectedPref) {
       setFormData(prev => ({
         ...prev,
-        questions: prev.questions.map(q => 
+        questions: prev.questions.map(q =>
           q.id === questionId ? {
             ...q,
             key: selectedPref.key,
             type: selectedPref.type,
             section: selectedPref.section,
-            question: selectedPref.type === "date" 
-              ? `When is your ${selectedPref.key}?` 
+            question: selectedPref.type === "date"
+              ? `When is your ${selectedPref.key}?`
               : `What is your ${selectedPref.key}?`,
             options: selectedPref.options || []
           } : q
         )
       }));
+
+      // Clear key and question errors when preference is selected (since both fields get filled)
+      if (errors.questions) {
+        const questionIndex = formData.questions.findIndex(q => q.id === questionId);
+        if (errors.questions[questionIndex] && (errors.questions[questionIndex].key || errors.questions[questionIndex].question)) {
+          setErrors(prev => {
+            const newQuestionErrors = { ...prev.questions };
+            if (newQuestionErrors[questionIndex]) {
+              const { key, question, ...otherErrors } = newQuestionErrors[questionIndex];
+              if (Object.keys(otherErrors).length > 0) {
+                newQuestionErrors[questionIndex] = otherErrors;
+              } else {
+                delete newQuestionErrors[questionIndex];
+              }
+            }
+            return {
+              ...prev,
+              questions: Object.keys(newQuestionErrors).length > 0 ? newQuestionErrors : undefined
+            };
+          });
+        }
+      }
     }
   };
 
   const togglePreferenceDropdown = (questionIndex, isOpen) => {
     const newDropdownState = [...isPreferenceDropdownOpen];
-    newDropdownState[questionIndex] = isOpen !== undefined 
-      ? isOpen 
+    newDropdownState[questionIndex] = isOpen !== undefined
+      ? isOpen
       : !newDropdownState[questionIndex];
     setIsPreferenceDropdownOpen(newDropdownState);
   };
@@ -115,6 +138,15 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
       ...prev,
       [field]: value,
     }));
+
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const handleQuestionChange = (questionId, field, value) => {
@@ -124,6 +156,29 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
         q.id === questionId ? { ...q, [field]: value } : q
       ),
     }));
+
+    // Clear question error when user starts typing
+    if (errors.questions) {
+      const questionIndex = formData.questions.findIndex(q => q.id === questionId);
+      if (errors.questions[questionIndex] && errors.questions[questionIndex][field]) {
+        setErrors(prev => {
+          const newQuestionErrors = { ...prev.questions };
+          if (newQuestionErrors[questionIndex]) {
+            const updatedQuestionErrors = { ...newQuestionErrors[questionIndex] };
+            delete updatedQuestionErrors[field];
+            if (Object.keys(updatedQuestionErrors).length > 0) {
+              newQuestionErrors[questionIndex] = updatedQuestionErrors;
+            } else {
+              delete newQuestionErrors[questionIndex];
+            }
+          }
+          return {
+            ...prev,
+            questions: Object.keys(newQuestionErrors).length > 0 ? newQuestionErrors : undefined
+          };
+        });
+      }
+    }
   };
 
   const handleOptionChange = (questionId, optionIndex, value) => {
@@ -149,6 +204,29 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
         q.id === questionId ? { ...q, options: [...q.options, ""] } : q
       ),
     }));
+
+    // Clear options error when option is added
+    if (errors.questions) {
+      const questionIndex = formData.questions.findIndex(q => q.id === questionId);
+      if (errors.questions[questionIndex] && errors.questions[questionIndex].options) {
+        setErrors(prev => {
+          const newQuestionErrors = { ...prev.questions };
+          if (newQuestionErrors[questionIndex]) {
+            const updatedQuestionErrors = { ...newQuestionErrors[questionIndex] };
+            delete updatedQuestionErrors.options;
+            if (Object.keys(updatedQuestionErrors).length > 0) {
+              newQuestionErrors[questionIndex] = updatedQuestionErrors;
+            } else {
+              delete newQuestionErrors[questionIndex];
+            }
+          }
+          return {
+            ...prev,
+            questions: Object.keys(newQuestionErrors).length > 0 ? newQuestionErrors : undefined
+          };
+        });
+      }
+    }
   };
 
   const removeOption = (questionId, optionIndex) => {
@@ -191,42 +269,67 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Validate title
+    if (!formData.title.trim()) {
+      newErrors.title = 'Quiz title is required';
+    }
+
+    // Validate loyalty points
+    if (!formData.loyaltyPoints) {
+      newErrors.loyaltyPoints = 'Loyalty points is required';
+    } else if (isNaN(formData.loyaltyPoints) || parseInt(formData.loyaltyPoints) <= 0) {
+      newErrors.loyaltyPoints = 'Loyalty points must be a positive number';
+    }
+
+    // Validate questions
+    const questionErrors = {};
+    formData.questions.forEach((question, index) => {
+      const questionError = {};
+
+      if (!question.key.trim()) {
+        questionError.key = 'Please select a preference key';
+      }
+
+      if (!question.question.trim()) {
+        questionError.question = 'Question text is required';
+      }
+
+      if (question.type === 'options' && question.options.length === 0) {
+        questionError.options = 'At least one option is required for multiple choice questions';
+      }
+
+      if (Object.keys(questionError).length > 0) {
+        questionErrors[index] = questionError;
+      }
+    });
+
+    if (Object.keys(questionErrors).length > 0) {
+      newErrors.questions = questionErrors;
+    }
+
+    console.log('Validation errors:', newErrors);
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (isSubmitting) return; // Prevent double submission
-    
-    // Validate required fields
-    if (!formData.title.trim()) {
-      console.error('Quiz title is required');
+
+    // Validate form
+    if (!validateForm()) {
       return;
-    }
-    
-    if (!formData.loyaltyPoints || formData.loyaltyPoints <= 0) {
-      console.error('Loyalty points must be a positive number');
-      return;
-    }
-    
-    // Validate questions
-    for (const question of formData.questions) {
-      if (!question.key.trim()) {
-        console.error('All questions must have a preference key selected');
-        return;
-      }
-      if (!question.question.trim()) {
-        console.error('All questions must have question text');
-        return;
-      }
-      if (question.type === 'options' && question.options.length === 0) {
-        console.error('Questions with options type must have at least one option');
-        return;
-      }
     }
 
     const campaignData = {
       campaignName: formData.title,
       description: formData.description,
       loyaltyPoints: parseInt(formData.loyaltyPoints),
+      quizFor: "quiz",
       questions: formData.questions.map(q => ({
         key: q.key,
         question: q.question,
@@ -238,11 +341,11 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
     };
 
     setIsSubmitting(true);
-    
+
     try {
       const response = await api.post('/api/quiz', campaignData);
       console.log('Quiz created successfully:', response.data);
-      
+
       // Call the onSave callback with the response data
       if (onSave) {
         onSave(response.data);
@@ -262,13 +365,19 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
         <h2 className="text-2xl font-bold text-slate-800">Create Quiz</h2>
         <div className="flex items-center space-x-4">
           <span className="text-slate-600">Loyalty Point</span>
-          <input
-            type="text"
-            placeholder="Enter Value"
-            value={formData.loyaltyPoints}
-            onChange={(e) => handleInputChange("loyaltyPoints", e.target.value)}
-            className="px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
-          />
+          <div className="flex flex-col">
+            <input
+              type="text"
+              placeholder="Enter Value"
+              value={formData.loyaltyPoints}
+              onChange={(e) => handleInputChange("loyaltyPoints", e.target.value)}
+              className={`px-3 py-1 border rounded-md focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.loyaltyPoints ? 'border-red-500' : 'border-gray-300'
+                }`}
+            />
+            {errors.loyaltyPoints && (
+              <span className="text-red-500 text-xs mt-1">{String(errors.loyaltyPoints)}</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -282,9 +391,13 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
             placeholder="Enter quiz title"
             value={formData.title}
             onChange={(e) => handleInputChange("title", e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
-            required
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.title ? 'border-red-500' : 'border-gray-300'
+              }`}
+          // required
           />
+          {errors.title && (
+            <span className="text-red-500 text-sm mt-1 block">{String(errors.title)}</span>
+          )}
         </div>
 
         {/* <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
@@ -307,40 +420,48 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
             className="bg-[#31316612] rounded-lg p-6 border border-gray-200"
           >
             <div className="flex justify-between items-start mb-4">
-              <div className="flex w-full justify-between items-center">
+              <div className="flex w-full justify-between items-start">
                 <div>
                   <h3 className="text-lg font-semibold text-slate-800">
                     Question {qIndex + 1}
                   </h3>
                 </div>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => togglePreferenceDropdown(qIndex)}
-                    className="flex items-center justify-between w-48 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
-                  >
-                    <span className="text-sm truncate">
-                      {question.key || "Select a preference"}
-                    </span>
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  </button>
+                <div className="flex flex-col items-end">
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => togglePreferenceDropdown(qIndex)}
+                      className={`flex items-center justify-between w-48 px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.questions?.[qIndex]?.key ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                    >
+                      <span className="text-sm truncate">
+                        {question.key || "Select a preference"}
+                      </span>
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    </button>
 
-                  {isPreferenceDropdownOpen[qIndex] && (
-                    <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
-                      {allPreferences.map((pref) => (
-                        <button
-                          key={`${pref.key}-${qIndex}`}
-                          type="button"
-                          onClick={() => {
-                            handlePreferenceKeyChange(question.id, pref.key);
-                            togglePreferenceDropdown(qIndex, false);
-                          }}
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 focus:bg-gray-50 outline-none truncate"
-                        >
-                          {pref.key}
-                        </button>
-                      ))}
-                    </div>
+                    {isPreferenceDropdownOpen[qIndex] && (
+                      <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+                        {allPreferences.map((pref) => (
+                          <button
+                            key={`${pref.key}-${qIndex}`}
+                            type="button"
+                            onClick={() => {
+                              handlePreferenceKeyChange(question.id, pref.key);
+                              togglePreferenceDropdown(qIndex, false);
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 focus:bg-gray-50 outline-none truncate"
+                          >
+                            {pref.key}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {errors.questions?.[qIndex]?.key && (
+                    <span className="text-red-500 text-xs mt-1 w-48 text-right">
+                      {String(errors.questions[qIndex].key)}
+                    </span>
                   )}
                 </div>
               </div>
@@ -365,9 +486,15 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
                 onChange={(e) =>
                   handleQuestionChange(question.id, "question", e.target.value)
                 }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white"
-                required
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white ${errors.questions?.[qIndex]?.question ? 'border-red-500' : 'border-gray-300'
+                  }`}
+              // required
               />
+              {errors.questions?.[qIndex]?.question && (
+                <span className="text-red-500 text-sm mt-1 block">
+                  {String(errors.questions[qIndex].question)}
+                </span>
+              )}
             </div>
 
             {question.type === "options" && (
@@ -405,19 +532,23 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
                   </div>
                 ))}
                 <AddOption onClick={() => addOption(question.id)} />
+                {errors.questions?.[qIndex]?.options && (
+                  <span className="text-red-500 text-sm mt-1 block">
+                    {String(errors.questions[qIndex].options)}
+                  </span>
+                )}
               </div>
             )}
 
             {question.type !== "options" && (
               <div>
                 <input
-                  type={question.type === "date" ? "date" : 
-                        question.type === "number" ? "number" : 
-                        question.type === "boolean" ? "checkbox" : "text"}
+                  type={question.type === "date" ? "date" :
+                    question.type === "number" ? "number" :
+                      question.type === "boolean" ? "checkbox" : "text"}
                   placeholder={`Enter your ${question.key || "answer"}`}
-                  className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white ${
-                    question.type === "checkbox" ? "w-auto" : ""
-                  }`}
+                  className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white ${question.type === "checkbox" ? "w-auto" : ""
+                    }`}
                 />
               </div>
             )}
@@ -444,11 +575,10 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`px-6 py-2 text-white rounded-lg transition-colors ${
-              isSubmitting 
-                ? 'bg-gray-400 cursor-not-allowed' 
+            className={`px-6 py-2 text-white rounded-lg transition-colors ${isSubmitting
+                ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-pink-600 hover:bg-pink-700'
-            }`}
+              }`}
           >
             {isSubmitting ? 'Creating Quiz...' : 'Create Quiz'}
           </button>
