@@ -4,6 +4,15 @@ import AddOption from "../common/AddOption";
 import api from "../../api/apiconfig";
 
 const QuizForm = ({ campaign, onSave, onCancel }) => {
+  // Helper function to safely render values and prevent object rendering errors
+  const safeRender = (value) => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'object') {
+      console.error('Attempted to render object:', value);
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
   const [formData, setFormData] = useState({
     title: "",
     // description: "",
@@ -87,8 +96,9 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
         if (errors.questions[questionIndex] && (errors.questions[questionIndex].key || errors.questions[questionIndex].question)) {
           setErrors(prev => {
             const newQuestionErrors = { ...prev.questions };
-            if (newQuestionErrors[questionIndex]) {
-              const { key, question, ...otherErrors } = newQuestionErrors[questionIndex];
+            if (newQuestionErrors[questionIndex] && typeof newQuestionErrors[questionIndex] === 'object') {
+              const currentErrors = newQuestionErrors[questionIndex];
+              const { key, question, ...otherErrors } = currentErrors;
               if (Object.keys(otherErrors).length > 0) {
                 newQuestionErrors[questionIndex] = otherErrors;
               } else {
@@ -375,7 +385,7 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
                 }`}
             />
             {errors.loyaltyPoints && (
-              <span className="text-red-500 text-xs mt-1">{String(errors.loyaltyPoints)}</span>
+              <span className="text-red-500 text-xs mt-1">{safeRender(errors.loyaltyPoints)}</span>
             )}
           </div>
         </div>
@@ -396,7 +406,7 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
           // required
           />
           {errors.title && (
-            <span className="text-red-500 text-sm mt-1 block">{String(errors.title)}</span>
+            <span className="text-red-500 text-sm mt-1 block">{safeRender(errors.title)}</span>
           )}
         </div>
 
@@ -460,7 +470,7 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
                   </div>
                   {errors.questions?.[qIndex]?.key && (
                     <span className="text-red-500 text-xs mt-1 w-48 text-right">
-                      {String(errors.questions[qIndex].key)}
+                      {safeRender(errors.questions[qIndex].key)}
                     </span>
                   )}
                 </div>
@@ -492,7 +502,7 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
               />
               {errors.questions?.[qIndex]?.question && (
                 <span className="text-red-500 text-sm mt-1 block">
-                  {String(errors.questions[qIndex].question)}
+                  {safeRender(errors.questions[qIndex].question)}
                 </span>
               )}
             </div>
@@ -534,7 +544,7 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
                 <AddOption onClick={() => addOption(question.id)} />
                 {errors.questions?.[qIndex]?.options && (
                   <span className="text-red-500 text-sm mt-1 block">
-                    {String(errors.questions[qIndex].options)}
+                    {safeRender(errors.questions[qIndex].options)}
                   </span>
                 )}
               </div>
