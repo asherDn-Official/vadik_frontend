@@ -52,8 +52,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
   const searchProducts = async (query, productId) => {
     try {
-      const response = await axios.get(
-        `https://app.vadik.ai/api/inventory?retailerId=6856350030bcee9b82be4c17&search=${query}`
+      const response = await api.get(
+        `/api/inventory?retailerId=6856350030bcee9b82be4c17&search=${query}`
       );
       setProductSearchResults((prev) => ({
         ...prev,
