@@ -9,6 +9,7 @@ import ScratchCardList from "../components/customeroppertunites/ScratchCardList"
 import PersonalizationCampaign from "../components/customeroppertunites/PersonalizationCampaign";
 import CustomerRecommendation from "../components/customeroppertunites/CustomerRecommendation";
 import StoreRecommendation from "../components/customeroppertunites/StoreRecommendation";
+import EngagementActivities from "../components/customeroppertunites/EngagementActivities";
 
 const CustomerOpportunities = () => {
   const [activeTab, setActiveTab] = useState("engagement");
@@ -168,11 +169,10 @@ const CustomerOpportunities = () => {
         <div className="flex justify-center mt-8 space-x-8">
           <button
             onClick={() => setActiveTab("engagement")}
-            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${
-              activeTab === "engagement"
+            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${activeTab === "engagement"
                 ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
-            }`}
+              }`}
           >
             <div className="w-8 h-8 rounded-lg flex justify-center items-center">
               {/* <div className="w-4 h-4 bg-white rounded"></div> */}
@@ -190,11 +190,10 @@ const CustomerOpportunities = () => {
 
           <button
             onClick={() => setActiveTab("campaign")}
-            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${
-              activeTab === "campaign"
+            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${activeTab === "campaign"
                 ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
-            }`}
+              }`}
           >
             <div className="w-8 h-8  rounded-lg flex items-center justify-center">
               <img src="../assets/cus-2.png" alt="" />
@@ -211,11 +210,10 @@ const CustomerOpportunities = () => {
 
           <button
             onClick={() => setActiveTab("customer-recommendation")}
-            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${
-              activeTab === "customer-recommendation"
+            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${activeTab === "customer-recommendation"
                 ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
-            }`}
+              }`}
           >
             <div className="w-8 h-8  rounded-lg flex items-center justify-center">
               <img src="../assets/cus-3.png" alt="" />
@@ -232,11 +230,10 @@ const CustomerOpportunities = () => {
 
           <button
             onClick={() => setActiveTab("store-recommendation")}
-            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${
-              activeTab === "store-recommendation"
+            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${activeTab === "store-recommendation"
                 ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
-            }`}
+              }`}
           >
             <div className="w-8 h-8  rounded-lg flex items-center justify-center">
               <img src="../assets/cus-4.png" alt="" />
@@ -256,81 +253,17 @@ const CustomerOpportunities = () => {
       {/* Content */}
       <div className="p-6">
         {activeTab === "engagement" && (
-          <div className="max-w-6xl mx-auto">
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-slate-800 mb-2">
-                Select Activities
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Create fun activities like quiz, scratch card, or spin wheel to
-                interact with your customers and learn their preferences.
-              </p>
-
-              <div className="max-w-md">
-                <select
-                  value={selectedCampaign}
-                  onChange={(e) => setSelectedCampaign(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
-                >
-                  <option value="quiz">Quiz</option>
-                  <option value="spinwheel">Spin Wheel</option>
-                  <option value="scratchcard">Scratch Card</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-slate-800">
-                {selectedCampaign === "quiz"
-                  ? quizActivities.length
-                  : selectedCampaign === "spinwheel"
-                  ? spinWheelActivities.length
-                  : scratchCardActivities.length}{" "}
-                {selectedCampaign === "quiz"
-                  ? "Quiz"
-                  : selectedCampaign === "spinwheel"
-                  ? "Spin Wheel"
-                  : "Scratch Card"}{" "}
-                Activities
-              </h3>
-              <button
-                onClick={handleCreateCampaign}
-                className="flex items-center text-[#313166] px-4 py-2 bg-white border border-[#313166] rounded-[10px] hover:bg-gray-50 transition-colors"
-              >
-                <Plus className="w-4 h-4 mr-2 text-[#313166]" />
-                Create{" "}
-                {selectedCampaign === "quiz"
-                  ? "Quiz"
-                  : selectedCampaign === "spinwheel"
-                  ? "Spin Wheel"
-                  : "Scratch Card"}
-              </button>
-            </div>
-
-            {selectedCampaign === "quiz" && (
-              <QuizList
-                activities={quizActivities}
-                onEdit={handleEditCampaign}
-                onDelete={handleDeleteCampaign}
-              />
-            )}
-
-            {selectedCampaign === "spinwheel" && (
-              <SpinWheelList
-                activities={spinWheelActivities}
-                onEdit={handleEditCampaign}
-                onDelete={handleDeleteCampaign}
-              />
-            )}
-
-            {selectedCampaign === "scratchcard" && (
-              <ScratchCardList
-                activities={scratchCardActivities}
-                onEdit={handleEditCampaign}
-                onDelete={handleDeleteCampaign}
-              />
-            )}
-          </div>
+          <EngagementActivities
+            activeTab={activeTab}
+            selectedCampaign={selectedCampaign}
+            setSelectedCampaign={setSelectedCampaign}
+            quizActivities={quizActivities}
+            spinWheelActivities={spinWheelActivities}
+            scratchCardActivities={scratchCardActivities}
+            handleCreateCampaign={handleCreateCampaign}
+            handleEditCampaign={handleEditCampaign}
+            handleDeleteCampaign={handleDeleteCampaign}
+          />
         )}
 
         {activeTab === "campaign" && (
