@@ -17,27 +17,96 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
       },
     ],
   });
+  
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
   });
-  const [perference, setPerference] = useState([]);
+  
+  const [allPreferenceKeys, setAllPreferenceKeys] = useState([]);
+  const [selectedPreferenceKey, setSelectedPreferenceKey] = useState("");
+  const [selectedPreferenceType, setSelectedPreferenceType] = useState("");
 
   async function getPerferences() {
     try {
-      const response = await api.get(`/api/customer-preferences/${retailerId}`)
-      const perference = response?.data
-      console.log('perference', perference);
-      setPerference(perference);
+      const response = await api.get(`/api/customer-preferences/${retailerId}`);
+      const preference = response?.data;
+      
+      // Combine all preference keys from different categories
+      const combinedKeys = [
+        ...(preference.additionalData?.map(item => ({
+          key: item.key,
+          type: item.type,
+          options: item.options || []
+        })) || []),
+        ...(preference.advancedDetails?.map(item => ({
+          key: item.key,
+          type: item.type,
+          options: item.options || []
+        })) || []),
+        ...(preference.advancedPrivacyDetails?.map(item => ({
+          key: item.key,
+          type: item.type,
+          options: item.options || []
+        })) || [])
+      ];
+      
+      setAllPreferenceKeys(combinedKeys);
+      
     } catch (error) {
       showToast(error.response.data.message, 'error');
     }
   }
 
   useEffect(() => {
-    // Fetch quizzes data from the API and update state here
     getPerferences();
   }, []);
 
+  const handlePreferenceKeyChange = (e) => {
+    const selectedKey = e.target.value;
+    setSelectedPreferenceKey(selectedKey);
+    
+    // Find the selected preference to get its type and options
+    const selectedPref = allPreferenceKeys.find(item => item.key === selectedKey);
+    if (selectedPref) {
+      setSelectedPreferenceType(selectedPref.type);
+      
+      // Update the first question with the selected preference
+      const firstQuestionId = formData.questions[0].id;
+      
+      if (selectedPref.type === "options") {
+        // For options type, set the question type to MCQ and fill options
+        handleQuestionChange(firstQuestionId, "type", "mcq");
+        handleQuestionChange(firstQuestionId, "question", `What is your ${selectedKey}?`);
+        
+        // Set the options from the preference
+        setFormData(prev => ({
+          ...prev,
+          questions: prev.questions.map((q, idx) => 
+            idx === 0 ? { 
+              ...q, 
+              options: selectedPref.options,
+              type: "mcq"
+            } : q
+          )
+        }));
+      } else if (selectedPref.type === "date") {
+        // For date type, set the question to short answer
+        handleQuestionChange(firstQuestionId, "type", "short-answer");
+        handleQuestionChange(firstQuestionId, "question", `When is your ${selectedKey}?`);
+        handleQuestionChange(firstQuestionId, "options", [""]);
+      } else {
+        // For string type, set the question to short answer
+        handleQuestionChange(firstQuestionId, "type", "short-answer");
+        handleQuestionChange(firstQuestionId, "question", `What is your ${selectedKey}?`);
+        handleQuestionChange(firstQuestionId, "options", [""]);
+      }
+    }
+  };
+
+  
+
+
+  // ... rest of your existing handlers ...
 
   useEffect(() => {
     if (campaign) {
@@ -137,6 +206,10 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
       questions: formData.questions.length,
       questionsData: formData.questions,
       loyaltyPoints: formData.loyaltyPoints,
+      selectedPreference: {
+        key: selectedPreferenceKey,
+        type: selectedPreferenceType
+      }
     };
     onSave(campaignData);
   };
@@ -172,6 +245,32 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
           />
         </div>
 
+        {/* Combined Preferences Dropdown */}
+        {allPreferenceKeys.length > 0 && (
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <h3 className="text-lg font-semibold mb-4">Customer Preferences</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Preference to Auto-fill Question
+              </label>
+              <select
+                value={selectedPreferenceKey}
+                onChange={handlePreferenceKeyChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+              >
+                <option value="">Select a preference to auto-fill question</option>
+                {allPreferenceKeys.map((item) => (
+                  <option key={item.key} value={item.key}>
+                    {item.key}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* Questions Section */}
         {formData.questions.map((question, qIndex) => (
           <div
             key={question.id}
