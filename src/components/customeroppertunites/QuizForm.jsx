@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, X, Check } from "lucide-react";
-import QuestionTypeDropdown from "../common/QuestionTypeDropdown";
+import { Plus, X, Check, ChevronDown } from "lucide-react";
 import AddOption from "../common/AddOption";
 import api from "../../api/apiconfig";
 
@@ -17,20 +16,21 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
       },
     ],
   });
-  
+
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
   });
-  
+
   const [allPreferenceKeys, setAllPreferenceKeys] = useState([]);
   const [selectedPreferenceKey, setSelectedPreferenceKey] = useState("");
   const [selectedPreferenceType, setSelectedPreferenceType] = useState("");
+  const [isPreferenceDropdownOpen, setIsPreferenceDropdownOpen] = useState(false);
 
   async function getPerferences() {
     try {
       const response = await api.get(`/api/customer-preferences/${retailerId}`);
       const preference = response?.data;
-      
+
       // Combine all preference keys from different categories
       const combinedKeys = [
         ...(preference.additionalData?.map(item => ({
@@ -49,9 +49,9 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
           options: item.options || []
         })) || [])
       ];
-      
+
       setAllPreferenceKeys(combinedKeys);
-      
+
     } catch (error) {
       showToast(error.response.data.message, 'error');
     }
@@ -61,29 +61,29 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
     getPerferences();
   }, []);
 
-  const handlePreferenceKeyChange = (e) => {
-    const selectedKey = e.target.value;
-    setSelectedPreferenceKey(selectedKey);
-    
+  const handlePreferenceKeyChange = (key) => {
+    setSelectedPreferenceKey(key);
+    setIsPreferenceDropdownOpen(false);
+
     // Find the selected preference to get its type and options
-    const selectedPref = allPreferenceKeys.find(item => item.key === selectedKey);
+    const selectedPref = allPreferenceKeys.find(item => item.key === key);
     if (selectedPref) {
       setSelectedPreferenceType(selectedPref.type);
-      
+
       // Update the first question with the selected preference
       const firstQuestionId = formData.questions[0].id;
-      
+
       if (selectedPref.type === "options") {
         // For options type, set the question type to MCQ and fill options
         handleQuestionChange(firstQuestionId, "type", "mcq");
-        handleQuestionChange(firstQuestionId, "question", `What is your ${selectedKey}?`);
-        
+        handleQuestionChange(firstQuestionId, "question", `What is your ${key}?`);
+
         // Set the options from the preference
         setFormData(prev => ({
           ...prev,
-          questions: prev.questions.map((q, idx) => 
-            idx === 0 ? { 
-              ...q, 
+          questions: prev.questions.map((q, idx) =>
+            idx === 0 ? {
+              ...q,
               options: selectedPref.options,
               type: "mcq"
             } : q
@@ -92,19 +92,16 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
       } else if (selectedPref.type === "date") {
         // For date type, set the question to short answer
         handleQuestionChange(firstQuestionId, "type", "short-answer");
-        handleQuestionChange(firstQuestionId, "question", `When is your ${selectedKey}?`);
+        handleQuestionChange(firstQuestionId, "question", `When is your ${key}?`);
         handleQuestionChange(firstQuestionId, "options", [""]);
       } else {
         // For string type, set the question to short answer
         handleQuestionChange(firstQuestionId, "type", "short-answer");
-        handleQuestionChange(firstQuestionId, "question", `What is your ${selectedKey}?`);
+        handleQuestionChange(firstQuestionId, "question", `What is your ${key}?`);
         handleQuestionChange(firstQuestionId, "options", [""]);
       }
     }
   };
-
-  
-
 
   // ... rest of your existing handlers ...
 
@@ -246,29 +243,44 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
         </div>
 
         {/* Combined Preferences Dropdown */}
-        {allPreferenceKeys.length > 0 && (
+        {/* {allPreferenceKeys.length > 0 && (
           <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
             <h3 className="text-lg font-semibold mb-4">Customer Preferences</h3>
-            
+
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select Preference to Auto-fill Question
               </label>
-              <select
-                value={selectedPreferenceKey}
-                onChange={handlePreferenceKeyChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
-              >
-                <option value="">Select a preference to auto-fill question</option>
-                {allPreferenceKeys.map((item) => (
-                  <option key={item.key} value={item.key}>
-                    {item.key}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsPreferenceDropdownOpen(!isPreferenceDropdownOpen)}
+                  className="flex items-center justify-between w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+                >
+                  <span className="text-sm">
+                    {selectedPreferenceKey || "Select a preference"}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </button>
+
+                {isPreferenceDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+                    {allPreferenceKeys.map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => handlePreferenceKeyChange(item.key)}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 focus:bg-gray-50 outline-none"
+                      >
+                        {item.key}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Questions Section */}
         {formData.questions.map((question, qIndex) => (
@@ -277,16 +289,41 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
             className="bg-[#31316612] rounded-lg p-6 border border-gray-200"
           >
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-semibold text-slate-800">
-                Question {qIndex + 1}
-              </h3>
+              <div className="flex w-full  justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    Question {qIndex + 1}
+                  </h3>
+                </div>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsPreferenceDropdownOpen(!isPreferenceDropdownOpen)}
+                    className="flex items-center justify-between w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+                  >
+                    <span className="text-sm">
+                      {selectedPreferenceKey || "Select a preference"}
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </button>
+
+                  {isPreferenceDropdownOpen && (
+                    <div className="absolute w-36 top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+                      {allPreferenceKeys.map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => handlePreferenceKeyChange(item.key)}
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 focus:bg-gray-50 outline-none"
+                        >
+                          {item.key}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className="flex items-center space-x-2">
-                <QuestionTypeDropdown
-                  value={question.type}
-                  onChange={(type) =>
-                    handleQuestionChange(question.id, "type", type)
-                  }
-                />
                 {formData.questions.length > 1 && (
                   <button
                     type="button"
