@@ -25,12 +25,19 @@ const Quiz = () => {
   };
 
   const handleSave = (quizData) => {
+    // Transform the quiz data to match the expected format for QuizList
+    const transformedQuiz = {
+      id: editingQuiz ? editingQuiz.id : Date.now(),
+      title: quizData.title || quizData.campaignName || 'Untitled Quiz',
+      questions: Array.isArray(quizData.questions) ? quizData.questions.length : (quizData.questions || 0)
+    };
+
     if (editingQuiz) {
       setQuizzes(prev =>
-        prev.map(q => q.id === editingQuiz.id ? { ...quizData, id: editingQuiz.id } : q)
+        prev.map(q => q.id === editingQuiz.id ? transformedQuiz : q)
       );
     } else {
-      setQuizzes(prev => [...prev, { ...quizData, id: Date.now() }]);
+      setQuizzes(prev => [...prev, transformedQuiz]);
     }
     setShowForm(false);
   };

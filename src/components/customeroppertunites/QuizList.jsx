@@ -2,6 +2,16 @@ import React from "react";
 import { Edit, Trash2 } from "lucide-react";
 
 const QuizList = ({ activities, onEdit, onDelete }) => {
+  // Helper function to safely render values
+  const safeRender = (value) => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'object') {
+      console.error('Attempted to render object in QuizList:', value);
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+
   return (
     <div className="space-y-4">
       {activities.map((campaign) => (
@@ -19,10 +29,10 @@ const QuizList = ({ activities, onEdit, onDelete }) => {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-slate-800">
-                  {campaign.title}
+                  {safeRender(campaign.title)}
                 </h3>
                 <p className="text-gray-600">
-                  No Of Questions : {campaign.questions}
+                  No Of Questions : {safeRender(campaign.questions)}
                 </p>
               </div>
             </div>
