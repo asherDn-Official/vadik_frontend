@@ -133,16 +133,16 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
         title: quiz.campaignName || "",
         description: quiz.description || "",
         loyaltyPoints: quiz.loyaltyPoints || "",
-        questions: quiz.questions || [
-          {
-            id: 1,
-            key: "",
-            question: "",
-            type: "string",
-            section: "additionalData",
-            options: [],
-          },
-        ],
+        questions: (quiz.questions || []).map((q, idx) => ({
+          // ensure local editing id exists for each question
+          id: typeof q.id !== 'undefined' ? q.id : Date.now() + idx,
+          key: q.key || "",
+          question: q.question || "",
+          type: q.type || "string",
+          section: q.section || "additionalData",
+          options: Array.isArray(q.options) ? q.options : [],
+          iconUrl: q.iconUrl || ""
+        }))
       });
     }
   }, [quiz]);
@@ -202,7 +202,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
         q.id === questionId
           ? {
             ...q,
-            options: q.options.map((opt, idx) =>
+            options: (Array.isArray(q.options) ? q.options : []).map((opt, idx) =>
               idx === optionIndex ? value : opt
             ),
           }
@@ -215,7 +215,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
     setFormData(prev => ({
       ...prev,
       questions: prev.questions.map(q =>
-        q.id === questionId ? { ...q, options: [...q.options, ""] } : q
+        q.id === questionId ? { ...q, options: [...(Array.isArray(q.options) ? q.options : []), ""] } : q
       ),
     }));
 
@@ -248,7 +248,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
       ...prev,
       questions: prev.questions.map(q =>
         q.id === questionId
-          ? { ...q, options: q.options.filter((_, idx) => idx !== optionIndex) }
+          ? { ...q, options: (Array.isArray(q.options) ? q.options : []).filter((_, idx) => idx !== optionIndex) }
           : q
       ),
     }));
@@ -311,7 +311,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
         questionError.question = 'Question text is required';
       }
 
-      if (question.type === 'options' && question.options.length === 0) {
+      if (question.type === 'options' && (!Array.isArray(question.options) || question.options.length === 0)) {
         questionError.options = 'At least one option is required for multiple choice questions';
       }
 
@@ -339,7 +339,8 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
       return;
     }
 
-    const quizData = {
+    const baseData = {
+      campaignName: formData.title,
       quizName: formData.title,
       description: formData.description,
       loyaltyPoints: parseInt(formData.loyaltyPoints),
@@ -349,7 +350,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
         question: q.question,
         type: q.type,
         section: q.section,
-        ...(q.options.length > 0 && { options: q.options }),
+        ...(Array.isArray(q.options) && q.options.length > 0 && { options: q.options }),
         ...(q.iconUrl && { iconUrl: q.iconUrl })
       }))
     };
@@ -357,17 +358,28 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
     setIsSubmitting(true);
 
     try {
-      const response = await api.post('/api/quiz', quizData);
-      console.log('Quiz created successfully:', response.data);
+      let response;
+      if (quiz && quiz._id) {
+        const payload = {
+          ...baseData,
+          retailerId,
+          _id: quiz._id,
+          isActive: typeof quiz.isActive === 'boolean' ? quiz.isActive : true,
+        };
+        response = await api.put(`/api/quiz/${quiz._id}`, payload);
+        console.log('Quiz updated successfully:', response.data);
+      } else {
+        response = await api.post('/api/quiz', { ...baseData, retailerId });
+        console.log('Quiz created successfully:', response.data);
+      }
 
-      // Call the onSave callback with the response data
       if (onSave) {
-        onSave(response.data);
+        onSave();
       }
     } catch (error) {
-      console.error('Error creating quiz:', error.response?.data?.message || error.message);
+      console.error('Error saving quiz:', error.response?.data?.message || error.message);
       // You can replace this with proper toast notification
-      // showToast(error.response?.data?.message || 'Failed to create quiz', 'error');
+      // showToast(error.response?.data?.message || 'Failed to save quiz', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -376,7 +388,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
   return (
     <div className="mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">Create Quiz</h2>
+        <h2 className="text-2xl font-bold text-slate-800">{quiz ? 'Edit Quiz' : 'Create Quiz'}</h2>
         <div className="flex items-center space-x-4">
           <span className="text-slate-600">Loyalty Point</span>
           <div className="flex flex-col">
@@ -594,7 +606,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
                 : 'bg-pink-600 hover:bg-pink-700'
               }`}
           >
-            {isSubmitting ? 'Creating Quiz...' : 'Create Quiz'}
+            {isSubmitting ? (quiz ? 'Updating Quiz...' : 'Creating Quiz...') : (quiz ? 'Update Quiz' : 'Create Quiz')}
           </button>
         </div>
       </form>

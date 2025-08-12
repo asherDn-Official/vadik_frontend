@@ -8,11 +8,7 @@ import { get } from "react-hook-form";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 
 const Quiz = () => {
-  const [quizzes, setQuizzes] = useState([
-    { id: 1, title: "Special Day Quizz", questions: 8 },
-    { id: 2, title: "Favourite Product Quizz", questions: 6 },
-    { id: 3, title: "Personal Details Quiz", questions: 3 },
-  ]);
+  const [quizzes, setQuizzes] = useState();
   const [showForm, setShowForm] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState(null);
 
@@ -39,22 +35,11 @@ const Quiz = () => {
     setShowForm(true);
   };
 
-  const handleSave = (quizData) => {
-    // Transform the quiz data to match the expected format for QuizList
-    const transformedQuiz = {
-      id: editingQuiz ? editingQuiz.id : Date.now(),
-      title: quizData.title || quizData.campaignName || 'Untitled Quiz',
-      questions: Array.isArray(quizData.questions) ? quizData.questions.length : (quizData.questions || 0)
-    };
-
-    if (editingQuiz) {
-      setQuizzes(prev =>
-        prev.map(q => q.id === editingQuiz.id ? transformedQuiz : q)
-      );
-    } else {
-      setQuizzes(prev => [...prev, transformedQuiz]);
-    }
+  const handleSave = () => {
+    // After create or update, refresh from server to keep data shape consistent
+    getQuizeList();
     setShowForm(false);
+    setEditingQuiz(null);
   };
 
   const handleDelete = (id) => {
@@ -95,7 +80,7 @@ const Quiz = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-slate-800">
-          {quizzes.length} Quiz Activities
+          {quizzes?.length} Quiz Activities
         </h3>
         <button
           onClick={handleCreate}

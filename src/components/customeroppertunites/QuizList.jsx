@@ -14,9 +14,9 @@ const QuizList = ({ activities, onEdit, onDelete }) => {
 
   return (
     <div className="space-y-4">
-      {activities.map((campaign) => (
+      {activities?.map((campaign) => (
         <div
-          key={campaign.id}
+          key={campaign._id}
           className="bg-white rounded-lg p-6 border border-gray-300 hover:shadow-md transition-shadow"
         >
           <div className="flex items-center justify-between">
@@ -29,10 +29,10 @@ const QuizList = ({ activities, onEdit, onDelete }) => {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-slate-800">
-                  {safeRender(campaign.campaignName)}
+                  {safeRender(campaign?.campaignName)}
                 </h3>
                 <p className="text-gray-600">
-                  No Of Questions : {safeRender(campaign.questions.length)}
+                  No Of Questions : {safeRender(campaign?.questions?.length)}
                 </p>
               </div>
             </div>
@@ -55,7 +55,7 @@ const QuizList = ({ activities, onEdit, onDelete }) => {
         </div>
       ))}
 
-      {activities.length === 0 && (
+      {activities?.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           <p>
             No quiz activities created yet. Click "Create Quiz" to get started.
