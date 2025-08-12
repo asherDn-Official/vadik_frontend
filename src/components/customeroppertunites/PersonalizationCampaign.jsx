@@ -4,20 +4,21 @@ import FilterPanel from "../customerInsigth/FilterPanel";
 import CustomerList from "../customerInsigth/CustomerList";
 import api from "../../api/apiconfig";
 
-const PersonalizationCampaign = ({
-  quizActivities,
-  spinWheelActivities,
-  scratchCardActivities,
-}) => {
-  // Campaign selection state (unchanged)
+const PersonalizationCampaign = () => {
+  // Campaign selection state
   const [selectedCampaignType, setSelectedCampaignType] = useState("");
-  const [selectedCampaign, setSelectedCampaign] = useState("");
+  const [selectedCampaign, setSelectedCampaign] = useState(""); //id
 
-  // Sending options (unchanged)
+  // Activities data state
+  const [quizActivities, setQuizActivities] = useState([]);
+  const [spinWheelActivities, setSpinWheelActivities] = useState([]);
+  const [scratchCardActivities, setScratchCardActivities] = useState([]);
+
+  // Sending options
   const [sendByWhatsapp, setSendByWhatsapp] = useState(false);
   const [sendByEngageBird, setSendByEngageBird] = useState(false);
 
-  // New: make this page behave like CustomerPersonalisation.jsx
+  // Filter and customer selection state
   const [filters, setFilters] = useState({});
   const [selectedPeriod, setSelectedPeriod] = useState("Yearly");
   const [selectedCustomers, setSelectedCustomers] = useState([]);
@@ -27,8 +28,35 @@ const PersonalizationCampaign = ({
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [pageSize, setPageSize] = useState(15); // customers per page selector
 
-  // Fetch customer data with filters and pagination (same logic as CustomerPersonalisation)
+
+  
+
+  // Fetch activities data on component mount
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        // Fetch quiz activities
+        const quizResponse = await api.get("/api/quiz");
+        setQuizActivities(quizResponse.data);
+        
+        // Fetch spin wheel activities
+        const spinWheelResponse = await api.get("/api/spinWheels/spinWheel/all");
+        setSpinWheelActivities(spinWheelResponse.data.data);
+        
+        // Fetch scratch card activities
+        const scratchCardResponse = await api.get("/api/scratchCards/scratchCard/all");
+        setScratchCardActivities(scratchCardResponse.data.data);
+      } catch (error) {
+        console.error("Error fetching activities:", error);
+      }
+    };
+
+    fetchActivities();
+  }, []);
+
+  // Fetch customer data with filters and pagination
   const fetchCustomers = async () => {
     try {
       setLoading(true);
@@ -48,9 +76,8 @@ const PersonalizationCampaign = ({
       // Prepare the request payload
       const payload = {
         page: currentPage,
-        // limit: pagination.limit,
+        limit: pageSize,
         filters: filtersArray.length > 0 ? filtersArray : undefined,
-        // Period filters (handled separately)
         ...(selectedPeriod === "Yearly" && filters.periodValue && {
           year: parseInt(filters.periodValue),
         }),
@@ -71,8 +98,6 @@ const PersonalizationCampaign = ({
         }
       });
 
-      console.log("API Payload:", payload);
-
       const response = await api.post("/api/personilizationInsights", payload);
       setFilteredData(response.data.data);
       setPagination(response.data.pagination);
@@ -86,7 +111,7 @@ const PersonalizationCampaign = ({
   useEffect(() => {
     fetchCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, filters]);
+  }, [currentPage, filters, pageSize]);
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => {
@@ -132,19 +157,19 @@ const PersonalizationCampaign = ({
   const getCampaignOptions = () => {
     switch (selectedCampaignType) {
       case "quiz":
-        return quizActivities.map((campaign) => ({
-          value: campaign.id,
-          label: campaign.title,
+        return quizActivities?.map((campaign) => ({
+          value: campaign._id,
+          label: campaign.campaignName,
         }));
       case "spinwheel":
-        return spinWheelActivities.map((campaign) => ({
-          value: campaign.id,
-          label: campaign.title,
+        return spinWheelActivities?.map((campaign) => ({
+          value: campaign._id,
+          label: campaign.name,
         }));
       case "scratchcard":
-        return scratchCardActivities.map((campaign) => ({
-          value: campaign.id,
-          label: campaign.title,
+        return scratchCardActivities?.map((campaign) => ({
+          value: campaign._id,
+          label: campaign.name,
         }));
       default:
         return [];
@@ -182,8 +207,8 @@ const PersonalizationCampaign = ({
           <select
             value={selectedCampaignType}
             onChange={(e) => {
-              // setSelectedCampaignType(e.target.value);
-              // setSelectedCampaign("");
+              setSelectedCampaignType(e.target.value);
+              setSelectedCampaign("");
             }}
             className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
           >
@@ -215,9 +240,9 @@ const PersonalizationCampaign = ({
       </div>
 
       {/* Customer filter + list (FilterPanel in a popup) */}
-      <div className="grid grid-cols-12  rounded-[20px] w-full  ">
+      <div className="grid grid-cols-12 rounded-[20px] w-full">
         {/* Filters trigger + List Section */}
-        <div className="col-span-12 ">
+        <div className="col-span-12">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <button
@@ -226,18 +251,26 @@ const PersonalizationCampaign = ({
               >
                 Select Customer
               </button>
-              {/* <label className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-                <Upload className="w-4 h-4 mr-2" />
-                Import Customer
-                <input
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={handleImportCustomers}
-                  className="hidden"
-                />
-              </label> */}
             </div>
-            <h1 className="text-xl font-semibold">Customer List ({pagination.total})</h1>
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-gray-600">Customers per page:</label>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(parseInt(e.target.value, 10));
+                  setCurrentPage(1); // reset to page 1 when page size changes
+                }}
+                className="px-2 py-1 border rounded-md text-sm"
+              >
+                <option value={15}>15</option>
+                <option value={20}>20</option>
+                <option value={25}>25</option>
+                {pagination.total > 0 && (
+                  <option value={pagination.total}>{pagination.total}</option>
+                )}
+              </select>
+              <h1 className="text-xl font-semibold">Customer List ({pagination.total})</h1>
+            </div>
           </div>
 
           <CustomerList
@@ -255,8 +288,8 @@ const PersonalizationCampaign = ({
 
       {/* Popup for FilterPanel */}
       {showFilterModal && (
-        <div className="fixed inset-0  bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white  rounded-xl shadow-xl w-full max-w-xl mx-4 min-h-[400px] max-h-[85vh] overflow-auto p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-xl mx-4 min-h-[400px] max-h-[85vh] overflow-auto p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold text-slate-800">Filter Customers</h3>
               <button
@@ -266,18 +299,17 @@ const PersonalizationCampaign = ({
                 Close
               </button>
             </div>
-              <div className="col-span-12 md:col-span-5  border-r min-h-[300px] pr-2">
-                <FilterPanel
-                  filters={filters}
-                  onFilterChange={handleFilterChange}
-                  selectedPeriod={selectedPeriod}
-                  onPeriodChange={setSelectedPeriod}
-                  appliedFiltersCount={appliedFiltersCount}
-                  clearAllFilters={clearAllFilters}
-                  onFilteredDataChange={setFilteredData}
-                />
-              </div>
-            
+            <div className="col-span-12 md:col-span-5 border-r min-h-[300px] pr-2">
+              <FilterPanel
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={setSelectedPeriod}
+                appliedFiltersCount={appliedFiltersCount}
+                clearAllFilters={clearAllFilters}
+                onFilteredDataChange={setFilteredData}
+              />
+            </div>
           </div>
         </div>
       )}
