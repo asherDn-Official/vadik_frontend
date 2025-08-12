@@ -195,7 +195,16 @@ const PersonalizationCampaign = () => {
     setFormErrors({});
 
 
-    const customerIds = selectedCustomers; // array of _id from /api/personilizationInsights
+    // Determine recipients: default to all customers in current filteredData if none explicitly selected
+    const customerIds = selectedCustomers.length > 0
+      ? selectedCustomers
+      : (filteredData || []).map((c) => c._id);
+
+    // Guard: if still empty, nothing to send
+    if (!customerIds || customerIds.length === 0) {
+      setFormErrors({ selectedCustomers: "No customers match the current filters." });
+      return;
+    }
 
     try {
       setLoading(true);
