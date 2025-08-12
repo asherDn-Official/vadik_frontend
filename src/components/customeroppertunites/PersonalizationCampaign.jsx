@@ -3,6 +3,7 @@ import { Upload } from "lucide-react";
 import FilterPanel from "../customerInsigth/FilterPanel";
 import CustomerList from "../customerInsigth/CustomerList";
 import api from "../../api/apiconfig";
+import showToast from "../../utils/ToastNotification";
 
 const PersonalizationCampaign = () => {
   // Campaign selection state
@@ -29,9 +30,10 @@ const PersonalizationCampaign = () => {
   const [loading, setLoading] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [pageSize, setPageSize] = useState(15); // customers per page selector
+  const [formErrors, setFormErrors] = useState({});
 
 
-  
+
 
   // Fetch activities data on component mount
   useEffect(() => {
@@ -40,11 +42,11 @@ const PersonalizationCampaign = () => {
         // Fetch quiz activities
         const quizResponse = await api.get("/api/quiz");
         setQuizActivities(quizResponse.data);
-        
+
         // Fetch spin wheel activities
         const spinWheelResponse = await api.get("/api/spinWheels/spinWheel/all");
         setSpinWheelActivities(spinWheelResponse.data.data);
-        
+
         // Fetch scratch card activities
         const scratchCardResponse = await api.get("/api/scratchCards/scratchCard/all");
         setScratchCardActivities(scratchCardResponse.data.data);
@@ -177,27 +179,21 @@ const PersonalizationCampaign = () => {
   };
 
   const handleSendCampaign = async () => {
-    // Validations
-    if (!selectedCampaignType) {
-      alert("Please select Activities Type");
+    // Frontend validations -> show inline errors
+    const newErrors = {};
+    if (!selectedCampaignType) newErrors.selectedCampaignType = "Please select Activities Type";
+    if (!selectedCampaign) newErrors.selectedCampaign = "Please select an activity from 'Select Activities'";
+    // if (selectedCustomers.length === 0) newErrors.selectedCustomers = "Please select at least one customer";
+      // if (selectedCustomers.length === 0) throw new Error('Please select at least one customer');
+
+
+    if (Object.keys(newErrors).length > 0) {
+      setFormErrors(newErrors);
       return;
     }
 
-    if (!selectedCampaign) {
-      alert("Please select an activity from 'Select Activities'");
-      return;
-    }
+    setFormErrors({});
 
-    if (selectedCustomers.length === 0) {
-      alert("Please select at least one customer");
-      return;
-    }
-
-    // Optional: keep send method validation if required
-    // if (!sendByWhatsapp && !sendByEngageBird) {
-    //   alert("Please select at least one sending method");
-    //   return;
-    // }
 
     const customerIds = selectedCustomers; // array of _id from /api/personilizationInsights
 
@@ -227,13 +223,9 @@ const PersonalizationCampaign = () => {
         alert("Unsupported Activities Type selected");
         return;
       }
-
-      alert("Activities sent successfully!");
+      showToast('Activities sent successfully!', 'success');
     } catch (error) {
-      console.error("Error sending activities:", error);
-      alert(
-        error?.response?.data?.message || "Failed to send activities. Please try again."
-      );
+      showToast(error.response.data.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -252,14 +244,18 @@ const PersonalizationCampaign = () => {
             onChange={(e) => {
               setSelectedCampaignType(e.target.value);
               setSelectedCampaign("");
+              setFormErrors((prev) => ({ ...prev, selectedCampaignType: undefined }));
             }}
-            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+            className={`w-full px-4 py-3 bg-white border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${formErrors.selectedCampaignType ? 'border-red-500' : 'border-gray-300'}`}
           >
             <option value="">Select Activities Type</option>
             <option value="quiz">Quiz</option>
             <option value="spinwheel">Spin Wheel</option>
             <option value="scratchcard">Scratch Card</option>
           </select>
+          {formErrors.selectedCampaignType && (
+            <p className="text-red-600 text-sm mt-1">{formErrors.selectedCampaignType}</p>
+          )}
         </div>
 
         {/* Select Activities */}
@@ -268,8 +264,11 @@ const PersonalizationCampaign = () => {
           <p className="text-gray-600 mb-4">Select a Activities You've Already Created</p>
           <select
             value={selectedCampaign}
-            onChange={(e) => setSelectedCampaign(e.target.value)}
-            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+            onChange={(e) => {
+              setSelectedCampaign(e.target.value);
+              setFormErrors((prev) => ({ ...prev, selectedCampaign: undefined }));
+            }}
+            className={`w-full px-4 py-3 bg-white border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${formErrors.selectedCampaign ? 'border-red-500' : 'border-gray-300'}`}
             disabled={!selectedCampaignType}
           >
             <option value="">Select the campaign you created</option>
@@ -279,6 +278,12 @@ const PersonalizationCampaign = () => {
               </option>
             ))}
           </select>
+          {formErrors.selectedCampaign && (
+            <p className="text-red-600 text-sm mt-1">{formErrors.selectedCampaign}</p>
+          )}
+          {formErrors.selectedCustomers && (
+            <p className="text-red-600 text-sm mt-1">{formErrors.selectedCustomers}</p>
+          )}
         </div>
       </div>
 
