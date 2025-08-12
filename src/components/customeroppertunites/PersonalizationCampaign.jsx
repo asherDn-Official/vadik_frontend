@@ -1,121 +1,133 @@
-import React, { useState } from "react";
-import { ChevronDown, Upload, X } from "lucide-react";
-import CustomerFilterModal from "./CustomerFilterModal";
+import React, { useEffect, useState } from "react";
+import { Upload } from "lucide-react";
+import FilterPanel from "../customerInsigth/FilterPanel";
+import CustomerList from "../customerInsigth/CustomerList";
+import api from "../../api/apiconfig";
 
 const PersonalizationCampaign = ({
   quizActivities,
   spinWheelActivities,
   scratchCardActivities,
 }) => {
+  // Campaign selection state (unchanged)
   const [selectedCampaignType, setSelectedCampaignType] = useState("");
   const [selectedCampaign, setSelectedCampaign] = useState("");
-  const [showFilterModal, setShowFilterModal] = useState(false);
-  const [customers, setCustomers] = useState([
-    {
-      id: 121,
-      name: "Karthik Raja",
-      mobile: "+91 95554 51518",
-      gender: "Male",
-      source: "Walk In",
-      profession: "IT",
-      location: "Chennai",
-      income: "Medium",
-    },
-    {
-      id: 114,
-      name: "Suresh Babu",
-      mobile: "+91 95554 51518",
-      gender: "Male",
-      source: "Walk In",
-      profession: "Business",
-      location: "Chennai",
-      income: "Medium",
-    },
-    {
-      id: 87,
-      name: "Chandra",
-      mobile: "+91 95554 51518",
-      gender: "Female",
-      source: "Walk In",
-      profession: "Corporate",
-      location: "Chennai",
-      income: "Medium",
-    },
-    {
-      id: 101,
-      name: "Sathish Kumar",
-      mobile: "+91 95554 51518",
-      gender: "Male",
-      source: "Walk In",
-      profession: "Corporate",
-      location: "Chennai",
-      income: "Medium",
-    },
-    {
-      id: 198,
-      name: "Praveen Anand",
-      mobile: "+91 95554 51518",
-      gender: "Male",
-      source: "Walk In",
-      profession: "IT",
-      location: "Chennai",
-      income: "High",
-    },
-    {
-      id: 47,
-      name: "Janani",
-      mobile: "+91 95554 51518",
-      gender: "Female",
-      source: "Walk In",
-      profession: "Medicine",
-      location: "Chennai",
-      income: "Medium",
-    },
-    {
-      id: 122,
-      name: "Kavitha",
-      mobile: "+91 95554 51518",
-      gender: "Female",
-      source: "Walk In",
-      profession: "Corporate",
-      location: "Chennai",
-      income: "Medium",
-    },
-    {
-      id: 152,
-      name: "Mohanraj Elango",
-      mobile: "+91 95554 51518",
-      gender: "Male",
-      source: "Walk In",
-      profession: "Business",
-      location: "Chennai",
-      income: "Medium",
-    },
-    {
-      id: 103,
-      name: "Dinesh Kannan",
-      mobile: "+91 95554 51518",
-      gender: "Male",
-      source: "Walk In",
-      profession: "Service",
-      location: "Chennai",
-      income: "Low",
-    },
-    {
-      id: 106,
-      name: "Selvaraj",
-      mobile: "+91 95554 51518",
-      gender: "Male",
-      source: "Walk In",
-      profession: "Teacher",
-      location: "Chennai",
-      income: "High",
-    },
-  ]);
-  const [filteredCustomers, setFilteredCustomers] = useState(customers);
-  const [selectedCustomers, setSelectedCustomers] = useState([]);
+
+  // Sending options (unchanged)
   const [sendByWhatsapp, setSendByWhatsapp] = useState(false);
   const [sendByEngageBird, setSendByEngageBird] = useState(false);
+
+  // New: make this page behave like CustomerPersonalisation.jsx
+  const [filters, setFilters] = useState({});
+  const [selectedPeriod, setSelectedPeriod] = useState("Yearly");
+  const [selectedCustomers, setSelectedCustomers] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [appliedFiltersCount, setAppliedFiltersCount] = useState(0);
+  const [filteredData, setFilteredData] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
+  const [loading, setLoading] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+
+  // Fetch customer data with filters and pagination (same logic as CustomerPersonalisation)
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      // Prepare filters array - exclude period-related filters
+      const filtersArray = Object.entries(filters)
+        .filter(([name, value]) => {
+          // Exclude periodValue and any other period-related fields
+          return (
+            value !== "" &&
+            value !== null &&
+            value !== undefined &&
+            name !== "periodValue"
+          );
+        })
+        .map(([name, value]) => ({ name, value }));
+
+      // Prepare the request payload
+      const payload = {
+        page: currentPage,
+        // limit: pagination.limit,
+        filters: filtersArray.length > 0 ? filtersArray : undefined,
+        // Period filters (handled separately)
+        ...(selectedPeriod === "Yearly" && filters.periodValue && {
+          year: parseInt(filters.periodValue),
+        }),
+        ...(selectedPeriod === "Monthly" && filters.periodValue && {
+          year: new Date().getFullYear(),
+          month: parseInt(filters.periodValue),
+        }),
+        ...(selectedPeriod === "Quarterly" && filters.periodValue && {
+          year: new Date().getFullYear(),
+          quarter: filters.periodValue,
+        }),
+      };
+
+      // Remove undefined parameters
+      Object.keys(payload).forEach((key) => {
+        if (payload[key] === undefined) {
+          delete payload[key];
+        }
+      });
+
+      console.log("API Payload:", payload);
+
+      const response = await api.post("/api/personilizationInsights", payload);
+      setFilteredData(response.data.data);
+      setPagination(response.data.pagination);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, filters]);
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => {
+      const newFilters = { ...prev, [key]: value };
+      // Calculate applied filters count
+      const count = Object.values(newFilters).filter(
+        (v) => v !== undefined && v !== ""
+      ).length;
+      setAppliedFiltersCount(count);
+      return newFilters;
+    });
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const clearAllFilters = () => {
+    setFilters({});
+    setAppliedFiltersCount(0);
+    setCurrentPage(1);
+  };
+
+  // Toggle customer selection
+  const toggleCustomerSelection = (customerId) => {
+    setSelectedCustomers((prevSelected) =>
+      prevSelected.includes(customerId)
+        ? prevSelected.filter((id) => id !== customerId)
+        : [...prevSelected, customerId]
+    );
+  };
+
+  // Toggle all customers on current page
+  const toggleAllCustomers = () => {
+    const allCurrentPageCustomerIds = filteredData.map((customer) => customer._id);
+    if (
+      selectedCustomers.length === filteredData.length &&
+      selectedCustomers.every((id) => allCurrentPageCustomerIds.includes(id))
+    ) {
+      setSelectedCustomers([]);
+    } else {
+      setSelectedCustomers(allCurrentPageCustomerIds);
+    }
+  };
 
   const getCampaignOptions = () => {
     switch (selectedCampaignType) {
@@ -136,64 +148,6 @@ const PersonalizationCampaign = ({
         }));
       default:
         return [];
-    }
-  };
-
-  const handleImportCustomers = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      // Simulate file processing
-      console.log("Importing customers from:", file.name);
-      // In a real app, you would parse the Excel file and add customers
-    }
-  };
-
-  const handleApplyFilters = (filters) => {
-    let filtered = customers;
-
-    if (filters.gender && filters.gender !== "all") {
-      filtered = filtered.filter(
-        (customer) => customer.gender.toLowerCase() === filters.gender
-      );
-    }
-
-    if (filters.profession && filters.profession !== "all") {
-      filtered = filtered.filter(
-        (customer) =>
-          customer.profession.toLowerCase() === filters.profession.toLowerCase()
-      );
-    }
-
-    if (filters.income && filters.income !== "all") {
-      filtered = filtered.filter(
-        (customer) =>
-          customer.income.toLowerCase() === filters.income.toLowerCase()
-      );
-    }
-
-    if (filters.location && filters.location !== "all") {
-      filtered = filtered.filter((customer) =>
-        customer.location.toLowerCase().includes(filters.location.toLowerCase())
-      );
-    }
-
-    setFilteredCustomers(filtered);
-    setShowFilterModal(false);
-  };
-
-  const handleCustomerSelect = (customerId) => {
-    setSelectedCustomers((prev) =>
-      prev.includes(customerId)
-        ? prev.filter((id) => id !== customerId)
-        : [...prev, customerId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedCustomers.length === filteredCustomers.length) {
-      setSelectedCustomers([]);
-    } else {
-      setSelectedCustomers(filteredCustomers.map((customer) => customer.id));
     }
   };
 
@@ -219,20 +173,17 @@ const PersonalizationCampaign = ({
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Activities selectors */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Activities Type */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-2">
-            Activities Type
-          </h3>
-          <p className="text-gray-600 mb-4">
-            What Kind of Activities Would You Like to Run?
-          </p>
+          <h3 className="text-lg font-semibold text-slate-800 mb-2">Activities Type</h3>
+          <p className="text-gray-600 mb-4">What Kind of Activities Would You Like to Run?</p>
           <select
             value={selectedCampaignType}
             onChange={(e) => {
-              setSelectedCampaignType(e.target.value);
-              setSelectedCampaign("");
+              // setSelectedCampaignType(e.target.value);
+              // setSelectedCampaign("");
             }}
             className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
           >
@@ -245,12 +196,8 @@ const PersonalizationCampaign = ({
 
         {/* Select Activities */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-2">
-            Select Activities
-          </h3>
-          <p className="text-gray-600 mb-4">
-            Select a Activities You've Already Created
-          </p>
+          <h3 className="text-lg font-semibold text-slate-800 mb-2">Select Activities</h3>
+          <p className="text-gray-600 mb-4">Select a Activities You've Already Created</p>
           <select
             value={selectedCampaign}
             onChange={(e) => setSelectedCampaign(e.target.value)}
@@ -267,139 +214,73 @@ const PersonalizationCampaign = ({
         </div>
       </div>
 
-      {/* Customer Selection */}
-      <div className="mb-8">
-        <div className="flex items-center space-x-4 mb-6">
-          <button
-            onClick={() => setShowFilterModal(true)}
-            className="px-6 py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors"
-          >
-            Select Customer
-          </button>
-          <label className="flex items-center px-6 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-            <Upload className="w-4 h-4 mr-2" />
-            Import Customer
-            <input
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={handleImportCustomers}
-              className="hidden"
-            />
-          </label>
-        </div>
+      {/* Customer filter + list (FilterPanel in a popup) */}
+      <div className="grid grid-cols-12  rounded-[20px] w-full  ">
+        {/* Filters trigger + List Section */}
+        <div className="col-span-12 ">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowFilterModal(true)}
+                className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700"
+              >
+                Select Customer
+              </button>
+              {/* <label className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                <Upload className="w-4 h-4 mr-2" />
+                Import Customer
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleImportCustomers}
+                  className="hidden"
+                />
+              </label> */}
+            </div>
+            <h1 className="text-xl font-semibold">Customer List ({pagination.total})</h1>
+          </div>
 
-        {/* Customer Table */}
-        <div className="bg-white border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left">
-                    <input
-                      type="checkbox"
-                      checked={
-                        selectedCustomers.length === filteredCustomers.length &&
-                        filteredCustomers.length > 0
-                      }
-                      onChange={handleSelectAll}
-                      className="rounded border-gray-300 text-pink-600 focus:ring-pink-500"
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    ID No
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Mobile Number
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Gender
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Source
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Profession
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Location
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Income
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedCustomers.includes(customer.id)}
-                        onChange={() => handleCustomerSelect(customer.id)}
-                        className="rounded border-gray-300 text-pink-600 focus:ring-pink-500"
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {customer.id}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
-                      {customer.name}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {customer.mobile}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {customer.gender}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {customer.source}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {customer.profession}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {customer.location}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {customer.income}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <CustomerList
+            customers={filteredData}
+            loading={loading}
+            selectedCustomers={selectedCustomers}
+            toggleCustomerSelection={toggleCustomerSelection}
+            toggleAllCustomers={toggleAllCustomers}
+            pagination={pagination}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      </div>
+
+      {/* Popup for FilterPanel */}
+      {showFilterModal && (
+        <div className="fixed inset-0  bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white  rounded-xl shadow-xl w-full max-w-xl mx-4 min-h-[400px] max-h-[85vh] overflow-auto p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-slate-800">Filter Customers</h3>
+              <button
+                onClick={() => setShowFilterModal(false)}
+                className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
+              >
+                Close
+              </button>
+            </div>
+              <div className="col-span-12 md:col-span-5  border-r min-h-[300px] pr-2">
+                <FilterPanel
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  selectedPeriod={selectedPeriod}
+                  onPeriodChange={setSelectedPeriod}
+                  appliedFiltersCount={appliedFiltersCount}
+                  clearAllFilters={clearAllFilters}
+                  onFilteredDataChange={setFilteredData}
+                />
+              </div>
+            
           </div>
         </div>
-      </div>
-
-      {/* Send Options */}
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold text-slate-800 mb-4">
-          Select Tool To Send Activities
-        </h3>
-        <div className="space-y-3">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={sendByWhatsapp}
-              onChange={(e) => setSendByWhatsapp(e.target.checked)}
-              className="rounded border-gray-300 text-pink-600 focus:ring-pink-500 mr-3"
-            />
-            <span className="text-gray-700">Send by Whatsapp</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={sendByEngageBird}
-              onChange={(e) => setSendByEngageBird(e.target.checked)}
-              className="rounded border-gray-300 text-pink-600 focus:ring-pink-500 mr-3"
-            />
-            <span className="text-gray-700">Send by EngageBird</span>
-          </label>
-        </div>
-      </div>
+      )}
 
       {/* Send Button */}
       <div className="flex justify-start">
@@ -410,14 +291,6 @@ const PersonalizationCampaign = ({
           Send Activities
         </button>
       </div>
-
-      {/* Filter Modal */}
-      {showFilterModal && (
-        <CustomerFilterModal
-          onClose={() => setShowFilterModal(false)}
-          onApply={handleApplyFilters}
-        />
-      )}
     </div>
   );
 };
