@@ -4,6 +4,7 @@ import QuizForm from "./QuizForm";
 import { ArrowLeft } from "lucide-react";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
+import { get } from "react-hook-form";
 
 const Quiz = () => {
   const [quizzes, setQuizzes] = useState([
@@ -13,7 +14,20 @@ const Quiz = () => {
   ]);
   const [showForm, setShowForm] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState(null);
-  
+
+  async function getQuizeList() {
+    try {
+      let res = await api.get('/api/quiz');
+      setQuizzes(res.data);
+    } catch (err) {
+      console.log("err", err)
+    }
+  }
+
+  useEffect(() => {
+    getQuizeList()
+  }, [])
+
   const handleCreate = () => {
     setEditingQuiz(null);
     setShowForm(true);
@@ -42,8 +56,14 @@ const Quiz = () => {
     setShowForm(false);
   };
 
-  const handleDelete = (id) => {
-    setQuizzes(prev => prev.filter(q => q.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      const response = await api.delete(`/api/quiz/${id}`);
+      showToast('Deleted Successfully!', 'success');
+      getQuizeList();
+    } catch (error) {
+      showToast(error.response.data.message,'error')
+    }
   };
 
   if (showForm) {

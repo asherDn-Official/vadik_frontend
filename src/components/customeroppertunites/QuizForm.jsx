@@ -3,8 +3,12 @@ import { Plus, X, Check, ChevronDown } from "lucide-react";
 import AddOption from "../common/AddOption";
 import api from "../../api/apiconfig";
 
-const QuizForm = ({ campaign, onSave, onCancel }) => {
+const QuizForm = ({ quiz, onSave, onCancel }) => {
   // Helper function to safely render values and prevent object rendering errors
+
+  // console.log("quiz",quiz);
+  // console.log("quiz.quiz",quiz);
+
   const safeRender = (value) => {
     if (value === null || value === undefined) return '';
     if (typeof value === 'object') {
@@ -124,12 +128,12 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
   };
 
   useEffect(() => {
-    if (campaign) {
+    if (quiz) {
       setFormData({
-        title: campaign.title || "",
-        description: campaign.description || "",
-        loyaltyPoints: campaign.loyaltyPoints || "",
-        questions: campaign.questionsData || [
+        title: quiz.campaignName || "",
+        description: quiz.description || "",
+        loyaltyPoints: quiz.loyaltyPoints || "",
+        questions: quiz.questions || [
           {
             id: 1,
             key: "",
@@ -141,7 +145,7 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
         ],
       });
     }
-  }, [campaign]);
+  }, [quiz]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -335,8 +339,8 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
       return;
     }
 
-    const campaignData = {
-      campaignName: formData.title,
+    const quizData = {
+      quizName: formData.title,
       description: formData.description,
       loyaltyPoints: parseInt(formData.loyaltyPoints),
       quizFor: "quiz",
@@ -353,7 +357,7 @@ const QuizForm = ({ campaign, onSave, onCancel }) => {
     setIsSubmitting(true);
 
     try {
-      const response = await api.post('/api/quiz', campaignData);
+      const response = await api.post('/api/quiz', quizData);
       console.log('Quiz created successfully:', response.data);
 
       // Call the onSave callback with the response data
