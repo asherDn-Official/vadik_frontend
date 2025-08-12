@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Plus, X, Check, ChevronDown } from "lucide-react";
 import AddOption from "../common/AddOption";
 import api from "../../api/apiconfig";
+import showToast from "../../utils/ToastNotification";
 
 const QuizForm = ({ quiz, onSave, onCancel }) => {
- 
+
   const safeRender = (value) => {
     if (value === null || value === undefined) return '';
     if (typeof value === 'object') {
@@ -363,19 +364,17 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
           isActive: typeof quiz.isActive === 'boolean' ? quiz.isActive : true,
         };
         response = await api.put(`/api/quiz/${quiz._id}`, payload);
-        console.log('Quiz updated successfully:', response.data);
+        showToast('Quiz updated successfully:', 'success');
       } else {
         response = await api.post('/api/quiz', { ...baseData, retailerId });
-        console.log('Quiz created successfully:', response.data);
+        showToast('Quiz created successfully:', "success");
       }
 
       if (onSave) {
         onSave();
       }
     } catch (error) {
-      console.error('Error saving quiz:', error.response?.data?.message || error.message);
-      // You can replace this with proper toast notification
-      // showToast(error.response?.data?.message || 'Failed to save quiz', 'error');
+      showToast(error.response?.data?.message, "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -598,8 +597,8 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
             type="submit"
             disabled={isSubmitting}
             className={`px-6 py-2 text-white rounded-lg transition-colors ${isSubmitting
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-pink-600 hover:bg-pink-700'
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-pink-600 hover:bg-pink-700'
               }`}
           >
             {isSubmitting ? (quiz ? 'Updating Quiz...' : 'Creating Quiz...') : (quiz ? 'Update Quiz' : 'Create Quiz')}
