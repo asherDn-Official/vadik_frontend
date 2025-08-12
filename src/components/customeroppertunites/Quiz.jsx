@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import { get } from "react-hook-form";
+import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 
 const Quiz = () => {
   const [quizzes, setQuizzes] = useState([
@@ -56,14 +57,17 @@ const Quiz = () => {
     setShowForm(false);
   };
 
-  const handleDelete = async (id) => {
-    try {
-      const response = await api.delete(`/api/quiz/${id}`);
-      showToast('Deleted Successfully!', 'success');
-      getQuizeList();
-    } catch (error) {
-      showToast(error.response.data.message,'error')
+  const handleDelete = (id) => {
+    const deleteOperations = async () => {
+      try {
+        const response = await api.delete(`/api/quiz/${id}`);
+        showToast('Deleted Successfully!', 'success');
+        getQuizeList();
+      } catch (error) {
+        showToast(error.response.data.message, 'error')
+      }
     }
+    deleteConfirmTostNotification("delete", deleteOperations)
   };
 
   if (showForm) {
