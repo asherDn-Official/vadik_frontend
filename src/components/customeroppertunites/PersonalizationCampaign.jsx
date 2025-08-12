@@ -176,24 +176,67 @@ const PersonalizationCampaign = () => {
     }
   };
 
-  const handleSendCampaign = () => {
+  const handleSendCampaign = async () => {
+    // Validations
+    if (!selectedCampaignType) {
+      alert("Please select Activities Type");
+      return;
+    }
+
+    if (!selectedCampaign) {
+      alert("Please select an activity from 'Select Activities'");
+      return;
+    }
+
     if (selectedCustomers.length === 0) {
       alert("Please select at least one customer");
       return;
     }
 
-    if (!selectedCampaign) {
-      alert("Please select a campaign");
-      return;
-    }
+    // Optional: keep send method validation if required
+    // if (!sendByWhatsapp && !sendByEngageBird) {
+    //   alert("Please select at least one sending method");
+    //   return;
+    // }
 
-    if (!sendByWhatsapp && !sendByEngageBird) {
-      alert("Please select at least one sending method");
-      return;
-    }
+    const customerIds = selectedCustomers; // array of _id from /api/personilizationInsights
 
-    console.log("Sending campaign to:", selectedCustomers);
-    alert("Activities sent successfully!");
+    try {
+      setLoading(true);
+
+      if (selectedCampaignType === "quiz") {
+        // POST /api/quiz/share
+        await api.post("/api/quiz/share", {
+          quizId: selectedCampaign,
+          customerIds: customerIds,
+          frontendUrl: "https://app.vadik.ai",
+        });
+      } else if (selectedCampaignType === "spinwheel") {
+        // POST /api/spinWheels/share/spinWheel
+        await api.post("/api/spinWheels/share/spinWheel", {
+          spinWheelId: selectedCampaign,
+          customersIds: customerIds,
+        });
+      } else if (selectedCampaignType === "scratchcard") {
+        // POST /api/scratchCards/share/scratchCard
+        await api.post("/api/scratchCards/share/scratchCard", {
+          scratchCardId: selectedCampaign,
+          customersIds: customerIds,
+        });
+      } else {
+        alert("Unsupported Activities Type selected");
+        return;
+      }
+
+      alert("Activities sent successfully!");
+    } catch (error) {
+      console.error("Error sending activities:", error);
+      alert(
+        error?.response?.data?.message || "Failed to send activities. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
