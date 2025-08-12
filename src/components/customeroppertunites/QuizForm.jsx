@@ -4,11 +4,7 @@ import AddOption from "../common/AddOption";
 import api from "../../api/apiconfig";
 
 const QuizForm = ({ quiz, onSave, onCancel }) => {
-  // Helper function to safely render values and prevent object rendering errors
-
-  // console.log("quiz",quiz);
-  // console.log("quiz.quiz",quiz);
-
+ 
   const safeRender = (value) => {
     if (value === null || value === undefined) return '';
     if (typeof value === 'object') {
