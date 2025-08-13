@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Upload } from "lucide-react";
 import FilterPanel from "../customerInsigth/FilterPanel";
 import CustomerList from "../customerInsigth/CustomerList";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
+import * as XLSX from "xlsx";
 
 const PersonalizationCampaign = () => {
   // Campaign selection state
@@ -32,7 +33,12 @@ const PersonalizationCampaign = () => {
   const [pageSize, setPageSize] = useState(15); // customers per page selector
   const [formErrors, setFormErrors] = useState({});
 
-
+  // Excel import state
+  const fileInputRef = useRef(null);
+  const [importedRows, setImportedRows] = useState([]); // rows as read from Excel
+  const [importedHeaders, setImportedHeaders] = useState([]); // column names from Excel
+  const [selectedImported, setSelectedImported] = useState([]); // resolved _ids selected from import
+  const [unresolvedImports, setUnresolvedImports] = useState([]); // rows we couldn't map to an existing customer
 
 
   // Fetch activities data on component mount
@@ -156,6 +162,25 @@ const PersonalizationCampaign = () => {
     }
   };
 
+  // Toggle imported selections
+  const toggleImportedSelection = (resolvedId) => {
+    setSelectedImported((prev) =>
+      prev.includes(resolvedId)
+        ? prev.filter((id) => id !== resolvedId)
+        : [...prev, resolvedId]
+    );
+  };
+
+  const toggleAllImported = () => {
+    const allResolvable = importedRows
+      .map((r) => r._id)
+      .filter(Boolean);
+    const allUnique = [...new Set(allResolvable)];
+    const allSelected = selectedImported.length === allUnique.length &&
+      allUnique.every((id) => selectedImported.includes(id));
+    setSelectedImported(allSelected ? [] : allUnique);
+  };
+  
   const getCampaignOptions = () => {
     switch (selectedCampaignType) {
       case "quiz":
@@ -178,14 +203,107 @@ const PersonalizationCampaign = () => {
     }
   };
 
+  // ===== Import Customers from Excel =====
+  const acceptedColumns = [
+    "firstname","lastname","mobileNumber","gender","source","customerId","firstVisit","loyaltyPoints","additionalData","advancedDetails","advancedPrivacyDetails","createdAt","updatedAt","__v"
+  ];
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const readFileAsArrayBuffer = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const parseExcel = async (file) => {
+    try {
+      const data = await readFileAsArrayBuffer(file);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+      if (!rows.length) {
+        showToast("No rows found in uploaded file", "warning");
+        return;
+      }
+      const headers = Object.keys(rows[0]);
+      // Keep only known columns; ignore extra columns
+      const normalizedRows = rows.map((r) => {
+        const obj = {};
+        headers.forEach((h) => {
+          if (acceptedColumns.includes(h)) obj[h] = r[h];
+        });
+        return obj;
+      });
+      setImportedHeaders(headers.filter((h) => acceptedColumns.includes(h)));
+      setImportedRows(normalizedRows);
+
+      // Resolve which customers map to existing ones → Prefer _id, then customerId, then mobileNumber
+      const resolvedIds = [];
+      const unresolved = [];
+      for (const row of normalizedRows) {
+        // If row already has _id, keep it
+        if (row._id) {
+          resolvedIds.push(row._id);
+          continue;
+        }
+        // Try quick search by mobileNumber if present
+        if (row.mobileNumber) {
+          try {
+            const res = await api.get("/api/customerQuickSearch", { params: { search: String(row.mobileNumber).trim() } });
+            const found = res.data?.data?.customer?._id;
+            if (found) {
+              resolvedIds.push(found);
+              continue;
+            }
+          } catch (e) {
+            // ignore; we’ll mark unresolved
+          }
+        }
+        // Try by customerId if present (backend must support it in quick search)
+        if (row.customerId) {
+          try {
+            const res = await api.get("/api/customerQuickSearch", { params: { search: String(row.customerId).trim() } });
+            const found = res.data?.data?.customer?._id;
+            if (found) {
+              resolvedIds.push(found);
+              continue;
+            }
+          } catch (e) {}
+        }
+        unresolved.push(row);
+      }
+      setSelectedImported([...new Set(resolvedIds)]);
+      setUnresolvedImports(unresolved);
+      if (unresolved.length) {
+        showToast(`${unresolved.length} row(s) could not be matched to existing customers`, "warning");
+      } else {
+        showToast(`Imported ${resolvedIds.length} customers`, "success");
+      }
+    } catch (err) {
+      console.error("Failed to parse Excel:", err);
+      showToast("Failed to parse Excel file", "error");
+    }
+  };
+
+  const onFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    parseExcel(file);
+    e.target.value = ""; // reset input
+  };
+
   const handleSendCampaign = async () => {
     // Frontend validations -> show inline errors
     const newErrors = {};
     if (!selectedCampaignType) newErrors.selectedCampaignType = "Please select Activities Type";
     if (!selectedCampaign) newErrors.selectedCampaign = "Please select an activity from 'Select Activities'";
-    // if (selectedCustomers.length === 0) newErrors.selectedCustomers = "Please select at least one customer";
-      // if (selectedCustomers.length === 0) throw new Error('Please select at least one customer');
-
 
     if (Object.keys(newErrors).length > 0) {
       setFormErrors(newErrors);
@@ -194,15 +312,20 @@ const PersonalizationCampaign = () => {
 
     setFormErrors({});
 
+    // Recipients: merge UI selections + imported selections; if none, fallback to visible filteredData
+    const merged = new Set([
+      ...selectedCustomers,
+      ...selectedImported
+    ].filter(Boolean));
 
-    // Determine recipients: default to all customers in current filteredData if none explicitly selected
-    const customerIds = selectedCustomers.length > 0
-      ? selectedCustomers
-      : (filteredData || []).map((c) => c._id);
+    let customerIds = Array.from(merged);
+    if (customerIds.length === 0) {
+      customerIds = (filteredData || []).map((c) => c._id);
+    }
 
     // Guard: if still empty, nothing to send
     if (!customerIds || customerIds.length === 0) {
-      setFormErrors({ selectedCustomers: "No customers match the current filters." });
+      setFormErrors({ selectedCustomers: "No customers selected or match the current filters." });
       return;
     }
 
@@ -234,7 +357,7 @@ const PersonalizationCampaign = () => {
       }
       showToast('Activities sent successfully!', 'success');
     } catch (error) {
-      showToast(error.response.data.message, 'error');
+      showToast(error?.response?.data?.message || 'Failed to send', 'error');
     } finally {
       setLoading(false);
     }
@@ -308,9 +431,16 @@ const PersonalizationCampaign = () => {
               >
                 Select Customer
               </button>
-               <button  className="px-4 py-2 border  text-blue-950 rounded-sm border-blue-950    ">
-                  Import Customers
+               <button  className="px-4 py-2 border  text-blue-950 rounded-sm border-blue-950 flex items-center gap-2" onClick={handleImportClick}>
+                  <Upload size={16} /> Import Customers
                </button>
+               <input
+                 ref={fileInputRef}
+                 type="file"
+                 accept=".xlsx,.xls"
+                 onChange={onFileChange}
+                 className="hidden"
+               />
             </div>
             <div className="flex items-center gap-3">
               <label className="text-sm text-gray-600">Customers per page:</label>
@@ -332,6 +462,63 @@ const PersonalizationCampaign = () => {
               <h1 className="text-xl font-semibold">Customer List ({pagination.total})</h1>
             </div>
           </div>
+
+          {/* Imported customers preview table */}
+          {importedRows.length > 0 && (
+            <div className="mb-6 border rounded-lg overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b">
+                <div className="text-sm text-gray-700">
+                  Imported customers matched: {selectedImported.length} / {importedRows.length}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={toggleAllImported} className="text-xs px-3 py-1 border rounded">
+                    Toggle All
+                  </button>
+                  <button onClick={() => { setImportedRows([]); setSelectedImported([]); setUnresolvedImports([]); }} className="text-xs px-3 py-1 border rounded text-red-700">
+                    Clear Import
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Select</th>
+                      {importedHeaders.slice(0, 6).map((h) => (
+                        <th key={h} className="px-3 py-2 text-left text-xs uppercase text-gray-600">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {importedRows.slice(0, 50).map((row, idx) => {
+                      const resolvedId = row._id; // after parse we keep _id if present
+                      const isSelected = resolvedId && selectedImported.includes(resolvedId);
+                      return (
+                        <tr key={idx} className="hover:bg-gray-50">
+                          <td className="px-3 py-2">
+                            <input
+                              type="checkbox"
+                              disabled={!resolvedId}
+                              checked={!!resolvedId && isSelected}
+                              onChange={() => resolvedId && toggleImportedSelection(resolvedId)}
+                            />
+                          </td>
+                          {importedHeaders.slice(0, 6).map((h) => (
+                            <td key={`${idx}-${h}`} className="px-3 py-2 text-sm">{String(row[h] ?? "")}</td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {unresolvedImports.length > 0 && (
+                <div className="px-4 py-2 text-sm text-amber-700 bg-amber-50 border-t">
+                  {unresolvedImports.length} row(s) could not be resolved to existing customers. We can only send to existing customer IDs.
+                </div>
+              )}
+            </div>
+          )}
 
           <CustomerList
             customers={filteredData}
