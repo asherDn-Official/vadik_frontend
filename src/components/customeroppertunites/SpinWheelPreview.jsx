@@ -112,7 +112,7 @@ const SpinWheelPreview = ({ segments = [] }) => {
               fill="#FFD700"
               stroke="#FFA500"
               strokeWidth="2"
-              onClick={spinWheel}
+              // onClick={spinWheel}
               style={{ cursor: isSpinning ? 'not-allowed' : 'pointer' }}
             />
             <text
@@ -122,7 +122,7 @@ const SpinWheelPreview = ({ segments = [] }) => {
               fill="#000"
               fontSize="6"
               fontWeight="bold"
-              onClick={spinWheel}
+              // onClick={spinWheel}
               style={{ cursor: isSpinning ? 'not-allowed' : 'pointer' }}
             >
               SPIN

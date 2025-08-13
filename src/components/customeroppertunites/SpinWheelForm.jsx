@@ -106,17 +106,6 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     });
   };
 
-  const handleImageUpload = (segmentId, e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        handleSegmentChange(segmentId, "image", event.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const addSegment = () => {
     const newSegment = {
       id: Date.now(),
@@ -393,7 +382,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                         <select
                           value={segment.couponId}
                           onChange={(e) => handleCouponSelect(segment.id, e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
+                          className="w-full cursor-pointer px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
                         >
                           <option value="">Select Coupon</option>
                           {coupons?.map((coupon) => (
@@ -416,6 +405,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                             e.target.value
                           )
                         }
+                        disabled={true}
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
                       />
                     </td>
@@ -430,6 +420,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                             e.target.value.replace(" %", "")
                           )
                         }
+                        disabled={true}
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
                       />
                     </td>
@@ -521,7 +512,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
             type="submit"
             className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
           >
-            {campaign ? 'Save Spin Wheel' : 'Create Spin Wheel'} 
+            {campaign ? 'Save Spin Wheel' : 'Create Spin Wheel'}
           </button>
         </div>
       </form>
