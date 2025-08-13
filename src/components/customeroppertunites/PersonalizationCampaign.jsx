@@ -39,6 +39,7 @@ const PersonalizationCampaign = () => {
   const [importedHeaders, setImportedHeaders] = useState([]); // column names from Excel
   const [selectedImported, setSelectedImported] = useState([]); // resolved _ids selected from import
   const [unresolvedImports, setUnresolvedImports] = useState([]); // rows we couldn't map to an existing customer
+  const [resolvableImportedIds, setResolvableImportedIds] = useState([]); // unique list of resolvable IDs from import
 
 
   // Fetch activities data on component mount
@@ -149,16 +150,16 @@ const PersonalizationCampaign = () => {
     );
   };
 
-  // Toggle all customers on current page
+  // Toggle all customers on current page (preserve selections across pages)
   const toggleAllCustomers = () => {
-    const allCurrentPageCustomerIds = filteredData.map((customer) => customer._id);
-    if (
-      selectedCustomers.length === filteredData.length &&
-      selectedCustomers.every((id) => allCurrentPageCustomerIds.includes(id))
-    ) {
-      setSelectedCustomers([]);
+    const pageIds = filteredData.map((customer) => customer._id);
+    const allOnPageSelected = pageIds.every((id) => selectedCustomers.includes(id));
+    if (allOnPageSelected) {
+      // Deselect only the current page IDs
+      setSelectedCustomers((prev) => prev.filter((id) => !pageIds.includes(id)));
     } else {
-      setSelectedCustomers(allCurrentPageCustomerIds);
+      // Select union of previous + current page IDs
+      setSelectedCustomers((prev) => Array.from(new Set([...prev, ...pageIds])));
     }
   };
 
@@ -172,15 +173,12 @@ const PersonalizationCampaign = () => {
   };
 
   const toggleAllImported = () => {
-    const allResolvable = importedRows
-      .map((r) => r._id)
-      .filter(Boolean);
-    const allUnique = [...new Set(allResolvable)];
+    const allUnique = resolvableImportedIds;
     const allSelected = selectedImported.length === allUnique.length &&
       allUnique.every((id) => selectedImported.includes(id));
     setSelectedImported(allSelected ? [] : allUnique);
   };
-  
+
   const getCampaignOptions = () => {
     switch (selectedCampaignType) {
       case "quiz":
@@ -205,7 +203,7 @@ const PersonalizationCampaign = () => {
 
   // ===== Import Customers from Excel =====
   const acceptedColumns = [
-    "firstname","lastname","mobileNumber","gender","source","customerId","firstVisit","loyaltyPoints","additionalData","advancedDetails","advancedPrivacyDetails","createdAt","updatedAt","__v"
+    "_id","firstname","lastname","mobileNumber","gender","source","customerId","firstVisit","loyaltyPoints","additionalData","advancedDetails","advancedPrivacyDetails","createdAt","updatedAt","__v"
   ];
 
   const handleImportClick = () => {
@@ -239,6 +237,10 @@ const PersonalizationCampaign = () => {
         headers.forEach((h) => {
           if (acceptedColumns.includes(h)) obj[h] = r[h];
         });
+        // Normalize potential header variants for ID/Phone/CustomerId
+        if (!obj._id && (r.id || r.ID)) obj._id = r.id || r.ID;
+        if (!obj.mobileNumber && (r.phone || r.phoneNumber || r.mobile)) obj.mobileNumber = r.phone || r.phoneNumber || r.mobile;
+        if (!obj.customerId && (r.customerID || r.CustomerId)) obj.customerId = r.customerID || r.CustomerId;
         return obj;
       });
       setImportedHeaders(headers.filter((h) => acceptedColumns.includes(h)));
@@ -279,7 +281,9 @@ const PersonalizationCampaign = () => {
         }
         unresolved.push(row);
       }
-      setSelectedImported([...new Set(resolvedIds)]);
+      const uniqueResolved = [...new Set(resolvedIds)];
+      setResolvableImportedIds(uniqueResolved);
+      setSelectedImported(uniqueResolved);
       setUnresolvedImports(unresolved);
       if (unresolved.length) {
         showToast(`${unresolved.length} row(s) could not be matched to existing customers`, "warning");
@@ -467,14 +471,21 @@ const PersonalizationCampaign = () => {
           {importedRows.length > 0 && (
             <div className="mb-6 border rounded-lg overflow-hidden">
               <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b">
-                <div className="text-sm text-gray-700">
-                  Imported customers matched: {selectedImported.length} / {importedRows.length}
+                <div className="text-sm text-gray-700 flex items-center gap-3">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      onChange={toggleAllImported}
+                      checked={resolvableImportedIds.length > 0 && selectedImported.length === resolvableImportedIds.length}
+                    />
+                    <span>Toggle All</span>
+                  </label>
+                  <span>
+                    Matched: {selectedImported.length} / {resolvableImportedIds.length} (imported rows: {importedRows.length})
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={toggleAllImported} className="text-xs px-3 py-1 border rounded">
-                    Toggle All
-                  </button>
-                  <button onClick={() => { setImportedRows([]); setSelectedImported([]); setUnresolvedImports([]); }} className="text-xs px-3 py-1 border rounded text-red-700">
+                  <button onClick={() => { setImportedRows([]); setSelectedImported([]); setUnresolvedImports([]); setResolvableImportedIds([]); }} className="text-xs px-3 py-1 border rounded text-red-700">
                     Clear Import
                   </button>
                 </div>
