@@ -33,19 +33,15 @@ const SpinWheel = () => {
     setShowForm(true);
   };
 
-  const handleEdit = () => {
-    setEditingSpinWheel();
+  const handleEdit = (spineWheelSingledata) => {
+    setEditingSpinWheel(spineWheelSingledata);
     setShowForm(true);
   };
 
-  const handleSave = (spinWheels) => {
-    if (editingSpinWheel) {
-      setSpinWheels(prev =>
-        prev.map(q => q.id === editingSpinWheel.id ? { ...spinWheels, id: editingSpinWheel.id } : q)
-      );
-    } else {
-      setSpinWheels(prev => [...prev, { ...spinWheels, id: Date.now() }]);
-    }
+  const handleSave = () => {
+    // Refresh list from server after create/update and close form
+    getAllWheelData();
+    setEditingSpinWheel(null);
     setShowForm(false);
   };
 
@@ -75,7 +71,7 @@ const SpinWheel = () => {
             Back
           </button>
           <SpinWheelForm
-            quiz={editingSpinWheel}
+            campaign={editingSpinWheel}
             onSave={handleSave}
             onCancel={() => setShowForm(false)}
           />

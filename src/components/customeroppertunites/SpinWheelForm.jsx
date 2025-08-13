@@ -13,6 +13,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     couponOptions: [],
     targetedCoupons: [],
     expiryDate: "",
+    isActive: true,
     segments: [],
   });
   const [errors, setErrors] = useState({});
@@ -50,13 +51,13 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     if (campaign) {
       setFormData({
         name: campaign.name ?? "",
-        noOfSpins:
-          campaign.noOfSpins ?? (Array.isArray(campaign.segments) ? campaign.segments.length : 0),
-        couponOptions: campaign.couponOptions ?? [],
-        targetedCoupons: campaign.targetedCoupons ?? [],
-        isActive: campaign.isActive !== undefined ? campaign.isActive : true,
-        expiryDate: campaign.expiryDate ?? "",
+        noOfSpins: campaign.noOfSpins ?? 0,
+        couponOptions: Array.isArray(campaign.couponOptions) ? campaign.couponOptions : [],
+        targetedCoupons: Array.isArray(campaign.targetedCoupons) ? campaign.targetedCoupons : [],
+        isActive: typeof campaign.isActive === 'boolean' ? campaign.isActive : true,
+        expiryDate: campaign.expiryDate ? campaign.expiryDate.slice(0, 10) : "",
         segments: Array.isArray(campaign.segments) ? campaign.segments : [],
+        _id: campaign._id,
       });
     }
   }, [campaign]);
@@ -143,23 +144,37 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     }
   };
 
-  const handleCouponSelect = (segmentId, couponId) => {
-    const selectedCoupon = coupons.find(c => c._id === couponId);
-    if (selectedCoupon) {
+  const handleCouponSelect = async (segmentId, couponId) => {
+    if (!couponId) {
+      // If cleared selection, re-validate
+      setFormData((prev) => ({
+        ...prev,
+        segments: prev.segments.map(s =>
+          s.id === segmentId ? { ...s, couponId: "", productName: "", offer: "0.00", couponType: undefined } : s
+        )
+      }));
+      return;
+    }
+
+    try {
+      // Fetch coupon details using provided API to auto-fill row
+      const res = await api.post("/api/coupons/couponforCampains", { coupons: couponId });
+      const data = res?.data?.data || {};
+
       setFormData((prev) => ({
         ...prev,
         segments: prev.segments.map(s =>
           s.id === segmentId ? {
             ...s,
-            couponId: couponId,
-            productName: selectedCoupon.name,
-            offer: selectedCoupon.discount.toString(),
-            couponType: selectedCoupon.couponType
+            couponId,
+            productName: data.name || "",
+            offer: String(data.discount ?? "0"),
+            couponType: data.couponType,
           } : s
         )
       }));
 
-      // Clear table validation if at least 2 coupons selected
+      // Clear table validation if at least 3 coupons selected
       setErrors((prev) => {
         const next = { ...prev };
         const count = (formData.segments || [])
@@ -168,14 +183,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         if (count >= 3) delete next.segments;
         return next;
       });
-    } else {
-      // If cleared selection, re-validate
-      setFormData((prev) => ({
-        ...prev,
-        segments: prev.segments.map(s =>
-          s.id === segmentId ? { ...s, couponId: "" } : s
-        )
-      }));
+    } catch (error) {
+      console.error("Failed to fetch coupon details", error);
+      showToast(error?.response?.data?.message || "Failed to fetch coupon details", "error");
     }
   };
 
@@ -225,22 +235,28 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
 
     setErrors({});
 
-    const campaignData = {
+    const payload = {
       name: formData.name.trim(),
       noOfSpins: noOfSpinsNum,
       couponOptions: validCouponIds,
       targetedCoupons: formData.targetedCoupons,
-      isActive: true, // forced per requirements
+      isActive: formData.isActive,
       expiryDate: formData.expiryDate,
-      // segments: formData.segments,
     };
 
     try {
-      const response = await api.post("/api/spinWheels", campaignData);
-      onSave(response.data);
-      showToast("Spin wheel saved successfully!", "success")
+      if (formData._id) {
+        // Update existing spin wheel
+        await api.put(`/api/spinWheels/${formData._id}`, payload);
+        showToast("Spin wheel updated successfully!", "success");
+      } else {
+        // Create new spin wheel
+        await api.post("/api/spinWheels", payload);
+        showToast("Spin wheel created successfully!", "success");
+      }
+      onSave();
     } catch (error) {
-      showToast(error.response?.data?.message, "error")
+      showToast(error.response?.data?.message || "Request failed", "error");
     }
   };
 
