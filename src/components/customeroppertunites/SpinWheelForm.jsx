@@ -11,17 +11,31 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     noOfSpins: 0,
     couponOptions: [],
     targetedCoupons: [],
-    isActive: true,
     expiryDate: "",
     segments: [],
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
         const response = await api.get("/api/coupons/all");
-        setCoupons(response.data.data);
+        const list = response.data?.data || [];
+        setCoupons(list);
         setLoadingCoupons(false);
+
+        // Default select first targeted coupon if none selected
+        if (list.length > 0) {
+          setFormData((prev) => {
+            if (Array.isArray(prev.targetedCoupons) && prev.targetedCoupons.length > 0) return prev;
+            return { ...prev, targetedCoupons: [list[0]._id] };
+          });
+          setErrors((prev) => {
+            const next = { ...prev };
+            delete next.targetedCoupons;
+            return next;
+          });
+        }
       } catch (error) {
         console.error("Error fetching coupons:", error);
         setLoadingCoupons(false);
@@ -62,6 +76,14 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       ...prev,
       [field]: value,
     }));
+    // Clear field-specific error when user types a valid-like value
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (field === 'name' && value?.trim()) delete next.name;
+      if (field === 'noOfSpins' && Number(value) >= 1) delete next.noOfSpins;
+      if (field === 'expiryDate' && value) delete next.expiryDate;
+      return next;
+    });
   };
 
   const handleSegmentChange = (segmentId, field, value) => {
@@ -71,6 +93,15 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         s.id === segmentId ? { ...s, [field]: value } : s
       ),
     }));
+    // Clear coupons/table validation if at least two couponIds are present
+    setErrors((prev) => {
+      const next = { ...prev };
+      const count = (formData.segments || [])
+        .map((s) => (s.id === segmentId ? value : s.couponId))
+        .filter((id) => id && String(id).trim().length > 0).length;
+      if (field === 'couponId' && count >= 2) delete next.segments;
+      return next;
+    });
   };
 
   const handleImageUpload = (segmentId, e) => {
@@ -95,9 +126,10 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     };
     setFormData((prev) => ({
       ...prev,
-      segments: [...prev?.segments, newSegment],
-      noOfSpins: prev?.segments?.length + 1,
+      segments: [...(prev?.segments || []), newSegment],
+      noOfSpins: (prev?.segments?.length || 0) + 1,
     }));
+    // If after adding we reach 2 segments and both selected, clear error handled elsewhere
   };
 
   const removeSegment = (segmentId) => {
@@ -125,46 +157,88 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
           } : s
         )
       }));
+
+      // Clear table validation if at least 2 coupons selected
+      setErrors((prev) => {
+        const next = { ...prev };
+        const count = (formData.segments || [])
+          .map((s) => (s.id === segmentId ? couponId : s.couponId))
+          .filter((id) => id && String(id).trim().length > 0).length;
+        if (count >= 2) delete next.segments;
+        return next;
+      });
+    } else {
+      // If cleared selection, re-validate
+      setFormData((prev) => ({
+        ...prev,
+        segments: prev.segments.map(s => 
+          s.id === segmentId ? { ...s, couponId: "" } : s
+        )
+      }));
     }
   };
 
-  const handleTargetedCouponChange = (couponId, isChecked) => {
-    setFormData((prev) => {
-      let newTargetedCoupons = [...prev.targetedCoupons];
-      if (isChecked) {
-        newTargetedCoupons.push(couponId);
-      } else {
-        newTargetedCoupons = newTargetedCoupons.filter(id => id !== couponId);
-      }
-      return {
-        ...prev,
-        targetedCoupons: newTargetedCoupons
-      };
+  const handleTargetedCouponChange = (couponId) => {
+    // Enforce exactly one targeted coupon selected
+    setFormData((prev) => ({
+      ...prev,
+      targetedCoupons: [couponId],
+    }));
+
+    // Clear targeted coupon validation once selected
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.targetedCoupons;
+      return next;
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const couponOptions = formData?.segments?.map(segment => segment.couponId);
-    
+
+    // Validation
+    const newErrors = {};
+
+    if (!formData.name?.trim()) newErrors.name = "Name is required";
+
+    const noOfSpinsNum = Number(formData.noOfSpins);
+    if (!Number.isInteger(noOfSpinsNum) || noOfSpinsNum < 1)
+      newErrors.noOfSpins = "No Of Spins must be at least 1";
+
+    if (!formData.expiryDate) newErrors.expiryDate = "Expiry Date is required";
+
+    if (!Array.isArray(formData.targetedCoupons) || formData.targetedCoupons.length === 0)
+      newErrors.targetedCoupons = "Select at least one targeted coupon";
+
+    const validCouponIds = (formData.segments || [])
+      .map((s) => s.couponId)
+      .filter((id) => id && String(id).trim().length > 0);
+
+    if (validCouponIds.length <= 3)
+      newErrors.segments = "Add at least 3 coupons in the table";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
+
     const campaignData = {
-      name: formData.name,
-      noOfSpins: formData.noOfSpins,
-      couponOptions: couponOptions,
+      name: formData.name.trim(),
+      noOfSpins: noOfSpinsNum,
+      couponOptions: validCouponIds,
       targetedCoupons: formData.targetedCoupons,
-      isActive: formData.isActive,
+      isActive: true, // forced per requirements
       expiryDate: formData.expiryDate,
-      segments: formData.segments,
+      // segments: formData.segments,
     };
 
     try {
-      // If it's an existing campaign, you might want to use PUT/PATCH instead
-      const response = await api.post("/spinWheels", campaignData);
+      const response = await api.post("/api/spinWheels", campaignData);
       onSave(response.data);
     } catch (error) {
       console.error("Error saving spin wheel:", error);
-      // Handle error (show notification, etc.)
     }
   };
 
@@ -194,10 +268,11 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
               <input
                 type="text"
                 value={formData.name}
+                placeholder="Enter Campaign Name"
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
-                required
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
             </div>
 
             <div>
@@ -208,12 +283,13 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                 type="number"
                 value={formData.noOfSpins}
                 onChange={(e) =>
-                  handleInputChange("noOfSpins", parseInt(e.target.value))
+                  handleInputChange("noOfSpins", parseInt(e.target.value || '0', 10))
                 }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.noOfSpins ? 'border-red-500' : 'border-gray-300'}`}
                 min="1"
-                required
+                max="4"
               />
+              {errors.noOfSpins && <p className="mt-1 text-sm text-red-600">{errors.noOfSpins}</p>}
             </div>
 
             <div>
@@ -224,21 +300,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                 type="date"
                 value={formData?.expiryDate}
                 onChange={(e) => handleInputChange("expiryDate", e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'}`}
               />
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={formData?.isActive}
-                onChange={(e) => handleInputChange("isActive", e.target.checked)}
-                className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
-              />
-              <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
-                Active
-              </label>
+              {errors.expiryDate && <p className="mt-1 text-sm text-red-600">{errors.expiryDate}</p>}
             </div>
 
             {formData?.targetedCoupons?.length > 0 && (
@@ -269,6 +333,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         {/* Segments Table */}
         {formData?.segments?.length > 0 ? (
           <div className="overflow-x-auto mt-8">
+            {errors.segments && (
+              <p className="mb-2 text-sm text-red-600">{errors.segments}</p>
+            )}
             <table className="w-full border-collapse border border-gray-200 rounded-lg overflow-hidden">
               <thead className="bg-gray-50">
                 <tr>
@@ -367,6 +434,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
           </div>
         ) : (
           <div className="mt-8 border border-dashed border-gray-300 rounded-lg p-8 text-center">
+            {errors.segments && (
+              <p className="mb-2 text-sm text-red-600">{errors.segments}</p>
+            )}
             <p className="text-gray-500 mb-3">No spins added yet.</p>
             <button
               type="button"
@@ -390,19 +460,23 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
 
         <div className="mt-6">
           <h3 className="text-lg font-medium text-gray-700 mb-2">Targeted Coupons</h3>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-500 mb-2">
             Select coupons that will be targeted for this spin wheel campaign.
           </p>
+          {errors.targetedCoupons && (
+            <p className="mb-2 text-sm text-red-600">{errors.targetedCoupons}</p>
+          )}
           {loadingCoupons ? (
             <div>Loading coupons...</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {coupons.map(coupon => (
-                <div key={coupon._id} className="flex items-center p-3 border border-gray-200 rounded-lg">
+                <label key={coupon._id} className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer">
                   <input
-                    type="checkbox"
+                    type="radio"
+                    name="targetedCoupons"
                     checked={formData?.targetedCoupons?.includes(coupon._id)}
-                    onChange={(e) => handleTargetedCouponChange(coupon._id, e.target.checked)}
+                    onChange={() => handleTargetedCouponChange(coupon._id)}
                     className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
                   />
                   <div className="ml-3">
@@ -411,7 +485,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                       {coupon.code} - {coupon.discount}{coupon.couponType === 'percentage' ? '%' : '₹'} off
                     </div>
                   </div>
-                </div>
+                </label>
               ))}
             </div>
           )}
