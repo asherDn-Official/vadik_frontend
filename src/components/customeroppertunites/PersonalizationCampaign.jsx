@@ -308,6 +308,9 @@ const PersonalizationCampaign = () => {
               >
                 Select Customer
               </button>
+               <button  className="px-4 py-2 border  text-blue-950 rounded-sm border-blue-950    ">
+                  Import Customers
+               </button>
             </div>
             <div className="flex items-center gap-3">
               <label className="text-sm text-gray-600">Customers per page:</label>
