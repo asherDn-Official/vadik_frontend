@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Plus } from "lucide-react";
 import SpinWheelPreview from "./SpinWheelPreview";
 import api from "../../api/apiconfig";
+import showToast from "../../utils/ToastNotification";
 
 const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const [coupons, setCoupons] = useState([]);
@@ -147,9 +148,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     if (selectedCoupon) {
       setFormData((prev) => ({
         ...prev,
-        segments: prev.segments.map(s => 
-          s.id === segmentId ? { 
-            ...s, 
+        segments: prev.segments.map(s =>
+          s.id === segmentId ? {
+            ...s,
             couponId: couponId,
             productName: selectedCoupon.name,
             offer: selectedCoupon.discount.toString(),
@@ -171,7 +172,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       // If cleared selection, re-validate
       setFormData((prev) => ({
         ...prev,
-        segments: prev.segments.map(s => 
+        segments: prev.segments.map(s =>
           s.id === segmentId ? { ...s, couponId: "" } : s
         )
       }));
@@ -237,8 +238,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     try {
       const response = await api.post("/api/spinWheels", campaignData);
       onSave(response.data);
+      showToast("Spin wheel saved successfully!", "success")
     } catch (error) {
-      console.error("Error saving spin wheel:", error);
+      showToast(error.response?.data?.message, "error")
     }
   };
 
