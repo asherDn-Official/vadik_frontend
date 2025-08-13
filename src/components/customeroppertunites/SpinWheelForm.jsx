@@ -7,38 +7,13 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const [coupons, setCoupons] = useState([]);
   const [loadingCoupons, setLoadingCoupons] = useState(true);
   const [formData, setFormData] = useState({
-    name: "Our Spin",
-    noOfSpins: 3,
+    name: "",
+    noOfSpins: 0,
     couponOptions: [],
     targetedCoupons: [],
     isActive: true,
     expiryDate: "",
-    segments: [
-      {
-        id: 1,
-        productName: "Premium Wireless Headphones",
-        offer: "12",
-        color: "#E91E63",
-        image: null,
-        couponId: "",
-      },
-      { 
-        id: 2, 
-        productName: "", 
-        offer: "0.00", 
-        color: "#FF4081", 
-        image: null,
-        couponId: "" 
-      },
-      { 
-        id: 3, 
-        productName: "", 
-        offer: "0.00", 
-        color: "#E91E63", 
-        image: null,
-        couponId: "" 
-      },
-    ],
+    segments: [],
   });
 
   useEffect(() => {
@@ -59,24 +34,14 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   useEffect(() => {
     if (campaign) {
       setFormData({
-        name: campaign.name || "Our Spin",
-        noOfSpins: campaign.noOfSpins || 3,
-        couponOptions: campaign.couponOptions || [],
-        targetedCoupons: campaign.targetedCoupons || [],
+        name: campaign.name ?? "",
+        noOfSpins:
+          campaign.noOfSpins ?? (Array.isArray(campaign.segments) ? campaign.segments.length : 0),
+        couponOptions: campaign.couponOptions ?? [],
+        targetedCoupons: campaign.targetedCoupons ?? [],
         isActive: campaign.isActive !== undefined ? campaign.isActive : true,
-        expiryDate: campaign.expiryDate || "",
-        segments: campaign.segments || [
-          {
-            id: 1,
-            productName: "Premium Wireless Headphones",
-            offer: "12",
-            color: "#E91E63",
-            image: null,
-            couponId: "",
-          },
-          { id: 2, productName: "", offer: "0.00", color: "#FF4081", image: null, couponId: "" },
-          { id: 3, productName: "", offer: "0.00", color: "#E91E63", image: null, couponId: "" },
-        ],
+        expiryDate: campaign.expiryDate ?? "",
+        segments: Array.isArray(campaign.segments) ? campaign.segments : [],
       });
     }
   }, [campaign]);
@@ -124,19 +89,19 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       id: Date.now(),
       productName: "",
       offer: "0.00",
-      color: colors[formData.segments.length % colors.length],
+      color: colors[formData?.segments?.length % colors.length],
       image: null,
       couponId: "",
     };
     setFormData((prev) => ({
       ...prev,
-      segments: [...prev.segments, newSegment],
-      noOfSpins: prev.segments.length + 1,
+      segments: [...prev?.segments, newSegment],
+      noOfSpins: prev?.segments?.length + 1,
     }));
   };
 
   const removeSegment = (segmentId) => {
-    if (formData.segments.length > 1) {
+    if (formData?.segments?.length > 1) {
       setFormData((prev) => ({
         ...prev,
         segments: prev.segments.filter((s) => s.id !== segmentId),
@@ -181,7 +146,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const couponOptions = formData.segments.map(segment => segment.couponId);
+    const couponOptions = formData?.segments?.map(segment => segment.couponId);
     
     const campaignData = {
       name: formData.name,
@@ -257,7 +222,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
               </label>
               <input
                 type="date"
-                value={formData.expiryDate}
+                value={formData?.expiryDate}
                 onChange={(e) => handleInputChange("expiryDate", e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
               />
@@ -267,7 +232,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
               <input
                 type="checkbox"
                 id="isActive"
-                checked={formData.isActive}
+                checked={formData?.isActive}
                 onChange={(e) => handleInputChange("isActive", e.target.checked)}
                 className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
               />
@@ -276,13 +241,13 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
               </label>
             </div>
 
-            {formData.targetedCoupons.length > 0 && (
+            {formData?.targetedCoupons?.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Targeted Coupons
                 </label>
                 <div className="space-y-2">
-                  {coupons.filter(c => formData.targetedCoupons.includes(c._id)).map(coupon => (
+                  {coupons?.filter(c => formData.targetedCoupons.includes(c._id)).map(coupon => (
                     <div key={coupon._id} className="flex items-center">
                       <input
                         type="checkbox"
@@ -302,102 +267,116 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         </div>
 
         {/* Segments Table */}
-        <div className="overflow-x-auto mt-8">
-          <table className="w-full border-collapse border border-gray-200 rounded-lg overflow-hidden">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  S.no
-                </th>
-                <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  Coupon
-                </th>
-                <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  Product Name
-                </th>
-                <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  Offer %
-                </th>
-                {/* <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  Add Image
-                </th>
-                <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  Choose Color
-                </th> */}
-                <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {formData.segments.map((segment, index) => (
-                <tr key={segment.id} className="hover:bg-gray-50">
-                  <td className="border border-gray-200 px-4 py-3 text-sm">
-                    {index + 1}
-                  </td>
-                  <td className="border border-gray-200 px-4 py-3">
-                    {loadingCoupons ? (
-                      <div className="text-sm text-gray-500">Loading coupons...</div>
-                    ) : (
-                      <select
-                        value={segment.couponId}
-                        onChange={(e) => handleCouponSelect(segment.id, e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
-                      >
-                        <option value="">Select Coupon</option>
-                        {coupons.map((coupon) => (
-                          <option key={coupon._id} value={coupon._id}>
-                            {coupon.name} ({coupon.code})
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </td>
-                  <td className="border border-gray-200 px-4 py-3">
-                    <input
-                      type="text"
-                      placeholder="Enter Product Name"
-                      value={segment.productName}
-                      onChange={(e) =>
-                        handleSegmentChange(
-                          segment.id,
-                          "productName",
-                          e.target.value
-                        )
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
-                    />
-                  </td>
-                  <td className="border border-gray-200 px-4 py-3">
-                    <input
-                      type="text"
-                      value={segment.offer + " %"}
-                      onChange={(e) =>
-                        handleSegmentChange(
-                          segment.id,
-                          "offer",
-                          e.target.value.replace(" %", "")
-                        )
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
-                    />
-                  </td>
-                  <td className="border border-gray-200 px-4 py-3">
-                    {formData.segments.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeSegment(segment.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </td>
+        {formData?.segments?.length > 0 ? (
+          <div className="overflow-x-auto mt-8">
+            <table className="w-full border-collapse border border-gray-200 rounded-lg overflow-hidden">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    S.no
+                  </th>
+                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Coupon
+                  </th>
+                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Product Name
+                  </th>
+                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Offer %
+                  </th>
+                  {/* <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Add Image
+                  </th>
+                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Choose Color
+                  </th> */}
+                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Action
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {formData?.segments?.map((segment, index) => (
+                  <tr key={segment.id} className="hover:bg-gray-50">
+                    <td className="border border-gray-200 px-4 py-3 text-sm">
+                      {index + 1}
+                    </td>
+                    <td className="border border-gray-200 px-4 py-3">
+                      {loadingCoupons ? (
+                        <div className="text-sm text-gray-500">Loading coupons...</div>
+                      ) : (
+                        <select
+                          value={segment.couponId}
+                          onChange={(e) => handleCouponSelect(segment.id, e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
+                        >
+                          <option value="">Select Coupon</option>
+                          {coupons?.map((coupon) => (
+                            <option key={coupon._id} value={coupon._id}>
+                              {coupon.name} ({coupon.code})
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
+                    <td className="border border-gray-200 px-4 py-3">
+                      <input
+                        type="text"
+                        placeholder="Enter Product Name"
+                        value={segment.productName}
+                        onChange={(e) =>
+                          handleSegmentChange(
+                            segment.id,
+                            "productName",
+                            e.target.value
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
+                      />
+                    </td>
+                    <td className="border border-gray-200 px-4 py-3">
+                      <input
+                        type="text"
+                        value={segment.offer + " %"}
+                        onChange={(e) =>
+                          handleSegmentChange(
+                            segment.id,
+                            "offer",
+                            e.target.value.replace(" %", "")
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
+                      />
+                    </td>
+
+                    <td className="border border-gray-200 px-4 py-3">
+                      {formData?.segments?.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeSegment(segment.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="mt-8 border border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <p className="text-gray-500 mb-3">No spins added yet.</p>
+            <button
+              type="button"
+              onClick={addSegment}
+              className="inline-flex items-center px-4 py-2 text-pink-600 hover:text-pink-700 transition-colors"
+            >
+              Add first Spin <Plus className="w-4 h-4 ml-1" />
+            </button>
+          </div>
+        )}
 
         <div className="flex justify-end">
           <button
@@ -422,7 +401,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                 <div key={coupon._id} className="flex items-center p-3 border border-gray-200 rounded-lg">
                   <input
                     type="checkbox"
-                    checked={formData.targetedCoupons.includes(coupon._id)}
+                    checked={formData?.targetedCoupons?.includes(coupon._id)}
                     onChange={(e) => handleTargetedCouponChange(coupon._id, e.target.checked)}
                     className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
                   />

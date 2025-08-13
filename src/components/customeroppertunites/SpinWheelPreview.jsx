@@ -1,11 +1,22 @@
 import React, { useState, useRef } from "react";
 
-const SpinWheelPreview = ({ segments }) => {
-  const totalSegments = segments.length;
-  const segmentAngle = 360 / totalSegments;
+const SpinWheelPreview = ({ segments = [] }) => {
+  const totalSegments = Array.isArray(segments) ? segments.length : 0;
+  const segmentAngle = totalSegments > 0 ? 360 / totalSegments : 0;
   const [rotation, setRotation] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
   const wheelRef = useRef(null);
+
+  // Show placeholder when there are no segments yet
+  if (totalSegments === 0) {
+    return (
+      <div className="flex flex-col items-center">
+        <div className="relative w-80 h-80 mb-4 flex items-center justify-center border-8 border-dashed border-yellow-400 rounded-full">
+          <span className="text-gray-500 text-sm">Add a spin to preview</span>
+        </div>
+      </div>
+    );
+  }
 
   const spinWheel = () => {
     if (isSpinning) return;
@@ -35,7 +46,7 @@ const SpinWheelPreview = ({ segments }) => {
         >
           {/* Wheel Segments */}
           <svg className="w-full h-full" viewBox="0 0 200 200">
-            {segments.map((segment, index) => {
+            {segments?.map((segment, index) => {
               const startAngle = index * segmentAngle - 90; // Start from top
               const endAngle = (index + 1) * segmentAngle - 90;
 
