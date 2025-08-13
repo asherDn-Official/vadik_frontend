@@ -17,9 +17,9 @@ const SpinWheelList = ({ activities, onEdit, onDelete }) => {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-slate-800">
-                  {campaign.title}
+                  {campaign.name}
                 </h3>
-                <p className="text-gray-600">No Of Spins : {campaign.spins}</p>
+                <p className="text-gray-600">No Of Spins : {campaign.noOfSpins}</p>
               </div>
             </div>
 
@@ -31,7 +31,7 @@ const SpinWheelList = ({ activities, onEdit, onDelete }) => {
                 <Edit className="w-4 h-4" />
               </button>
               <button
-                onClick={() => onDelete(campaign.id)}
+                onClick={() => onDelete(campaign._id)}
                 className="p-2 text-[#FD2C2F] bg-[#FF00001A] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <Trash2 className="w-4 h-4" />

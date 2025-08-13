@@ -1,43 +1,69 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SpinWheelList from "./SpinWheelList";
 import SpinWheelForm from "./SpinWheelForm";
 import { ArrowLeft } from "lucide-react";
+import api from "../../api/apiconfig";
+import showToast from "../../utils/ToastNotification";
+import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 
 const SpinWheel = () => {
-    const [spinWheels, setSpinWheels] = useState([
-        { id: 1, title: "Spin Wheel 1", spins: 8 },
-        { id: 2, title: "Spin Wheel 2", spins: 6 },
-        { id: 3, title: "Spin Wheel 3", spins: 3 },
-    ]);
-    const [showForm, setShowForm] = useState(false);
-    const [editingSpinWheel, setEditingSpinWheel] = useState(null);
+  const [spinWheels, setSpinWheels] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingSpinWheel, setEditingSpinWheel] = useState(null);
 
-    const handleCreate = () => {
-        setEditingSpinWheel(null);
-        setShowForm(true);
+
+  const getAllWheelData = async () => {
+    try {
+      const response = await api.get('/api/spinWheels/spinWheel/all');
+      setSpinWheels(response.data.data);
+
+    } catch (error) {
+      showToast(error.response.data.message, "error")
+    }
+
+  }
+
+  useEffect(() => {
+    getAllWheelData()
+  }, [])
+
+
+  const handleCreate = () => {
+    setEditingSpinWheel(null);
+    setShowForm(true);
+  };
+
+  const handleEdit = () => {
+    setEditingSpinWheel();
+    setShowForm(true);
+  };
+
+  const handleSave = (spinWheels) => {
+    if (editingSpinWheel) {
+      setSpinWheels(prev =>
+        prev.map(q => q.id === editingSpinWheel.id ? { ...spinWheels, id: editingSpinWheel.id } : q)
+      );
+    } else {
+      setSpinWheels(prev => [...prev, { ...spinWheels, id: Date.now() }]);
+    }
+    setShowForm(false);
+  };
+
+  const handleDelete = async (id) => {
+    const onconfirm = async () => {
+      try {
+        await api.delete(`/api/spinWheels/${id}`);
+        getAllWheelData();
+        showToast("Quiz deleted successfully", "success");
+      } catch (err) {
+        showToast(err.response.data.message, "error");
+      }
     };
 
-    const handleEdit = () => {
-        setEditingSpinWheel();
-        setShowForm(true);
-    };
+    deleteConfirmTostNotification("", onconfirm);
+  };
 
-    const handleSave = (spinWheels) => {
-        if (editingSpinWheel) {
-            setSpinWheels(prev =>
-                prev.map(q => q.id === editingSpinWheel.id ? { ...spinWheels, id: editingSpinWheel.id } : q)
-            );
-        } else {
-            setSpinWheels(prev => [...prev, { ...spinWheels, id: Date.now() }]);
-        }
-        setShowForm(false);
-    };
-
-    const handleDelete = (id) => {
-        setSpinWheels(prev => prev.filter(q => q.id !== id));
-    };
-
-     if (showForm) {
+  if (showForm) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="p-8">
@@ -48,10 +74,10 @@ const SpinWheel = () => {
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back
           </button>
-          <SpinWheelForm 
-            quiz={editingSpinWheel} 
-            onSave={handleSave} 
-            onCancel={() => setShowForm(false)} 
+          <SpinWheelForm
+            quiz={editingSpinWheel}
+            onSave={handleSave}
+            onCancel={() => setShowForm(false)}
           />
         </div>
       </div>
@@ -59,8 +85,8 @@ const SpinWheel = () => {
   }
 
 
-    return (
-       <div>
+  return (
+    <div>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-slate-800">
           {spinWheels.length} Quiz Activities
@@ -72,10 +98,10 @@ const SpinWheel = () => {
           Create Quiz
         </button>
       </div>
-      <SpinWheelList 
-        activities={spinWheels} 
-        onEdit={handleEdit} 
-        onDelete={handleDelete} 
+      <SpinWheelList
+        activities={spinWheels}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     </div>
   );
