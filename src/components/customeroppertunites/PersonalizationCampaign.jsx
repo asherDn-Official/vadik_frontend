@@ -193,7 +193,11 @@ const PersonalizationCampaign = () => {
     const allUnique = resolvableImportedIds;
     const allSelected = selectedImported.length === allUnique.length &&
       allUnique.every((id) => selectedImported.includes(id));
-    setSelectedImported(allSelected ? [] : allUnique);
+    const next = allSelected ? [] : allUnique;
+    setSelectedImported(next);
+    if ((selectedCustomers.length + next.length) > 0) {
+      setFormErrors((prev) => ({ ...prev, selectedCustomers: undefined }));
+    }
   };
 
   const getCampaignOptions = () => {
