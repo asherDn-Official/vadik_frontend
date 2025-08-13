@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FiEye, FiEyeOff } from "react-icons/fi"; // Added eye icons
 import api from "../api/apiconfig";
 import { useAuth } from "../context/AuthContext";
 
@@ -12,6 +13,7 @@ const Login = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false); // Added password visibility state
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
 
@@ -47,20 +49,16 @@ const Login = () => {
 
         // Store appropriate ID based on login type
         if (loginType === "retailer" && data.retailer?._id) {
-
           if (data.retailer.onboarding) {
             navigate("/dashboard");
           } else {
             navigate(`/register/basic/${data.retailer._id}`);
           }
-
           localStorage.setItem("retailerId", data.retailer._id);
         } else if (loginType === "staff" && data.staff?._id) {
           localStorage.setItem("retailerId", data.staff._id);
           navigate("/dashboard");
-
         }
-
       }
     } catch (err) {
       setError(
@@ -124,16 +122,25 @@ const Login = () => {
             />
           </div>
 
-          <div>
+          {/* Password field with visibility toggle */}
+          <div className="relative">
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               name="password"
               value={credentials.password}
               onChange={handleChange}
               placeholder="Enter password"
-              className="w-full px-4 py-3 rounded-md bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
+              className="w-full px-4 py-3 rounded-md bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent pr-12"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/60 hover:text-white transition-colors"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+            </button>
           </div>
 
           <div className="flex items-center justify-between">
