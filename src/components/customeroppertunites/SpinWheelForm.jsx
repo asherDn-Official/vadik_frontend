@@ -99,7 +99,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       const count = (formData.segments || [])
         .map((s) => (s.id === segmentId ? value : s.couponId))
         .filter((id) => id && String(id).trim().length > 0).length;
-      if (field === 'couponId' && count >= 2) delete next.segments;
+      if (field === 'couponId' && count >= 3) delete next.segments;
       return next;
     });
   };
@@ -164,7 +164,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         const count = (formData.segments || [])
           .map((s) => (s.id === segmentId ? couponId : s.couponId))
           .filter((id) => id && String(id).trim().length > 0).length;
-        if (count >= 2) delete next.segments;
+        if (count >= 3) delete next.segments;
         return next;
       });
     } else {
@@ -214,8 +214,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       .map((s) => s.couponId)
       .filter((id) => id && String(id).trim().length > 0);
 
-    if (validCouponIds.length <= 3)
-      newErrors.segments = "Add at least 3 coupons in the table";
+    if (validCouponIds.length < 3)
+      newErrors.segments = "Minimum 3 coupons in the table";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
