@@ -25,7 +25,7 @@ const CouponManagement = () => {
   const [editingCouponId, setEditingCouponId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-    // New states for pagination, sorting, filtering, and search
+  // New states for pagination, sorting, filtering, and search
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
@@ -42,7 +42,9 @@ const CouponManagement = () => {
     discount: "",
     conditionType: ""
   });
+  
   const initialCouponData = {
+    name: "",
     code: "",
     discount: 0,
     expiryDate: "",
@@ -106,6 +108,7 @@ const CouponManagement = () => {
     setIsAddingCoupon(true);
     setEditingCouponId(coupon._id);
     setCouponData({
+      name: coupon.name,
       code: coupon.code,
       discount: coupon.discount,
       expiryDate: new Date(coupon.expiryDate).toISOString().split('T')[0],
@@ -136,6 +139,10 @@ const CouponManagement = () => {
   };
 
   const validateCoupon = () => {
+    if (!couponData.name.trim()) {
+      return "Coupon name is required";
+    }
+    
     if (!couponData.code.trim()) {
       return "Coupon code is required";
     }
@@ -213,6 +220,7 @@ const CouponManagement = () => {
       setIsDeleting(false);
     }
   };
+  
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
@@ -249,6 +257,7 @@ const CouponManagement = () => {
     setSearchQuery("");
     setCurrentPage(1);
   };
+  
   const getCouponIcon = (type) => {
     switch (type) {
       case "amount":
@@ -323,6 +332,21 @@ const CouponManagement = () => {
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                {/* Coupon Name */}
+                <div className="col-span-1 md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={couponData.name}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="e.g., Summer Sale Discount"
+                  />
+                </div>
+                
                 {/* Coupon Code */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -527,204 +551,206 @@ const CouponManagement = () => {
               </div>
             </div>
           )}
-     {/* Search and Filter Section */}
-             <div className="mb-6 bg-gray-50 rounded-lg p-4">
-               <div className="flex flex-wrap gap-4 items-center">
-                 <div className="relative flex-1 min-w-[200px]">
-                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                   <input
-                     type="text"
-                     placeholder="Search coupons..."
-                     value={searchQuery}
-                     onChange={(e) => {
-                       setSearchQuery(e.target.value);
-                       setCurrentPage(1);
-                     }}
-                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                   />
-                 </div>
-                 
-                 <button 
-                   onClick={() => setShowFilters(!showFilters)}
-                   className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-                 >
-                   <FiFilter className="mr-2" /> 
-                   Filters 
-                   {showFilters ? <FiChevronUp className="ml-1" /> : <FiChevronDown className="ml-1" />}
-                 </button>
-                 
-                 <button 
-                   onClick={clearFilters}
-                   className="px-4 py-2 text-gray-600 hover:text-gray-900"
-                 >
-                   Clear All
-                 </button>
-               </div>
-               
-               {showFilters && (
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
-                   {/* Status Filter */}
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                       Status
-                     </label>
-                     <select
-                       name="isActive"
-                       value={filters.isActive}
-                       onChange={handleFilterChange}
-                       className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                     >
-                       <option value="">All Statuses</option>
-                       <option value="true">Active</option>
-                       <option value="false">Inactive</option>
-                     </select>
-                   </div>
-                   
-                   {/* Coupon Type Filter */}
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                       Coupon Type
-                     </label>
-                     <select
-                       name="couponType"
-                       value={filters.couponType}
-                       onChange={handleFilterChange}
-                       className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                     >
-                       <option value="">All Types</option>
-                       <option value="amount">Amount</option>
-                       <option value="percentage">Percentage</option>
-                       <option value="product">Product</option>
-                     </select>
-                   </div>
-                   
-                   {/* Condition Type Filter */}
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                       Condition Type
-                     </label>
-                     <select
-                       name="conditionType"
-                       value={filters.conditionType}
-                       onChange={handleFilterChange}
-                       className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                     >
-                       <option value="">All Conditions</option>
-                       <option value="greater">Greater than</option>
-                       <option value="lesser">Less than</option>
-                       <option value="equal">Equal to</option>
-                     </select>
-                   </div>
-                   
-                   {/* Expiry Date Filter */}
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                       Expiry Before
-                     </label>
-                     <input
-                       type="date"
-                       name="expiryDate"
-                       value={filters.expiryDate}
-                       onChange={handleFilterChange}
-                       className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                     />
-                   </div>
-                   
-                   {/* Product ID Filter */}
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                       Product ID
-                     </label>
-                     <input
-                       type="text"
-                       name="productId"
-                       value={filters.productId}
-                       onChange={handleFilterChange}
-                       placeholder="Enter product ID"
-                       className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                     />
-                   </div>
-                   
-                   {/* Discount Filter */}
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                       Discount Amount
-                     </label>
-                     <input
-                       type="number"
-                       name="discount"
-                       value={filters.discount}
-                       onChange={handleFilterChange}
-                       placeholder="Enter discount amount"
-                       min="0"
-                       className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                     />
-                   </div>
-                 </div>
-               )}
-             </div>
-             
-             {/* Sorting Controls */}
-             <div className="flex flex-wrap gap-4 mb-4">
-               <span className="text-sm text-gray-700 font-medium">Sort by:</span>
-               
-               <button 
-                 onClick={() => handleSort("createdAt")}
-                 className={`px-3 py-1 rounded-full text-sm ${
-                   sortField === "createdAt" 
-                     ? "bg-[#313166] text-white" 
-                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                 }`}
-               >
-                 Created Date {sortField === "createdAt" && (
-                   sortOrder === "asc" ? "↑" : "↓"
-                 )}
-               </button>
-               
-               <button 
-                 onClick={() => handleSort("expiryDate")}
-                 className={`px-3 py-1 rounded-full text-sm ${
-                   sortField === "expiryDate" 
-                     ? "bg-[#313166] text-white" 
-                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                 }`}
-               >
-                 Expiry Date {sortField === "expiryDate" && (
-                   sortOrder === "asc" ? "↑" : "↓"
-                 )}
-               </button>
-               
-               <button 
-                 onClick={() => handleSort("discount")}
-                 className={`px-3 py-1 rounded-full text-sm ${
-                   sortField === "discount" 
-                     ? "bg-[#313166] text-white" 
-                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                 }`}
-               >
-                 Discount Amount {sortField === "discount" && (
-                   sortOrder === "asc" ? "↑" : "↓"
-                 )}
-               </button>
-             </div>
-             
-             {/* Items Per Page Selector */}
-             <div className="flex items-center gap-2 mb-4">
-               <span className="text-sm text-gray-700">Items per page:</span>
-               <select
-                 value={itemsPerPage}
-                 onChange={(e) => {
-                   setItemsPerPage(Number(e.target.value));
-                   setCurrentPage(1);
-                 }}
-                 className="p-2 border border-gray-300 rounded-lg text-sm"
-               >
-                 <option value="5">5</option>
-                 <option value="10">10</option>
-                 <option value="20">20</option>
-                 <option value="50">50</option>
-               </select>
-             </div>
+          
+          {/* Search and Filter Section */}
+          <div className="mb-6 bg-gray-50 rounded-lg p-4">
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="relative flex-1 min-w-[200px]">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by name or code..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+              
+              <button 
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                <FiFilter className="mr-2" /> 
+                Filters 
+                {showFilters ? <FiChevronUp className="ml-1" /> : <FiChevronDown className="ml-1" />}
+              </button>
+              
+              <button 
+                onClick={clearFilters}
+                className="px-4 py-2 text-gray-600 hover:text-gray-900"
+              >
+                Clear All
+              </button>
+            </div>
+            
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
+                {/* Status Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    name="isActive"
+                    value={filters.isActive}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                  </select>
+                </div>
+                
+                {/* Coupon Type Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Coupon Type
+                  </label>
+                  <select
+                    name="couponType"
+                    value={filters.couponType}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="">All Types</option>
+                    <option value="amount">Amount</option>
+                    <option value="percentage">Percentage</option>
+                    <option value="product">Product</option>
+                  </select>
+                </div>
+                
+                {/* Condition Type Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Condition Type
+                  </label>
+                  <select
+                    name="conditionType"
+                    value={filters.conditionType}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="">All Conditions</option>
+                    <option value="greater">Greater than</option>
+                    <option value="lesser">Less than</option>
+                    <option value="equal">Equal to</option>
+                  </select>
+                </div>
+                
+                {/* Expiry Date Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Expiry Before
+                  </label>
+                  <input
+                    type="date"
+                    name="expiryDate"
+                    value={filters.expiryDate}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+                
+                {/* Product ID Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Product ID
+                  </label>
+                  <input
+                    type="text"
+                    name="productId"
+                    value={filters.productId}
+                    onChange={handleFilterChange}
+                    placeholder="Enter product ID"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+                
+                {/* Discount Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Discount Amount
+                  </label>
+                  <input
+                    type="number"
+                    name="discount"
+                    value={filters.discount}
+                    onChange={handleFilterChange}
+                    placeholder="Enter discount amount"
+                    min="0"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Sorting Controls */}
+          <div className="flex flex-wrap gap-4 mb-4">
+            <span className="text-sm text-gray-700 font-medium">Sort by:</span>
+            
+            <button 
+              onClick={() => handleSort("createdAt")}
+              className={`px-3 py-1 rounded-full text-sm ${
+                sortField === "createdAt" 
+                  ? "bg-[#313166] text-white" 
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Created Date {sortField === "createdAt" && (
+                sortOrder === "asc" ? "↑" : "↓"
+              )}
+            </button>
+            
+            <button 
+              onClick={() => handleSort("expiryDate")}
+              className={`px-3 py-1 rounded-full text-sm ${
+                sortField === "expiryDate" 
+                  ? "bg-[#313166] text-white" 
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Expiry Date {sortField === "expiryDate" && (
+                sortOrder === "asc" ? "↑" : "↓"
+              )}
+            </button>
+            
+            <button 
+              onClick={() => handleSort("discount")}
+              className={`px-3 py-1 rounded-full text-sm ${
+                sortField === "discount" 
+                  ? "bg-[#313166] text-white" 
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Discount Amount {sortField === "discount" && (
+                sortOrder === "asc" ? "↑" : "↓"
+              )}
+            </button>
+          </div>
+          
+          {/* Items Per Page Selector */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-sm text-gray-700">Items per page:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="p-2 border border-gray-300 rounded-lg text-sm"
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+          
           <div className="space-y-4">
             {coupons.length > 0 ? (
               coupons.map((coupon) => (
@@ -740,20 +766,25 @@ const CouponManagement = () => {
                         {getCouponIcon(coupon.couponType)}
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-gray-900">{coupon.code}</h4>
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${getCouponTypeClasses(coupon.couponType)}`}
-                          >
-                            {coupon.couponType}
-                          </span>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-gray-900">{coupon.name}</h4>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-full ${coupon.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
                           >
                             {coupon.isActive ? "Active" : "Inactive"}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                            {coupon.code}
+                          </span>
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded-full ${getCouponTypeClasses(coupon.couponType)}`}
+                          >
+                            {coupon.couponType}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2">
                           {coupon.description}
                         </p>
                         <div className="flex flex-wrap gap-2 text-sm text-gray-500 mt-2">
@@ -814,7 +845,8 @@ const CouponManagement = () => {
               </div>
             )}
           </div>
-            {totalPages > 1 && (
+          
+          {totalPages > 1 && (
             <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
