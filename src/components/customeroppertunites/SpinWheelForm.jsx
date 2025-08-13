@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { X, Plus } from "lucide-react";
 import SpinWheelPreview from "./SpinWheelPreview";
+import api from "../../api/apiconfig";
 
 const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
+  const [coupons, setCoupons] = useState([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(true);
   const [formData, setFormData] = useState({
-    title: "Our Spin",
-    spins: 3,
+    name: "Our Spin",
+    noOfSpins: 3,
+    couponOptions: [],
+    targetedCoupons: [],
+    isActive: true,
+    expiryDate: "",
     segments: [
       {
         id: 1,
@@ -13,27 +20,62 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         offer: "12",
         color: "#E91E63",
         image: null,
+        couponId: "",
       },
-      { id: 2, productName: "", offer: "0.00", color: "#FF4081", image: null },
-      { id: 3, productName: "", offer: "0.00", color: "#E91E63", image: null },
+      { 
+        id: 2, 
+        productName: "", 
+        offer: "0.00", 
+        color: "#FF4081", 
+        image: null,
+        couponId: "" 
+      },
+      { 
+        id: 3, 
+        productName: "", 
+        offer: "0.00", 
+        color: "#E91E63", 
+        image: null,
+        couponId: "" 
+      },
     ],
   });
 
   useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const response = await api.get("/api/coupons/all");
+        setCoupons(response.data.data);
+        setLoadingCoupons(false);
+      } catch (error) {
+        console.error("Error fetching coupons:", error);
+        setLoadingCoupons(false);
+      }
+    };
+
+    fetchCoupons();
+  }, []);
+
+  useEffect(() => {
     if (campaign) {
       setFormData({
-        title: campaign.title || "Our Spin",
-        spins: campaign.spins || 3,
-        segments: campaign.segmentsData || [
+        name: campaign.name || "Our Spin",
+        noOfSpins: campaign.noOfSpins || 3,
+        couponOptions: campaign.couponOptions || [],
+        targetedCoupons: campaign.targetedCoupons || [],
+        isActive: campaign.isActive !== undefined ? campaign.isActive : true,
+        expiryDate: campaign.expiryDate || "",
+        segments: campaign.segments || [
           {
             id: 1,
             productName: "Premium Wireless Headphones",
             offer: "12",
             color: "#E91E63",
             image: null,
+            couponId: "",
           },
-          { id: 2, productName: "", offer: "0.00", color: "#FF4081", image: null },
-          { id: 3, productName: "", offer: "0.00", color: "#E91E63", image: null },
+          { id: 2, productName: "", offer: "0.00", color: "#FF4081", image: null, couponId: "" },
+          { id: 3, productName: "", offer: "0.00", color: "#E91E63", image: null, couponId: "" },
         ],
       });
     }
@@ -84,11 +126,12 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       offer: "0.00",
       color: colors[formData.segments.length % colors.length],
       image: null,
+      couponId: "",
     };
     setFormData((prev) => ({
       ...prev,
       segments: [...prev.segments, newSegment],
-      spins: prev.segments.length + 1,
+      noOfSpins: prev.segments.length + 1,
     }));
   };
 
@@ -97,19 +140,67 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       setFormData((prev) => ({
         ...prev,
         segments: prev.segments.filter((s) => s.id !== segmentId),
-        spins: prev.segments.length - 1,
+        noOfSpins: prev.segments.length - 1,
       }));
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleCouponSelect = (segmentId, couponId) => {
+    const selectedCoupon = coupons.find(c => c._id === couponId);
+    if (selectedCoupon) {
+      setFormData((prev) => ({
+        ...prev,
+        segments: prev.segments.map(s => 
+          s.id === segmentId ? { 
+            ...s, 
+            couponId: couponId,
+            productName: selectedCoupon.name,
+            offer: selectedCoupon.discount.toString(),
+            couponType: selectedCoupon.couponType
+          } : s
+        )
+      }));
+    }
+  };
+
+  const handleTargetedCouponChange = (couponId, isChecked) => {
+    setFormData((prev) => {
+      let newTargetedCoupons = [...prev.targetedCoupons];
+      if (isChecked) {
+        newTargetedCoupons.push(couponId);
+      } else {
+        newTargetedCoupons = newTargetedCoupons.filter(id => id !== couponId);
+      }
+      return {
+        ...prev,
+        targetedCoupons: newTargetedCoupons
+      };
+    });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    const couponOptions = formData.segments.map(segment => segment.couponId);
+    
     const campaignData = {
-      title: formData.title,
-      spins: formData.segments.length,
-      segmentsData: formData.segments,
+      name: formData.name,
+      noOfSpins: formData.noOfSpins,
+      couponOptions: couponOptions,
+      targetedCoupons: formData.targetedCoupons,
+      isActive: formData.isActive,
+      expiryDate: formData.expiryDate,
+      segments: formData.segments,
     };
-    onSave(campaignData);
+
+    try {
+      // If it's an existing campaign, you might want to use PUT/PATCH instead
+      const response = await api.post("/spinWheels", campaignData);
+      onSave(response.data);
+    } catch (error) {
+      console.error("Error saving spin wheel:", error);
+      // Handle error (show notification, etc.)
+    }
   };
 
   return (
@@ -133,12 +224,12 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Title
+                Name
               </label>
               <input
                 type="text"
-                value={formData.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
+                value={formData.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
                 required
               />
@@ -150,15 +241,63 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
               </label>
               <input
                 type="number"
-                value={formData.spins}
+                value={formData.noOfSpins}
                 onChange={(e) =>
-                  handleInputChange("spins", parseInt(e.target.value))
+                  handleInputChange("noOfSpins", parseInt(e.target.value))
                 }
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
                 min="1"
                 required
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Expiry Date
+              </label>
+              <input
+                type="date"
+                value={formData.expiryDate}
+                onChange={(e) => handleInputChange("expiryDate", e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+              />
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isActive"
+                checked={formData.isActive}
+                onChange={(e) => handleInputChange("isActive", e.target.checked)}
+                className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
+              />
+              <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+                Active
+              </label>
+            </div>
+
+            {formData.targetedCoupons.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Targeted Coupons
+                </label>
+                <div className="space-y-2">
+                  {coupons.filter(c => formData.targetedCoupons.includes(c._id)).map(coupon => (
+                    <div key={coupon._id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={formData.targetedCoupons.includes(coupon._id)}
+                        onChange={(e) => handleTargetedCouponChange(coupon._id, e.target.checked)}
+                        className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">
+                        {coupon.name} ({coupon.code})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -171,17 +310,20 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                   S.no
                 </th>
                 <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
+                  Coupon
+                </th>
+                <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
                   Product Name
                 </th>
                 <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
                   Offer %
                 </th>
-                <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
+                {/* <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
                   Add Image
                 </th>
                 <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
                   Choose Color
-                </th>
+                </th> */}
                 <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
                   Action
                 </th>
@@ -192,6 +334,24 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                 <tr key={segment.id} className="hover:bg-gray-50">
                   <td className="border border-gray-200 px-4 py-3 text-sm">
                     {index + 1}
+                  </td>
+                  <td className="border border-gray-200 px-4 py-3">
+                    {loadingCoupons ? (
+                      <div className="text-sm text-gray-500">Loading coupons...</div>
+                    ) : (
+                      <select
+                        value={segment.couponId}
+                        onChange={(e) => handleCouponSelect(segment.id, e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
+                      >
+                        <option value="">Select Coupon</option>
+                        {coupons.map((coupon) => (
+                          <option key={coupon._id} value={coupon._id}>
+                            {coupon.name} ({coupon.code})
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </td>
                   <td className="border border-gray-200 px-4 py-3">
                     <input
@@ -223,44 +383,6 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                     />
                   </td>
                   <td className="border border-gray-200 px-4 py-3">
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload(segment.id, e)}
-                        className="hidden"
-                      />
-                      <div className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200 transition-colors text-center">
-                        {segment.image ? "Change Image" : "Click To Add"}
-                      </div>
-                    </label>
-                    {segment.image && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        Image selected
-                      </div>
-                    )}
-                  </td>
-                  <td className="border border-gray-200 px-4 py-3">
-                    <div className="flex items-center space-x-2">
-                      <div
-                        className="w-8 h-6 rounded-full cursor-pointer border-2 border-gray-300"
-                        style={{ backgroundColor: segment.color }}
-                        onClick={() => {
-                          const input = document.createElement("input");
-                          input.type = "color";
-                          input.value = segment.color;
-                          input.onchange = (e) =>
-                            handleSegmentChange(
-                              segment.id,
-                              "color",
-                              e.target.value
-                            );
-                          input.click();
-                        }}
-                      ></div>
-                    </div>
-                  </td>
-                  <td className="border border-gray-200 px-4 py-3">
                     {formData.segments.length > 1 && (
                       <button
                         type="button"
@@ -287,7 +409,36 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
           </button>
         </div>
 
-        <div className="flex justify-end space-x-4 pt-4">
+        <div className="mt-6">
+          <h3 className="text-lg font-medium text-gray-700 mb-2">Targeted Coupons</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Select coupons that will be targeted for this spin wheel campaign.
+          </p>
+          {loadingCoupons ? (
+            <div>Loading coupons...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {coupons.map(coupon => (
+                <div key={coupon._id} className="flex items-center p-3 border border-gray-200 rounded-lg">
+                  <input
+                    type="checkbox"
+                    checked={formData.targetedCoupons.includes(coupon._id)}
+                    onChange={(e) => handleTargetedCouponChange(coupon._id, e.target.checked)}
+                    className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
+                  />
+                  <div className="ml-3">
+                    <div className="text-sm font-medium text-gray-700">{coupon.name}</div>
+                    <div className="text-xs text-gray-500">
+                      {coupon.code} - {coupon.discount}{coupon.couponType === 'percentage' ? '%' : '₹'} off
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end space-x-4 pt-8">
           <button
             type="button"
             onClick={onCancel}
