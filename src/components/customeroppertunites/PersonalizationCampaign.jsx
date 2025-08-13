@@ -316,20 +316,17 @@ const PersonalizationCampaign = () => {
 
     setFormErrors({});
 
-    // Recipients: merge UI selections + imported selections; if none, fallback to visible filteredData
-    const merged = new Set([
+    // Recipients: merge only explicitly selected checkboxes (no fallback)
+    const merged = [...new Set([
       ...selectedCustomers,
       ...selectedImported
-    ].filter(Boolean));
+    ].filter(Boolean))];
 
-    let customerIds = Array.from(merged);
-    if (customerIds.length === 0) {
-      customerIds = (filteredData || []).map((c) => c._id);
-    }
+    const customerIds = merged;
 
-    // Guard: if still empty, nothing to send
+    // Guard: must select at least one checkbox
     if (!customerIds || customerIds.length === 0) {
-      setFormErrors({ selectedCustomers: "No customers selected or match the current filters." });
+      setFormErrors({ selectedCustomers: "Please select at least one customer (from list or import)." });
       return;
     }
 
