@@ -19,7 +19,7 @@ import api from "./api/apiconfig";
 
 function App() {
   const { auth, loading } = useAuth();
-  const [onboardingDone, setOnboardingDone] = useState(false);
+  const [onboardingDone, setOnboardingDone] = useState(true); // assume true until checked
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
   const [formData, setFormData] = useState({
@@ -45,19 +45,18 @@ function App() {
     setFormData((prev) => ({ ...prev, ...newData }));
   };
 
-  // Fetch onboarding status once authenticated
   useEffect(() => {
     const fetchOnboardingStatus = async () => {
-      if (auth) {
-        try {
-          const res = await api.get("/api/retailer/profile");
-          setOnboardingDone(res.data.data.onboarding); // true or false
-        } catch (err) {
-          console.error("Error fetching onboarding status", err);
-        } finally {
-          setCheckingOnboarding(false);
-        }
-      } else {
+      if (!auth) {
+        setCheckingOnboarding(false);
+        return;
+      }
+      try {
+        const res = await api.get("/api/retailer/profile");
+        setOnboardingDone(res.data.data.onboarding === true); // adjust based on backend meaning
+      } catch (err) {
+        console.error("Error fetching onboarding status", err);
+      } finally {
         setCheckingOnboarding(false);
       }
     };
@@ -80,29 +79,53 @@ function App() {
         />
         <Route path="completion" element={<Completion />} />
 
-        {/* Protected */}
         {auth ? (
-          onboardingDone ? (
-            <Route path="/" element={<Layout />}>
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="customers" element={<CustomerList />} />
-              <Route path="customers/add" element={<CustomerAdd />} />
-              <Route
-                path="customers/customer-profile/:customerId"
-                element={<CustomerProfile />}
-              />
-              <Route path="personalisation" element={<CustomerPersonalisation />} />
-              <Route path="customeropportunities" element={<CustomerOpportunities />} />
-              <Route path="/performance" element={<PerformanceTracking />} />
-              <Route path="integration" element={<IntegrationPage />} />
-              <Route path="kyc" element={<KYCPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-              <Route path="settings/:tab" element={<SettingsPage />} />
-            </Route>
-          ) : (
-            // If onboarding not done → force to register flow
-            <Route path="*" element={<Navigate to="/register" replace />} />
-          )
+          <Route path="/" element={<Layout />}>
+            <Route
+              path="dashboard"
+              element={onboardingDone ? <Dashboard /> : <Navigate to="/register" replace />}
+            />
+            <Route
+              path="customers"
+              element={onboardingDone ? <CustomerList /> : <Navigate to="/register" replace />}
+            />
+            <Route
+              path="customers/add"
+              element={onboardingDone ? <CustomerAdd /> : <Navigate to="/register" replace />}
+            />
+            <Route
+              path="customers/customer-profile/:customerId"
+              element={onboardingDone ? <CustomerProfile /> : <Navigate to="/register" replace />}
+            />
+            <Route
+              path="personalisation"
+              element={onboardingDone ? <CustomerPersonalisation /> : <Navigate to="/register" replace />}
+            />
+            <Route
+              path="customeropportunities"
+              element={onboardingDone ? <CustomerOpportunities /> : <Navigate to="/register" replace />}
+            />
+            <Route
+              path="performance"
+              element={onboardingDone ? <PerformanceTracking /> : <Navigate to="/register" replace />}
+            />
+            <Route
+              path="integration"
+              element={onboardingDone ? <IntegrationPage /> : <Navigate to="/register" replace />}
+            />
+            <Route
+              path="kyc"
+              element={onboardingDone ? <KYCPage /> : <Navigate to="/register" replace />}
+            />
+            <Route
+              path="settings"
+              element={onboardingDone ? <SettingsPage /> : <Navigate to="/register" replace />}
+            />
+            <Route
+              path="settings/:tab"
+              element={onboardingDone ? <SettingsPage /> : <Navigate to="/register" replace />}
+            />
+          </Route>
         ) : (
           <Route path="*" element={<Navigate to="/" replace />} />
         )}
