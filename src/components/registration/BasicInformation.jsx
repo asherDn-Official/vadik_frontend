@@ -20,29 +20,32 @@ const schema = yup.object().shape({
   mobile: yup
     .string()
     .required("Mobile number is required")
-    .test('is-indian-mobile', 'Enter a valid 10-digit Indian mobile number', value => {
-      if (!value) return false;
-      const digits = value.replace(/\D/g, "");
-      return /^(\+91|91|0)?[6-9]\d{9}$/.test(digits);
-    }),
+    .test(
+      "is-indian-mobile",
+      "Enter a valid 10-digit Indian mobile number",
+      (value) => {
+        if (!value) return false;
+        const digits = value.replace(/\D/g, "");
+        return /^(\+91|91|0)?[6-9]\d{9}$/.test(digits);
+      }
+    ),
   email: yup
     .string()
     .required("Email address is required")
     .email("Invalid email format")
-    .test('is-corporate', 'Enter a valid corporate email address', value => {
+    .test("is-corporate", "Enter a valid corporate email address", (value) => {
       if (!value) return false;
       return !/(gmail\.com|yahoo\.com|hotmail\.com)$/i.test(value);
-    })
+    }),
 });
 
 const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
-  console.log("formadata", formData)
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({
     firstName: false,
     lastName: false,
     mobile: false,
-    email: false
+    email: false,
   });
 
   // Validate field immediately when formData changes
@@ -50,9 +53,9 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
     const validateField = async (field, value) => {
       try {
         await schema.validateAt(field, { [field]: value });
-        setErrors(prev => ({ ...prev, [field]: "" }));
+        setErrors((prev) => ({ ...prev, [field]: "" }));
       } catch (err) {
-        setErrors(prev => ({ ...prev, [field]: err.message }));
+        setErrors((prev) => ({ ...prev, [field]: err.message }));
       }
     };
 
@@ -67,38 +70,38 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     updateFormData({ [name]: value });
-    
+
     // Mark field as touched on first interaction
     if (!touched[name]) {
-      setTouched(prev => ({ ...prev, [name]: true }));
+      setTouched((prev) => ({ ...prev, [name]: true }));
     }
   };
 
   const handleMobileChange = (value) => {
     updateFormData({ mobile: value });
-    
+
     // Mark mobile as touched on first interaction
     if (!touched.mobile) {
-      setTouched(prev => ({ ...prev, mobile: true }));
+      setTouched((prev) => ({ ...prev, mobile: true }));
     }
   };
 
   const handleBlur = (field) => {
-    setTouched(prev => ({ ...prev, [field]: true }));
+    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       // Mark all fields as touched to show all errors
       setTouched({
         firstName: true,
         lastName: true,
         mobile: true,
-        email: true
+        email: true,
       });
-      
+
       // Validate entire form
       await schema.validate(formData, { abortEarly: false });
       goToNextStep();
@@ -138,8 +141,10 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
             name="firstName"
             value={formData.firstName || ""}
             onChange={handleChange}
-            onBlur={() => handleBlur('firstName')}
-            className={`form-input ${touched.firstName && errors.firstName ? "border-red-500" : ""}`}
+            onBlur={() => handleBlur("firstName")}
+            className={`form-input ${
+              touched.firstName && errors.firstName ? "border-red-500" : ""
+            }`}
             placeholder="First Name"
           />
           {touched.firstName && errors.firstName && (
@@ -160,8 +165,10 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
             name="lastName"
             value={formData.lastName || ""}
             onChange={handleChange}
-            onBlur={() => handleBlur('lastName')}
-            className={`form-input ${touched.lastName && errors.lastName ? "border-red-500" : ""}`}
+            onBlur={() => handleBlur("lastName")}
+            className={`form-input ${
+              touched.lastName && errors.lastName ? "border-red-500" : ""
+            }`}
             placeholder="Last Name"
           />
           {touched.lastName && errors.lastName && (
@@ -179,16 +186,19 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
           <div className="mt-8">
             <PhoneInput
               country={"in"}
-              value={updateFormData.phoneCode+formData.mobile || ""}
-              onChange={handleMobileChange}
-              onBlur={() => handleBlur('mobile')}
+              value={`${formData.phoneCode || ""}${formData.mobile || ""}`} // display only
               inputProps={{
                 name: "mobile",
+                readOnly: true, // makes the field uneditable
                 required: true,
-                className: `pl-10 py-3 w-full border ${touched.mobile && errors.mobile ? "border-red-500" : "border-gray-300"} rounded-md outline-none`,
+                className: `pl-10 py-3 w-full border ${
+                  touched.mobile && errors.mobile
+                    ? "border-red-500"
+                    : "border-gray-300"
+                } rounded-md outline-none bg-gray-100 cursor-not-allowed`,
               }}
               countryCodeEditable={false}
-              onlyCountries={['in']}
+              onlyCountries={["in"]}
             />
           </div>
           {touched.mobile && errors.mobile && (
@@ -209,8 +219,10 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
             name="email"
             value={formData.email || ""}
             onChange={handleChange}
-            onBlur={() => handleBlur('email')}
-            className={`form-input ${touched.email && errors.email ? "border-red-500" : ""}`}
+            onBlur={() => handleBlur("email")}
+            className={`form-input ${
+              touched.email && errors.email ? "border-red-500" : ""
+            }`}
             placeholder="Email Address"
           />
           {touched.email && errors.email && (
