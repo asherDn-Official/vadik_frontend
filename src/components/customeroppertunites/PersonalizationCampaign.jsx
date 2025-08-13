@@ -143,33 +143,50 @@ const PersonalizationCampaign = () => {
 
   // Toggle customer selection
   const toggleCustomerSelection = (customerId) => {
-    setSelectedCustomers((prevSelected) =>
-      prevSelected.includes(customerId)
+    setSelectedCustomers((prevSelected) => {
+      const next = prevSelected.includes(customerId)
         ? prevSelected.filter((id) => id !== customerId)
-        : [...prevSelected, customerId]
-    );
+        : [...prevSelected, customerId];
+      // Clear error if there is at least one selection across tables
+      if ((next.length + selectedImported.length) > 0) {
+        setFormErrors((prev) => ({ ...prev, selectedCustomers: undefined }));
+      }
+      return next;
+    });
   };
 
   // Toggle all customers on current page (preserve selections across pages)
   const toggleAllCustomers = () => {
     const pageIds = filteredData.map((customer) => customer._id);
-    const allOnPageSelected = pageIds.every((id) => selectedCustomers.includes(id));
-    if (allOnPageSelected) {
-      // Deselect only the current page IDs
-      setSelectedCustomers((prev) => prev.filter((id) => !pageIds.includes(id)));
-    } else {
-      // Select union of previous + current page IDs
-      setSelectedCustomers((prev) => Array.from(new Set([...prev, ...pageIds])));
-    }
+    const allOnPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedCustomers.includes(id));
+    setSelectedCustomers((prev) => {
+      let next;
+      if (allOnPageSelected) {
+        // Deselect only the current page IDs
+        next = prev.filter((id) => !pageIds.includes(id));
+      } else {
+        // Select union of previous + current page IDs
+        next = Array.from(new Set([...prev, ...pageIds]));
+      }
+      if ((next.length + selectedImported.length) > 0) {
+        setFormErrors((prevErr) => ({ ...prevErr, selectedCustomers: undefined }));
+      }
+      return next;
+    });
   };
 
   // Toggle imported selections
   const toggleImportedSelection = (resolvedId) => {
-    setSelectedImported((prev) =>
-      prev.includes(resolvedId)
+    setSelectedImported((prev) => {
+      const next = prev.includes(resolvedId)
         ? prev.filter((id) => id !== resolvedId)
-        : [...prev, resolvedId]
-    );
+        : [...prev, resolvedId];
+      // Clear error if there is at least one selection across tables
+      if ((selectedCustomers.length + next.length) > 0) {
+        setFormErrors((prev) => ({ ...prev, selectedCustomers: undefined }));
+      }
+      return next;
+    });
   };
 
   const toggleAllImported = () => {
