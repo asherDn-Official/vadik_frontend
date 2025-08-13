@@ -33,10 +33,48 @@ const SpinWheel = () => {
     setShowForm(true);
   };
 
-  const handleEdit = (spineWheelSingledata) => {
-    setEditingSpinWheel(spineWheelSingledata);
+  const handleEdit = async (spineWheelSingledata) => {
+  console.log("edit", spineWheelSingledata);
+
+  try {
+    // If you need to fetch coupon details for each coupon in the wheel
+    const couponDetails = {};
+    
+    // Get unique coupon IDs to avoid duplicate API calls
+    const uniqueCouponIds = [...new Set(spineWheelSingledata.couponOptions)];
+    
+    // Fetch details for all coupons in parallel
+    const couponPromises = uniqueCouponIds.map(async (couponId) => {
+      const res = await api.post("/api/coupons/couponforCampains", { coupons: couponId });
+      return { [couponId]: res?.data?.data || {} };
+    });
+    
+    // Wait for all promises and merge results
+    const couponResults = await Promise.all(couponPromises);
+    couponResults.forEach(result => {
+      Object.assign(couponDetails, result);
+    });
+
+    // Transform the spin wheel data into your editing format
+    const transformedData = {
+      ...spineWheelSingledata,
+      segments: spineWheelSingledata.couponOptions.map((couponId, index) => ({
+        id: `segment-${index}`, // or use actual segment IDs if available
+        couponId,
+        productName: couponDetails[couponId]?.name || "",
+        offer: String(couponDetails[couponId]?.discount ?? "0"),
+        couponType: couponDetails[couponId]?.couponType,
+        // Add other segment properties as needed
+      }))
+    };
+
+    setEditingSpinWheel(transformedData);
     setShowForm(true);
-  };
+  } catch (error) {
+    console.error("Error editing spin wheel:", error);
+    // Handle error (show toast, etc.)
+  }
+};
 
   const handleSave = () => {
     // Refresh list from server after create/update and close form
