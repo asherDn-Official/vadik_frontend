@@ -35,8 +35,8 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
       setErrors(prev => ({ ...prev, storeName: "Store name is required" }));
     } else if (formData.storeName.length < 3) {
       setErrors(prev => ({ ...prev, storeName: "Minimum 3 characters required" }));
-    } else if (formData.storeName.length > 18) {
-      setErrors(prev => ({ ...prev, storeName: "Maximum 18 characters allowed" }));
+    } else if (formData.storeName.length > 30) {
+      setErrors(prev => ({ ...prev, storeName: "Maximum 30 characters allowed" }));
     } else {
       setErrors(prev => ({ ...prev, storeName: "" }));
     }
@@ -112,13 +112,9 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
     { label: "Clothing & Apparel", value: "clothingCategory" },
     { label: "Electronics", value: "electronicCategory" },
     { label: "Grocery", value: "groceryCategory" },
-    { label: "Restaurant", value: "restaurantCategory" },
     { label: "Beauty & Cosmetics", value: "beautyCategory" },
     { label: "Home & Furniture", value: "homeAppliancesCategory" },
-    { label: "Books & Stationery", value: "booksCategory" },
     { label: "Jewelry", value: "jewelleryCategory" },
-    { label: "Toys & Games", value: "toysCategory" },
-    { label: "Sports & Fitness", value: "sportsCategory" },
     { label: "Other", value: "otherCategory" },
   ];
 
@@ -150,7 +146,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             onBlur={() => handleBlur('storeName')}
             className={`form-input ${errors.storeName ? "border-red-500" : ""}`}
             placeholder="Store Name"
-            maxLength={18}
+            maxLength={30}
           />
           {errors.storeName && (
             <p className="text-red-500 text-xs mt-1">{errors.storeName}</p>
