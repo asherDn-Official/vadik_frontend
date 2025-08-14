@@ -9,11 +9,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import * as yup from 'yup';
 import { extractFieldValue, transformCustomerData, transformFormDataToAPI, formatFieldForDisplay, getInputType, getFieldType } from "../../utils/customerDataUtils";
 import EditIcon from '../../../public/assets/edit-icon.png';
 import profileImg from '../../../public/assets/profile.png';
-
-
 
 // Memoized FieldItem component to prevent unnecessary re-renders
 const FieldItem = React.memo(({
@@ -25,7 +24,8 @@ const FieldItem = React.memo(({
   value,
   onChange,
   customer,
-  isEditing
+  isEditing,
+  error
 }) => {
   // Get field data from the nested structure
   const fieldData = customer?.[section]?.[name] || {};
@@ -46,27 +46,33 @@ const FieldItem = React.memo(({
       <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">{label}</p>
       {isEditing && isEditable ? (
         fieldType === 'options' ? (
-          <select
-            value={value || ''}
-            onChange={handleSelectChange}
-            className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-          >
-            <option value="">Select an option</option>
-            {options.map((option, index) => (
-              <option key={index} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          <div>
+            <select
+              value={value || ''}
+              onChange={handleSelectChange}
+              className={`text-sm font-medium text-gray-900 border ${error ? 'border-red-500' : 'border-gray-300'} rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
+            >
+              <option value="">Select an option</option>
+              {options.map((option, index) => (
+                <option key={index} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+          </div>
         ) : (
-          <input
-            type={inputType}
-            value={value || ''}
-            onChange={handleInputChange}
-            className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-            placeholder={`Enter ${label.toLowerCase()}`}
-            autoComplete="off"
-          />
+          <div>
+            <input
+              type={inputType}
+              value={value || ''}
+              onChange={handleInputChange}
+              className={`text-sm font-medium text-gray-900 border ${error ? 'border-red-500' : 'border-gray-300'} rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
+              placeholder={`Enter ${label.toLowerCase()}`}
+              autoComplete="off"
+            />
+            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+          </div>
         )
       ) : (
         <p className="font-medium text-[16px] leading-[30px] tracking-normal text-[#313166]">
@@ -87,14 +93,14 @@ const DetailItem = React.memo(({
   value,
   onChange,
   customer,
-  isEditing
+  isEditing,
+  error
 }) => {
   // Get field data from the nested structure
   const fieldData = customer?.[section]?.[name] || {};
   const fieldType = fieldData.type || getFieldType(customer, section, name);
   const inputType = getInputType(fieldType);
   const options = fieldData.options || [];
-
 
   const handleInputChange = useCallback((e) => {
     onChange(section, name, e.target.value);
@@ -114,27 +120,33 @@ const DetailItem = React.memo(({
           <p className="text-sm font-medium text-gray-900">{label}</p>
           {isEditing && isEditable ? (
             fieldType === 'options' ? (
-              <select
-                value={value || ''}
-                onChange={handleSelectChange}
-                className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-              >
-                <option value="">Select an option</option>
-                {options.map((option, index) => (
-                  <option key={index} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <select
+                  value={value || ''}
+                  onChange={handleSelectChange}
+                  className={`mt-1 px-2 py-1 border ${error ? 'border-red-500' : 'border-gray-300'} rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
+                >
+                  <option value="">Select an option</option>
+                  {options.map((option, index) => (
+                    <option key={index} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+              </div>
             ) : (
-              <input
-                type={inputType}
-                value={value || ''}
-                onChange={handleInputChange}
-                className="mt-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
-                placeholder={`Enter ${label.toLowerCase()}`}
-                autoComplete="off"
-              />
+              <div>
+                <input
+                  type={inputType}
+                  value={value || ''}
+                  onChange={handleInputChange}
+                  className={`mt-1 px-2 py-1 border ${error ? 'border-red-500' : 'border-gray-300'} rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
+                  placeholder={`Enter ${label.toLowerCase()}`}
+                  autoComplete="off"
+                />
+                {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+              </div>
             )
           ) : (
             <p className="text-sm text-gray-600">
@@ -151,6 +163,51 @@ const DetailItem = React.memo(({
 FieldItem.displayName = 'FieldItem';
 DetailItem.displayName = 'DetailItem';
 
+// Validation schema for basic fields
+const basicSchema = yup.object().shape({
+  firstname: yup
+    .string()
+    .required('First name is required')
+    .matches(/^[A-Za-z\s]+$/, 'Only letters are allowed')
+    .min(3, 'Must be at least 3 characters')
+    .max(15, 'Must be 15 characters or less'),
+  lastname: yup
+    .string()
+    .required('Last name is required')
+    .matches(/^[A-Za-z\s]+$/, 'Only letters are allowed')
+    .min(1, 'Must be at least 1 character')
+    .max(15, 'Must be 15 characters or less'),
+  mobileNumber: yup
+    .string()
+    .required('Mobile number is required')
+    .matches(/^[6-9]\d{9}$/, 'Enter a valid 10-digit Indian mobile number'),
+  source: yup.string().optional(),
+  customerId: yup.string().optional(),
+  firstVisit: yup.string().optional(),
+});
+
+// Validation schema for store information fields
+const storeSchema = yup.object().shape({
+  storeName: yup
+    .string()
+    .required('Store name is required')
+    .min(3, 'Store name must be at least 3 characters')
+    .max(18, 'Store name cannot exceed 18 characters'),
+  address: yup
+    .string()
+    .required('Address is required')
+    .min(10, 'Address must be at least 10 characters')
+    .max(40, 'Address cannot exceed 40 characters'),
+  city: yup
+    .string()
+    .required('City/Town is required')
+    .max(18, 'City/Town cannot exceed 18 characters'),
+  pincode: yup
+    .string()
+    .required('Pincode is required')
+    .matches(/^\d{6}$/, 'Pincode must be exactly 6 digits')
+});
+
 const CustomerDetails = ({
   customer,
   activeTab,
@@ -165,7 +222,6 @@ const CustomerDetails = ({
 }) => {
   // Transform customer data to handle new nested structure
   const transformedCustomer = useMemo(() => transformCustomerData(customer), [customer]);
-
 
   // Initialize form data with proper default values
   const [formData, setFormData] = useState(() => {
@@ -199,6 +255,22 @@ const CustomerDetails = ({
     };
   });
 
+  // State for validation errors
+  const [errors, setErrors] = useState({
+    basic: {},
+    additionalData: {},
+    advancedDetails: {},
+    advancedPrivacyDetails: {},
+  });
+
+  // Track touched fields
+  const [touched, setTouched] = useState({
+    basic: {},
+    additionalData: {},
+    advancedDetails: {},
+    advancedPrivacyDetails: {},
+  });
+
   // Update form data when customer data changes
   useEffect(() => {
     if (transformedCustomer) {
@@ -228,7 +300,98 @@ const CustomerDetails = ({
         [name]: value
       }
     }));
+
+    // Mark field as touched
+    setTouched(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [name]: true
+      }
+    }));
+
+    // Clear error for this field
+    setErrors(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [name]: null
+      }
+    }));
   }, []);
+
+  // Validate form in real-time
+  useEffect(() => {
+    const validateForm = async () => {
+      try {
+        // Validate basic fields
+        await basicSchema.validateAt('firstname', formData.basic);
+        setErrors(prev => ({
+          ...prev,
+          basic: {
+            ...prev.basic,
+            firstname: null
+          }
+        }));
+      } catch (err) {
+        if (touched.basic?.firstname) {
+          setErrors(prev => ({
+            ...prev,
+            basic: {
+              ...prev.basic,
+              firstname: err.message
+            }
+          }));
+        }
+      }
+
+      try {
+        await basicSchema.validateAt('lastname', formData.basic);
+        setErrors(prev => ({
+          ...prev,
+          basic: {
+            ...prev.basic,
+            lastname: null
+          }
+        }));
+      } catch (err) {
+        if (touched.basic?.lastname) {
+          setErrors(prev => ({
+            ...prev,
+            basic: {
+              ...prev.basic,
+              lastname: err.message
+            }
+          }));
+        }
+      }
+
+      try {
+        await basicSchema.validateAt('mobileNumber', formData.basic);
+        setErrors(prev => ({
+          ...prev,
+          basic: {
+            ...prev.basic,
+            mobileNumber: null
+          }
+        }));
+      } catch (err) {
+        if (touched.basic?.mobileNumber) {
+          setErrors(prev => ({
+            ...prev,
+            basic: {
+              ...prev.basic,
+              mobileNumber: err.message
+            }
+          }));
+        }
+      }
+    };
+
+    if (isEditing) {
+      validateForm();
+    }
+  }, [formData, touched, isEditing]);
 
   const tabs = ["AdditionalData","Advanced Details", "Advanced Privacy", "Referral"];
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
@@ -236,10 +399,6 @@ const CustomerDetails = ({
   const [messageType, setMessageType] = useState("birthday");
   const [showPurchaseList, setShowPurchaseList] = useState(false);
   const [showAllPurchases, setShowAllPurchases] = useState(false);
-
-
-
-
 
   const renderStars = (rating) => {
     if (!rating) return null;
@@ -297,20 +456,40 @@ const CustomerDetails = ({
             onChange={handleInputChange}
             customer={customer}
             isEditing={isEditing}
+            error={errors?.[section]?.[key]}
           />
         );
       }
     });
-  }, [formData, isEditing, handleInputChange, customer]);
+  }, [formData, isEditing, handleInputChange, customer, errors]);
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
 
-    // Transform the form data back to API format
-    const formattedData = transformFormDataToAPI(formData, customer);
-    
-    // Call the parent save handler with formatted data
-    onSave(formattedData);
+    try {
+      // Validate basic fields
+      await basicSchema.validate(formData.basic, { abortEarly: false });
+      
+      // Transform the form data back to API format
+      const formattedData = transformFormDataToAPI(formData, customer);
+      
+      // Call the parent save handler with formatted data
+      onSave(formattedData);
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        const newErrors = {};
+        err.inner.forEach(error => {
+          newErrors[error.path] = error.message;
+        });
+        setErrors(prev => ({
+          ...prev,
+          basic: {
+            ...prev.basic,
+            ...newErrors
+          }
+        }));
+      }
+    }
   };
 
   return (
@@ -329,7 +508,6 @@ const CustomerDetails = ({
                   <div className="relative">
                     <img
                       src={transformedCustomer?.profileImage || "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"}
-                      // src={profileImg}
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
                       className="w-[148px] h-[212px] rounded-lg  object-contain"
                     />
@@ -347,6 +525,7 @@ const CustomerDetails = ({
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
+                        error={errors?.basic?.firstname}
                       />
                       <FieldItem
                         label="Last Name"
@@ -357,6 +536,7 @@ const CustomerDetails = ({
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
+                        error={errors?.basic?.lastname}
                       />
                       <FieldItem
                         label="Mobile Number"
@@ -367,6 +547,7 @@ const CustomerDetails = ({
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
+                        error={errors?.basic?.mobileNumber}
                       />
                       <FieldItem
                         label="Source"

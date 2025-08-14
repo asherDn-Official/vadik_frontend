@@ -16,6 +16,7 @@ import CustomerOpportunities from "./pages/CustomerOpportunities";
 import { useAuth } from "./context/AuthContext";
 import CustomerAdd from "./pages/CustomerAdd";
 import api from "./api/apiconfig";
+import Notification from "./pages/Notification";
 
 function App() {
   const { auth, loading } = useAuth();
@@ -124,6 +125,10 @@ function App() {
             <Route
               path="settings/:tab"
               element={onboardingDone ? <SettingsPage /> : <Navigate to="/register" replace />}
+            />
+                  <Route
+              path="notifications"
+              element={onboardingDone ? <Notification /> : <Navigate to="/register" replace />}
             />
           </Route>
         ) : (

@@ -158,9 +158,9 @@ const Login = () => {
               </label>
             </div>
 
-            <a href="#" className="text-sm hover:underline">
+            {/* <a href="#" className="text-sm hover:underline">
               Forgot password?
-            </a>
+            </a> */}
           </div>
 
           <button

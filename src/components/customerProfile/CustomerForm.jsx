@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PhoneInput from "react-phone-number-input";
-import "react-phone-number-input/style.css"; // make sure this is imported
+import { isValidPhoneNumber } from "react-phone-number-input"; // Import validation function
+import "react-phone-number-input/style.css";
 
 const CustomerForm = ({ onSubmit, resetForm }) => {
   const initialFormData = {
@@ -38,55 +39,69 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
     }
   }, [resetForm]);
 
-  // Real-time validation for showing error messages as you type
+  // Real-time validation
   useEffect(() => {
     setErrors(validateForm());
   }, [formData, isTouched]);
 
   const validateForm = () => {
     const newErrors = {};
+    const nameRegex = /^[a-zA-Z\u00C0-\u017F\s'-]{1,50}$/; // Allows international characters, hyphens, apostrophes
 
+    // First Name Validation
     if (isTouched.firstname) {
       if (!formData.firstname.trim()) {
         newErrors.firstname = "First Name is required";
+      } else if (!nameRegex.test(formData.firstname)) {
+        newErrors.firstname = "Only letters, hyphens, and apostrophes allowed";
       } else if (formData.firstname.trim().length < 3) {
-        newErrors.firstname = "First Name must be at least 3 characters";
+        newErrors.firstname = "Must be at least 3 characters";
+      } else if (formData.firstname.trim().length > 50) {
+        newErrors.firstname = "Cannot exceed 50 characters";
       }
     }
 
+    // Last Name Validation
     if (isTouched.lastname) {
       if (!formData.lastname.trim()) {
         newErrors.lastname = "Last Name is required";
+      } else if (!nameRegex.test(formData.lastname)) {
+        newErrors.lastname = "Only letters, hyphens, and apostrophes allowed";
+      } else if (formData.lastname.trim().length > 15) {
+        newErrors.lastname = "Cannot exceed 50 characters";
       }
     }
 
+    // Mobile Number Validation
     if (isTouched.mobileNumber) {
       if (!formData.mobileNumber) {
         newErrors.mobileNumber = "Mobile Number is required";
-      } else {
-        const digits = formData.mobileNumber.replace(/\D/g, "");
-        if (digits.length !== 10 && digits.length !== 12) {
-          newErrors.mobileNumber = "Mobile Number must be 10 digits";
-        }
+      } else if (!isValidPhoneNumber(formData.mobileNumber)) {
+        newErrors.mobileNumber = "Invalid phone number";
       }
     }
 
+    // Source Validation
     if (isTouched.source && !formData.source) {
       newErrors.source = "Source is required";
     }
 
+    // Gender Validation
     if (isTouched.gender && !formData.gender) {
       newErrors.gender = "Gender is required";
     }
 
+    // First Visit Validation
     if (isTouched.firstVisit) {
       if (!formData.firstVisit) {
         newErrors.firstVisit = "First Visit date is required";
       } else {
         const selectedDate = new Date(formData.firstVisit);
         const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+        
         if (selectedDate > today) {
-          newErrors.firstVisit = "First Visit date cannot be in the future";
+          newErrors.firstVisit = "Date cannot be in the future";
         }
       }
     }
@@ -111,25 +126,21 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Touch all fields
-    const allTouched = {
-      firstname: true,
-      lastname: true,
-      mobileNumber: true,
-      source: true,
-      gender: true,
-      firstVisit: true,
-    };
+    // Touch all fields to show errors
+    const allTouched = Object.keys(isTouched).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {});
     setIsTouched(allTouched);
 
     const validationErrors = validateForm();
     setErrors(validationErrors);
 
-    // if (Object.keys(validationErrors).length > 0) {
-    //   alert("Please fill all required fields correctly before submitting.");
-    //   return;
-    // }
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
 
+    // Format data for submission
     const formattedMobile = formData.mobileNumber.replace(/\D/g, "");
     const formattedDate = formData.firstVisit
       ? `${formData.firstVisit}T00:00:00Z`
@@ -156,6 +167,7 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
             value={formData.firstname}
             onChange={handleChange}
             onBlur={() => handleBlur("firstname")}
+            maxLength={50}
             className={`w-full p-2 border ${
               errors.firstname ? "border-red-500" : "border-gray-300"
             } rounded text-[#313166]`}
@@ -174,6 +186,7 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
             value={formData.lastname}
             onChange={handleChange}
             onBlur={() => handleBlur("lastname")}
+            maxLength={50}
             className={`w-full p-2 border ${
               errors.lastname ? "border-red-500" : "border-gray-300"
             } rounded text-[#313166]`}
@@ -202,9 +215,6 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
           />
           {errors.mobileNumber && (
             <p className="text-red-500 text-xs">{errors.mobileNumber}</p>
-          )}
-          {formData.mobileNumber && !errors.mobileNumber && (
-            <p className="text-green-500 text-xs">Valid phone number</p>
           )}
         </div>
 

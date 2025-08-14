@@ -7,6 +7,7 @@ import ChurnRate from "../components/dashboard/ChurnRate";
 import CustomerEngagementScore from "../components/dashboard/CustomerEngagementScore";
 import OptInOptOut from "../components/dashboard/OptInOptOut";
 import CustomerSatisfactionScore from "../components/dashboard/CustomerSatisfactionScore";
+import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -14,7 +15,10 @@ function Dashboard() {
   const handleDateChange = (date) => {
     setSelectedDate(date);
   };
-
+const navigate=useNavigate();
+function gotoNotification(){
+navigate("/notifications");
+}
   return (
     <div className="min-h-screen bg-gray-50">
       <div className=" ">
@@ -24,7 +28,7 @@ function Dashboard() {
               Welcome, Admin
             </h1>
             <div className="flex items-center gap-4">
-              <button className="text-gray-600 hover:text-gray-800">
+              <button className="text-gray-600 hover:text-gray-800" onClick={()=>gotoNotification()}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-6 w-6"
