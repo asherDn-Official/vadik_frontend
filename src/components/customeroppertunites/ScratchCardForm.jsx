@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Edit, Trash2, Gift } from "lucide-react";
+import api from "../../api/apiconfig";
 
 const ScratchCard = ({ offer, title }) => {
   const canvasRef = useRef(null);
@@ -178,6 +179,13 @@ const ScratchCard = ({ offer, title }) => {
 
 const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
+    // Backend fields
+    name: "",
+    couponId: "",
+    allocatedQuizCampainId: "",
+    expiryDate: "",
+    isActive: true,
+    // Local preview fields
     title: "Summer Scratch Card",
     offers: [
       {
@@ -190,21 +198,77 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
   });
 
   const [selectedOffer, setSelectedOffer] = useState(0);
+  const [coupons, setCoupons] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(true);
+  const [loadingQuizzes, setLoadingQuizzes] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
+  // Fetch dropdown data
   useEffect(() => {
-    if (campaign) {
-      setFormData({
-        title: campaign.title || "Summer Scratch Card",
-        offers: campaign.offersData || [
-          {
-            id: 1,
-            title: "Enter Title Name",
-            offer: "10",
-            couponCode: "SUMMER10",
-          },
-        ],
-      });
-    }
+    const fetchCoupons = async () => {
+      try {
+        const res = await api.get("https://app.vadik.ai/api/coupons/all");
+        const list = res?.data?.data || [];
+        setCoupons(list);
+      } catch (e) {
+        console.error("Failed to load coupons", e);
+      } finally {
+        setLoadingCoupons(false);
+      }
+    };
+    const fetchQuizzes = async () => {
+      try {
+        const res = await api.get("https://app.vadik.ai/api/quiz");
+        const list = Array.isArray(res?.data) ? res.data : (res?.data?.data || []);
+        setQuizzes(list);
+      } catch (e) {
+        console.error("Failed to load quizzes", e);
+      } finally {
+        setLoadingQuizzes(false);
+      }
+    };
+    fetchCoupons();
+    fetchQuizzes();
+  }, []);
+
+  // Prefill from campaign prop (edit mode)
+  useEffect(() => {
+    if (!campaign) return;
+
+    // If only id is provided, still set what we can
+    setFormData((prev) => ({
+      ...prev,
+      name: campaign.name || prev.name || "",
+      couponId: campaign.couponId || prev.couponId || "",
+      allocatedQuizCampainId: campaign.allocatedQuizCampainId || prev.allocatedQuizCampainId || "",
+      expiryDate: campaign.expiryDate ? String(campaign.expiryDate).slice(0, 10) : (prev.expiryDate || ""),
+      isActive: typeof campaign.isActive === "boolean" ? campaign.isActive : (prev.isActive ?? true),
+    }));
+
+    // If _id exists, fetch full scratch card details
+    const id = campaign._id;
+    if (!id) return;
+
+    (async () => {
+      try {
+        const res = await api.get(`/api/scratchCards/${id}`);
+        const data = res?.data;
+        if (data && data._id) {
+          setFormData((prev) => ({
+            ...prev,
+            name: data.name || "",
+            couponId: data.couponId || "",
+            allocatedQuizCampainId: data.allocatedQuizCampainId || "",
+            expiryDate: data.expiryDate ? String(data.expiryDate).slice(0, 10) : "",
+            isActive: typeof data.isActive === "boolean" ? data.isActive : true,
+            _id: data._id,
+          }));
+        }
+      } catch (e) {
+        console.error("Failed to fetch scratch card details", e);
+      }
+    })();
   }, [campaign]);
 
   useEffect(() => {
@@ -252,13 +316,33 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
     }
   };
 
-  const handleSubmit = () => {
-    const campaignData = {
-      title: formData.title,
-      offers: formData.offers.length,
-      offersData: formData.offers,
+  const handleSubmit = async () => {
+    // Build backend payload
+    const payload = {
+      name: formData.name?.trim() || formData.title?.trim() || "",
+      couponId: formData.couponId || "",
+      allocatedQuizCampainId: formData.allocatedQuizCampainId || "",
+      expiryDate: formData.expiryDate ? `${formData.expiryDate}T00:00:00.000Z` : "",
+      isActive: !!formData.isActive,
     };
-    onSave && onSave(campaignData);
+
+    // Optimistically pass to parent
+    onSave && onSave({ ...payload, _id: formData._id });
+
+    try {
+      setSubmitting(true);
+      if (formData._id) {
+        // Update existing
+        await api.patch(`/api/scratchCards/${formData._id}`, payload);
+      } else {
+        // Create new
+        await api.post(`/api/scratchCards/`, payload);
+      }
+    } catch (e) {
+      console.error("Failed to submit scratch card", e);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const currentOffer = formData.offers[selectedOffer] || formData.offers[0];
@@ -306,16 +390,88 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
 
           {/* Right Column - Form */}
           <div className="space-y-6">
+            {/* Name (backend) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                placeholder="Enter Scratch Card Name"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+                required
+              />
+            </div>
+
+            {/* Coupon Select */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Coupon</label>
+              <select
+                value={formData.couponId || ""}
+                onChange={(e) => handleInputChange("couponId", e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+                disabled={loadingCoupons}
+              >
+                <option value="">{loadingCoupons ? "Loading..." : "Select Coupon"}</option>
+                {!loadingCoupons && coupons?.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name} ({c.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Expiry Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+              <input
+                type="date"
+                value={formData.expiryDate || ""}
+                onChange={(e) => handleInputChange("expiryDate", e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+              />
+            </div>
+
+            {/* Quiz Select (Select Blog) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Blog</label>
+              <select
+                value={formData.allocatedQuizCampainId || ""}
+                onChange={(e) => handleInputChange("allocatedQuizCampainId", e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+                disabled={loadingQuizzes}
+              >
+                <option value="">{loadingQuizzes ? "Loading..." : "Select Blog"}</option>
+                {!loadingQuizzes && quizzes?.map((q) => (
+                  <option key={q._id} value={q._id}>
+                    {q.campaignName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Is Active */}
+            <div className="flex items-center space-x-2">
+              <input
+                id="isActive"
+                type="checkbox"
+                checked={!!formData.isActive}
+                onChange={(e) => handleInputChange("isActive", e.target.checked)}
+                className="h-4 w-4 text-pink-600 border-gray-300 rounded"
+              />
+              <label htmlFor="isActive" className="text-sm text-gray-700">Is Active</label>
+            </div>
+
+            {/* Activities Title (local preview only) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Activities Title
+                Activities Title (Preview Only)
               </label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => handleInputChange("title", e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
-                required
               />
             </div>
 
