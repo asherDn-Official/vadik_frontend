@@ -124,7 +124,7 @@ const CustomerRecommendation = () => {
   const fetchThreadMessages = async (threadId) => {
     try {
       const response = await api.get(
-        `$/api/customerChat/get-thread-messages/${threadId}?userId=${retailerId}`
+        `/api/customerChat/get-thread-messages/${threadId}?userId=${retailerId}`
 
       );
       setMessages(
