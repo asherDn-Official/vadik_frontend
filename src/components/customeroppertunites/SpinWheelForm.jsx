@@ -75,7 +75,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
 
     const fetchSelectedQuiz = async () => {
       try {
-        const res = await api.get(`https://app.vadik.ai/api/quiz/${selectedId}`);
+        const res = await api.get(`/quiz/${selectedId}`);
         const data = res?.data;
         if (data && data._id) {
           setQuizzes((prev) => [{ ...data }, ...(Array.isArray(prev) ? prev : [])]);
