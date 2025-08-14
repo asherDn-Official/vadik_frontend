@@ -7,12 +7,15 @@ import showToast from "../../utils/ToastNotification";
 const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const [coupons, setCoupons] = useState([]);
   const [loadingCoupons, setLoadingCoupons] = useState(true);
+  const [quizzes, setQuizzes] = useState([]);
+  const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     noOfSpins: 0,
     couponOptions: [],
     targetedCoupons: [],
     expiryDate: "",
+    allocatedQuizCampainId: "", // selected quiz campaign _id
     isActive: true,
     segments: [],
   });
@@ -47,6 +50,44 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     fetchCoupons();
   }, []);
 
+  // Fetch quizzes for "Select Blog" dropdown
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      try {
+        const res = await api.get("https://app.vadik.ai/api/quiz");
+        const list = Array.isArray(res?.data) ? res.data : (res?.data?.data || []);
+        setQuizzes(list);
+      } catch (error) {
+        console.error("Error fetching quizzes:", error);
+        showToast(error?.response?.data?.message || "Failed to load quizzes", "error");
+      } finally {
+        setLoadingQuizzes(false);
+      }
+    };
+    fetchQuizzes();
+  }, []);
+
+  // Ensure selected quiz (by allocatedQuizCampainId) is present in dropdown by fetching its details
+  useEffect(() => {
+    const selectedId = formData?.allocatedQuizCampainId;
+    if (!selectedId) return;
+    if (quizzes?.some((q) => q?._id === selectedId)) return; // already in list
+
+    const fetchSelectedQuiz = async () => {
+      try {
+        const res = await api.get(`https://app.vadik.ai/api/quiz/${selectedId}`);
+        const data = res?.data;
+        if (data && data._id) {
+          setQuizzes((prev) => [{ ...data }, ...(Array.isArray(prev) ? prev : [])]);
+        }
+      } catch (error) {
+        console.error("Error fetching selected quiz:", error);
+      }
+    };
+
+    fetchSelectedQuiz();
+  }, [formData?.allocatedQuizCampainId, quizzes]);
+
   useEffect(() => {
     if (campaign) {
       setFormData({
@@ -56,6 +97,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         targetedCoupons: Array.isArray(campaign.targetedCoupons) ? campaign.targetedCoupons : [],
         isActive: typeof campaign.isActive === 'boolean' ? campaign.isActive : true,
         expiryDate: campaign.expiryDate ? campaign.expiryDate.slice(0, 10) : "",
+        allocatedQuizCampainId: campaign.allocatedQuizCampainId ?? "",
         segments: Array.isArray(campaign.segments) ? campaign.segments : [],
         _id: campaign._id,
       });
@@ -224,13 +266,17 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
 
     setErrors({});
 
+    // Convert YYYY-MM-DD to ISO midnight
+    const expiryIso = formData.expiryDate ? `${formData.expiryDate}T00:00:00.000Z` : "";
+
     const payload = {
       name: formData.name.trim(),
       noOfSpins: noOfSpinsNum,
       couponOptions: validCouponIds,
       targetedCoupons: formData.targetedCoupons,
       isActive: formData.isActive,
-      expiryDate: formData.expiryDate,
+      allocatedQuizCampainId: formData.allocatedQuizCampainId || "",
+      expiryDate: expiryIso,
     };
 
     try {
@@ -310,6 +356,26 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'}`}
               />
               {errors.expiryDate && <p className="mt-1 text-sm text-red-600">{errors.expiryDate}</p>}
+            </div>
+
+            {/* Select  (Quiz Campaign) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Quiz
+              </label>
+              <select
+                value={formData.allocatedQuizCampainId || ""}
+                onChange={(e) => handleInputChange("allocatedQuizCampainId", e.target.value)}
+                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none border-gray-300"
+                disabled={loadingQuizzes}
+              >
+                <option value="">{loadingQuizzes ? "Loading..." : "Select Quiz"}</option>
+                {!loadingQuizzes && quizzes?.map((q) => (
+                  <option key={q._id} value={q._id}>
+                    {q.campaignName}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {formData?.targetedCoupons?.length > 0 && (
