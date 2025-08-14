@@ -3,6 +3,7 @@ import ScratchCardList from "./ScratchCardList";
 import ScratchCardForm from "./ScratchCardForm";
 import { ArrowLeft } from "lucide-react";
 import api from "../../api/apiconfig";
+import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 
 const ScratchCard = () => {
     const [scratchCards, setScratchCards] = useState([]);
@@ -51,13 +52,16 @@ const ScratchCard = () => {
         setShowForm(false);
     };
 
-    const handleDelete = async (id) => {
-        try {
-            await api.delete(`/api/scratchCards/${id}`);
-            await fetchScratchCards();
-        } catch (e) {
-            console.error('Failed to delete scratch card', e);
+    const handleDelete = (id) => {
+        const onConfirm = async () => {
+            try {
+                await api.delete(`/api/scratchCards/${id}`);
+                await fetchScratchCards();
+            } catch (e) {
+                console.error('Failed to delete scratch card', e);
+            }
         }
+        deleteConfirmTostNotification('', onConfirm)
     };
 
     if (showForm) {
@@ -98,7 +102,7 @@ const ScratchCard = () => {
             <ScratchCardList
                 activities={scratchCards}
                 onEdit={handleEdit}
-                onDelete={(id)=>handleDelete(id)}
+                onDelete={(id) => handleDelete(id)}
             />
         </div>
     );

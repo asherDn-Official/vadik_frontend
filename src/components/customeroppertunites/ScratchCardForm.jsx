@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Edit, Trash2, Gift } from "lucide-react";
 import api from "../../api/apiconfig";
+import showToast from "../../utils/ToastNotification";
 
 const ScratchCard = ({ offer, title }) => {
   const canvasRef = useRef(null);
@@ -10,11 +11,11 @@ const ScratchCard = ({ offer, title }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    
+
     // Set canvas size
     canvas.width = 256;
     canvas.height = 256;
-    
+
     // Draw the scratch surface
     drawScratchSurface(ctx);
   }, []);
@@ -26,7 +27,7 @@ const ScratchCard = ({ offer, title }) => {
     gradient.addColorStop(1, '#db2777');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 256, 256);
-    
+
     // Add polka dots
     ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
     for (let i = 0; i < 50; i++) {
@@ -36,7 +37,7 @@ const ScratchCard = ({ offer, title }) => {
       ctx.arc(x, y, 8, 0, 2 * Math.PI);
       ctx.fill();
     }
-    
+
     // Add gift icon placeholder
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
     ctx.beginPath();
@@ -48,7 +49,7 @@ const ScratchCard = ({ offer, title }) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
+
     return {
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY
@@ -59,7 +60,7 @@ const ScratchCard = ({ offer, title }) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
+
     return {
       x: (e.touches[0].clientX - rect.left) * scaleX,
       y: (e.touches[0].clientY - rect.top) * scaleY
@@ -69,12 +70,12 @@ const ScratchCard = ({ offer, title }) => {
   const scratch = (x, y) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    
+
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
     ctx.arc(x, y, 20, 0, 2 * Math.PI);
     ctx.fill();
-    
+
     // Check if enough area is scratched
     checkScratchedArea();
   };
@@ -84,16 +85,16 @@ const ScratchCard = ({ offer, title }) => {
     const ctx = canvas.getContext('2d');
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const pixels = imageData.data;
-    
+
     let transparentPixels = 0;
     for (let i = 3; i < pixels.length; i += 4) {
       if (pixels[i] === 0) {
         transparentPixels++;
       }
     }
-    
+
     const scratchedPercentage = (transparentPixels / (canvas.width * canvas.height)) * 100;
-    
+
     if (scratchedPercentage > 30 && !isRevealed) {
       setIsRevealed(true);
       // Clear the entire canvas to reveal the offer
@@ -148,7 +149,7 @@ const ScratchCard = ({ offer, title }) => {
         <div className="text-2xl font-bold">{offer}% OFF</div>
         <div className="text-sm text-center px-4 mt-2">{title}</div>
       </div>
-      
+
       {/* Scratch layer */}
       <canvas
         ref={canvasRef}
@@ -162,7 +163,7 @@ const ScratchCard = ({ offer, title }) => {
         onTouchEnd={handleTouchEnd}
         style={{ touchAction: 'none' }}
       />
-      
+
       {/* Instruction text */}
       {!isRevealed && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -331,15 +332,17 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
 
     try {
       setSubmitting(true);
-      if (formData._id) {
+      if (campaign._id) {
         // Update existing
-        await api.patch(`/api/scratchCards/${formData._id}`, payload);
+        await api.patch(`/api/scratchCards/${campaign._id}`, payload);
+        showToast("Scratch Card Updated Successfully!", "success");
       } else {
         // Create new
         await api.post(`/api/scratchCards/`, payload);
+        showToast("Scratch Card Created Successfully!", "success");
       }
-    } catch (e) {
-      console.error("Failed to submit scratch card", e);
+    } catch (error) {
+      showToast(error.response?.data?.message, "error");
     } finally {
       setSubmitting(false);
     }
@@ -362,13 +365,13 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
           {/* Left Column - Preview */}
           <div className="flex flex-col items-center">
             <h3 className="text-lg font-semibold mb-4">Preview</h3>
-            <ScratchCard 
-              offer={currentOffer?.offer || "0"} 
+            <ScratchCard
+              offer={currentOffer?.offer || "0"}
               title={currentOffer?.title || "No Title"}
             />
-            
+
             {/* Offer selector */}
-          
+
           </div>
 
           {/* Right Column - Form */}
@@ -460,7 +463,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
                 disabled={submitting}
                 className={`px-6 py-2 rounded-lg transition-colors text-white ${submitting ? "bg-pink-400 cursor-not-allowed" : "bg-pink-600 hover:bg-pink-700"}`}
               >
-                {formData?._id ? (submitting ? "Updating..." : "Update Scratch Card") : (submitting ? "Creating..." : "Create Scratch Card")}
+                {campaign?._id ? (submitting ? "Updating..." : "Update Scratch Card") : (submitting ? "Creating..." : "Create Scratch Card")}
               </button>
             </div>
           </div>
