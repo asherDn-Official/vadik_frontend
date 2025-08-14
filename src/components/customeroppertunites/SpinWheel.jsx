@@ -140,7 +140,7 @@ const SpinWheel = () => {
           onClick={handleCreate}
           className="flex items-center text-[#313166] px-4 py-2 bg-white border border-[#313166] rounded-[10px] hover:bg-gray-50 transition-colors"
         >
-          Create Quiz
+          Create Spin Wheel
         </button>
       </div>
       <SpinWheelList
