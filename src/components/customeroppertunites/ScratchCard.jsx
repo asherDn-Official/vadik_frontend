@@ -51,8 +51,13 @@ const ScratchCard = () => {
         setShowForm(false);
     };
 
-    const handleDelete = (id) => {
-        setScratchCards(prev => prev.filter(q => q.id !== id));
+    const handleDelete = async (id) => {
+        try {
+            await api.delete(`/api/scratchCards/${id}`);
+            await fetchScratchCards();
+        } catch (e) {
+            console.error('Failed to delete scratch card', e);
+        }
     };
 
     if (showForm) {
@@ -93,7 +98,7 @@ const ScratchCard = () => {
             <ScratchCardList
                 activities={scratchCards}
                 onEdit={handleEdit}
-                onDelete={handleDelete}
+                onDelete={(id)=>handleDelete(id)}
             />
         </div>
     );

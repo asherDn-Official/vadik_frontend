@@ -368,24 +368,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
             />
             
             {/* Offer selector */}
-            {formData.offers.length > 1 && (
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preview Offer:
-                </label>
-                <select
-                  value={selectedOffer}
-                  onChange={(e) => setSelectedOffer(parseInt(e.target.value))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
-                >
-                  {formData.offers.map((offer, index) => (
-                    <option key={offer.id} value={index}>
-                      {offer.title} - {offer.offer}%
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+          
           </div>
 
           {/* Right Column - Form */}
@@ -434,14 +417,14 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
 
             {/* Quiz Select (Select Blog) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Blog</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Quiz</label>
               <select
                 value={formData.allocatedQuizCampainId || ""}
                 onChange={(e) => handleInputChange("allocatedQuizCampainId", e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
                 disabled={loadingQuizzes}
               >
-                <option value="">{loadingQuizzes ? "Loading..." : "Select Blog"}</option>
+                <option value="">{loadingQuizzes ? "Loading..." : "Select Quiz"}</option>
                 {!loadingQuizzes && quizzes?.map((q) => (
                   <option key={q._id} value={q._id}>
                     {q.campaignName}
@@ -462,124 +445,6 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
               <label htmlFor="isActive" className="text-sm text-gray-700">Is Active</label>
             </div>
 
-            {/* Activities Title (local preview only) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Activities Title (Preview Only)
-              </label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
-              />
-            </div>
-
-            {/* Offers Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-200 rounded-lg overflow-hidden">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                      S.no
-                    </th>
-                    <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                      Enter Title
-                    </th>
-                    <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                      Offer %
-                    </th>
-                    <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                      Coupon Code
-                    </th>
-                    <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formData.offers.map((offer, index) => (
-                    <tr 
-                      key={offer.id} 
-                      className={`hover:bg-gray-50 ${
-                        index === selectedOffer ? 'bg-pink-50' : ''
-                      }`}
-                    >
-                      <td className="border border-gray-200 px-4 py-3 text-sm">
-                        {index + 1}
-                      </td>
-                      <td className="border border-gray-200 px-4 py-3">
-                        <input
-                          type="text"
-                          value={offer.title}
-                          onChange={(e) =>
-                            handleOfferChange(offer.id, "title", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
-                        />
-                      </td>
-                      <td className="border border-gray-200 px-4 py-3">
-                        <input
-                          type="number"
-                          value={offer.offer}
-                          onChange={(e) =>
-                            handleOfferChange(offer.id, "offer", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
-                          min="0"
-                          max="100"
-                        />
-                      </td>
-                      <td className="border border-gray-200 px-4 py-3">
-                        <input
-                          type="text"
-                          value={offer.couponCode}
-                          onChange={(e) =>
-                            handleOfferChange(
-                              offer.id,
-                              "couponCode",
-                              e.target.value
-                            )
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
-                        />
-                      </td>
-                      <td className="border border-gray-200 px-4 py-3">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedOffer(index)}
-                            className="text-gray-500 hover:text-pink-600"
-                            title="Preview this offer"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          {formData.offers.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeOffer(offer.id)}
-                              className="text-gray-500 hover:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={addOffer}
-                className="px-4 py-2 text-pink-600 hover:text-pink-700 transition-colors"
-              >
-                + Add Offer
-              </button>
-            </div>
 
             <div className="flex justify-end space-x-4 pt-4">
               <button
