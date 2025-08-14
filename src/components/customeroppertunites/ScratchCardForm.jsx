@@ -3,7 +3,7 @@ import { Edit, Trash2, Gift } from "lucide-react";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 
-const ScratchCard = ({ offer, title }) => {
+const ScratchCard = ({ offer, title ,CoupanName}) => {
   const canvasRef = useRef(null);
   const [isScratching, setIsScratching] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -146,8 +146,7 @@ const ScratchCard = ({ offer, title }) => {
       {/* Background with offer */}
       <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-orange-500 flex flex-col items-center justify-center text-white">
         <Gift className="w-12 h-12 mb-2" />
-        <div className="text-2xl font-bold">{offer}% OFF</div>
-        <div className="text-sm text-center px-4 mt-2">{title}</div>
+        <div className="text-2xl font-bold">{CoupanName}</div>
       </div>
 
       {/* Scratch layer */}
@@ -164,16 +163,7 @@ const ScratchCard = ({ offer, title }) => {
         style={{ touchAction: 'none' }}
       />
 
-      {/* Instruction text */}
-      {!isRevealed && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="text-white text-sm font-medium text-center">
-            Scratch to reveal
-            <br />
-            your offer!
-          </div>
-        </div>
-      )}
+    
     </div>
   );
 };
@@ -366,8 +356,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
           <div className="flex flex-col items-center">
             <h3 className="text-lg font-semibold mb-4">Preview</h3>
             <ScratchCard
-              offer={currentOffer?.offer || "0"}
-              title={currentOffer?.title || "No Title"}
+              // CoupanName={formData.couponId||""}
             />
 
             {/* Offer selector */}
