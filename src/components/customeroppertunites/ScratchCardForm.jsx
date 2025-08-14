@@ -457,9 +457,10 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
+                disabled={submitting}
+                className={`px-6 py-2 rounded-lg transition-colors text-white ${submitting ? "bg-pink-400 cursor-not-allowed" : "bg-pink-600 hover:bg-pink-700"}`}
               >
-                Save Scratch Card
+                {formData?._id ? (submitting ? "Updating..." : "Update Scratch Card") : (submitting ? "Creating..." : "Create Scratch Card")}
               </button>
             </div>
           </div>
