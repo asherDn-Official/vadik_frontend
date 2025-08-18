@@ -1,179 +1,96 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { useForm } from "react-hook-form";
 import PhoneInput from "react-phone-number-input";
-import { isValidPhoneNumber } from "react-phone-number-input"; // Import validation function
+import { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 
 const CustomerForm = ({ onSubmit, resetForm }) => {
-  const initialFormData = {
-    firstname: "",
-    lastname: "",
-    mobileNumber: "",
-    source: "walk-in",
-    gender: "",
-    firstVisit: "",
-  };
-
-  const [formData, setFormData] = useState(initialFormData);
-  const [errors, setErrors] = useState({});
-  const [isTouched, setIsTouched] = useState({
-    firstname: false,
-    lastname: false,
-    mobileNumber: false,
-    source: false,
-    gender: false,
-    firstVisit: false,
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    watch,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      firstname: "",
+      lastname: "",
+      mobileNumber: "",
+      source: "walk-in",
+      gender: "",
+      firstVisit: "",
+    },
   });
 
-  useEffect(() => {
+  // Reset form when resetForm prop changes
+  React.useEffect(() => {
     if (resetForm) {
-      setFormData(initialFormData);
-      setErrors({});
-      setIsTouched({
-        firstname: false,
-        lastname: false,
-        mobileNumber: false,
-        source: false,
-        gender: false,
-        firstVisit: false,
-      });
+      reset();
     }
-  }, [resetForm]);
-
-  // Real-time validation
-  useEffect(() => {
-    setErrors(validateForm());
-  }, [formData, isTouched]);
-
-  const validateForm = () => {
-    const newErrors = {};
-    const nameRegex = /^[a-zA-Z\u00C0-\u017F\s'-]{1,50}$/; // Allows international characters, hyphens, apostrophes
-
-    // First Name Validation
-    if (isTouched.firstname) {
-      if (!formData.firstname.trim()) {
-        newErrors.firstname = "First Name is required";
-      } else if (!nameRegex.test(formData.firstname)) {
-        newErrors.firstname = "Only letters, hyphens, and apostrophes allowed";
-      } else if (formData.firstname.trim().length < 3) {
-        newErrors.firstname = "Must be at least 3 characters";
-      } else if (formData.firstname.trim().length > 50) {
-        newErrors.firstname = "Cannot exceed 50 characters";
-      }
-    }
-
-    // Last Name Validation
-    if (isTouched.lastname) {
-      if (!formData.lastname.trim()) {
-        newErrors.lastname = "Last Name is required";
-      } else if (!nameRegex.test(formData.lastname)) {
-        newErrors.lastname = "Only letters, hyphens, and apostrophes allowed";
-      } else if (formData.lastname.trim().length > 15) {
-        newErrors.lastname = "Cannot exceed 50 characters";
-      }
-    }
-
-    // Mobile Number Validation
-    if (isTouched.mobileNumber) {
-      if (!formData.mobileNumber) {
-        newErrors.mobileNumber = "Mobile Number is required";
-      } else if (!isValidPhoneNumber(formData.mobileNumber)) {
-        newErrors.mobileNumber = "Invalid phone number";
-      }
-    }
-
-    // Source Validation
-    if (isTouched.source && !formData.source) {
-      newErrors.source = "Source is required";
-    }
-
-    // Gender Validation
-    if (isTouched.gender && !formData.gender) {
-      newErrors.gender = "Gender is required";
-    }
-
-    // First Visit Validation
-    if (isTouched.firstVisit) {
-      if (!formData.firstVisit) {
-        newErrors.firstVisit = "First Visit date is required";
-      } else {
-        const selectedDate = new Date(formData.firstVisit);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
-        
-        if (selectedDate > today) {
-          newErrors.firstVisit = "Date cannot be in the future";
-        }
-      }
-    }
-
-    return newErrors;
-  };
-
-  const handleBlur = (field) => {
-    setIsTouched((prev) => ({ ...prev, [field]: true }));
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  }, [resetForm, reset]);
 
   const handlePhoneChange = (value) => {
-    setFormData((prev) => ({ ...prev, mobileNumber: value }));
-    setIsTouched((prev) => ({ ...prev, mobileNumber: true }));
+    setValue("mobileNumber", value, { shouldValidate: true });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const validateMobileNumber = (value) => {
+    if (!value) return "Mobile Number is required";
 
-    // Touch all fields to show errors
-    const allTouched = Object.keys(isTouched).reduce((acc, key) => {
-      acc[key] = true;
-      return acc;
-    }, {});
-    setIsTouched(allTouched);
+    // Remove all non-digit characters
+    const digitsOnly = value.replace(/\D/g, '');
 
-    const validationErrors = validateForm();
-    setErrors(validationErrors);
-
-    if (Object.keys(validationErrors).length > 0) {
-      return;
+    // For India (default country), check if it's exactly 12 digits (91 + 10 digits)
+    if (digitsOnly.length !== 12) {
+      return "Mobile number must be exactly 12 digits (including country code)";
     }
 
-    // Format data for submission
-    const formattedMobile = formData.mobileNumber.replace(/\D/g, "");
-    const formattedDate = formData.firstVisit
-      ? `${formData.firstVisit}T00:00:00Z`
-      : "";
+    return true;
+  };
+
+  const onFormSubmit = (data) => {
+    // Format mobile number by removing all non-digit characters
+    const formattedMobile = data.mobileNumber.replace(/\D/g, "");
+    const formattedDate = data.firstVisit ? `${data.firstVisit}T00:00:00Z` : "";
 
     onSubmit({
-      ...formData,
+      ...data,
       mobileNumber: formattedMobile,
       firstVisit: formattedDate,
     });
   };
 
   const today = new Date().toISOString().split("T")[0];
+  const mobileNumber = watch("mobileNumber");
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-1 gap-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <label className="block text-sm text-[#31316680]">First Name *</label>
           <input
             type="text"
-            name="firstname"
             placeholder="First Name"
-            value={formData.firstname}
-            onChange={handleChange}
-            onBlur={() => handleBlur("firstname")}
-            maxLength={50}
-            className={`w-full p-2 border ${
-              errors.firstname ? "border-red-500" : "border-gray-300"
-            } rounded text-[#313166]`}
+            {...register("firstname", {
+              required: "First Name is required",
+              minLength: {
+                value: 3,
+                message: "Must be at least 3 characters",
+              },
+              maxLength: {
+                value: 20,
+                message: "Cannot exceed 20 characters",
+              },
+              pattern: {
+                value: /^[a-zA-Z\u00C0-\u017F\s'-]+$/,
+                message: "Only letters, hyphens, and apostrophes allowed",
+              },
+            })}
+            className={`w-full p-2 border ${errors.firstname ? "border-red-500" : "border-gray-300"
+              } rounded text-[#313166]`}
           />
           {errors.firstname && (
-            <p className="text-red-500 text-xs">{errors.firstname}</p>
+            <p className="text-red-500 text-xs">{errors.firstname.message}</p>
           )}
         </div>
 
@@ -181,76 +98,59 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
           <label className="block text-sm text-[#31316680]">Last Name *</label>
           <input
             type="text"
-            name="lastname"
             placeholder="Last Name"
-            value={formData.lastname}
-            onChange={handleChange}
-            onBlur={() => handleBlur("lastname")}
-            maxLength={50}
-            className={`w-full p-2 border ${
-              errors.lastname ? "border-red-500" : "border-gray-300"
-            } rounded text-[#313166]`}
+            {...register("lastname", {
+              required: "Last Name is required",
+              minLength: {
+                value: 3,
+                message: "Must be at least 3 characters",
+              },
+              maxLength: {
+                value: 20,
+                message: "Cannot exceed 20 characters",
+              },
+              pattern: {
+                value: /^[a-zA-Z\u00C0-\u017F\s'-]+$/,
+                message: "Only letters, hyphens, and apostrophes allowed",
+              },
+            })}
+            className={`w-full p-2 border ${errors.lastname ? "border-red-500" : "border-gray-300"
+              } rounded text-[#313166]`}
           />
           {errors.lastname && (
-            <p className="text-red-500 text-xs">{errors.lastname}</p>
+            <p className="text-red-500 text-xs">{errors.lastname.message}</p>
           )}
         </div>
       </div>
 
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
         <div className="space-y-2">
           <label className="block text-sm text-[#31316680]">Mobile Number *</label>
           <PhoneInput
             international
             defaultCountry="IN"
-            value={formData.mobileNumber}
+            value={mobileNumber}
             onChange={handlePhoneChange}
-            onBlur={() => handleBlur("mobileNumber")}
-            className={`w-full p-2 border ${
-              errors.mobileNumber ? "border-red-500" : "border-gray-300"
-            } rounded text-[#313166]`}
+            className={`w-full p-2 border ${errors.mobileNumber ? "border-red-500" : "border-gray-300"
+              } rounded text-[#313166]`}
             inputStyle={{ width: "100%", padding: "0.5rem" }}
             dropdownClass="text-gray-700"
             countryCallingCodeEditable={false}
+            rules={{ validate: validateMobileNumber }}
           />
           {errors.mobileNumber && (
-            <p className="text-red-500 text-xs">{errors.mobileNumber}</p>
+            <p className="text-red-500 text-xs">{errors.mobileNumber.message}</p>
           )}
         </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm text-[#31316680]">Gender *</label>
-          <select
-            name="gender"
-            value={formData.gender}
-            onChange={handleChange}
-            onBlur={() => handleBlur("gender")}
-            className={`w-full p-2 border ${
-              errors.gender ? "border-red-500" : "border-gray-300"
-            } rounded text-[#313166] bg-white`}
-          >
-            <option value="">Select Gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="others">Others</option>
-          </select>
-          {errors.gender && (
-            <p className="text-red-500 text-xs">{errors.gender}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <label className="block text-sm text-[#31316680]">Source *</label>
           <select
-            name="source"
-            value={formData.source}
-            onChange={handleChange}
-            onBlur={() => handleBlur("source")}
-            className={`w-full p-2 border ${
-              errors.source ? "border-red-500" : "border-gray-300"
-            } rounded text-[#313166] bg-white`}
+            {...register("source", { required: "Source is required" })}
+            className={`w-full p-2 border ${errors.source ? "border-red-500" : "border-gray-300"
+              } rounded text-[#313166] bg-white`}
           >
             <option value="walk-in">Walk-in</option>
             <option value="website">Website</option>
@@ -258,27 +158,29 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
             <option value="others">Others</option>
           </select>
           {errors.source && (
-            <p className="text-red-500 text-xs">{errors.source}</p>
+            <p className="text-red-500 text-xs">{errors.source.message}</p>
           )}
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm text-[#31316680]">
-            First Visit Date *
-          </label>
+          <label className="block text-sm text-[#31316680]">First Visit Date *</label>
           <input
             type="date"
-            name="firstVisit"
-            value={formData.firstVisit}
-            onChange={handleChange}
-            onBlur={() => handleBlur("firstVisit")}
+            {...register("firstVisit", {
+              required: "First Visit date is required",
+              validate: (value) => {
+                const selectedDate = new Date(value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return selectedDate <= today || "Date cannot be in the future";
+              },
+            })}
             max={today}
-            className={`w-full p-2 border ${
-              errors.firstVisit ? "border-red-500" : "border-gray-300"
-            } rounded text-[#313166]`}
+            className={`w-full p-2 border ${errors.firstVisit ? "border-red-500" : "border-gray-300"
+              } rounded text-[#313166]`}
           />
           {errors.firstVisit && (
-            <p className="text-red-500 text-xs">{errors.firstVisit}</p>
+            <p className="text-red-500 text-xs">{errors.firstVisit.message}</p>
           )}
         </div>
       </div>
