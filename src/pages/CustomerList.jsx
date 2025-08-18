@@ -150,21 +150,21 @@ const CustomerList = () => {
                   </div>
                 ) : (
                   <table className="min-w-full">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
+                    <thead className="bg-gray-100 border-b border-gray-200">
+                      <tr className="divide-x divide-gray-200">
+                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                           First Name
                         </th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                           Last Name
                         </th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                           Mobile Number
                         </th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                           Source
                         </th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
@@ -173,22 +173,22 @@ const CustomerList = () => {
                       {customers.map((customer) => (
                         <tr
                           key={customer._id}
-                          className="hover:bg-gray-50 cursor-pointer"
+                          className="hover:bg-gray-50 cursor-pointer divide-x divide-gray-200"
                           onClick={() => handleCustomerClick(customer._id)}
                         >
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
                             {customer.firstname}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
                             {customer.lastname}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
                             {customer.mobileNumber}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
                             {customer.source}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166]">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
                             <button
                               className="text-gray-500 hover:text-gray-700"
                               onClick={(e) => handleEditClick(e, customer._id)}
