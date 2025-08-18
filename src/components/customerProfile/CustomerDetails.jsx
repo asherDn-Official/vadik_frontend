@@ -177,13 +177,14 @@ const basicSchema = yup.object().shape({
     .matches(/^[A-Za-z\s]+$/, 'Only letters are allowed')
     .min(1, 'Must be at least 1 character')
     .max(15, 'Must be 15 characters or less'),
-  mobileNumber: yup
-    .string()
-    .required('Mobile number is required')
-    .matches(/^[6-9]\d{9}$/, 'Enter a valid 10-digit Indian mobile number'),
+
   source: yup.string().optional(),
   customerId: yup.string().optional(),
   firstVisit: yup.string().optional(),
+  mobileNumber: yup
+    .string()
+    .required('Mobile number is required')
+    .matches(/^(\+91[-\s]?)?[6-9]\d{9}$/, 'Enter a valid 10-digit Indian mobile number'),
 });
 
 // Validation schema for store information fields
@@ -393,7 +394,7 @@ const CustomerDetails = ({
     }
   }, [formData, touched, isEditing]);
 
-  const tabs = ["AdditionalData","Advanced Details", "Advanced Privacy", "Referral"];
+  const tabs = ["AdditionalData", "Advanced Details", "Advanced Privacy", "Referral"];
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
   const [recipientNumber, setRecipientNumber] = useState("");
   const [messageType, setMessageType] = useState("birthday");
@@ -469,10 +470,10 @@ const CustomerDetails = ({
     try {
       // Validate basic fields
       await basicSchema.validate(formData.basic, { abortEarly: false });
-      
+
       // Transform the form data back to API format
       const formattedData = transformFormDataToAPI(formData, customer);
-      
+
       // Call the parent save handler with formatted data
       onSave(formattedData);
     } catch (err) {
@@ -608,7 +609,7 @@ const CustomerDetails = ({
                       />
                     </div>
 
-            
+
                   </div>
                 </div>
               </div>
@@ -625,8 +626,8 @@ const CustomerDetails = ({
                       type="button"
                       onClick={() => setActiveTab(tab)}
                       className={`py-4 px-4 border-b-2 font-medium rounded-[10px] text-sm ${activeTab === tab
-                          ? "bg-[#EC396F1A] text-[#EC396F]"
-                          : "border-transparent text-gray-500 hover:text-[#EC396F] hover:bg-[#EC396F1A]"
+                        ? "bg-[#EC396F1A] text-[#EC396F]"
+                        : "border-transparent text-gray-500 hover:text-[#EC396F] hover:bg-[#EC396F1A]"
                         }`}
                     >
                       {tab}
