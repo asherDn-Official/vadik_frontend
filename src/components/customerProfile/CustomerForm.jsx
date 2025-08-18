@@ -125,11 +125,11 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
       </div>
 
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg">
 
         <div className="space-y-2">
           <label className="block text-sm text-[#31316680]">Mobile Number *</label>
-         <Controller
+          <Controller
             name="mobileNumber"
             control={control}
             rules={{
@@ -142,9 +142,8 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
                 defaultCountry="IN"
                 value={value}
                 onChange={onChange}
-                className={`w-full p-2 border ${
-                  errors.mobileNumber ? "border-red-500" : "border-gray-300"
-                } rounded text-[#313166]`}
+                className={`w-full p-2 border ${errors.mobileNumber ? "border-red-500" : "border-gray-300"
+                  } rounded text-[#313166] `}
                 inputStyle={{ width: "100%", padding: "0.5rem" }}
                 dropdownClass="text-gray-700"
                 countryCallingCodeEditable={false}
