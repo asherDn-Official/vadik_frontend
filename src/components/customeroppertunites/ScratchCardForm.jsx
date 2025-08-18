@@ -3,7 +3,7 @@ import { Edit, Trash2, Gift } from "lucide-react";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 
-const ScratchCard = ({ offer, title ,CoupanName}) => {
+const ScratchCard = ({ offer, title, CoupanName }) => {
   const canvasRef = useRef(null);
   const [isScratching, setIsScratching] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -163,7 +163,7 @@ const ScratchCard = ({ offer, title ,CoupanName}) => {
         style={{ touchAction: 'none' }}
       />
 
-    
+
     </div>
   );
 };
@@ -194,6 +194,8 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
   const [loadingCoupons, setLoadingCoupons] = useState(true);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const selectedCoupon = coupons.find(c => c._id === formData.couponId);
+  const couponCode = selectedCoupon ? selectedCoupon.code : "";
 
   // Fetch dropdown data
   useEffect(() => {
@@ -356,7 +358,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
           <div className="flex flex-col items-center">
             <h3 className="text-lg font-semibold mb-4">Preview</h3>
             <ScratchCard
-              // CoupanName={formData.couponId||""}
+              CoupanName={couponCode}//show the coupon code in the scratch card , CoupanName is the coupon code 
             />
 
             {/* Offer selector */}
