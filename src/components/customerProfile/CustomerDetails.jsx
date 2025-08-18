@@ -502,9 +502,9 @@ const CustomerDetails = ({
         <form onSubmit={onSubmit}>
           <div className="rounded-lg shadow-sm">
             {/* Profile Header */}
-            <div className="p-6 border-b border-gray-200 mb-5 bg-white rounded-[20px]">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center">
+            <div className="p-6 border-b border-gray-200 mb-5 bg-white rounded-[20px]   ">
+              <div className="flex items-start justify-between " >
+                <div className="flex items-center w-full">
                   <div className="relative">
                     <img
                       src={transformedCustomer?.profileImage || "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"}
@@ -633,7 +633,7 @@ const CustomerDetails = ({
                     </button>
                   ))}
                   <div className="flex-1 flex justify-end items-center">
-                    {!isEditing ? (
+                    {!isEditing && (
                       <button
                         type="button"
                         onClick={onEdit}
@@ -642,22 +642,6 @@ const CustomerDetails = ({
                         <img src={EditIcon} className="w-4 h-4 mr-2" alt="Edit" />
                         Edit
                       </button>
-                    ) : (
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={onCancel}
-                          className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="px-4 py-2 bg-[#313166] text-white rounded-lg text-sm font-medium hover:bg-[#27275a] focus:outline-none focus:ring-2 focus:ring-[#313166]"
-                        >
-                          Update Changes
-                        </button>
-                      </div>
                     )}
                   </div>
                 </nav>
