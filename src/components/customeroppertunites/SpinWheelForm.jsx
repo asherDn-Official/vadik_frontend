@@ -339,8 +339,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                   handleInputChange("noOfSpins", parseInt(e.target.value || '0', 10))
                 }
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.noOfSpins ? 'border-red-500' : 'border-gray-300'}`}
-                min="1"
-                max="4"
+                // min="1"
+                // max="4"
               />
               {errors.noOfSpins && <p className="mt-1 text-sm text-red-600">{errors.noOfSpins}</p>}
             </div>
