@@ -174,7 +174,7 @@ const CustomerList = () => {
                 ) : (
                   <table className="min-w-full">
                     <thead className="bg-gray-100 border-b border-gray-200">
-                      <tr className="divide-x divide-gray-200">
+                      <tr className="">
                         <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                           First Name
                         </th>
@@ -196,7 +196,7 @@ const CustomerList = () => {
                       {customers.map((customer) => (
                         <tr
                           key={customer._id}
-                          className="hover:bg-gray-50 cursor-pointer divide-x divide-gray-200"
+                          className="hover:bg-gray-50 cursor-pointer  divide-gray-200"
                           onClick={() => handleCustomerClick(customer._id)}
                         >
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
