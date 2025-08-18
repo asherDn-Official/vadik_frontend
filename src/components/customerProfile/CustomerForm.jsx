@@ -4,6 +4,10 @@ import PhoneInput from "react-phone-number-input";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
+
 const CustomerForm = ({ onSubmit, resetForm }) => {
   const {
     register,
@@ -20,7 +24,7 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
       mobileNumber: "",
       source: "walk-in",
       gender: "",
-      firstVisit: "",
+      firstVisit: null,
     },
   });
 
@@ -33,20 +37,20 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
 
   const validateMobileNumber = (value) => {
     if (!value) return "Mobile Number is required";
-    
+
     // Check if the phone number is valid
     if (!isValidPhoneNumber(value)) {
       return "Invalid phone number";
     }
-    
+
     // Extract just the national number (without country code)
     const nationalNumber = value.replace(/\D/g, '').slice(-10);
-    
+
     // For India, check if it's exactly 10 digits (national number)
     if (nationalNumber.length !== 10) {
       return "Mobile number must be exactly 10 digits";
     }
-    
+
     return true;
   };
 
@@ -192,25 +196,28 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
 
         <div className="space-y-2">
           <label className="block text-sm text-[#31316680]">First Visit Date *</label>
-          <input
-            type="date"
-            {...register("firstVisit", {
-              required: "First Visit date is required",
-              validate: (value) => {
-                const selectedDate = new Date(value);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                return selectedDate <= today || "Date cannot be in the future";
-              },
-            })}
-            max={today}
-            className={`w-full p-2 border ${errors.firstVisit ? "border-red-500" : "border-gray-300"
-              } rounded text-[#313166]`}
+          <Controller
+            name="firstVisit"
+            control={control}
+            rules={{ required: "First Visit Date is required" }}
+            render={({ field }) => (
+              <DatePicker
+                selected={field.value}
+                onChange={(date) => field.onChange(date)}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="DD/MM/YYYY"
+                className={`w-full p-2 border ${errors.firstVisit ? "border-red-500" : "border-gray-300"
+                  } rounded text-[#313166]`}
+                maxDate={new Date()}
+              />
+            )}
           />
           {errors.firstVisit && (
             <p className="text-red-500 text-xs">{errors.firstVisit.message}</p>
           )}
         </div>
+
+
       </div>
 
       <div>
