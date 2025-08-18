@@ -512,8 +512,37 @@ const CustomerDetails = ({
                       className="w-[148px] h-[212px] rounded-lg  object-contain"
                     />
                   </div>
+                  {/* Basic Details Sections */}
                   <div className="ml-14 w-full">
-                    <h2 className=" font-bold text-[18px] leading-[30px] tracking-normal mb-6 text-[#313166] underline font-poppins">Basic Details</h2>
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className=" font-bold text-[18px] leading-[30px] tracking-normal text-[#313166] underline font-poppins">Basic Details</h2>
+                      {!isEditing ? (
+                        <button
+                          type="button"
+                          onClick={onEdit}
+                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center"
+                        >
+                          <img src={EditIcon} className="w-4 h-4 mr-2" alt="Edit" />
+                          Edit
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={onCancel}
+                            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-4 py-2 bg-[#313166] text-white rounded-lg text-sm font-medium hover:bg-[#27275a] focus:outline-none focus:ring-2 focus:ring-[#313166]"
+                          >
+                            Update Changes
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex flex-wrap  gap-x-10 gap-y-6  mb-6">
                       <FieldItem
@@ -613,7 +642,23 @@ const CustomerDetails = ({
                         <img src={EditIcon} className="w-4 h-4 mr-2" alt="Edit" />
                         Edit
                       </button>
-                    ) : null}
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={onCancel}
+                          className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-[#313166] text-white rounded-lg text-sm font-medium hover:bg-[#27275a] focus:outline-none focus:ring-2 focus:ring-[#313166]"
+                        >
+                          Update Changes
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </nav>
               </div>
