@@ -545,7 +545,7 @@ const CustomerDetails = ({
                       )}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-x-10 gap-y-6 mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10 gap-y-6 mb-6">
                       <FieldItem
                         label="First Name"
                         name="firstname"
