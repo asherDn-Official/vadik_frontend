@@ -31,21 +31,22 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
     }
   }, [resetForm, reset]);
 
-  const handlePhoneChange = (value) => {
-    setValue("mobileNumber", value, { shouldValidate: true });
-  };
-
   const validateMobileNumber = (value) => {
     if (!value) return "Mobile Number is required";
-
-    // Remove all non-digit characters
-    const digitsOnly = value.replace(/\D/g, '');
-
-    // For India (default country), check if it's exactly 12 digits (91 + 10 digits)
-    if (digitsOnly.length !== 12) {
-      return "Mobile number must be exactly 12 digits (including country code)";
+    
+    // Check if the phone number is valid
+    if (!isValidPhoneNumber(value)) {
+      return "Invalid phone number";
     }
-
+    
+    // Extract just the national number (without country code)
+    const nationalNumber = value.replace(/\D/g, '').slice(-10);
+    
+    // For India, check if it's exactly 10 digits (national number)
+    if (nationalNumber.length !== 10) {
+      return "Mobile number must be exactly 10 digits";
+    }
+    
     return true;
   };
 
@@ -124,9 +125,7 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
         </div>
       </div>
 
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg">
-
         <div className="space-y-2">
           <label className="block text-sm text-[#31316680]">Mobile Number *</label>
           <Controller
@@ -147,11 +146,30 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
                 inputStyle={{ width: "100%", padding: "0.5rem" }}
                 dropdownClass="text-gray-700"
                 countryCallingCodeEditable={false}
+                limitMaxLength={true}
               />
             )}
           />
           {errors.mobileNumber && (
             <p className="text-red-500 text-xs">{errors.mobileNumber.message}</p>
+          )}
+          <p className="text-xs text-gray-500">Enter 10-digit mobile number</p>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm text-[#31316680]">Gender *</label>
+          <select
+            {...register("gender", { required: "Gender is required" })}
+            className={`w-full p-2 border ${errors.gender ? "border-red-500" : "border-gray-300"
+              } rounded text-[#313166] bg-white`}
+          >
+            <option value="">Select Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="others">Others</option>
+          </select>
+          {errors.gender && (
+            <p className="text-red-500 text-xs">{errors.gender.message}</p>
           )}
         </div>
 
