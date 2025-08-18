@@ -184,7 +184,7 @@ const basicSchema = yup.object().shape({
   mobileNumber: yup
     .string()
     .required('Mobile number is required')
-    .matches(/^(\+91[-\s]?)?[6-9]\d{9}$/, 'Enter a valid 10-digit Indian mobile number')
+    .matches(/^91[6-9]\d{9}$/, 'Enter a valid 12-digit Indian mobile number (e.g., 919894584104)')
 });
 
 // Validation schema for store information fields
