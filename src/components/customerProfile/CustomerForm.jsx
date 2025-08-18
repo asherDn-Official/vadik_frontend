@@ -1,5 +1,5 @@
 import React from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import PhoneInput from "react-phone-number-input";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
@@ -8,6 +8,7 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
   const {
     register,
     handleSubmit,
+    control,
     setValue,
     reset,
     watch,
@@ -128,17 +129,27 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
 
         <div className="space-y-2">
           <label className="block text-sm text-[#31316680]">Mobile Number *</label>
-          <PhoneInput
-            international
-            defaultCountry="IN"
-            value={mobileNumber}
-            onChange={handlePhoneChange}
-            className={`w-full p-2 border ${errors.mobileNumber ? "border-red-500" : "border-gray-300"
-              } rounded text-[#313166]`}
-            inputStyle={{ width: "100%", padding: "0.5rem" }}
-            dropdownClass="text-gray-700"
-            countryCallingCodeEditable={false}
-            rules={{ validate: validateMobileNumber }}
+         <Controller
+            name="mobileNumber"
+            control={control}
+            rules={{
+              validate: validateMobileNumber,
+              required: "Mobile Number is required",
+            }}
+            render={({ field: { onChange, value } }) => (
+              <PhoneInput
+                international
+                defaultCountry="IN"
+                value={value}
+                onChange={onChange}
+                className={`w-full p-2 border ${
+                  errors.mobileNumber ? "border-red-500" : "border-gray-300"
+                } rounded text-[#313166]`}
+                inputStyle={{ width: "100%", padding: "0.5rem" }}
+                dropdownClass="text-gray-700"
+                countryCallingCodeEditable={false}
+              />
+            )}
           />
           {errors.mobileNumber && (
             <p className="text-red-500 text-xs">{errors.mobileNumber.message}</p>
