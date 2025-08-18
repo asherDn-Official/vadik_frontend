@@ -62,7 +62,7 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
     onSubmit({
       ...data,
       mobileNumber: formattedMobile,
-      firstVisit: formattedDate,
+      firstVisit: data.firstVisit,
     });
   };
 
