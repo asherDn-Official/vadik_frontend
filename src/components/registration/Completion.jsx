@@ -1,6 +1,13 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Completion = ({ formData }) => {
+
+  const navigate = useNavigate();
+
+  const handleNavigate = () => {
+     navigate("/dashboard");
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-white">
       <div className="w-full max-w-md mx-auto  rounded-xl  overflow-hidden p-8 text-center">
@@ -22,9 +29,9 @@ const Completion = ({ formData }) => {
           Let's make today productive!
         </p>
 
-        <div className="w-full flex justify-center">
+        <div className="w-full flex justify-center" onClick={handleNavigate}>
           <Link
-            to="/dashboard"
+            // to="/dashboard"
             className="min-w-[200px] px-6 py-3 bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-[10px] hover:opacity-90 transition-opacity duration-200 text-center"
           >
             Let's go!
