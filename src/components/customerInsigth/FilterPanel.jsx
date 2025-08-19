@@ -145,6 +145,15 @@ const FilterPanel = ({
               </button>
             );
           })}
+          {filters[filterKey] && (
+            <button
+              className="ml-2 px-2 py-1 text-[10px] text-red-600 hover:underline"
+              onClick={() => onFilterChange(filterKey, '')}
+              aria-label={`Clear ${filterKey}`}
+            >
+              Clear
+            </button>
+          )}
         </div>
       );
     } else if (filterConfig?.type === "string") {
@@ -155,7 +164,7 @@ const FilterPanel = ({
             placeholder={`Enter ${filterKey
               .replace(/([A-Z])/g, " $1")
               .toLowerCase()}`}
-            className="w-full p-2 pl-8 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
+            className="w-full p-2 pl-8 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
             value={filters[filterKey] || ""}
             onChange={(e) => onFilterChange(filterKey, e.target.value)}
           />
@@ -163,6 +172,15 @@ const FilterPanel = ({
             size={16}
             className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
           />
+          {filters[filterKey] && (
+            <button
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              onClick={() => onFilterChange(filterKey, '')}
+              aria-label={`Clear ${filterKey}`}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
       );
     } else if (filterConfig?.type === "number") {
@@ -173,7 +191,7 @@ const FilterPanel = ({
             placeholder={`Enter ${filterKey
               .replace(/([A-Z])/g, " $1")
               .toLowerCase()}`}
-            className="w-full p-2 pl-8 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
+            className="w-full p-2 pl-8 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
             value={filters[filterKey] || ""}
             onChange={(e) => onFilterChange(filterKey, e.target.value)}
             min="0"
@@ -182,6 +200,15 @@ const FilterPanel = ({
             size={16}
             className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
           />
+          {filters[filterKey] && (
+            <button
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              onClick={() => onFilterChange(filterKey, '')}
+              aria-label={`Clear ${filterKey}`}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
       );
     } else if (filterConfig?.type === "date") {
@@ -189,7 +216,7 @@ const FilterPanel = ({
         <div className="mt-2 relative">
           <input
             type="date"
-            className="w-full p-2 pr-8 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
+            className="w-full p-2 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
             value={
               filters[filterKey]
                 ? new Date(filters[filterKey]).toISOString().split("T")[0]
@@ -207,8 +234,17 @@ const FilterPanel = ({
           />
           <Calendar
             size={16}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+            className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
           />
+          {filters[filterKey] && (
+            <button
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              onClick={() => onFilterChange(filterKey, '')}
+              aria-label={`Clear ${filterKey}`}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
       );
     }
@@ -411,6 +447,7 @@ const FilterPanel = ({
         // icon={getIconComponent(iconName)}
         expanded={expandedFilter === key}
         onToggle={() => toggleFilter(key)}
+        isActive={filters[key] !== undefined && filters[key] !== ''}
       >
         {renderFilterInput(key, apiFilterOptions[key])}
       </FilterItem>
@@ -512,18 +549,18 @@ const FilterPanel = ({
   );
 };
 
-const FilterItem = ({ name, expanded, onToggle, children, icon }) => {
+const FilterItem = ({ name, expanded, onToggle, children, icon, isActive }) => {
   return (
-    <div className="border-b border-gray-200 last:border-b-0 p-4 pt-2 mt-0">
+    <div className={`border-b border-gray-200 last:border-b-0 p-4 pt-2 mt-0 ${isActive ? 'bg-[#f5f5ff]' : ''}`}>
       <button
         className="w-full flex justify-between items-center py-2 text-[14px] font-[400] text-[#313166]"
         onClick={onToggle}
       >
         <div className="flex items-center">
-          {/* {icon && <span className="mr-2">{icon}</span>} */}
-          <span>{name}</span>
+          {/* {icon && <span className=\"mr-2\">{icon}</span>} */}
+          <span className={`${isActive ? 'font-semibold text-[#313166]' : ''}`}>{name}</span>
         </div>
-        <span className="text-[#313166]">
+        <span className={`text-[#313166] ${isActive ? 'font-semibold' : ''}`}>
           {expanded ? <Minus size={16} /> : <Plus size={16} />}
         </span>
       </button>
