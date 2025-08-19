@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Plus, Send, Heart, CalendarDays, Delete, Trash } from "lucide-react";
-import axios from "axios";
+import Markdown from 'react-markdown'
 import api from "../../api/apiconfig";
 
 const CustomerRecommendation = () => {
@@ -382,9 +382,9 @@ const CustomerRecommendation = () => {
       const response = await api.post(
         `/api/customerChat/chat-stream/${currentThreadId}`,
         {
-            userId: retailerId,
-            message: messageContent,
-          }
+          userId: retailerId,
+          message: messageContent,
+        }
       );
 
       if (!response.ok) throw new Error("Stream request failed");
@@ -593,8 +593,10 @@ const CustomerRecommendation = () => {
                         : "bg-white border border-gray-200 text-gray-800"
                         }`}
                     >
-                      <div className="whitespace-pre-line">
-                        {message.content}
+                      <div className="prose prose-sm prose space-y-1">
+                        <Markdown>
+                          {message.content}
+                        </Markdown>
                       </div>
                     </div>
                   </div>

@@ -291,7 +291,10 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
     // Validate loyalty points
     if (!formData.loyaltyPoints) {
       newErrors.loyaltyPoints = 'Loyalty points is required';
-    } else if (isNaN(formData.loyaltyPoints) || parseInt(formData.loyaltyPoints) <= 0) {
+    } else if (!/^\d+$/.test(formData.loyaltyPoints)) {
+      newErrors.loyaltyPoints = 'Loyalty points must contain only numbers';
+    }
+    else if (isNaN(formData.loyaltyPoints) || parseInt(formData.loyaltyPoints) <= 0) {
       newErrors.loyaltyPoints = 'Loyalty points must be a positive number';
     }
 
@@ -388,7 +391,9 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
           <span className="text-slate-600">Loyalty Point</span>
           <div className="flex flex-col">
             <input
-              type="text"
+              type="number"
+              min="1"
+              step="1"
               placeholder="Enter Value"
               value={formData.loyaltyPoints}
               onChange={(e) => handleInputChange("loyaltyPoints", e.target.value)}

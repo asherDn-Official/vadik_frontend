@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Plus, Send, Heart, CalendarDays, Delete, Trash } from "lucide-react";
-import axios from "axios";
+import Markdown from 'react-markdown'
 import api from "../../api/apiconfig";
 
 const StoreRecommendation = () => {
@@ -380,11 +380,11 @@ const StoreRecommendation = () => {
     try {
       setIsStreaming(true);
       const response = await api.post(
-        `/api/staffChat/chat-stream/${currentThreadId}`,{
-            userId: retailerId,
-            message: messageContent,
-          });
-    
+        `/api/staffChat/chat-stream/${currentThreadId}`, {
+        userId: retailerId,
+        message: messageContent,
+      });
+
 
       if (!response.ok) throw new Error("Stream request failed");
       if (!response.body) throw new Error("ReadableStream not supported");
@@ -592,8 +592,10 @@ const StoreRecommendation = () => {
                         : "bg-white border border-gray-200 text-gray-800"
                         }`}
                     >
-                      <div className="whitespace-pre-line">
-                        {message.content}
+                      <div className="prose prose-sm prose space-y-1">
+                        <Markdown>
+                          {message.content}
+                        </Markdown>
                       </div>
                     </div>
                   </div>
