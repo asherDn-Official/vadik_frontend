@@ -639,7 +639,7 @@ const CustomerDetails = ({
                       <FieldItem
                         label="Notifications status"
                         name="optinMessageSent"
-                        defaultValue={transformedCustomer?.optinMessageSent === true ? 'Received' : 'Not Received'}
+                        defaultValue={transformedCustomer?.optinMessageSent === true ? 'Sent' : 'Not Sent'}
                         value={formData?.basic?.optinMessageSent}
                         onChange={handleInputChange}
                         customer={customer}
