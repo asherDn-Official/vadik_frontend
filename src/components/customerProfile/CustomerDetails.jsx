@@ -177,7 +177,6 @@ const basicSchema = yup.object().shape({
     .matches(/^[A-Za-z\s]+$/, 'Only letters are allowed')
     .min(1, 'Must be at least 1 character')
     .max(15, 'Must be 15 characters or less'),
-
   source: yup.string().optional(),
   customerId: yup.string().optional(),
   firstVisit: yup.string().optional(),

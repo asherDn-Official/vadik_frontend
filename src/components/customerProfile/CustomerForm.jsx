@@ -107,10 +107,10 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
             placeholder="Last Name"
             {...register("lastname", {
               required: "Last Name is required",
-              minLength: {
-                value: 2,
-                message: "Must be at least 2 characters",
-              },
+              // minLength: {
+              //   value: 2,
+              //   message: "Must be at least 2 characters",
+              // },
               maxLength: {
                 value: 20,
                 message: "Cannot exceed 20 characters",
