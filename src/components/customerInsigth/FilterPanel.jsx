@@ -125,46 +125,6 @@ const FilterPanel = ({
     setExpandedFilter((prev) => (prev === key ? null : key));
   };
 
-  // Function to apply filters and update filtered data
-  // const applyFilters = async () => {
-  //   try {
-  //     // setLoading(true);
-  //     // Construct query parameters from filters
-  //     const queryParams = new URLSearchParams();
-
-  //     for (const [key, value] of Object.entries(filters)) {
-  //       if (value) {
-  //         queryParams.append(key, value);
-  //       }
-  //     }
-
-  //     // Add period filter
-  //     if (selectedPeriod && filters.periodValue) {
-  //       queryParams.append('period', selectedPeriod);
-  //       queryParams.append('periodValue', filters.periodValue);
-  //     }
-
-  //     // Make API call with filters
-  //     const response = await api.get(`/api/customers?${queryParams.toString()}`);
-
-  //     // Update local filtered data state
-  //     setFilteredData(response.data);
-
-  //     // Notify parent component about filtered data
-  //     if (onFilteredDataChange) {
-  //       onFilteredDataChange(response.data);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error applying filters:", error);
-  //   } finally {
-  //     // setLoading(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   applyFilters();
-  // }, [filters, selectedPeriod]);
-
   const renderFilterInput = (filterKey, filterConfig) => {
     if (Array.isArray(filterConfig)) {
       return (

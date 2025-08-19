@@ -99,8 +99,10 @@ const CustomerPersonalisation = () => {
   const handleFilterChange = (key, value) => {
     setFilters(prev => {
       const newFilters = { ...prev, [key]: value };
-      // Calculate applied filters count
-      const count = Object.values(newFilters).filter(v => v !== undefined && v !== '').length;
+      // Calculate applied filters count (exclude periodValue)
+      const count = Object.entries(newFilters)
+        .filter(([k, v]) => k !== 'periodValue' && v !== undefined && v !== '')
+        .length;
       setAppliedFiltersCount(count);
       return newFilters;
     });
