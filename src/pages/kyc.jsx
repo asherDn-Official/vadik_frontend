@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { FiChevronDown, FiChevronUp, FiFilter, FiX } from "react-icons/fi";
 import api from "../api/apiconfig";
 import showToast from "../utils/ToastNotification";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
 
 const KYCPage = () => {
   const [searchType, setSearchType] = useState("phone");
@@ -12,12 +15,12 @@ const KYCPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
-  
+
   // Filter state
   const [filters, setFilters] = useState({
     minAmount: "",
@@ -26,19 +29,19 @@ const KYCPage = () => {
     dateTo: "",
     productName: ""
   });
-  
+
   const handleSearch = async (query, type) => {
     if (!query.trim()) {
       showToast("Please enter a search query", "warning");
       return;
     }
-    
+
     setSearchType(type);
     setSearchQuery(query);
     setCurrentPage(1);
     fetchCustomerData(query);
   };
-  
+
   const fetchCustomerData = async (query) => {
     setLoading(true);
     setError(null);
@@ -50,7 +53,7 @@ const KYCPage = () => {
           limit: itemsPerPage,
         }
       });
-      
+
       const { customer, statistics, orderHistory } = response.data.data;
       setCustomerData(customer);
       setStatistics(statistics);
@@ -65,17 +68,17 @@ const KYCPage = () => {
       setLoading(false);
     }
   };
-  
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
   };
-  
+
   const applyFilters = () => {
     setCurrentPage(1);
     fetchCustomerData(searchQuery);
   };
-  
+
   const clearFilters = () => {
     setFilters({
       minAmount: "",
@@ -86,19 +89,19 @@ const KYCPage = () => {
     });
     fetchCustomerData(searchQuery);
   };
-  
+
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
     }
   };
-  
+
   useEffect(() => {
     if (searchQuery) {
       fetchCustomerData(searchQuery);
     }
   }, [currentPage, itemsPerPage]);
-  
+
   const filteredOrders = orderHistory.filter(order => {
     // Apply filters
     if (filters.minAmount && order.orderSummary.grandTotal < parseFloat(filters.minAmount)) {
@@ -113,10 +116,10 @@ const KYCPage = () => {
     if (filters.dateTo && new Date(order.createdAt) > new Date(filters.dateTo)) {
       return false;
     }
-    if (filters.productName && 
-        !order.products.some(p => 
-          p.productName.toLowerCase().includes(filters.productName.toLowerCase())
-        )) {
+    if (filters.productName &&
+      !order.products.some(p =>
+        p.productName.toLowerCase().includes(filters.productName.toLowerCase())
+      )) {
       return false;
     }
     return true;
@@ -125,24 +128,23 @@ const KYCPage = () => {
   return (
     <div className="p-8">
       <h1 className="text-[#313166] font-bold text-xl mb-6">Quick Search</h1>
-      
+
       <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
         <div className="flex flex-wrap gap-2 mb-4">
           {["phone", "name", "email"].map(type => (
             <button
               key={type}
               onClick={() => setSearchType(type)}
-              className={`px-4 py-2 rounded-full capitalize ${
-                searchType === type
-                  ? "bg-[#313166] text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              className={`px-4 py-2 rounded-full capitalize ${searchType === type
+                ? "bg-[#313166] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
             >
               {type}
             </button>
           ))}
         </div>
-        
+
         <div className="flex gap-2">
           <input
             type="text"
@@ -160,9 +162,9 @@ const KYCPage = () => {
           </button>
         </div>
       </div>
-      
+
       {loading && <SkeletonLoader />}
-      
+
       {error && (
         <div className="p-4 mb-6 bg-red-50 border border-red-200 rounded-lg">
           <div className="text-red-700">{error}</div>
@@ -174,7 +176,7 @@ const KYCPage = () => {
           </button>
         </div>
       )}
-      
+
       {customerData && !loading && (
         <>
           {/* Customer Info Section */}
@@ -203,7 +205,7 @@ const KYCPage = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="border-r border-gray-200 pr-6">
                 <h2 className="text-lg font-semibold text-[#313166] mb-4">Shopping Statistics</h2>
                 {statistics ? (
@@ -229,14 +231,14 @@ const KYCPage = () => {
                   <p>No statistics available</p>
                 )}
               </div>
-              
+
               <div>
                 <h2 className="text-lg font-semibold text-[#313166] mb-4">Favorites</h2>
                 {statistics?.mostPurchasedProduct ? (
                   <div>
                     <p className="text-sm text-gray-500">Most Purchased Product</p>
                     <p className="font-medium">
-                      {statistics.mostPurchasedProduct.name} 
+                      {statistics.mostPurchasedProduct.name}
                       (x{statistics.mostPurchasedProduct.quantity})
                     </p>
                   </div>
@@ -246,7 +248,7 @@ const KYCPage = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Filters Section */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <div className="flex justify-between items-center mb-4">
@@ -254,11 +256,11 @@ const KYCPage = () => {
                 onClick={() => setShowFilters(!showFilters)}
                 className="flex items-center px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
               >
-                <FiFilter className="mr-2" /> 
-                Filters 
+                <FiFilter className="mr-2" />
+                Filters
                 {showFilters ? <FiChevronUp className="ml-1" /> : <FiChevronDown className="ml-1" />}
               </button>
-              
+
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Items per page:</span>
                 <select
@@ -276,7 +278,7 @@ const KYCPage = () => {
                 </select>
               </div>
             </div>
-            
+
             {showFilters && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4 pt-4 border-t border-gray-200">
                 <div>
@@ -290,7 +292,7 @@ const KYCPage = () => {
                     className="w-full p-2 border border-gray-300 rounded-lg"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Max Amount</label>
                   <input
@@ -302,29 +304,50 @@ const KYCPage = () => {
                     className="w-full p-2 border border-gray-300 rounded-lg"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
-                  <input
-                    type="date"
-                    name="dateFrom"
-                    value={filters.dateFrom}
-                    onChange={handleFilterChange}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    From Date
+                  </label>
+                  <DatePicker
+                    selected={
+                      filters.dateFrom ? new Date(filters.dateFrom) : null
+                    }
+                    onChange={(date) => {
+                      const formatted = date
+                        ? new Intl.DateTimeFormat("en-GB").format(date) // dd/MM/yyyy
+                        : "";
+                      setFilters((prev) => ({ ...prev, dateFrom: formatted }));
+                    }}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="DD/MM/YYYY"
                     className="w-full p-2 border border-gray-300 rounded-lg"
+                    maxDate={new Date()}
                   />
                 </div>
-                
+
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
-                  <input
-                    type="date"
-                    name="dateTo"
-                    value={filters.dateTo}
-                    onChange={handleFilterChange}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    To Date
+                  </label>
+                  <DatePicker
+                    selected={
+                      filters.dateTo ? new Date(filters.dateTo) : null
+                    }
+                    onChange={(date) => {
+                      const formatted = date
+                        ? new Intl.DateTimeFormat("en-GB").format(date) // dd/MM/yyyy
+                        : "";
+                      setFilters((prev) => ({ ...prev, dateTo: formatted }));
+                    }}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="DD/MM/YYYY"
                     className="w-full p-2 border border-gray-300 rounded-lg"
+                    maxDate={new Date()}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
                   <input
@@ -336,7 +359,7 @@ const KYCPage = () => {
                     className="w-full p-2 border border-gray-300 rounded-lg"
                   />
                 </div>
-                
+
                 <div className="flex items-end gap-2">
                   <button
                     onClick={applyFilters}
@@ -354,12 +377,12 @@ const KYCPage = () => {
               </div>
             )}
           </div>
-          
+
           {/* Order History Section */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="p-6">
               <h2 className="text-lg font-semibold text-[#313166] mb-4">Order History</h2>
-              
+
               {filteredOrders.length > 0 ? (
                 <>
                   <div className="overflow-x-auto">
@@ -386,8 +409,8 @@ const KYCPage = () => {
                             <td className="px-6 py-4 text-sm text-gray-900">
                               <div className="flex flex-wrap gap-1">
                                 {order.products.map((product, idx) => (
-                                  <span 
-                                    key={idx} 
+                                  <span
+                                    key={idx}
                                     className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
                                   >
                                     {product.productName}
@@ -402,11 +425,10 @@ const KYCPage = () => {
                               ₹{order.orderSummary.grandTotal.toFixed(2)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                order.orderSummary.paymentStatus === 'Paid' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
+                              <span className={`px-2 py-1 text-xs rounded-full ${order.orderSummary.paymentStatus === 'Paid'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                                }`}>
                                 {order.orderSummary.paymentStatus}
                               </span>
                             </td>
@@ -415,26 +437,25 @@ const KYCPage = () => {
                       </tbody>
                     </table>
                   </div>
-                  
+
                   {/* Pagination */}
                   <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className={`px-4 py-2 rounded-lg ${
-                        currentPage === 1 
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      }`}
+                      className={`px-4 py-2 rounded-lg ${currentPage === 1
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        }`}
                     >
                       Previous
                     </button>
-                    
+
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-700">
                         Page {currentPage} of {totalPages}
                       </span>
-                      
+
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum;
                         if (totalPages <= 5) {
@@ -446,35 +467,33 @@ const KYCPage = () => {
                         } else {
                           pageNum = currentPage - 2 + i;
                         }
-                        
+
                         return (
                           <button
                             key={pageNum}
                             onClick={() => handlePageChange(pageNum)}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              currentPage === pageNum
-                                ? "bg-[#313166] text-white"
-                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                            }`}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center ${currentPage === pageNum
+                              ? "bg-[#313166] text-white"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              }`}
                           >
                             {pageNum}
                           </button>
                         );
                       })}
-                      
+
                       {totalPages > 5 && (
                         <span className="px-2 text-gray-500">...</span>
                       )}
                     </div>
-                    
+
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className={`px-4 py-2 rounded-lg ${
-                        currentPage === totalPages 
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      }`}
+                      className={`px-4 py-2 rounded-lg ${currentPage === totalPages
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        }`}
                     >
                       Next
                     </button>
@@ -524,7 +543,7 @@ const SkeletonLoader = () => (
         ))}
       </div>
     </div>
-    
+
     <div className="bg-white rounded-lg shadow-sm p-4">
       <div className="flex justify-between">
         <div className="h-10 bg-gray-200 rounded w-32"></div>
@@ -534,7 +553,7 @@ const SkeletonLoader = () => (
         </div>
       </div>
     </div>
-    
+
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <div className="p-6">
         <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
@@ -562,7 +581,7 @@ const SkeletonLoader = () => (
             </tbody>
           </table>
         </div>
-        
+
         <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
           <div className="h-10 bg-gray-200 rounded w-24"></div>
           <div className="flex gap-2">
