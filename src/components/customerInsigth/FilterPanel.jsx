@@ -23,6 +23,8 @@ import {
 
 import ReactSlider from "react-slider";
 import api from "../../api/apiconfig";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const FilterPanel = ({
   filters,
@@ -213,29 +215,16 @@ const FilterPanel = ({
       );
     } else if (filterConfig?.type === "date") {
       return (
-        <div className="mt-2 relative">
-          <input
-            type="date"
-            className="w-full p-2 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
-            value={
-              filters[filterKey]
-                ? new Date(filters[filterKey]).toISOString().split("T")[0]
-                : ""
-            }
-            onChange={(e) => {
-              if (e.target.value) {
-                const selectedDate = new Date(e.target.value);
-                onFilterChange(filterKey, selectedDate);
-              } else {
-                onFilterChange(filterKey, "");
-              }
-            }}
-            placeholder="Select date"
+        <div className="mt-2 relative ">
+          <DatePicker
+            selected={filters[filterKey] ? new Date(filters[filterKey]) : null}
+            onChange={(date) => onFilterChange(filterKey, date || '')}
+            dateFormat="dd/MM/yyyy"
+            placeholderText="Select date"
+            className=" w-full p-2 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
+            isClearable={false}
           />
-          <Calendar
-            size={16}
-            className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-          />
+    
           {filters[filterKey] && (
             <button
               className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
