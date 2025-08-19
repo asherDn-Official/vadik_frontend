@@ -234,6 +234,9 @@ const CustomerDetails = ({
           source: transformedCustomer?.source || '',
           customerId: transformedCustomer?.customerId || '',
           firstVisit: transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : '',
+          loyaltyPoints: transformedCustomer?.loyaltyPoints ?? '',
+          isOptedIn: transformedCustomer?.isOptedIn ?? null,
+          optinMessageSent: transformedCustomer?.optinMessageSent ?? null,
         },
         additionalData: transformedCustomer?.additionalData || {},
         advancedDetails: transformedCustomer?.advancedDetails || {},
@@ -247,7 +250,10 @@ const CustomerDetails = ({
         mobileNumber: '',
         source: '',
         customerId: '',
-        firstVisit: ''
+        firstVisit: '',
+        loyaltyPoints: '',
+        isOptedIn: null,
+        optinMessageSent: null,
       },
       additionalData: {},
       advancedDetails: {},
@@ -282,6 +288,7 @@ const CustomerDetails = ({
           source: transformedCustomer?.source || '',
           customerId: transformedCustomer?.customerId || '',
           firstVisit: transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : '',
+          loyaltyPoints: transformedCustomer?.loyaltyPoints || '',
         },
         additionalData: transformedCustomer?.additionalData || {},
         advancedDetails: transformedCustomer?.advancedDetails || {},
@@ -606,6 +613,40 @@ const CustomerDetails = ({
                         customer={customer}
                         isEditing={isEditing}
                       />
+
+                      {/* Add this additionaly only can see not ediable */}
+
+                      <FieldItem
+                        label="Loyalty Points"
+                        name="loyaltyPoints"
+                        defaultValue={transformedCustomer?.loyaltyPoints ?? ''}
+                        value={formData?.basic?.loyaltyPoints}
+                        onChange={handleInputChange}
+                        customer={customer}
+                        isEditing={isEditing}
+                      />
+
+                      <FieldItem
+                        label="Allow Notifications"
+                        name="isOptedIn"
+                        defaultValue={transformedCustomer?.isOptedIn === true ? 'Allowed' : 'Not Allowed'}
+                        value={formData?.basic?.isOptedIn}
+                        onChange={handleInputChange}
+                        customer={customer}
+                        isEditing={isEditing}
+                      />
+
+                      <FieldItem
+                        label="Notifications status"
+                        name="optinMessageSent"
+                        defaultValue={transformedCustomer?.optinMessageSent === true ? 'Received' : 'Not Received'}
+                        value={formData?.basic?.optinMessageSent}
+                        onChange={handleInputChange}
+                        customer={customer}
+                        isEditing={isEditing}
+                      />
+
+
                     </div>
 
 
