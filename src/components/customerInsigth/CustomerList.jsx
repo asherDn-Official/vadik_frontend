@@ -93,7 +93,9 @@ const CustomerList = ({
           getNestedValue(customer, `additionalData.${header}.value`) ??
           getNestedValue(customer, `advancedDetails.${header}.value`) ??
           getNestedValue(customer, `advancedPrivacyDetails.${header}.value`);
-        return nestedValue ?? 'dsfsdf';
+
+          // Return "-" if value is still undefined or null
+        return nestedValue !== "" ? nestedValue : '-';
     }
   };
 
