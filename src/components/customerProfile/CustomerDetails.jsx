@@ -629,7 +629,7 @@ const CustomerDetails = ({
                       <FieldItem
                         label="Allow Notifications"
                         name="isOptedIn"
-                        defaultValue={transformedCustomer?.isOptedIn === true ? 'Allowed' : 'Not Allowed'}
+                        defaultValue={transformedCustomer?.isOptedIn === true ? 'Opt-In' : 'Opt-Out'}
                         value={formData?.basic?.isOptedIn}
                         onChange={handleInputChange}
                         customer={customer}
