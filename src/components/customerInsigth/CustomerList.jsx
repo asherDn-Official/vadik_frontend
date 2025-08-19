@@ -25,7 +25,7 @@ const CustomerList = ({
 
   // Function to safely get nested values from customer object
   const getNestedValue = (obj, path) => {
-    return path.split('.').reduce((o, p) => (o || {})[p], obj) || '';
+    return path.split('.').reduce((o, p) => (o || {})[p], obj) || '-';
   };
 
   const allSelected = customers.length > 0 &&
