@@ -26,6 +26,7 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
       gender: "",
       firstVisit: null,
     },
+    mode: "onChange", // Change validation mode to onChange for real-time
   });
 
   // Reset form when resetForm prop changes
