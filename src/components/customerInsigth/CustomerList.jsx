@@ -25,7 +25,7 @@ const CustomerList = ({
 
   // Function to safely get nested values from customer object
   const getNestedValue = (obj, path) => {
-    return path.split('.').reduce((o, p) => (o || {})[p], obj) || '-';
+    return path.split('.').reduce((o, p) => (o || {})[p], obj) ;
   };
 
   const allSelected = customers.length > 0 &&
@@ -39,10 +39,10 @@ const CustomerList = ({
         const mergedData = {
           allData: [...apiData?.additionalData, ...apiData?.advancedDetails, ...apiData?.advancedPrivacyDetails]
         };
-        
+
         // Extract all unique keys from the API data
         const keysArray = mergedData.allData.map(item => item.key);
-        
+
         // Combine with default headers and remove duplicates
         const allHeaders = [
           ...new Set([
@@ -54,7 +54,7 @@ const CustomerList = ({
             ...keysArray
           ])
         ];
-        
+
         setTableHeaders(allHeaders);
       } catch (error) {
         console.error("Error fetching filter options:", error);
@@ -74,7 +74,7 @@ const CustomerList = ({
 
   // Render cell content based on header
   const renderCellContent = (customer, header) => {
-    switch(header) {
+    switch (header) {
       case 'name':
         return `${customer.firstname || ''} ${customer.lastname || ''}`.trim();
       case 'mobileNumber':
@@ -82,16 +82,18 @@ const CustomerList = ({
       case 'gender':
         return customer.gender || '';
       case 'firstVisit':
-        return customer.firstVisit ? 
+        return customer.firstVisit ?
           new Date(customer.firstVisit).toLocaleDateString() : '';
       case 'source':
         return customer.source ? customer.source.charAt(0).toUpperCase() + customer.source.slice(1) : '';
       default:
         // Check nested properties
-        const nestedValue = getNestedValue(customer, `additionalData.${header}.value`) || 
-                          getNestedValue(customer, `advancedDetails.${header}.value`) ||
-                          getNestedValue(customer, `advancedPrivacyDetails.${header}.value`);
-        return nestedValue || '';
+        // Check nested properties (returns empty string if value is "")
+        const nestedValue =
+          getNestedValue(customer, `additionalData.${header}.value`) ??
+          getNestedValue(customer, `advancedDetails.${header}.value`) ??
+          getNestedValue(customer, `advancedPrivacyDetails.${header}.value`);
+        return nestedValue ?? '';
     }
   };
 
@@ -112,11 +114,10 @@ const CustomerList = ({
         <button
           key={i}
           onClick={() => onPageChange(i)}
-          className={`px-3 py-1 mx-1 rounded ${
-            currentPage === i
+          className={`px-3 py-1 mx-1 rounded ${currentPage === i
               ? "bg-[#7E57C2] text-white"
               : "bg-white text-gray-600 hover:bg-gray-100"
-          }`}
+            }`}
         >
           {i}
         </button>
@@ -158,7 +159,7 @@ const CustomerList = ({
                   />
                 </th>
                 {tableHeaders.map(header => (
-                  <th 
+                  <th
                     key={header}
                     className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap"
                   >
@@ -170,30 +171,31 @@ const CustomerList = ({
             <tbody className="divide-y divide-gray-200">
               {customers.map((customer) => {
 
-                return(
-                <tr
-                  key={customer._id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedCustomers.includes(customer._id)}
-                      onChange={() => toggleCustomerSelection(customer._id)}
-                      className="rounded border-gray-300 text-[#7E57C2] focus:ring-[#7E57C2]"
-                    />
-                  </td>
-                  
-                  {tableHeaders.map(header => (
-                    <td 
-                      key={`${customer._id}-${header}`}
-                      className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap"
-                    >
-                      {renderCellContent(customer, header)}
+                return (
+                  <tr
+                    key={customer._id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedCustomers.includes(customer._id)}
+                        onChange={() => toggleCustomerSelection(customer._id)}
+                        className="rounded border-gray-300 text-[#7E57C2] focus:ring-[#7E57C2]"
+                      />
                     </td>
-                  ))}
-                </tr>
-              )})}
+
+                    {tableHeaders.map(header => (
+                      <td
+                        key={`${customer._id}-${header}`}
+                        className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap"
+                      >
+                        {renderCellContent(customer, header)}
+                      </td>
+                    ))}
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -211,11 +213,10 @@ const CustomerList = ({
             <button
               onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className={`p-1 rounded ${
-                currentPage === 1
+              className={`p-1 rounded ${currentPage === 1
                   ? "text-gray-400 cursor-not-allowed"
                   : "text-gray-600 hover:bg-gray-100"
-              }`}
+                }`}
             >
               <ChevronLeft size={18} />
             </button>
@@ -227,11 +228,10 @@ const CustomerList = ({
                 currentPage < pagination.totalPages && onPageChange(currentPage + 1)
               }
               disabled={currentPage === pagination.totalPages}
-              className={`p-1 rounded ${
-                currentPage === pagination.totalPages
+              className={`p-1 rounded ${currentPage === pagination.totalPages
                   ? "text-gray-400 cursor-not-allowed"
                   : "text-gray-600 hover:bg-gray-100"
-              }`}
+                }`}
             >
               <ChevronRight size={18} />
             </button>
