@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
 import {
   FiArrowLeft,
   FiSearch,
@@ -8,6 +9,7 @@ import {
 } from "react-icons/fi";
 import api from "../../api/apiconfig";
 import { useAuth } from "../../context/AuthContext";
+import showToast from "../../utils/ToastNotification";
 
 export const createProduct = async (formData) => {
   try {
@@ -50,24 +52,35 @@ const AddProduct = ({ onBack, product: editProduct }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [validationErrors, setValidationErrors] = useState({});
   const [imagePreviews, setImagePreviews] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
-  const [imagesToRemove, setImagesToRemove] = useState([]); // Track images to remove
+  const [imagesToRemove, setImagesToRemove] = useState([]);
 
   const [colors, setColors] = useState([]);
   const [newColor, setNewColor] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showSearchResults, setShowSearchResults] = useState(false);
 
-  const [productData, setProductData] = useState({
-    productname: "",
-    description: "",
-    price: "",
-    status: "In Stock",
-    category: "",
-    stock: "",
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+    control,
+    trigger,
+    reset
+  } = useForm({
+    defaultValues: {
+      productname: "",
+      description: "",
+      price: "",
+      status: "In Stock",
+      category: "",
+      stock: "",
+    },
+    mode: "onChange"
   });
+
+  const watchedValues = watch();
 
   // Authentication check
   useEffect(() => {
@@ -77,86 +90,21 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     }
   }, [auth]);
 
-  // Validation functions
-  const validateForm = () => {
-    const errors = {};
-
-    // Image validation - at least one image required
-    if (imagePreviews.length === 0 && imageFiles.length === 0) {
-      errors.images = "At least one product image is required";
-    }
-
-    // Product name validation
-    if (!productData.productname.trim()) {
-      errors.productname = "Product name is required";
-    } else if (productData.productname.trim().length < 2) {
-      errors.productname = "Product name must be at least 2 characters long";
-    }
-
-    // Description validation
-    if (!productData.description.trim()) {
-      errors.description = "Product description is required";
-    } else if (productData.description.trim().length < 10) {
-      errors.description = "Product description must be at least 10 characters long";
-    }
-
-    // Price validation
-    if (!productData.price) {
-      errors.price = "Price is required";
-    } else if (parseFloat(productData.price) <= 0) {
-      errors.price = "Price must be greater than 0";
-    }
-
-    // Category validation
-    if (!productData.category) {
-      errors.category = "Product category is required";
-    }
-
-    // Stock validation
-    if (!productData.stock) {
-      errors.stock = "Stock quantity is required";
-    } else if (parseInt(productData.stock) < 0) {
-      errors.stock = "Stock quantity cannot be negative";
-    }
-
-    // Status validation
-    if (!productData.status) {
-      errors.status = "Product status is required";
-    }
-
-    // Colors validation
-    if (colors.length === 0) {
-      errors.colors = "At least one color is required";
-    }
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const clearValidationError = (field) => {
-    if (validationErrors[field]) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  };
-
   useEffect(() => {
     if (editProduct) {
       const fetchProductDetails = async () => {
         try {
           setLoading(true);
           const product = await getProduct(editProduct._id);
-          setProductData({
-            productname: product.productname,
-            description: product.description,
-            price: product.price,
-            status: product.status,
-            category: product.category,
-            stock: product.stock,
-          });
+          
+          // Set form values
+          setValue("productname", product.productname);
+          setValue("description", product.description);
+          setValue("price", product.price);
+          setValue("status", product.status);
+          setValue("category", product.category);
+          setValue("stock", product.stock);
+          
           setColors(product.colors || []);
           if (product.images) {
             setImagePreviews(product.images);
@@ -170,7 +118,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
 
       fetchProductDetails();
     }
-  }, [editProduct]);
+  }, [editProduct, setValue]);
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
@@ -183,14 +131,12 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     const newImagePreviews = [...imagePreviews];
 
     files.forEach((file) => {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         setError("Only image files are allowed");
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
         setError("File size should be less than 5MB");
         return;
       }
@@ -205,19 +151,16 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     });
 
     setImageFiles(newImageFiles);
-    clearValidationError('images');
+    setError(null);
   };
 
   const removeImage = (index) => {
     const newImagePreviews = [...imagePreviews];
     const removedImage = newImagePreviews[index];
 
-    // If this is an existing image (has URL), add to imagesToRemove
     if (typeof removedImage === "string" && removedImage.startsWith("http")) {
       setImagesToRemove([...imagesToRemove, removedImage]);
-    }
-    // If this is a newly added file (not yet uploaded), remove from imageFiles
-    else if (index < imageFiles.length) {
+    } else if (index < imageFiles.length) {
       const newImageFiles = [...imageFiles];
       newImageFiles.splice(index, 1);
       setImageFiles(newImageFiles);
@@ -229,24 +172,18 @@ const AddProduct = ({ onBack, product: editProduct }) => {
 
   const handleAddColor = () => {
     if (newColor.trim() && !colors.includes(newColor.trim())) {
-      setColors([...colors, newColor.trim()]);
+      const updatedColors = [...colors, newColor.trim()];
+      setColors(updatedColors);
       setNewColor("");
-      clearValidationError('colors');
     }
   };
 
   const handleRemoveColor = (colorToRemove) => {
-    setColors(colors.filter((color) => color !== colorToRemove));
+    const updatedColors = colors.filter((color) => color !== colorToRemove);
+    setColors(updatedColors);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setProductData((prev) => ({ ...prev, [name]: value }));
-    clearValidationError(name);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setError(null);
 
     // Check authentication
@@ -255,9 +192,15 @@ const AddProduct = ({ onBack, product: editProduct }) => {
       return;
     }
 
-    // Validate form
-    if (!validateForm()) {
-      setError("Please fix the validation errors before submitting");
+    // Validate images
+    if (imagePreviews.length === 0 && imageFiles.length === 0) {
+      setError("At least one product image is required");
+      return;
+    }
+
+    // Validate colors
+    if (colors.length === 0) {
+      setError("At least one color is required");
       return;
     }
 
@@ -266,12 +209,12 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     try {
       const formData = new FormData();
       formData.append("retailerId", retailerId);
-      formData.append("productname", productData.productname.trim());
-      formData.append("description", productData.description.trim());
-      formData.append("price", productData.price);
-      formData.append("status", productData.status);
-      formData.append("category", productData.category);
-      formData.append("stock", productData.stock);
+      formData.append("productname", data.productname.trim());
+      formData.append("description", data.description.trim());
+      formData.append("price", data.price);
+      formData.append("status", data.status);
+      formData.append("category", data.category);
+      formData.append("stock", data.stock);
       formData.append("colors", colors.join(","));
 
       // Add images to remove
@@ -286,20 +229,21 @@ const AddProduct = ({ onBack, product: editProduct }) => {
 
       if (editProduct) {
         await updateProduct(editProduct._id, formData);
+        showToast("Product saved successfully!", "success");
       } else {
         await createProduct(formData);
+        showToast("Product created successfully!", "success");
       }
 
       onBack();
     } catch (err) {
       setError(err.message || "Failed to save product");
+      showToast(err.response?.data?.message, "error");
       console.error("Error saving product:", err);
     } finally {
       setLoading(false);
     }
   };
-
-  
 
   return (
     <div>
@@ -328,83 +272,90 @@ const AddProduct = ({ onBack, product: editProduct }) => {
           <h3 className="text-lg font-medium mb-4">Add New Product</h3>
         )}
 
-        {/* {editProduct && (
-          <div className="relative mb-6">
-            <input
-              type="text"
-              placeholder="Search product"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                if (e.target.value.length > 0) {
-                  setShowSearchResults(true);
-                } else {
-                  setShowSearchResults(false);
-                }
-              }}
-              className="w-full md:w-3/4 pl-4 pr-10 py-2 border border-gray-300 rounded-md"
-            />
-            <button
-              onClick={handleSearch}
-              className="absolute right-2 top-2 text-primary"
-            >
-              <FiSearch size={20} />
-            </button>
-
-            {showSearchResults && (
-              <div className="absolute z-10 w-full md:w-3/4 mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-                {searchResults.map((result, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-200"
-                    onClick={() => handleSelectSearchResult(result)}
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {imagePreviews.length > 0 ? (
+              imagePreviews.map((preview, index) => (
+                <div
+                  key={index}
+                  className="relative border border-gray-300 rounded-md h-40"
+                >
+                  <img
+                    src={preview}
+                    alt={`Preview ${index}`}
+                    className="w-full h-full object-cover rounded-md"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-sm"
                   >
-                    <FiSearch className="mr-3 text-gray-500" />
-                    <span>{result}</span>
+                    <FiX size={16} className="text-gray-600" />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="border border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center p-6 h-40">
+                <label className="cursor-pointer text-center">
+                  <div className="text-gray-400 mb-2">
+                    <FiPlusCircle size={24} />
                   </div>
-                ))}
+                  <p className="text-center text-sm text-blue-500">
+                    Click to Add Product
+                  </p>
+                  <p className="text-center text-xs text-gray-500 mt-1">
+                    Image or Video
+                  </p>
+                  <p className="text-center text-xs text-gray-400 mt-2">Format</p>
+                  <p className="text-center text-xs text-gray-400">
+                    (JPG, PNG or MP4, Max 5MB)
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    multiple
+                  />
+                </label>
               </div>
             )}
-          </div>
-        )} */}
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {imagePreviews.length > 0 ? (
-            imagePreviews.map((preview, index) => (
+            {Array.from({ length: 4 - imagePreviews.length }).map((_, index) => (
               <div
                 key={index}
-                className="relative border border-gray-300 rounded-md h-40"
+                className="border border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center p-6 h-40"
               >
-                <img
-                  src={preview}
-                  alt={`Preview ${index}`}
-                  className="w-full h-full object-cover rounded-md"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeImage(index)}
-                  className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-sm"
-                >
-                  <FiX size={16} className="text-gray-600" />
-                </button>
+                <label className="cursor-pointer text-center">
+                  <div className="text-gray-400 mb-2">
+                    <FiPlusCircle size={24} />
+                  </div>
+                  <p className="text-center text-sm text-blue-500">
+                    Click to Add Product
+                  </p>
+                  <p className="text-center text-xs text-gray-500 mt-1">
+                    Image or Video
+                  </p>
+                  <p className="text-center text-xs text-gray-400 mt-2">Format</p>
+                  <p className="text-center text-xs text-gray-400">
+                    (JPG, PNG or MP4, Max 5MB)
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    multiple
+                  />
+                </label>
               </div>
-            ))
-          ) : (
-            <div className="border border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center p-6 h-40">
-              <label className="cursor-pointer text-center">
-                <div className="text-gray-400 mb-2">
-                  <FiPlusCircle size={24} />
-                </div>
-                <p className="text-center text-sm text-blue-500">
-                  Click to Add Product
-                </p>
-                <p className="text-center text-xs text-gray-500 mt-1">
-                  Image or Video
-                </p>
-                <p className="text-center text-xs text-gray-400 mt-2">Format</p>
-                <p className="text-center text-xs text-gray-400">
-                  (JPG, PNG or MP4, Max 5MB)
-                </p>
+            ))}
+          </div>
+
+          {imagePreviews.length > 0 && (
+            <div className="text-right mb-8">
+              <label className="px-4 py-2 text-primary hover:text-primary-dark cursor-pointer">
+                Add More +
                 <input
                   type="file"
                   accept="image/*,video/*"
@@ -416,344 +367,298 @@ const AddProduct = ({ onBack, product: editProduct }) => {
             </div>
           )}
 
-          {Array.from({ length: 4 - imagePreviews.length }).map((_, index) => (
-            <div
-              key={index}
-              className="border border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center p-6 h-40"
-            >
-              <label className="cursor-pointer text-center">
-                <div className="text-gray-400 mb-2">
-                  <FiPlusCircle size={24} />
-                </div>
-                <p className="text-center text-sm text-blue-500">
-                  Click to Add Product
-                </p>
-                <p className="text-center text-xs text-gray-500 mt-1">
-                  Image or Video
-                </p>
-                <p className="text-center text-xs text-gray-400 mt-2">Format</p>
-                <p className="text-center text-xs text-gray-400">
-                  (JPG, PNG or MP4, Max 5MB)
-                </p>
-                <input
-                  type="file"
-                  accept="image/*,video/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                  multiple
-                />
-              </label>
-            </div>
-          ))}
-        </div>
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-6">General Information</h3>
 
-        {imagePreviews.length > 0 && (
-          <div className="text-right mb-8">
-            <label className="px-4 py-2 text-primary hover:text-primary-dark cursor-pointer">
-              Add More +
-              <input
-                type="file"
-                accept="image/*,video/*"
-                onChange={handleImageChange}
-                className="hidden"
-                multiple
-              />
-            </label>
-          </div>
-        )}
-
-        {validationErrors.images && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
-            {validationErrors.images}
-          </div>
-        )}
-
-        <div className="mb-8">
-          <h3 className="text-lg font-medium mb-6">General Information</h3>
-
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Product name*
-              </label>
-              <input
-                type="text"
-                name="productname"
-                placeholder="Enter product name"
-                value={productData.productname}
-                onChange={handleInputChange}
-                required
-                className={`w-full p-2 border rounded-md ${validationErrors.productname ? 'border-red-500' : 'border-gray-300'
-                  }`}
-              />
-              {validationErrors.productname ? (
-                <p className="text-xs text-red-500 mt-1">
-                  {validationErrors.productname}
-                </p>
-              ) : (
-                <p className="text-xs text-gray-500 mt-1">
-                  A product name is required and recommended to be unique
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Product description*
-              </label>
-              <textarea
-                name="description"
-                placeholder="Enter product description"
-                value={productData.description}
-                onChange={handleInputChange}
-                rows="4"
-                required
-                className={`w-full p-2 border rounded-md ${validationErrors.description ? 'border-red-500' : 'border-gray-300'
-                  }`}
-              ></textarea>
-              {validationErrors.description ? (
-                <p className="text-xs text-red-500 mt-1">
-                  {validationErrors.description}
-                </p>
-              ) : (
-                <p className="text-xs text-gray-500 mt-1">
-                  Add detailed information about the product, including usage,
-                  benefits, and features. This helps users make informed
-                  decisions.
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-8">
-          <h3 className="text-lg font-medium mb-6">Addition Information</h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Colors Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Colors*
-              </label>
-              <div className="flex">
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Product name*
+                </label>
                 <input
                   type="text"
-                  value={newColor}
-                  onChange={(e) => setNewColor(e.target.value)}
-                  placeholder="Add color"
-                  className={`flex-1 p-2 border rounded-l-md ${validationErrors.colors ? 'border-red-500' : 'border-gray-300'
+                  placeholder="Enter product name"
+                  {...register("productname", {
+                    required: "Product name is required",
+                    minLength: {
+                      value: 2,
+                      message: "Product name must be at least 2 characters long"
+                    }
+                  })}
+                  className={`w-full p-2 border rounded-md ${errors.productname ? 'border-red-500' : 'border-gray-300'
                     }`}
                 />
-                <button
-                  type="button"
-                  onClick={handleAddColor}
-                  className="px-3 bg-gray-200 hover:bg-gray-300 rounded-r-md"
-                >
-                  Add
-                </button>
+                {errors.productname ? (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.productname.message}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">
+                    A product name is required and recommended to be unique
+                  </p>
+                )}
               </div>
-              {colors.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {colors.map((color) => (
-                    <span
-                      key={color}
-                      className="inline-flex items-center px-2 py-1 bg-gray-100 rounded-md text-sm"
-                    >
-                      {color}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveColor(color)}
-                        className="ml-1 text-gray-500 hover:text-gray-700"
-                      >
-                        <FiX size={14} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              {validationErrors.colors && (
-                <p className="text-xs text-red-500 mt-1">
-                  {validationErrors.colors}
-                </p>
-              )}
-            </div>
 
-            {/* Price Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price*
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-2">₹</span>
-                <input
-                  type="number"
-                  name="price"
-                  placeholder="Update price"
-                  value={productData.price}
-                  onChange={handleInputChange}
-                  min="0"
-                  step="0.01"
-                  required
-                  className={`w-full pl-8 pr-4 py-2 border rounded-md ${validationErrors.price ? 'border-red-500' : 'border-gray-300'
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Product description*
+                </label>
+                <textarea
+                  placeholder="Enter product description"
+                  {...register("description", {
+                    required: "Product description is required",
+                    minLength: {
+                      value: 10,
+                      message: "Product description must be at least 10 characters long"
+                    }
+                  })}
+                  rows="4"
+                  className={`w-full p-2 border rounded-md ${errors.description ? 'border-red-500' : 'border-gray-300'
                     }`}
-                />
+                ></textarea>
+                {errors.description ? (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.description.message}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Add detailed information about the product, including usage,
+                    benefits, and features. This helps users make informed
+                    decisions.
+                  </p>
+                )}
               </div>
-              {validationErrors.price ? (
-                <p className="text-xs text-red-500 mt-1">
-                  {validationErrors.price}
-                </p>
-              ) : (
-                <p className="text-xs text-gray-500 mt-1">
-                  Enter the product price in INR
-                </p>
-              )}
-            </div>
-
-            {/* Status Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status*
-              </label>
-              <div className="relative">
-                <select
-                  name="status"
-                  value={productData.status}
-                  onChange={handleInputChange}
-                  required
-                  className={`w-full p-2 border rounded-md appearance-none ${validationErrors.status ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                >
-                  <option value="In Stock">In Stock</option>
-                  <option value="Out of Stock">Out of Stock</option>
-                  <option value="Low Stock">Low Stock</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    ></path>
-                  </svg>
-                </div>
-              </div>
-              {validationErrors.status && (
-                <p className="text-xs text-red-500 mt-1">
-                  {validationErrors.status}
-                </p>
-              )}
-            </div>
-
-            {/* Category Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Product categories*
-              </label>
-              <div className="relative">
-                <select
-                  name="category"
-                  value={productData.category}
-                  onChange={handleInputChange}
-                  required
-                  className={`w-full p-2 border rounded-md appearance-none ${validationErrors.category ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                >
-                  <option value="" disabled>
-                    Choose categories
-                  </option>
-                  <option value="Clothing">Clothing</option>
-                  <option value="Footwear">Footwear</option>
-                  <option value="Electronics">Electronics</option>
-                  <option value="Accessories">Accessories</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    ></path>
-                  </svg>
-                </div>
-              </div>
-              {validationErrors.category ? (
-                <p className="text-xs text-red-500 mt-1">
-                  {validationErrors.category}
-                </p>
-              ) : (
-                <p className="text-xs text-gray-500 mt-1">
-                  Select the appropriate category
-                </p>
-              )}
-            </div>
-
-            {/* Stock Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Stock*
-              </label>
-              <input
-                type="number"
-                name="stock"
-                placeholder="Enter stock quantity"
-                value={productData.stock}
-                onChange={handleInputChange}
-                min="0"
-                required
-                className={`w-full p-2 border rounded-md ${validationErrors.stock ? 'border-red-500' : 'border-gray-300'
-                  }`}
-              />
-              {validationErrors.stock ? (
-                <p className="text-xs text-red-500 mt-1">
-                  {validationErrors.stock}
-                </p>
-              ) : (
-                <p className="text-xs text-gray-500 mt-1">
-                  Enter available quantity in stock
-                </p>
-              )}
             </div>
           </div>
-        </div>
 
-        <div className="text-right">
-          <button
-            type="button"
-            onClick={onBack}
-            className="px-6 py-2 mr-4 border border-gray-300 rounded-md hover:bg-gray-100 transition"
-            disabled={loading}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            onClick={handleSubmit}
-            className="px-6 py-2 bg-primary bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-md hover:bg-pink-700 transition disabled:opacity-50"
-            disabled={loading}
-          >
-            {loading
-              ? editProduct
-                ? "Updating..."
-                : "Saving..."
-              : editProduct
-                ? "Update"
-                : "Save"}
-          </button>
-        </div>
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-6">Addition Information</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Colors Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Colors*
+                </label>
+                <div className="flex">
+                  <input
+                    type="text"
+                    value={newColor}
+                    onChange={(e) => setNewColor(e.target.value)}
+                    placeholder="Add color"
+                    className="flex-1 p-2 border border-gray-300 rounded-l-md"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddColor}
+                    className="px-3 bg-gray-200 hover:bg-gray-300 rounded-r-md"
+                  >
+                    Add
+                  </button>
+                </div>
+                {colors.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {colors.map((color) => (
+                      <span
+                        key={color}
+                        className="inline-flex items-center px-2 py-1 bg-gray-100 rounded-md text-sm"
+                      >
+                        {color}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveColor(color)}
+                          className="ml-1 text-gray-500 hover:text-gray-700"
+                        >
+                          <FiX size={14} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Price Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Price*
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2">₹</span>
+                  <input
+                    type="number"
+                    placeholder="Update price"
+                    {...register("price", {
+                      required: "Price is required",
+                      min: {
+                        value: 0.01,
+                        message: "Price must be greater than 0"
+                      },
+                      valueAsNumber: true
+                    })}
+                    min="0"
+                    step="0.01"
+                    className={`w-full pl-8 pr-4 py-2 border rounded-md ${errors.price ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                  />
+                </div>
+                {errors.price ? (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.price.message}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter the product price in INR
+                  </p>
+                )}
+              </div>
+
+              {/* Status Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status*
+                </label>
+                <div className="relative">
+                  <select
+                    {...register("status", {
+                      required: "Status is required"
+                    })}
+                    className={`w-full p-2 border rounded-md appearance-none ${errors.status ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                  >
+                    <option value="In Stock">In Stock</option>
+                    <option value="Out of Stock">Out of Stock</option>
+                    <option value="Low Stock">Low Stock</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 9l-7 7-7-7"
+                      ></path>
+                    </svg>
+                  </div>
+                </div>
+                {errors.status && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.status.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Category Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Product categories*
+                </label>
+                <div className="relative">
+                  <select
+                    {...register("category", {
+                      required: "Product category is required"
+                    })}
+                    className={`w-full p-2 border rounded-md appearance-none ${errors.category ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                  >
+                    <option value="" disabled>
+                      Choose categories
+                    </option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Footwear">Footwear</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Accessories">Accessories</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 9l-7 7-7-7"
+                      ></path>
+                    </svg>
+                  </div>
+                </div>
+                {errors.category ? (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.category.message}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Select the appropriate category
+                  </p>
+                )}
+              </div>
+
+              {/* Stock Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Stock*
+                </label>
+                <input
+                  type="number"
+                  placeholder="Enter stock quantity"
+                  {...register("stock", {
+                    required: "Stock quantity is required",
+                    min: {
+                      value: 0,
+                      message: "Stock quantity cannot be negative"
+                    },
+                    valueAsNumber: true
+                  })}
+                  min="0"
+                  className={`w-full p-2 border rounded-md ${errors.stock ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                />
+                {errors.stock ? (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.stock.message}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter available quantity in stock
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={onBack}
+              className="px-6 py-2 mr-4 border border-gray-300 rounded-md hover:bg-gray-100 transition"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-primary bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-md hover:bg-pink-700 transition disabled:opacity-50"
+              disabled={loading}
+            >
+              {loading
+                ? editProduct
+                  ? "Updating..."
+                  : "Saving..."
+                : editProduct
+                  ? "Update"
+                  : "Save"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

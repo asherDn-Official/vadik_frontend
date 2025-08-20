@@ -70,7 +70,7 @@ const SettingsPage = () => {
             isActive={activeTab === "roles-permissions"}
             onClick={() => handleTabChange("roles-permissions")}
           />
-                 <SettingsTab
+          <SettingsTab
             icon={<LuTicketPercent />}
             text="Coupons"
             isActive={activeTab === "coupon"}
@@ -100,18 +100,16 @@ const SettingsPage = () => {
 const SettingsTab = ({ icon, text, isActive, onClick }) => {
   return (
     <div
-      className={`flex items-center px-6 py-3 cursor-pointer hover:bg-gray-100 transition-colors duration-200 ${
-        isActive ? "bg-[#F5F5F7]" : ""
-      }`}
+      className={`flex items-center px-6 py-3 cursor-pointer hover:bg-gray-100 transition-colors duration-200 ${isActive ? "bg-[#F5F5F7]" : ""
+        }`}
       onClick={onClick}
     >
       <span className={`mr-3 ${isActive ? "text-[#313166]" : "text-gray-600"}`}>
         {icon}
       </span>
       <span
-        className={`${
-          isActive ? "text-[#313166] font-medium" : "text-[#313166]"
-        }`}
+        className={`${isActive ? "text-[#313166] font-medium" : "text-[#313166]"
+          }`}
       >
         {text}
       </span>
