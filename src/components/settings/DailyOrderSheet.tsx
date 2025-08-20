@@ -10,6 +10,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     control,
     setValue,
     watch,
+    trigger,
+    clearErrors,
     formState: { errors },
     reset,
   } = useForm({
@@ -33,7 +35,6 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       discount: 0,
       paymentStatus: "Unpaid",
     },
-    mode: "onChange",
   });
 
   const [newColor, setNewColor] = useState("");
@@ -62,13 +63,19 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
   useEffect(() => {
     if (customer) {
+      // Set form values
       setValue("phoneNumber", customer.mobileNumber || customer.mobile || "");
       setValue("firstName", customer.firstname || customer.firstName || "");
       setValue("lastName", customer.lastname || customer.lastName || "");
       setValue("gender", customer.additionalData?.gender || customer.gender || "");
       setValue("source", customer.source || "");
+      
+      // Clear validation errors for auto-filled fields
+      setTimeout(() => {
+        clearErrors(["phoneNumber", "firstName", "lastName", "gender", "source"]);
+      }, 100);
     }
-  }, [customer, setValue]);
+  }, [customer, setValue, clearErrors]);
 
   const searchProducts = async (query, productId) => {
     try {
@@ -112,6 +119,12 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     });
 
     setValue("products", updatedProducts);
+    
+    // Clear validation error for this product name
+    const productIndex = products.findIndex(p => p.id === productId);
+    if (productIndex !== -1) {
+      clearErrors(`products.${productIndex}.name`);
+    }
 
     setShowProductSuggestions((prev) => ({
       ...prev,
@@ -152,8 +165,16 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     }
   };
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = async (field, value) => {
     setValue(field, value);
+    
+    // Clear error for this field immediately
+    clearErrors(field);
+    
+    // Revalidate the field after a short delay
+    setTimeout(() => {
+      trigger(field);
+    }, 300);
 
     if (field === "phoneNumber" && value.length >= 3) {
       searchCustomers(value);
@@ -183,6 +204,15 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     setValue("lastName", customer.lastname || "");
     setValue("gender", customer.gender || "");
     setValue("source", customer.source || "");
+    
+    // Clear validation errors for all customer fields
+    clearErrors(["phoneNumber", "firstName", "lastName", "gender", "source"]);
+    
+    // Trigger validation to ensure fields are valid
+    setTimeout(() => {
+      trigger(["phoneNumber", "firstName", "lastName", "gender", "source"]);
+    }, 100);
+    
     setShowSuggestions(false);
   };
 
@@ -225,6 +255,12 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     });
 
     setValue("products", updatedProducts);
+    
+    // Clear validation error for the updated field
+    const productIndex = products.findIndex(p => p.id === id);
+    if (productIndex !== -1) {
+      clearErrors(`products.${productIndex}.${field}`);
+    }
   };
 
   const removeProduct = (id) => {
@@ -388,6 +424,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 type="text"
                 placeholder="Enter first name"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                onChange={(e) => handleInputChange("firstName", e.target.value)}
               />
               {errors.firstName && (
                 <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
@@ -409,6 +446,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 type="text"
                 placeholder="Enter last name"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                onChange={(e) => handleInputChange("lastName", e.target.value)}
               />
               {errors.lastName && (
                 <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
@@ -422,10 +460,10 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <input
                 {...register("phoneNumber", {
                   required: "Phone number is required",
-                  // pattern: {
-                  //   value: /^[0-9]{10}$/,
-                  //   message: "Please enter a valid 10-digit phone number"
-                  // }
+                  pattern: {
+                    value: /^[0-9]{10}$/,
+                    message: "Please enter a valid 10-digit phone number"
+                  }
                 })}
                 type="text"
                 placeholder="Enter Phone Number"
@@ -462,6 +500,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <select
                 {...register("gender", { required: "Gender is required" })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                onChange={(e) => handleInputChange("gender", e.target.value)}
               >
                 <option value="">Select Gender</option>
                 <option value="male">Male</option>
@@ -480,6 +519,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <select
                 {...register("source", { required: "Source is required" })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                onChange={(e) => handleInputChange("source", e.target.value)}
               >
                 <option value="">Select Source</option>
                 <option value="walk-in">Walk-in</option>
@@ -796,6 +836,10 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                   min="0"
                   max={subtotal}
                   className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                  onChange={(e) => {
+                    setValue("discount", parseFloat(e.target.value) || 0);
+                    clearErrors("discount");
+                  }}
                 />
               </div>
             </div>
