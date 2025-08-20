@@ -1,43 +1,53 @@
 import React, { useState, useEffect } from "react";
 import { Scan, Plus, Trash2, ArrowLeft } from "lucide-react";
-import axios from "axios";
+import { useForm, Controller } from "react-hook-form";
 import api from "../../api/apiconfig";
 
 const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
-  const [formData, setFormData] = useState({
-    phoneNumber: "",
-    firstName: "",
-    lastName: "",
-    gender: "",
-    source: "",
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    watch,
+    formState: { errors },
+    reset,
+  } = useForm({
+    defaultValues: {
+      phoneNumber: "",
+      firstName: "",
+      lastName: "",
+      gender: "",
+      source: "",
+      products: [
+        {
+          id: 1,
+          name: "",
+          quantity: 1,
+          unitPrice: 0,
+          totalPrice: 0,
+          colors: [],
+          isAutoPopulated: false,
+        },
+      ],
+      discount: 0,
+      paymentStatus: "Unpaid",
+    },
+    mode: "onChange",
   });
 
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "",
-      quantity: 1,
-      unitPrice: 0,
-      totalPrice: 0,
-      colors: [],
-      isAutoPopulated: false,
-    },
-  ]);
-
-  const [discount, setDiscount] = useState(0);
-  const [paymentStatus, setPaymentStatus] = useState("Unpaid");
   const [newColor, setNewColor] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-
-  // Product search states - now tracking per product
   const [productSearchResults, setProductSearchResults] = useState({});
   const [showProductSuggestions, setShowProductSuggestions] = useState({});
   const [currentProductSearches, setCurrentProductSearches] = useState({});
-  const [dropdownPositions, setDropdownPositions] = useState({});
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
   });
+
+  const formData = watch();
+  const products = formData.products || [];
 
   // Initialize product search states
   useEffect(() => {
@@ -49,6 +59,16 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     setShowProductSuggestions({});
     setProductSearchResults({});
   }, [products]);
+
+  useEffect(() => {
+    if (customer) {
+      setValue("phoneNumber", customer.mobileNumber || customer.mobile || "");
+      setValue("firstName", customer.firstname || customer.firstName || "");
+      setValue("lastName", customer.lastname || customer.lastName || "");
+      setValue("gender", customer.additionalData?.gender || customer.gender || "");
+      setValue("source", customer.source || "");
+    }
+  }, [customer, setValue]);
 
   const searchProducts = async (query, productId) => {
     try {
@@ -77,23 +97,21 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   };
 
   const selectProduct = (productId, selectedProduct) => {
-    // Update product with selected data and mark as auto-populated
-    setProducts(
-      products.map((product) => {
-        if (product.id === productId) {
-          const updatedProduct = {
-            ...product,
-            name: selectedProduct.productname,
-            unitPrice: selectedProduct.price,
-            colors: [...selectedProduct.colors],
-            isAutoPopulated: true,
-            totalPrice: product.quantity * selectedProduct.price,
-          };
-          return updatedProduct;
-        }
-        return product;
-      })
-    );
+    const updatedProducts = products.map((product) => {
+      if (product.id === productId) {
+        return {
+          ...product,
+          name: selectedProduct.productname,
+          unitPrice: selectedProduct.price,
+          colors: [...selectedProduct.colors],
+          isAutoPopulated: true,
+          totalPrice: product.quantity * selectedProduct.price,
+        };
+      }
+      return product;
+    });
+
+    setValue("products", updatedProducts);
 
     setShowProductSuggestions((prev) => ({
       ...prev,
@@ -112,7 +130,13 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       [productId]: value,
     }));
 
-    updateProduct(productId, "name", value);
+    const updatedProducts = products.map((product) => {
+      if (product.id === productId) {
+        return { ...product, name: value };
+      }
+      return product;
+    });
+    setValue("products", updatedProducts);
 
     if (value.length >= 3) {
       searchProducts(value, productId);
@@ -128,29 +152,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     }
   };
 
-  useEffect(() => {
-    if (customer) {
-      setFormData({
-        phoneNumber: customer.mobileNumber || customer.mobile || "",
-        firstName: customer.firstname || customer.firstName || "",
-        lastName: customer.lastname || customer.lastName || "",
-        gender: customer.additionalData?.gender || customer.gender || "",
-        source: customer.source || "",
-      });
-    } else {
-      setFormData({
-        phoneNumber: "",
-        firstName: "",
-        lastName: "",
-        gender: "",
-        source: "",
-      });
-      setProducts([]);
-    }
-  }, [customer]);
-
   const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setValue(field, value);
 
     if (field === "phoneNumber" && value.length >= 3) {
       searchCustomers(value);
@@ -175,14 +178,11 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   };
 
   const selectCustomer = (customer) => {
-    console.log("Selected customer:", customer);
-    setFormData({
-      phoneNumber: customer.mobileNumber || "",
-      firstName: customer.firstname || "",
-      lastName: customer.lastname || "",
-      gender: customer.gender || "",
-      source: customer.source || "",
-    });
+    setValue("phoneNumber", customer.mobileNumber || "");
+    setValue("firstName", customer.firstname || "");
+    setValue("lastName", customer.lastname || "");
+    setValue("gender", customer.gender || "");
+    setValue("source", customer.source || "");
     setShowSuggestions(false);
   };
 
@@ -196,72 +196,71 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       colors: [],
       isAutoPopulated: false,
     };
-    setProducts([...products, newProduct]);
+    setValue("products", [...products, newProduct]);
   };
 
   const updateProduct = (id, field, value) => {
-    setProducts(
-      products.map((product) => {
-        if (product.id === id) {
-          const updated = { ...product, [field]: value };
+    const updatedProducts = products.map((product) => {
+      if (product.id === id) {
+        const updated = { ...product, [field]: value };
 
-          // If manually editing unit price, remove auto-populated flag
-          if (field === "unitPrice") {
-            updated.isAutoPopulated = false;
-            updated.totalPrice = updated.quantity * updated.unitPrice;
-          }
-
-          if (field === "quantity") {
-            updated.totalPrice = updated.quantity * updated.unitPrice;
-          }
-
-          if (field === "totalPrice") {
-            updated.unitPrice =
-              updated.quantity > 0 ? updated.totalPrice / updated.quantity : 0;
-            updated.isAutoPopulated = false;
-          }
-
-          return updated;
+        if (field === "unitPrice") {
+          updated.isAutoPopulated = false;
+          updated.totalPrice = updated.quantity * updated.unitPrice;
         }
-        return product;
-      })
-    );
+
+        if (field === "quantity") {
+          updated.totalPrice = updated.quantity * updated.unitPrice;
+        }
+
+        if (field === "totalPrice") {
+          updated.unitPrice =
+            updated.quantity > 0 ? updated.totalPrice / updated.quantity : 0;
+          updated.isAutoPopulated = false;
+        }
+
+        return updated;
+      }
+      return product;
+    });
+
+    setValue("products", updatedProducts);
   };
 
   const removeProduct = (id) => {
-    setProducts(products.filter((product) => product.id !== id));
+    const filteredProducts = products.filter((product) => product.id !== id);
+    setValue("products", filteredProducts);
   };
 
   const addColor = (productId) => {
     if (!newColor.trim()) return;
 
-    setProducts(
-      products.map((product) => {
-        if (product.id === productId) {
-          return {
-            ...product,
-            colors: [...product.colors, newColor.trim()],
-          };
-        }
-        return product;
-      })
-    );
+    const updatedProducts = products.map((product) => {
+      if (product.id === productId) {
+        return {
+          ...product,
+          colors: [...product.colors, newColor.trim()],
+        };
+      }
+      return product;
+    });
 
+    setValue("products", updatedProducts);
     setNewColor("");
   };
 
   const removeColor = (productId, colorIndex) => {
-    setProducts(
-      products.map((product) => {
-        if (product.id === productId) {
-          return {
-            ...product,
-            colors: product.colors.filter((_, index) => index !== colorIndex),
-          };
-        }
-        return product;
-      })
-    );
+    const updatedProducts = products.map((product) => {
+      if (product.id === productId) {
+        return {
+          ...product,
+          colors: product.colors.filter((_, index) => index !== colorIndex),
+        };
+      }
+      return product;
+    });
+
+    setValue("products", updatedProducts);
   };
 
   const subtotal = products.reduce(
@@ -272,17 +271,17 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     (sum, product) => sum + (product.quantity || 0),
     0
   );
-  const grandTotal = subtotal - discount;
+  const grandTotal = subtotal - (formData.discount || 0);
 
-  const handleSubmit = async () => {
+  const onSubmit = async (data) => {
     const orderData = {
       retailerId,
-      mobileNumber: formData.phoneNumber,
-      firstname: formData.firstName,
-      lastname: formData.lastName,
-      gender: formData.gender,
-      source: formData.source,
-      products: products.map((product) => ({
+      mobileNumber: data.phoneNumber,
+      firstname: data.firstName,
+      lastname: data.lastName,
+      gender: data.gender,
+      source: data.source,
+      products: data.products.map((product) => ({
         productName: product.name,
         quantity: product.quantity,
         unitPrice: product.unitPrice,
@@ -292,9 +291,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       orderSummary: {
         totalItems: totalQuantity,
         subTotal: subtotal,
-        discount: discount,
+        discount: data.discount || 0,
         grandTotal: grandTotal,
-        paymentStatus: paymentStatus,
+        paymentStatus: data.paymentStatus || "Unpaid",
       },
     };
 
@@ -303,47 +302,43 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       console.log("Order saved successfully:", response.data);
       alert("Order saved successfully");
 
-      // Clear form data after successful submission
-      setFormData({
+      // Reset form
+      reset({
         phoneNumber: "",
         firstName: "",
         lastName: "",
         gender: "",
         source: "",
+        products: [
+          {
+            id: 1,
+            name: "",
+            quantity: 1,
+            unitPrice: 0,
+            totalPrice: 0,
+            colors: [],
+            isAutoPopulated: false,
+          },
+        ],
+        discount: 0,
+        paymentStatus: "Unpaid",
       });
 
-      // Reset products to initial state
-      setProducts([
-        {
-          id: 1,
-          name: "",
-          quantity: 1,
-          unitPrice: 0,
-          totalPrice: 0,
-          colors: [],
-          isAutoPopulated: false,
-        },
-      ]);
-
-      // Reset other form states
-      setDiscount(0);
-      setPaymentStatus("Unpaid");
-      setNewColor("");
+      // Clear search states
       setSearchResults([]);
       setShowSuggestions(false);
       setProductSearchResults({});
       setShowProductSuggestions({});
       setCurrentProductSearches({});
+      setNewColor("");
     } catch (error) {
       console.error("Error saving order:", error);
+      alert("Error saving order. Please try again.");
     }
   };
 
   return (
-    <div
-      className="bg-white rounded-lg shadow-sm"
-      style={{ overflow: "visible" }}
-    >
+    <div className="bg-white rounded-lg shadow-sm" style={{ overflow: "visible" }}>
       <div className="flex items-center justify-between p-6 border-b">
         <div className="flex items-center gap-4">
           <button
@@ -352,9 +347,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
           >
             <ArrowLeft size={20} />
           </button>
-          <h2 className="text-xl font-semibold text-gray-800">
-            Daily Order sheet
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-800">Daily Order sheet</h2>
         </div>
 
         <div className="flex gap-3">
@@ -375,11 +368,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         </div>
       </div>
 
-      <div className="p-6" style={{ overflow: "visible" }}>
+      <form onSubmit={handleSubmit(onSubmit)} className="p-6" style={{ overflow: "visible" }}>
         <div className="mb-8">
-          <h3 className="text-lg font-medium text-gray-800 mb-4">
-            Customer Details
-          </h3>
+          <h3 className="text-lg font-medium text-gray-800 mb-4">Customer Details</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -387,12 +378,20 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 First Name
               </label>
               <input
+                {...register("firstName", { 
+                  required: "First name is required",
+                  minLength: {
+                    value: 2,
+                    message: "First name must be at least 2 characters"
+                  }
+                })}
                 type="text"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange("firstName", e.target.value)}
                 placeholder="Enter first name"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
+              {errors.firstName && (
+                <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
+              )}
             </div>
 
             <div>
@@ -400,12 +399,20 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 Last Name
               </label>
               <input
+                {...register("lastName", { 
+                  required: "Last name is required",
+                  minLength: {
+                    value: 1,
+                    message: "Last name must be at least 2 characters"
+                  }
+                })}
                 type="text"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange("lastName", e.target.value)}
                 placeholder="Enter last name"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               />
+              {errors.lastName && (
+                <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
+              )}
             </div>
 
             <div className="relative">
@@ -413,14 +420,21 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 Phone Number
               </label>
               <input
+                {...register("phoneNumber", {
+                  required: "Phone number is required",
+                  // pattern: {
+                  //   value: /^[0-9]{10}$/,
+                  //   message: "Please enter a valid 10-digit phone number"
+                  // }
+                })}
                 type="text"
-                value={formData.phoneNumber}
-                onChange={(e) =>
-                  handleInputChange("phoneNumber", e.target.value)
-                }
                 placeholder="Enter Phone Number"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
               />
+              {errors.phoneNumber && (
+                <p className="text-red-500 text-sm mt-1">{errors.phoneNumber.message}</p>
+              )}
               {showSuggestions && searchResults.length > 0 && (
                 <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
                   {searchResults.map((customer) => (
@@ -446,8 +460,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 Gender
               </label>
               <select
-                value={formData.gender}
-                onChange={(e) => handleInputChange("gender", e.target.value)}
+                {...register("gender", { required: "Gender is required" })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               >
                 <option value="">Select Gender</option>
@@ -455,6 +468,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 <option value="female">Female</option>
                 <option value="other">Other</option>
               </select>
+              {errors.gender && (
+                <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>
+              )}
             </div>
 
             <div>
@@ -462,14 +478,16 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 Source
               </label>
               <select
-                value={formData.source}
-                onChange={(e) => handleInputChange("source", e.target.value)}
+                {...register("source", { required: "Source is required" })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
               >
                 <option value="">Select Source</option>
                 <option value="walk-in">Walk-in</option>
                 <option value="online">Online</option>
               </select>
+              {errors.source && (
+                <p className="text-red-500 text-sm mt-1">{errors.source.message}</p>
+              )}
             </div>
           </div>
         </div>
@@ -478,6 +496,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-gray-800">Product Entry</h3>
             <button
+              type="button"
               onClick={addProduct}
               className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
             >
@@ -511,20 +530,16 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
+                {products.map((product, index) => (
                   <tr key={product.id} className="border-b border-gray-200">
-                    <td
-                      className="px-4 py-3 relative"
-                      style={{ overflow: "visible" }}
-                    >
+                    <td className="px-4 py-3 relative" style={{ overflow: "visible" }}>
                       <input
+                        {...register(`products.${index}.name`, {
+                          required: "Product name is required"
+                        })}
                         type="text"
-                        value={
-                          currentProductSearches[product.id] || product.name
-                        }
-                        onChange={(e) =>
-                          handleProductNameChange(product.id, e.target.value)
-                        }
+                        value={currentProductSearches[product.id] || product.name}
+                        onChange={(e) => handleProductNameChange(product.id, e.target.value)}
                         placeholder="Search product"
                         className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
                         onFocus={() => {
@@ -547,6 +562,11 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                           }, 200)
                         }
                       />
+                      {errors.products?.[index]?.name && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.products[index].name.message}
+                        </p>
+                      )}
                       {showProductSuggestions[product.id] &&
                         productSearchResults[product.id]?.length > 0 && (
                           <div
@@ -597,9 +617,15 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                     </td>
                     <td className="px-4 py-3">
                       <input
+                        {...register(`products.${index}.quantity`, {
+                          required: "Quantity is required",
+                          min: {
+                            value: 1,
+                            message: "Quantity must be at least 1"
+                          }
+                        })}
                         type="number"
                         min="1"
-                        value={product.quantity}
                         onChange={(e) =>
                           updateProduct(
                             product.id,
@@ -609,14 +635,25 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                         }
                         className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
                       />
+                      {errors.products?.[index]?.quantity && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.products[index].quantity.message}
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="relative">
                         <input
+                          {...register(`products.${index}.unitPrice`, {
+                            required: "Unit price is required",
+                            min: {
+                              value: 0,
+                              message: "Unit price cannot be negative"
+                            }
+                          })}
                           type="number"
                           step="0.01"
                           min="0"
-                          value={product.unitPrice}
                           onChange={(e) =>
                             updateProduct(
                               product.id,
@@ -636,17 +673,25 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                               : "Enter unit price"
                           }
                         />
-                        {/* {product.isAutoPopulated && (
-                        <div className="absolute -top-2 -right-2 w-3 h-3 bg-green-500 rounded-full border-2 border-white" title="Auto-populated from inventory"></div>
-                      )} */}
+                        {errors.products?.[index]?.unitPrice && (
+                          <p className="text-red-500 text-xs mt-1">
+                            {errors.products[index].unitPrice.message}
+                          </p>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <input
+                        {...register(`products.${index}.totalPrice`, {
+                          required: "Total price is required",
+                          min: {
+                            value: 0,
+                            message: "Total price cannot be negative"
+                          }
+                        })}
                         type="number"
                         step="0.01"
                         min="0"
-                        value={product.totalPrice}
                         onChange={(e) =>
                           updateProduct(
                             product.id,
@@ -656,17 +701,23 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                         }
                         className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
                       />
+                      {errors.products?.[index]?.totalPrice && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.products[index].totalPrice.message}
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2 items-center">
-                        {product.colors.map((color, index) => (
+                        {product.colors.map((color, colorIndex) => (
                           <span
-                            key={index}
+                            key={colorIndex}
                             className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100"
                           >
                             {color}
                             <button
-                              onClick={() => removeColor(product.id, index)}
+                              type="button"
+                              onClick={() => removeColor(product.id, colorIndex)}
                               className="ml-1 text-red-500 hover:text-red-700"
                             >
                               <Trash2 size={12} />
@@ -682,6 +733,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                             className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
                           />
                           <button
+                            type="button"
                             onClick={() => addColor(product.id)}
                             className="text-green-600 hover:text-green-800"
                           >
@@ -691,12 +743,15 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => removeProduct(product.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {products.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeProduct(product.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -726,16 +781,29 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-500">₹</span>
                 <input
+                  {...register("discount", {
+                    min: {
+                      value: 0,
+                      message: "Discount cannot be negative"
+                    },
+                    max: {
+                      value: subtotal,
+                      message: "Discount cannot exceed subtotal"
+                    }
+                  })}
                   type="number"
                   step="0.01"
                   min="0"
                   max={subtotal}
-                  value={discount}
-                  onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
                   className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
                 />
               </div>
             </div>
+            {errors.discount && (
+              <p className="text-red-500 text-sm text-right">
+                {errors.discount.message}
+              </p>
+            )}
 
             <div className="flex justify-between text-lg font-semibold border-t pt-3">
               <span>Grand Total:</span>
@@ -746,15 +814,23 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <span className="text-gray-600">Payment Status:</span>
               <div className="flex items-center gap-2">
                 <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={paymentStatus === "Paid"}
-                    onChange={(e) =>
-                      setPaymentStatus(e.target.checked ? "Paid" : "Unpaid")
-                    }
-                    className="form-checkbox h-5 w-5 text-pink-600 rounded focus:ring-pink-500"
+                  <Controller
+                    name="paymentStatus"
+                    control={control}
+                    render={({ field }) => (
+                      <input
+                        type="checkbox"
+                        checked={field.value === "Paid"}
+                        onChange={(e) =>
+                          field.onChange(e.target.checked ? "Paid" : "Unpaid")
+                        }
+                        className="form-checkbox h-5 w-5 text-pink-600 rounded focus:ring-pink-500"
+                      />
+                    )}
                   />
-                  <span className="ml-2 text-gray-700">{paymentStatus}</span>
+                  <span className="ml-2 text-gray-700">
+                    {formData.paymentStatus}
+                  </span>
                 </label>
               </div>
             </div>
@@ -763,13 +839,13 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
         <div className="flex justify-center mt-8">
           <button
-            onClick={handleSubmit}
+            type="submit"
             className="px-8 py-3 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors font-medium"
           >
             Save
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };
