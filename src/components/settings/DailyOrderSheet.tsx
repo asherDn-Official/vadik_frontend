@@ -1,7 +1,30 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Scan, Plus, Trash2, ArrowLeft } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
-import api from "../../api/apiconfig";
+import api from "../../api/apiconfig"
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
+import showToast from "../../utils/ToastNotification";
+
+
+const useOutsideClick = (callback) => {
+  const ref = useRef();
+
+  useEffect(() => {
+    const handleClick = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) {
+        callback();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClick);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+    };
+  }, [callback]);
+
+  return ref;
+};
 
 const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const {
@@ -50,6 +73,11 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const formData = watch();
   const products = formData.products || [];
 
+  // Create a ref for the suggestions dropdown
+  const suggestionsRef = useOutsideClick(() => {
+    setShowSuggestions(false);
+  });
+
   // Initialize product search states
   useEffect(() => {
     const initialSearchStates = {};
@@ -69,7 +97,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       setValue("lastName", customer.lastname || customer.lastName || "");
       setValue("gender", customer.additionalData?.gender || customer.gender || "");
       setValue("source", customer.source || "");
-      
+
       // Clear validation errors for auto-filled fields
       setTimeout(() => {
         clearErrors(["phoneNumber", "firstName", "lastName", "gender", "source"]);
@@ -119,7 +147,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     });
 
     setValue("products", updatedProducts);
-    
+
     // Clear validation error for this product name
     const productIndex = products.findIndex(p => p.id === productId);
     if (productIndex !== -1) {
@@ -167,10 +195,10 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
   const handleInputChange = async (field, value) => {
     setValue(field, value);
-    
+
     // Clear error for this field immediately
     clearErrors(field);
-    
+
     // Revalidate the field after a short delay
     setTimeout(() => {
       trigger(field);
@@ -179,6 +207,28 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     if (field === "phoneNumber" && value.length >= 3) {
       searchCustomers(value);
     } else if (field === "phoneNumber") {
+      setSearchResults([]);
+      setShowSuggestions(false);
+    }
+  };
+
+   const handlePhoneChange = (value, country) => {
+    // Remove the country code prefix to get just the local number
+    const localNumber = value.replace(country.dialCode, "");
+    
+    setValue("phoneNumber", value);
+    clearErrors("phoneNumber");
+    
+    // Trigger validation after a short delay
+    setTimeout(() => {
+      trigger("phoneNumber");
+    }, 300);
+
+    // Search customers when phone number is valid (at least 10 digits including country code)
+    if (value.length >= 3) { // Country code + 10 digits
+      searchCustomers(value);
+      setShowSuggestions(true);
+    } else {
       setSearchResults([]);
       setShowSuggestions(false);
     }
@@ -204,15 +254,15 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     setValue("lastName", customer.lastname || "");
     setValue("gender", customer.gender || "");
     setValue("source", customer.source || "");
-    
+
     // Clear validation errors for all customer fields
     clearErrors(["phoneNumber", "firstName", "lastName", "gender", "source"]);
-    
+
     // Trigger validation to ensure fields are valid
     setTimeout(() => {
       trigger(["phoneNumber", "firstName", "lastName", "gender", "source"]);
     }, 100);
-    
+
     setShowSuggestions(false);
   };
 
@@ -255,7 +305,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     });
 
     setValue("products", updatedProducts);
-    
+
     // Clear validation error for the updated field
     const productIndex = products.findIndex(p => p.id === id);
     if (productIndex !== -1) {
@@ -336,7 +386,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     try {
       const response = await api.post("/api/orderHistory/", orderData);
       console.log("Order saved successfully:", response.data);
-      alert("Order saved successfully");
+      showToast("Order saved successfully", "success");
 
       // Reset form
       reset({
@@ -368,8 +418,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       setCurrentProductSearches({});
       setNewColor("");
     } catch (error) {
-      console.error("Error saving order:", error);
-      alert("Error saving order. Please try again.");
+      showToast("Error saving order. Please try again.","error");
     }
   };
 
@@ -414,7 +463,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 First Name
               </label>
               <input
-                {...register("firstName", { 
+                {...register("firstName", {
                   required: "First name is required",
                   minLength: {
                     value: 2,
@@ -436,7 +485,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 Last Name
               </label>
               <input
-                {...register("lastName", { 
+                {...register("lastName", {
                   required: "Last name is required",
                   minLength: {
                     value: 1,
@@ -457,24 +506,45 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number
               </label>
-              <input
-                {...register("phoneNumber", {
+              <Controller
+                name="phoneNumber"
+                control={control}
+                rules={{
                   required: "Phone number is required",
-                  pattern: {
-                    value: /^[0-9]{10}$/,
-                    message: "Please enter a valid 10-digit phone number"
+                  validate: (value) => {
+                    // Remove any non-digit characters for validation
+                    const digitsOnly = value.replace(/\D/g, '');
+                    return digitsOnly.length >= 10 || "Please enter a valid phone number";
                   }
-                })}
-                type="text"
-                placeholder="Enter Phone Number"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-                onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                }}
+                render={({ field }) => (
+                  <PhoneInput
+                    country={"in"}
+                    value={field.value}
+                    onChange={(value, country) => {
+                      field.onChange(value);
+                      handlePhoneChange(value, country);
+                    }}
+                    inputClass="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    inputStyle={{
+                      width: "100%",
+                      paddingLeft: "48px",
+                      height: "42px"
+                    }}
+                    dropdownClass="text-gray-700"
+                    enableSearch={true}
+                    countryCodeEditable={false}
+                  />
+                )}
               />
               {errors.phoneNumber && (
                 <p className="text-red-500 text-sm mt-1">{errors.phoneNumber.message}</p>
               )}
               {showSuggestions && searchResults.length > 0 && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                <div
+                  ref={suggestionsRef}
+                  className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+                >
                   {searchResults.map((customer) => (
                     <div
                       key={customer._id}
@@ -701,11 +771,10 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                               parseFloat(e.target.value) || 0
                             )
                           }
-                          className={`w-24 px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500 ${
-                            product.isAutoPopulated
+                          className={`w-24 px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500 ${product.isAutoPopulated
                               ? "border-green-300 bg-green-50"
                               : "border-gray-300"
-                          }`}
+                            }`}
                           placeholder="0.00"
                           title={
                             product.isAutoPopulated
