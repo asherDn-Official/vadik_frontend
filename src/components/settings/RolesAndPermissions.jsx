@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Search, Plus, MoreHorizontal, ArrowLeft, Info } from "lucide-react";
-import axios from "axios";
+import { useForm, Controller } from "react-hook-form";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
+import { Eye, EyeOff } from "lucide-react";
 import api from "../../api/apiconfig";
+import showToast from "../../utils/ToastNotification";
 
 const RolesAndPermissions = () => {
   const [currentView, setCurrentView] = useState("userManagement");
@@ -34,16 +38,7 @@ const RolesAndPermissions = () => {
   }, []);
 
   // Add Employee Form Component
-  const AddEmployeeForm = () => {
-    const [formData, setFormData] = useState({
-      fullName: "",
-      email: "",
-      phone: "",
-      designation: "",
-      password: "",
-      confirmPassword: "",
-    });
-
+  const AddEmployeeForm = ({ setCurrentView, fetchStaff }) => {
     const [permissions, setPermissions] = useState([
       {
         "module": "dashboard",
@@ -101,8 +96,32 @@ const RolesAndPermissions = () => {
         "canUpdate": false,
         "canDelete": false
       }
-    ]
-    );
+    ]);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+
+
+    const {
+      register,
+      handleSubmit,
+      reset,
+      control,
+      watch,
+      formState: { errors },
+      setError
+    } = useForm({
+      defaultValues: {
+        fullName: "",
+        email: "",
+        phone: "",
+        designation: "",
+        password: "",
+        confirmPassword: "",
+      },
+      mode: "onChange"
+    });
+
+    const password = watch("password");
 
     const handlePermissionChange = (moduleIndex, permissionType, value) => {
       setPermissions(prev =>
@@ -114,30 +133,25 @@ const RolesAndPermissions = () => {
       );
     };
 
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      if (formData.password !== formData.confirmPassword) {
-        alert("Passwords do not match");
-        return;
-      }
-
+    const onSubmit = async (data) => {
       try {
         const payload = {
-          fullName: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          designation: formData.designation,
-          password: formData.password,
+          fullName: data.fullName,
+          email: data.email,
+          phone: data.phone,
+          designation: data.designation,
+          password: data.password,
           permissions: permissions.filter(perm =>
             perm.canCreate || perm.canRead || perm.canUpdate || perm.canDelete
           ),
         };
 
         await api.post(END_POINT, payload);
-        await fetchStaff(); // Refresh the list
+        showToast("Successfully added employee", "success ");
+        reset();
         setCurrentView("userManagement");
       } catch (err) {
-        alert("Failed to create staff member");
+        showToast(err.response.data.message, "error");
         console.error(err);
       }
     };
@@ -153,7 +167,7 @@ const RolesAndPermissions = () => {
         </button>
         <h2 className="text-xl text-[#313166] font-[400] mb-6">Add Employee</h2>
 
-        <form onSubmit={handleSubmit} className="max-w-4xl">
+        <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl">
           <div className="grid grid-cols-1 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -162,13 +176,22 @@ const RolesAndPermissions = () => {
               <input
                 type="text"
                 placeholder="Enter full name"
-                value={formData.fullName}
-                onChange={(e) =>
-                  setFormData({ ...formData, fullName: e.target.value })
-                }
+                {...register("fullName", {
+                  required: "Full name is required",
+                  minLength: {
+                    value: 2,
+                    message: "Full name must be at least 2 characters"
+                  },
+                  maxLength: {
+                    value: 30,
+                    message: "Full name cannot exceed 30 characters"
+                  }
+                })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                required
               />
+              {errors.fullName && (
+                <p className="mt-1 text-sm text-red-600">{errors.fullName.message}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -177,31 +200,61 @@ const RolesAndPermissions = () => {
               <input
                 type="text"
                 placeholder="Enter designation"
-                value={formData.designation}
-                onChange={(e) =>
-                  setFormData({ ...formData, designation: e.target.value })
-                }
+                {...register("designation", {
+                  required: "Designation is required",
+                  minLength: {
+                    value: 2,
+                    message: "Designation must be at least 2 characters"
+                  },
+                  maxLength: {
+                    value: 30,
+                    message: "Full name cannot exceed 30 characters"
+                  }
+                })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                required
               />
+              {errors.designation && (
+                <p className="mt-1 text-sm text-red-600">{errors.designation.message}</p>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
+            <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number
               </label>
-              <input
-                type="tel"
-                placeholder="Enter Phone Number"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                required
+              <Controller
+                name="phone"
+                control={control}
+                rules={{
+                  required: "Phone number is required",
+                  validate: (value) => {
+                    // Remove any non-digit characters for validation
+                    const digitsOnly = value.replace(/\D/g, '');
+                    return digitsOnly.length >= 10 || "Please enter a valid phone number";
+                  }
+                }}
+                render={({ field }) => (
+                  <PhoneInput
+                    country={"in"}
+                    value={field.value}
+                    onChange={(value) => field.onChange(value)}
+                    inputClass="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    inputStyle={{
+                      width: "100%",
+                      paddingLeft: "48px",
+                      height: "42px"
+                    }}
+                    dropdownClass="text-gray-700"
+                    enableSearch={true}
+                    countryCodeEditable={false}
+                  />
+                )}
               />
+              {errors.phone && (
+                <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -210,17 +263,22 @@ const RolesAndPermissions = () => {
               <input
                 type="email"
                 placeholder="Enter email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
+                {...register("email", {
+                  required: "Email is required",
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Invalid email address"
+                  }
+                })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                required
               />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Create Password
@@ -228,13 +286,22 @@ const RolesAndPermissions = () => {
               <input
                 type="password"
                 placeholder="Enter Password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
+                {...register("password", {
+                  required: "Password is required",
+                  minLength: {
+                    value: 6,
+                    message: "Password must be at least 6 characters"
+                  },
+                  pattern: {
+                    value: /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/,
+                    message: "Password must contain at least one uppercase letter and one special character"
+                  }
+                })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                required
               />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -243,13 +310,101 @@ const RolesAndPermissions = () => {
               <input
                 type="password"
                 placeholder="Confirm Password"
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
-                }
+                {...register("confirmPassword", {
+                  required: "Please confirm your password",
+                  validate: value => value === password || "Passwords do not match",
+                  minLength: {
+                    value: 6,
+                    message: "Password must be at least 6 characters"
+                  },
+                  pattern: {
+                    value: /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/,
+                    message: "Password must contain at least one uppercase letter and one special character"
+                  }
+                })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
-                required
               />
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+              )}
+            </div>
+          </div> */}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Create Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Create Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter Password"
+                  {...register("password", {
+                    required: "Password is required",
+                    minLength: {
+                      value: 6,
+                      message: "Password must be at least 6 characters",
+                    },
+                    pattern: {
+                      value: /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/,
+                      message:
+                        "Password must contain at least one uppercase letter and one special character",
+                    },
+                  })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-3 flex items-center text-gray-500"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              )}
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  placeholder="Confirm Password"
+                  {...register("confirmPassword", {
+                    required: "Please confirm your password",
+                    validate: (value) =>
+                      value === password || "Passwords do not match",
+                    minLength: {
+                      value: 6,
+                      message: "Password must be at least 6 characters",
+                    },
+                    pattern: {
+                      value: /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/,
+                      message:
+                        "Password must contain at least one uppercase letter and one special character",
+                    },
+                  })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute inset-y-0 right-3 flex items-center text-gray-500"
+                >
+                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -318,6 +473,7 @@ const RolesAndPermissions = () => {
       </div>
     );
   };
+
 
   // User Permissions Component
   const UserPermissionsForm = () => {
@@ -400,63 +556,63 @@ const RolesAndPermissions = () => {
 
         // Initialize permissions based on selected user
         const defaultPerms = [
-      {
-        "module": "dashboard",
-        "canCreate": false,
-        "canRead": false,
-        "canUpdate": false,
-        "canDelete": false
-      },
-      {
-        "module": "customers",
-        "canCreate": false,
-        "canRead": false,
-        "canUpdate": false,
-        "canDelete": false
-      },
-      {
-        "module": "personalisation",
-        "canCreate": false,
-        "canRead": false,
-        "canUpdate": false,
-        "canDelete": false
-      },
-      {
-        "module": "customerOpportunities",
-        "canCreate": false,
-        "canRead": false,
-        "canUpdate": false,
-        "canDelete": false
-      },
-      {
-        "module": "performance",
-        "canCreate": false,
-        "canRead": false,
-        "canUpdate": false,
-        "canDelete": false
-      },
-      {
-        "module": "integration",
-        "canCreate": false,
-        "canRead": false,
-        "canUpdate": false,
-        "canDelete": false
-      },
-      {
-        "module": "kyc",
-        "canCreate": false,
-        "canRead": false,
-        "canUpdate": false,
-        "canDelete": false
-      },
-      {
-        "module": "settings",
-        "canCreate": false,
-        "canRead": false,
-        "canUpdate": false,
-        "canDelete": false
-      }
-    ];
+          {
+            "module": "dashboard",
+            "canCreate": false,
+            "canRead": false,
+            "canUpdate": false,
+            "canDelete": false
+          },
+          {
+            "module": "customers",
+            "canCreate": false,
+            "canRead": false,
+            "canUpdate": false,
+            "canDelete": false
+          },
+          {
+            "module": "personalisation",
+            "canCreate": false,
+            "canRead": false,
+            "canUpdate": false,
+            "canDelete": false
+          },
+          {
+            "module": "customerOpportunities",
+            "canCreate": false,
+            "canRead": false,
+            "canUpdate": false,
+            "canDelete": false
+          },
+          {
+            "module": "performance",
+            "canCreate": false,
+            "canRead": false,
+            "canUpdate": false,
+            "canDelete": false
+          },
+          {
+            "module": "integration",
+            "canCreate": false,
+            "canRead": false,
+            "canUpdate": false,
+            "canDelete": false
+          },
+          {
+            "module": "kyc",
+            "canCreate": false,
+            "canRead": false,
+            "canUpdate": false,
+            "canDelete": false
+          },
+          {
+            "module": "settings",
+            "canCreate": false,
+            "canRead": false,
+            "canUpdate": false,
+            "canDelete": false
+          }
+        ];
 
         if (selectedUser.permissions) {
           selectedUser.permissions.forEach(userPerm => {
@@ -502,11 +658,12 @@ const RolesAndPermissions = () => {
 
         await api.put(`${END_POINT}/${selectedUser._id}`, payload);
         await fetchStaff(); // Refresh the list
+        showToast("Staff member updated successfully!", "success");
         setCurrentView("userManagement");
         setSelectedUser(null);
       } catch (err) {
-        alert("Failed to update staff member");
-        console.error(err);
+        showToast("Failed to update staff member", "error");
+        // console.error(err);
       }
     };
 
@@ -518,7 +675,7 @@ const RolesAndPermissions = () => {
           setCurrentView("userManagement");
           setSelectedUser(null);
         } catch (err) {
-          alert("Failed to delete staff member");
+          showToast("Failed to delete staff member", "error");
           console.error(err);
         }
       }
