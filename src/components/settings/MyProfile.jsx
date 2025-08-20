@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import axios from "axios";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -6,15 +7,34 @@ import api from "../../api/apiconfig";
 import { useAuth } from "../../context/AuthContext";
 
 const MyProfile = () => {
-  const [profile, setProfile] = useState({
-    firstName: "",
-    lastName: "",
-    phone: "",
-    email: "",
-    storeName: "",
-    role: "Retailer",
-    address: "",
-    profilePicture: "https://randomuser.me/api/portraits/men/36.jpg",
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm({
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      phone: "",
+      email: "",
+      storeName: "",
+      role: "Retailer",
+      address: "",
+      retentionPeriod: 30,
+      loyalCustomerPeriodDays: 120,
+      automatedCustomersGreeting: true,
+      GSTNumber: "",
+      numberOfCustomers: "",
+      numberOfEmployees: "",
+      storeCity: "",
+      storeContactNumber: "",
+      storeOwnerName: "",
+      storePincode: "",
+      storeType: "",
+      profilePicture: "https://randomuser.me/api/portraits/men/36.jpg",
+    },
   });
 
   const [uploadError, setUploadError] = useState("");
@@ -26,6 +46,9 @@ const MyProfile = () => {
 
   const { auth } = useAuth();
 
+  // Watch the automatedCustomersGreeting value for the toggle
+  const automatedGreeting = watch("automatedCustomersGreeting");
+
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
@@ -33,27 +56,38 @@ const MyProfile = () => {
 
         if (response.data.status === "success") {
           const retailerData = response.data.data;
+          console.log(retailerData);
           const id = retailerData._id;
           setRetailerId(id);
 
-          const [firstName, ...lastParts] =
-            retailerData?.fullName?.split(" ") || [];
-          const lastName = lastParts.join(" ");
+          // Split fullName into firstName and lastName
+          const nameParts = retailerData?.fullName?.split(" ") || [];
+          const firstName = nameParts[0] || "";
+          const lastName = nameParts.slice(1).join(" ") || "";
+          
           const formattedPhone =
             (retailerData.phoneCode?.replace("+", "") || "") +
             (retailerData.phone || "");
 
-          setProfile({
-            firstName,
-            lastName,
-            phone: formattedPhone,
-            email: retailerData.email || "",
-            storeName: retailerData.storeName || "",
-            role: "Retailer",
-            address: retailerData.storeAddress || "",
-            profilePicture:
-               retailerData.storeImage,
-          });
+          // Set form values using setValue from react-hook-form
+          setValue("firstName", firstName);
+          setValue("lastName", lastName);
+          setValue("phone", formattedPhone);
+          setValue("email", retailerData.email || "");
+          setValue("storeName", retailerData.storeName || "");
+          setValue("address", retailerData.storeAddress || "");
+          setValue("retentionPeriod", retailerData.retentionPeriod || 30);
+          setValue("loyalCustomerPeriodDays", retailerData.loyalCustomerPeriodDays || 120);
+          setValue("automatedCustomersGreeting", retailerData.automatedCustomersGreeting || true);
+          setValue("GSTNumber", retailerData.GSTNumber || "");
+          setValue("numberOfCustomers", retailerData.numberOfCustomers || "");
+          setValue("numberOfEmployees", retailerData.numberOfEmployees || "");
+          setValue("storeCity", retailerData.storeCity || "");
+          setValue("storeContactNumber", retailerData.storeContactNumber || "");
+          setValue("storeOwnerName", retailerData.storeOwnerName || "");
+          setValue("storePincode", retailerData.storePincode || "");
+          setValue("storeType", retailerData.storeType || "");
+          setValue("profilePicture", retailerData.storeImage || "https://randomuser.me/api/portraits/men/36.jpg");
         }
 
         setLoading(false);
@@ -66,44 +100,43 @@ const MyProfile = () => {
     if (auth?.user) {
       fetchProfileData();
     }
-  }, [auth]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
-  };
+  }, [auth, setValue]);
 
   const handlePhoneChange = (value) => {
-    setProfile((prev) => ({ ...prev, phone: value }));
+    setValue("phone", value);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setError(null);
     setSuccessMessage("");
 
     try {
       const formData = new FormData();
-      formData.append(
-        "fullName",
-        `${profile.firstName} ${profile.lastName}`.trim()
-      );
-      formData.append("email", profile.email);
+      formData.append("fullName", `${data.firstName} ${data.lastName}`.trim());
+      formData.append("email", data.email);
 
-      const phoneCode = `+${profile.phone.slice(0, 2)}`;
-      const phoneNumber = profile.phone.slice(2);
+      const phoneCode = `+${data.phone.slice(0, 2)}`;
+      const phoneNumber = data.phone.slice(2);
       formData.append("phoneCode", phoneCode);
       formData.append("phone", phoneNumber);
 
-      formData.append("storeName", profile.storeName);
-      formData.append("storeAddress", profile.address);
+      formData.append("storeName", data.storeName);
+      formData.append("storeAddress", data.address);
+      formData.append("retentionPeriod", data.retentionPeriod);
+      formData.append("loyalCustomerPeriodDays", data.loyalCustomerPeriodDays);
+      formData.append("automatedCustomersGreeting", data.automatedCustomersGreeting);
+      formData.append("GSTNumber", data.GSTNumber);
+      formData.append("numberOfCustomers", data.numberOfCustomers);
+      formData.append("numberOfEmployees", data.numberOfEmployees);
+      formData.append("storeCity", data.storeCity);
+      formData.append("storeContactNumber", data.storeContactNumber);
+      formData.append("storeOwnerName", data.storeOwnerName);
+      formData.append("storePincode", data.storePincode);
+      formData.append("storeType", data.storeType);
 
-      if (
-        profile.profilePicture &&
-        !profile.profilePicture.startsWith("http")
-      ) {
-        const blob = await fetch(profile.profilePicture).then((r) => r.blob());
-        formData.append("storeImage", blob, "profile.jpg"); // renamed field
+      if (data.profilePicture && !data.profilePicture.startsWith("http")) {
+        const blob = await fetch(data.profilePicture).then((r) => r.blob());
+        formData.append("storeImage", blob, "profile.jpg");
       }
 
       const response = await api.patch(`api/retailer/${retailerId}`, formData, {
@@ -115,12 +148,8 @@ const MyProfile = () => {
       if (response.data.status === "success") {
         setSuccessMessage("Profile updated successfully!");
 
-        // Optional: update profile picture from response
         if (response.data.data?.avatarUrl) {
-          setProfile((prev) => ({
-            ...prev,
-            profilePicture: response.data.data.avatarUrl,
-          }));
+          setValue("profilePicture", response.data.data.avatarUrl);
         }
       }
     } catch (err) {
@@ -148,10 +177,7 @@ const MyProfile = () => {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      setProfile((prev) => ({
-        ...prev,
-        profilePicture: event.target.result,
-      }));
+      setValue("profilePicture", event.target.result);
       setUploadError("");
     };
     reader.onerror = () => {
@@ -166,12 +192,6 @@ const MyProfile = () => {
 
   if (loading) {
     return <div className="px-10 py-3 mx-auto">Loading profile data...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="px-10 py-3 mx-auto text-red-500">Error: {error}</div>
-    );
   }
 
   return (
@@ -191,7 +211,7 @@ const MyProfile = () => {
 
       <div className="flex flex-col md:flex-row gap-10">
         <div className="flex-1">
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block text-sm text-[#31316680]">
@@ -199,12 +219,12 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  name="firstName"
-                  value={profile.firstName}
-                  onChange={handleChange}
+                  {...register("firstName", { required: "First name is required" })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
-                  required
                 />
+                {errors.firstName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -213,9 +233,7 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  name="lastName"
-                  value={profile.lastName}
-                  onChange={handleChange}
+                  {...register("lastName")}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                 />
               </div>
@@ -228,12 +246,15 @@ const MyProfile = () => {
                 </label>
                 <PhoneInput
                   country={"in"}
-                  value={profile.phone}
+                  value={watch("phone")}
                   onChange={handlePhoneChange}
                   inputClass="w-full p-2 border border-gray-300 rounded text-[#313166]"
                   inputStyle={{ width: "100%" }}
                   dropdownClass="text-gray-700"
                 />
+                {errors.phone && (
+                  <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -242,12 +263,18 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="email"
-                  name="email"
-                  value={profile.email}
-                  onChange={handleChange}
+                  {...register("email", { 
+                    required: "Email is required",
+                    pattern: {
+                      value: /^\S+@\S+$/i,
+                      message: "Invalid email address"
+                    }
+                  })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
-                  required
                 />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+                )}
               </div>
             </div>
 
@@ -258,22 +285,20 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  name="storeName"
-                  value={profile.storeName}
-                  onChange={handleChange}
+                  {...register("storeName", { required: "Store name is required" })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
-                  required
                 />
+                {errors.storeName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.storeName.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <label className="block text-sm text-[#31316680]">Role</label>
                 <input
                   type="text"
-                  name="role"
-                  value={profile.role}
-                  onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  value="Retailer"
+                  className="w-full p-2 border border-gray-300 rounded text-[#313166] bg-gray-100"
                   disabled
                 />
               </div>
@@ -285,12 +310,186 @@ const MyProfile = () => {
               </label>
               <input
                 type="text"
-                name="address"
-                value={profile.address}
-                onChange={handleChange}
+                {...register("address", { required: "Store address is required" })}
                 className="w-full p-2 border border-gray-300 rounded text-[#313166]"
-                required
               />
+              {errors.address && (
+                <p className="text-red-500 text-xs mt-1">{errors.address.message}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm text-[#31316680]">
+                  Retention Period (days)
+                </label>
+                <input
+                  type="number"
+                  {...register("retentionPeriod", { 
+                    required: "Retention period is required",
+                    min: {
+                      value: 1,
+                      message: "Retention period must be at least 1 day"
+                    }
+                  })}
+                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                />
+                {errors.retentionPeriod && (
+                  <p className="text-red-500 text-xs mt-1">{errors.retentionPeriod.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm text-[#31316680]">
+                  Loyal Customer Period (days)
+                </label>
+                <input
+                  type="number"
+                  {...register("loyalCustomerPeriodDays", { 
+                    required: "Loyal customer period is required",
+                    min: {
+                      value: 1,
+                      message: "Loyal customer period must be at least 1 day"
+                    }
+                  })}
+                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                />
+                {errors.loyalCustomerPeriodDays && (
+                  <p className="text-red-500 text-xs mt-1">{errors.loyalCustomerPeriodDays.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm text-[#31316680]">
+                  GST Number
+                </label>
+                <input
+                  type="text"
+                  {...register("GSTNumber")}
+                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm text-[#31316680]">
+                  Store Owner Name
+                </label>
+                <input
+                  type="text"
+                  {...register("storeOwnerName")}
+                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm text-[#31316680]">
+                  Number of Customers
+                </label>
+                <select
+                  {...register("numberOfCustomers")}
+                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                >
+                  <option value="">Select range</option>
+                  <option value="1-50">1-50</option>
+                  <option value="51-100">51-100</option>
+                  <option value="101-500">101-500</option>
+                  <option value="501-1000">501-1000</option>
+                  <option value="1000+">1000+</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm text-[#31316680]">
+                  Number of Employees
+                </label>
+                <select
+                  {...register("numberOfEmployees")}
+                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                >
+                  <option value="">Select range</option>
+                  <option value="1-5">1-5</option>
+                  <option value="6-10">6-10</option>
+                  <option value="11-20">11-20</option>
+                  <option value="21-50">21-50</option>
+                  <option value="50+">50+</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm text-[#31316680]">
+                  Store City
+                </label>
+                <input
+                  type="text"
+                  {...register("storeCity")}
+                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm text-[#31316680]">
+                  Store Pincode
+                </label>
+                <input
+                  type="text"
+                  {...register("storePincode")}
+                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm text-[#31316680]">
+                  Store Contact Number
+                </label>
+                <input
+                  type="text"
+                  {...register("storeContactNumber")}
+                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm text-[#31316680]">
+                  Store Type
+                </label>
+                <input
+                  type="text"
+                  {...register("storeType")}
+                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm text-[#31316680] mb-2">
+                Automated Customers Greeting
+              </label>
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                    automatedGreeting ? 'bg-[#CB376D]' : 'bg-gray-300'
+                  }`}
+                  onClick={() => setValue("automatedCustomersGreeting", !automatedGreeting)}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      automatedGreeting ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="ml-2 text-sm text-gray-600">
+                  {automatedGreeting ? "Enabled" : "Disabled"}
+                </span>
+              </div>
             </div>
 
             <div>
@@ -312,7 +511,7 @@ const MyProfile = () => {
           </div>
           <div className="w-34 h-34 rounded-full overflow-hidden mb-4 border-2 border-gray-200">
             <img
-              src={profile.profilePicture}
+              src={watch("profilePicture")}
               alt="Profile"
               className="w-[134px] h-[134px] object-cover"
             />
