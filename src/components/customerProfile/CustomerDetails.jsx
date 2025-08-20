@@ -475,6 +475,13 @@ const CustomerDetails = ({
     });
   }, [formData, isEditing, handleInputChange, customer, errors]);
 
+
+
+  const defaultImage = {
+    menDefaultImgUrl: "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg",
+    femaleDefaultImgUrl: "https://cdn.vectorstock.com/i/750p/96/68/female-silhouette-head-vector-32409668.avif"
+  }
+
   const onSubmit = async (e) => {
     e.preventDefault();
 
@@ -519,7 +526,11 @@ const CustomerDetails = ({
                 <div className="flex items-center w-full">
                   <div className="relative">
                     <img
-                      src={transformedCustomer?.profileImage || "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"}
+                      src={transformedCustomer?.profileImage || transformedCustomer?.gender === 'male'
+                        ? defaultImage.menDefaultImgUrl
+                        : transformedCustomer?.gender === 'female'
+                          ? defaultImage.femaleDefaultImgUrl
+                          : ""}
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
                       className="w-[148px] h-[212px] rounded-lg  object-contain"
                     />
