@@ -5,6 +5,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import api from "../../api/apiconfig";
 import { useAuth } from "../../context/AuthContext";
+import showToast from "../../utils/ToastNotification";
 
 const MyProfile = () => {
   const {
@@ -35,6 +36,7 @@ const MyProfile = () => {
       storeType: "",
       profilePicture: "https://randomuser.me/api/portraits/men/36.jpg",
     },
+    mode: "onChange",
   });
 
   const [uploadError, setUploadError] = useState("");
@@ -64,7 +66,7 @@ const MyProfile = () => {
           const nameParts = retailerData?.fullName?.split(" ") || [];
           const firstName = nameParts[0] || "";
           const lastName = nameParts.slice(1).join(" ") || "";
-          
+
           const formattedPhone =
             (retailerData.phoneCode?.replace("+", "") || "") +
             (retailerData.phone || "");
@@ -146,18 +148,14 @@ const MyProfile = () => {
       });
 
       if (response.data.status === "success") {
-        setSuccessMessage("Profile updated successfully!");
+        showToast("Profile Updated Successfully!", "success");
 
-        if (response.data.data?.avatarUrl) {
+        if (response.data.data?.avatarUrl) { 
           setValue("profilePicture", response.data.data.avatarUrl);
         }
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Failed to update profile. Please try again."
-      );
+      showToast(err.response?.data?.message, "error")
     }
   };
 
@@ -219,7 +217,22 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("firstName", { required: "First name is required" })}
+                  {...register("firstName", {
+                    required: "First Name is required",
+                    minLength: {
+                      value: 3,
+                      message: "Must be at least 3 characters",
+                    },
+                    maxLength: {
+                      value: 20,
+                      message: "Cannot exceed 20 characters",
+                    },
+                    pattern: {
+                      value: /^[a-zA-Z\u00C0-\u017F\s'-]+$/,
+                      message: "Only letters, hyphens, and apostrophes allowed",
+                    },
+                  })}
+                  placeholder="Enter first name"
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                 />
                 {errors.firstName && (
@@ -233,7 +246,22 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("lastName")}
+                  {...register("lastName", {
+                    required: "Last Name is required",
+                    // minLength: {
+                    //   value: 2,
+                    //   message: "Must be at least 2 characters",
+                    // },
+                    maxLength: {
+                      value: 20,
+                      message: "Cannot exceed 20 characters",
+                    },
+                    pattern: {
+                      value: /^[a-zA-Z\u00C0-\u017F\s'-]+$/,
+                      message: "Only letters, hyphens, and apostrophes allowed",
+                    },
+                  })}
+                  placeholder="Enter last name"
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                 />
               </div>
@@ -263,13 +291,14 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="email"
-                  {...register("email", { 
+                  {...register("email", {
                     required: "Email is required",
                     pattern: {
                       value: /^\S+@\S+$/i,
                       message: "Invalid email address"
                     }
                   })}
+                  placeholder="Enter your email address"
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                 />
                 {errors.email && (
@@ -285,9 +314,11 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("storeName", { required: "Store name is required" })}
+                  {...register("storeName", { required: "Store name is required", minLength: { value: 3, message: "Must be at least 3 characters" }, maxLength: { value: 50, message: "Cannot exceed 50 characters" } })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  placeholder="Enter store name"
                 />
+
                 {errors.storeName && (
                   <p className="text-red-500 text-xs mt-1">{errors.storeName.message}</p>
                 )}
@@ -312,6 +343,7 @@ const MyProfile = () => {
                 type="text"
                 {...register("address", { required: "Store address is required" })}
                 className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                placeholder="Enter store address"
               />
               {errors.address && (
                 <p className="text-red-500 text-xs mt-1">{errors.address.message}</p>
@@ -325,13 +357,14 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="number"
-                  {...register("retentionPeriod", { 
+                  {...register("retentionPeriod", {
                     required: "Retention period is required",
                     min: {
                       value: 1,
                       message: "Retention period must be at least 1 day"
                     }
                   })}
+                  placeholder="Enter retention period in days"
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                 />
                 {errors.retentionPeriod && (
@@ -345,13 +378,14 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="number"
-                  {...register("loyalCustomerPeriodDays", { 
+                  {...register("loyalCustomerPeriodDays", {
                     required: "Loyal customer period is required",
                     min: {
                       value: 1,
                       message: "Loyal customer period must be at least 1 day"
                     }
                   })}
+                  placeholder="Enter loyal customer period in days"
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                 />
                 {errors.loyalCustomerPeriodDays && (
@@ -367,9 +401,13 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("GSTNumber")}
+                  {...register("GSTNumber", { required: "GST is required" })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  placeholder="Enter GST number"
                 />
+                {errors.GSTNumber && (
+                  <p className="text-red-500 text-xs mt-1">{errors.GSTNumber.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -378,9 +416,13 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("storeOwnerName")}
+                  {...register("storeOwnerName", { required: "Store owner name is required", minLength: { value: 3, message: "Must be at least 3 characters" }, maxLength: { value: 50, message: "Cannot exceed 50 characters" } })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  placeholder="Enter store owner name"
                 />
+                {errors.storeOwnerName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.storeOwnerName.message}</p>
+                )}
               </div>
             </div>
 
@@ -390,7 +432,7 @@ const MyProfile = () => {
                   Number of Customers
                 </label>
                 <select
-                  {...register("numberOfCustomers")}
+                  {...register("numberOfCustomers", { required: "Number of customers is required" })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                 >
                   <option value="">Select range</option>
@@ -400,6 +442,9 @@ const MyProfile = () => {
                   <option value="501-1000">501-1000</option>
                   <option value="1000+">1000+</option>
                 </select>
+                {errors.numberOfCustomers && (
+                  <p className="text-red-500 text-xs mt-1">{errors.numberOfCustomers.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -407,7 +452,7 @@ const MyProfile = () => {
                   Number of Employees
                 </label>
                 <select
-                  {...register("numberOfEmployees")}
+                  {...register("numberOfEmployees", { required: "Number of employees is required" })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                 >
                   <option value="">Select range</option>
@@ -417,6 +462,9 @@ const MyProfile = () => {
                   <option value="21-50">21-50</option>
                   <option value="50+">50+</option>
                 </select>
+                {errors.numberOfEmployees && (
+                  <p className="text-red-500 text-xs mt-1">{errors.numberOfEmployees.message}</p>
+                )}
               </div>
             </div>
 
@@ -427,9 +475,13 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("storeCity")}
+                  {...register("storeCity", { required: "Store city is required" })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  placeholder="Enter store city"
                 />
+                {errors.storeCity && (
+                  <p className="text-red-500 text-xs mt-1">{errors.storeCity.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -438,9 +490,13 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("storePincode")}
+                  {...register("storePincode", { required: "Store pincode is required" })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  placeholder="Enter store pincode"
                 />
+                {errors.storePincode && (
+                  <p className="text-red-500 text-xs mt-1">{errors.storePincode.message}</p>
+                )}
               </div>
             </div>
 
@@ -451,9 +507,13 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("storeContactNumber")}
+                  {...register("storeContactNumber", { required: "Store contact number is required" })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  placeholder="Enter store contact number"
                 />
+                {errors.storeContactNumber && (
+                  <p className="text-red-500 text-xs mt-1">{errors.storeContactNumber.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -462,9 +522,13 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("storeType")}
+                  {...register("storeType", { required: "Store type is required" })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+                  placeholder="Enter store type"
                 />
+                {errors.storeType && (
+                  <p className="text-red-500 text-xs mt-1">{errors.storeType.message}</p>
+                )}
               </div>
             </div>
 
@@ -475,15 +539,13 @@ const MyProfile = () => {
               <div className="flex items-center">
                 <button
                   type="button"
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                    automatedGreeting ? 'bg-[#CB376D]' : 'bg-gray-300'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${automatedGreeting ? 'bg-[#CB376D]' : 'bg-gray-300'
+                    }`}
                   onClick={() => setValue("automatedCustomersGreeting", !automatedGreeting)}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      automatedGreeting ? 'translate-x-6' : 'translate-x-1'
-                    }`}
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${automatedGreeting ? 'translate-x-6' : 'translate-x-1'
+                      }`}
                   />
                 </button>
                 <span className="ml-2 text-sm text-gray-600">

@@ -127,32 +127,32 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
   };
 
   const validateGstNumber = () => {
-  const gst = formData.gstNumber?.trim().toUpperCase();
-  const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    const gst = formData.gstNumber?.trim().toUpperCase();
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
-  // If empty, clear error and skip validation
-  if (!gst) {
-    setErrors((prev) => {
-      const { gstNumber, ...rest } = prev;
-      return rest;
-    });
-    updateFormData({ gstNumber: "" });
-    return;
-  }
+    // If empty, clear error and skip validation
+    if (!gst) {
+      setErrors((prev) => {
+        const { gstNumber, ...rest } = prev;
+        return rest;
+      });
+      updateFormData({ gstNumber: "" });
+      return;
+    }
 
-  // Validate only when GST is provided
-  if (gst.length !== 15) {
-    setErrors((prev) => ({ ...prev, gstNumber: "GST number must be 15 characters" }));
-  } else if (!gstRegex.test(gst)) {
-    setErrors((prev) => ({ ...prev, gstNumber: "Invalid GST number format" }));
-  } else {
-    setErrors((prev) => {
-      const { gstNumber, ...rest } = prev;
-      return rest;
-    });
-    updateFormData({ gstNumber: gst }); // ensures stored value is uppercase
-  }
-};
+    // Validate only when GST is provided
+    if (gst.length !== 15) {
+      setErrors((prev) => ({ ...prev, gstNumber: "GST number must be 15 characters" }));
+    } else if (!gstRegex.test(gst)) {
+      setErrors((prev) => ({ ...prev, gstNumber: "Invalid GST number format" }));
+    } else {
+      setErrors((prev) => {
+        const { gstNumber, ...rest } = prev;
+        return rest;
+      });
+      updateFormData({ gstNumber: gst }); // ensures stored value is uppercase
+    }
+  };
 
 
   const validateForm = () => {
@@ -194,7 +194,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
       data.append("storeContactNumber", formData.contactNumber);
       data.append("storeCity", formData.city);
       data.append("storePincode", formData.pincode);
-      if(formData?.gstNumber) data.append("GSTNumber", formData.gstNumber || "");
+      if (formData?.gstNumber) data.append("GSTNumber", formData.gstNumber || "");
       data.append("numberOfEmployees", formData.staffCount);
       data.append("numberOfCustomers", formData.customerCount);
       data.append("status", "active");
@@ -423,7 +423,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
         {/* GST number */}
         <div className="md:col-span-2">
           <label htmlFor="gstNumber" className="form-label">
-            GST Number 
+            GST Number
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
             Add your GST number if your Store is registered (15 digits).
