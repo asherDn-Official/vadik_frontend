@@ -17,7 +17,7 @@ const CustomerList = () => {
     return localStorage.getItem("retailerId") || "";
   });
 
-  const itemsPerPage = 6;
+  const itemsPerPage = 10;
   const navigate = useNavigate();
   const searchTerm = searchParams.get("search") || "";
 

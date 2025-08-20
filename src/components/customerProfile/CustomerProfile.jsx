@@ -42,14 +42,14 @@ const CustomerProfile = () => {
     try {
       setIsLoading(true);
       
-      // Prepare the payload with all form data
+      // Normalize gender to lowercase if present
       const payload = {
         ...formData.basic,
+        ...(formData.basic?.gender ? { gender: String(formData.basic.gender).toLowerCase() } : {}),
         additionalData: formData.additionalData || {},
         advancedDetails: formData.advancedDetails || {},
         advancedPrivacyDetails: formData.advancedPrivacyDetails || {}
       };
-
 
       const response = await api.patch(
         `/api/customers/${selectedCustomer._id}`,

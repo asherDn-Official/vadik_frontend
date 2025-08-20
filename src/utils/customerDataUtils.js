@@ -88,6 +88,8 @@ export const transformFormDataToAPI = (formData, originalCustomer) => {
     source: formData.basic.source,
     customerId: formData.basic.customerId,
     firstVisit: formData.basic.firstVisit,
+    // Include gender in API payload, normalize to lowercase if present
+    gender: formData.basic.gender ? String(formData.basic.gender).toLowerCase() : originalCustomer.gender,
     additionalData: {},
     advancedDetails: {},
     advancedPrivacyDetails: {}

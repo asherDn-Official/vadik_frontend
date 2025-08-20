@@ -29,9 +29,10 @@ const FieldItem = React.memo(({
 }) => {
   // Get field data from the nested structure
   const fieldData = customer?.[section]?.[name] || {};
-  const fieldType = fieldData.type || getFieldType(customer, section, name);
+  const isGender = section === 'basic' && name === 'gender';
+  const fieldType = isGender ? 'options' : (fieldData.type || getFieldType(customer, section, name));
   const inputType = getInputType(fieldType);
-  const options = fieldData.options || [];
+  const options = isGender ? ['Male', 'Female', 'Others'] : (fieldData.options || []);
 
   const handleInputChange = useCallback((e) => {
     onChange(section, name, e.target.value);
@@ -237,6 +238,7 @@ const CustomerDetails = ({
           loyaltyPoints: transformedCustomer?.loyaltyPoints ?? '',
           isOptedIn: transformedCustomer?.isOptedIn ?? null,
           optinMessageSent: transformedCustomer?.optinMessageSent ?? null,
+          gender: transformedCustomer?.gender || '',
         },
         additionalData: transformedCustomer?.additionalData || {},
         advancedDetails: transformedCustomer?.advancedDetails || {},
@@ -254,6 +256,7 @@ const CustomerDetails = ({
         loyaltyPoints: '',
         isOptedIn: null,
         optinMessageSent: null,
+        gender: '',
       },
       additionalData: {},
       advancedDetails: {},
@@ -294,6 +297,8 @@ const CustomerDetails = ({
         advancedDetails: transformedCustomer?.advancedDetails || {},
         advancedPrivacyDetails: transformedCustomer?.advancedPrivacyDetails || {},
       };
+      // Include gender if present on transformed customer
+      newFormData.basic.gender = transformedCustomer?.gender || '';
       setFormData(newFormData);
     }
   }, [transformedCustomer]);
@@ -612,6 +617,17 @@ const CustomerDetails = ({
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
+                      />
+
+                      <FieldItem
+                        label="Gender"
+                        name="gender"
+                        defaultValue={transformedCustomer?.gender || ''}
+                        value={formData?.basic?.gender}
+                        onChange={handleInputChange}
+                        customer={customer}
+                        isEditing={isEditing}
+                        isEditable={isEditing}
                       />
 
                       {/* Add this additionaly only can see not ediable */}
