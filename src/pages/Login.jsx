@@ -45,6 +45,7 @@ const Login = () => {
       if (data.token) {
         localStorage.setItem("token", data.token);
         await checkAuth();
+        localStorage.setItem('place_id', data.retailer.placeId);
         // navigate("/dashboard");
 
         // Store appropriate ID based on login type
