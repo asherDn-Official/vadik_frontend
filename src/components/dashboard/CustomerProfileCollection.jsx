@@ -79,8 +79,8 @@ const [data, setData] = useState([
         <h2 className="text-xl font-semibold text-[#313166]">
           Customer Profile Collection
         </h2>
-
-        {/* Date Picker */}
+{/* 
+        Date Picker
         <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-gray-100 text-[#313166] font-medium text-sm">
           <FaCalendarAlt />
           <DatePicker
@@ -103,7 +103,7 @@ const [data, setData] = useState([
             dateFormat="MMM dd, yyyy"
             className="bg-transparent focus:outline-none w-[110px]"
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Total */}

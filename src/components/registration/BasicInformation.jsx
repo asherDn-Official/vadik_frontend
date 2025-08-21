@@ -29,14 +29,10 @@ const schema = yup.object().shape({
         return /^(\+91|91|0)?[6-9]\d{9}$/.test(digits);
       }
     ),
-  email: yup
+ email: yup
     .string()
     .required("Email address is required")
-    .email("Invalid email format")
-    .test("is-corporate", "Enter a valid corporate email address", (value) => {
-      if (!value) return false;
-      return !/(gmail\.com|yahoo\.com|hotmail\.com)$/i.test(value);
-    }),
+    .email("Invalid email format"),
 });
 
 const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
