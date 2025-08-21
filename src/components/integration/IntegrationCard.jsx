@@ -3,10 +3,10 @@ import { ArrowRight } from "lucide-react";
 
 const IntegrationCard = ({ title, icon, description }) => {
   return (
-    <div className="bg-white p-4 rounded-[12px] shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+    <div className="bg-white p-2 rounded-[12px] shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
       <div className="flex items-center gap-2 mb-2">
-        <img src={icon} alt={title} className="w-6 h-6 object-contain" />
-        <h3 className="font-[400] text-[14px] text-[#000000]">{title}</h3>
+        <img src={icon} alt={title} className="w-4 h-4 object-contain" />
+        <h3 className="font-[100] text-[2px] text-[#000000]">{title}</h3>
       </div>
       <p className="text-[10px] text-[#686880] mb-3 font-[400]">
         {description}
