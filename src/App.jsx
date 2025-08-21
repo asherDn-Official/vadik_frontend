@@ -63,7 +63,7 @@ function App() {
     };
 
     fetchOnboardingStatus();
-  }, [auth]);
+  }, []);
 
   if (loading || checkingOnboarding) {
     return <div>Loading...</div>;
