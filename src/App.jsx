@@ -19,7 +19,7 @@ import api from "./api/apiconfig";
 import Notification from "./pages/Notification";
 
 function App() {
-  const { auth, loading } = useAuth();
+  const { auth, loading, checkAuth } = useAuth();
   const [onboardingDone, setOnboardingDone] = useState(true); // assume true until checked
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
@@ -53,7 +53,7 @@ function App() {
         return;
       }
       try {
-        const res = await api.get("/api/retailer/profile");
+        const res = await checkAuth();
         setOnboardingDone(res.data.data.onboarding === true); // adjust based on backend meaning
       } catch (err) {
         console.error("Error fetching onboarding status", err);
@@ -126,7 +126,7 @@ function App() {
               path="settings/:tab"
               element={onboardingDone ? <SettingsPage /> : <Navigate to="/register" replace />}
             />
-                  <Route
+            <Route
               path="notifications"
               element={onboardingDone ? <Notification /> : <Navigate to="/register" replace />}
             />
