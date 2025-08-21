@@ -1,26 +1,43 @@
+import { useEffect, useState } from "react";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
+import api from "../../api/apiconfig";
 
 function CustomerSatisfactionScore() {
+  const [starCount, setStarCount] = useState(0);
+  const [customers,setCustomers] = useState(0);
   const score = 4.5;
-  const totalCustomers = 1500;
+
+  
+
+    useEffect(()=>{
+      const fetchCustomerData=async()=>{
+        try{
+          const response = await api.get("api/dashboard/customerSatifactionScore");
+          const data = response.data;
+          console.log("data of customer retension rate",data)
+          setCustomers(data.data.user_ratings_total);
+          setStarCount(data.data.rating);
+        }catch(error){
+          console.log("error", error);
+        }
+      }
+      fetchCustomerData();
+    },[])
 
   const renderStars = () => {
     const stars = [];
-    const fullStars = Math.floor(score);
-    const hasHalfStar = score % 1 !== 0;
+    const fullStars = Math.floor(starCount);
+    const hasHalfStar = starCount % 1 !== 0;
 
     for (let i = 1; i <= 5; i++) {
       if (i <= fullStars) {
-        stars.push(<FaStar key={i} className="text-yellow-400 text-xl" />);
+        stars.push(<FaStar key={i} className="text-yellow-400 text-2xl" />);
       } else if (i === fullStars + 1 && hasHalfStar) {
-        stars.push(
-          <FaStarHalfAlt key={i} className="text-yellow-400 text-xl" />
-        );
+        stars.push(<FaStarHalfAlt key={i} className="text-yellow-400 text-2xl" />);
       } else {
-        stars.push(<FaRegStar key={i} className="text-yellow-400 text-xl" />);
+        stars.push(<FaRegStar key={i} className="text-yellow-400 text-2xl" />);
       }
     }
-
     return stars;
   };
 
@@ -31,12 +48,12 @@ function CustomerSatisfactionScore() {
       </h2>
 
       <div className="flex flex-col items-center justify-center flex-1">
-        <div className="text-3xl font-bold text-[#313166] mb-1">{score}</div>
+        <div className="text-3xl font-bold text-[#313166] mb-1">{starCount}</div>
 
         <div className="flex gap-1 mb-1">{renderStars()}</div>
 
         <p className="text-xs text-[#313166] opacity-70">
-          ({totalCustomers} Customers)
+          ({customers} Customers)
         </p>
       </div>
     </div>

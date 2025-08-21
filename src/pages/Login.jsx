@@ -144,7 +144,7 @@ const Login = () => {
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            {/* <div className="flex items-center">
               <input
                 type="checkbox"
                 name="rememberMe"
@@ -156,7 +156,7 @@ const Login = () => {
               <label htmlFor="rememberMe" className="ml-2 block text-sm">
                 Remember me
               </label>
-            </div>
+            </div> */}
 
             {/* <a href="#" className="text-sm hover:underline">
               Forgot password?
