@@ -1,16 +1,80 @@
 import React, { useState } from "react";
 import { Plus, Search, CheckCircle, LinkIcon, ArrowRight } from "lucide-react";
+import GooglePlaceReview from "../components/integration/GooglePlaceReview";
+
+// Mock components for demonstration
+// const GooglePlaceReview = () => (
+//   <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+//     <h2 className="text-2xl font-semibold mb-4 text-[#313166]">Google Place Review</h2>
+//     <p className="text-[#313166] mb-4">Manage your Google Place Review integration settings here.</p>
+//     <div className="bg-gray-100 p-4 rounded-lg">
+//       <h3 className="font-medium mb-2">Integration Details</h3>
+//       <p className="text-sm">Status: Connected</p>
+//       <p className="text-sm">Last synced: Today at 10:30 AM</p>
+//     </div>
+//   </div>
+// );
+
+const WhatsAppIntegration = () => (
+  <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+    <h2 className="text-2xl font-semibold mb-4 text-[#313166]">WhatsApp Integration</h2>
+    <p className="text-[#313166] mb-4">Manage your WhatsApp Business API integration settings here.</p>
+    <div className="bg-gray-100 p-4 rounded-lg">
+      <h3 className="font-medium mb-2">Integration Details</h3>
+      <p className="text-sm">Status: Connected</p>
+      <p className="text-sm">Connected number: +1 555-123-4567</p>
+    </div>
+  </div>
+);
+
+const FacebookIntegration = () => (
+  <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+    <h2 className="text-2xl font-semibold mb-4 text-[#313166]">Facebook Integration</h2>
+    <p className="text-[#313166] mb-4">Manage your Facebook integration settings here.</p>
+    <div className="bg-gray-100 p-4 rounded-lg">
+      <h3 className="font-medium mb-2">Integration Details</h3>
+      <p className="text-sm">Status: Connected</p>
+      <p className="text-sm">Page: My Business Page</p>
+    </div>
+  </div>
+);
+
+const InstagramIntegration = () => (
+  <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+    <h2 className="text-2xl font-semibold mb-4 text-[#313166]">Instagram Integration</h2>
+    <p className="text-[#313166] mb-4">Manage your Instagram integration settings here.</p>
+    <div className="bg-gray-100 p-4 rounded-lg">
+      <h3 className="font-medium mb-2">Integration Details</h3>
+      <p className="text-sm">Status: Connected</p>
+      <p className="text-sm">Account: @mybusiness</p>
+    </div>
+  </div>
+);
+
+const GSheetsIntegration = () => (
+  <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+    <h2 className="text-2xl font-semibold mb-4 text-[#313166]">Google Sheets Integration</h2>
+    <p className="text-[#313166] mb-4">Manage your Google Sheets integration settings here.</p>
+    <div className="bg-gray-100 p-4 rounded-lg">
+      <h3 className="font-medium mb-2">Integration Details</h3>
+      <p className="text-sm">Status: Integrated</p>
+      <p className="text-sm">Spreadsheet: Customer Data</p>
+    </div>
+  </div>
+);
 
 const IntegrationDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeIntegration, setActiveIntegration] = useState(null);
+  const [activeView, setActiveView] = useState("list"); // 'list' or 'detail'
+  const [selectedIntegration, setSelectedIntegration] = useState(null);
 
   const connectedPlatforms = [
     {
       title: "Google Place Review",
       icon: "./assets/whatsapp-icon.png",
       description: "Export customer context, quiz responses, and analytics directly to Google Sheets for comprehensive reporting and analysis.",
-      status: "connected"
+      status: "connected",
+      component: GooglePlaceReview
     },
   ];
 
@@ -19,49 +83,57 @@ const IntegrationDashboard = () => {
       title: "G-Sheets",
       icon: "./assets/whatsapp-icon.png",
       description: "Export customer context, quiz responses, and analytics directly to Google Sheets for comprehensive reporting and analysis.",
-      status: "integrated"
+      status: "integrated",
+      component: GSheetsIntegration
     },
     {
       title: "WhatsApp",
       icon: "./assets/whatsapp-icon.png",
       description: "Enable automated customer communications and campaign notifications through WhatsApp Business API integration.",
-      status: "connected"
+      status: "connected",
+      component: WhatsAppIntegration
     },
     {
       title: "Engage Bird",
       icon: "./assets/whatsapp-icon.png",
       description: "Streamline customer engagement with automated responses and personalized messaging activities.",
-      status: "integrated"
+      status: "integrated",
+      component: null // No component defined for this
     },
     {
       title: "Meta",
       icon: "./assets/whatsapp-icon.png",
       description: "Connect with Facebook and Instagram audiences through targeted ads and automated social media activities.",
-      status: "connected"
+      status: "connected",
+      component: FacebookIntegration
     },
     {
       title: "Quiz",
       icon: "./assets/whatsapp-icon.png",
       description: "Create interactive quizzes to gather customer insights and generate qualified leads through engaging assessments.",
-      status: "integrated"
+      status: "integrated",
+      component: null // No component defined for this
     },
     {
       title: "Digital coupons",
       icon: "./assets/whatsapp-icon.png",
       description: "Generate and distribute digital vouchers to boost sales and track redemption rates in real-time.",
-      status: "connected"
+      status: "connected",
+      component: null // No component defined for this
     },
     {
       title: "Fly-Wheel",
       icon: "./assets/whatsapp-icon.png",
       description: "Implement gamified loyalty programs with points, rewards, and tiered benefits to increase customer retention.",
-      status: "integrated"
+      status: "integrated",
+      component: null // No component defined for this
     },
     {
       title: "Scratch Card",
       icon: "./assets/whatsapp-icon.png",
       description: "Deploy virtual scratch cards for instant rewards and promotional activities with guaranteed engagement.",
-      status: "connected"
+      status: "connected",
+      component: null // No component defined for this
     },
   ];
 
@@ -120,9 +192,42 @@ const IntegrationDashboard = () => {
     );
   };
 
+  const handleIntegrationClick = (integration) => {
+    if (integration.component) {
+      setSelectedIntegration(integration);
+      setActiveView("detail");
+    } else {
+      // For integrations without a specific component, show the generic detail view
+      setSelectedIntegration(integration);
+      setActiveView("detail");
+    }
+  };
+  
+  const handleBackToList = () => {
+    setActiveView("list");
+    setSelectedIntegration(null);
+  };
+
   const IntegrationDetail = ({ integration, onBack }) => {
     if (!integration) return null;
     
+    // If there's a specific component for this integration, render it
+    if (integration.component) {
+      const IntegrationComponent = integration.component;
+      return (
+        <div>
+          <button 
+            onClick={onBack}
+            className="flex items-center text-sm text-gray-600 mb-6 hover:text-gray-800"
+          >
+            <ArrowRight size={16} className="rotate-180 mr-1" /> Back to integrations
+          </button>
+          <IntegrationComponent />
+        </div>
+      );
+    }
+    
+    // Otherwise, render the generic detail view
     return (
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <button 
@@ -171,20 +276,12 @@ const IntegrationDashboard = () => {
     );
   };
 
-  const handleIntegrationClick = (integration) => {
-    setActiveIntegration(integration);
-  };
-  
-  const handleBackToList = () => {
-    setActiveIntegration(null);
-  };
-
-  if (activeIntegration) {
+  if (activeView === "detail") {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-4xl mx-auto">
           <IntegrationDetail 
-            integration={activeIntegration} 
+            integration={selectedIntegration} 
             onBack={handleBackToList} 
           />
         </div>
@@ -215,10 +312,10 @@ const IntegrationDashboard = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <button className="bg-[#db3b76] hover:bg-[#c73369] text-white px-4 py-2 rounded-[10px] flex items-center gap-2 transition-colors h-10">
+        {/* <button className="bg-[#db3b76] hover:bg-[#c73369] text-white px-4 py-2 rounded-[10px] flex items-center gap-2 transition-colors h-10">
           <Plus size={18} />
           <span>Add Integration</span>
-        </button>
+        </button> */}
       </div>
 
       <PlatformSection
