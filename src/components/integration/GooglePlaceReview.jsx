@@ -59,11 +59,23 @@ const GooglePlaceReview = () => {
         }
     };
 
-    const handleSelectPlace = (place) => {
-        localStorage.setItem('place_id', place.place_id);
-        setSelectedPlace(place);
-        setSearchResults([]);
-        setSearchQuery('');
+    const handleSelectPlace = async (place) => {
+        try {
+            setIsLoading(true);
+            setError('');
+            localStorage.setItem('place_id', place.place_id);
+            // Optimistically show selection using available fields
+            setSelectedPlace(place);
+            setSearchResults([]);
+            setSearchQuery('');
+            // Fetch full details to populate name and formatted_address
+            await fetchPlaceDetails(place.place_id);
+        } catch (e) {
+            console.error('Select place error:', e);
+            setError('Failed to load business details. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleUpdatePlace = async () => {
@@ -124,8 +136,8 @@ const GooglePlaceReview = () => {
                     </div>
 
                     <div className="p-4 border border-gray-200 rounded-md bg-gray-50">
-                        <h4 className="text-lg font-semibold text-gray-800">{selectedPlace?.name}</h4>
-                        <p className="text-gray-600 mt-1">{selectedPlace?.formatted_address}</p>
+                        <h4 className="text-lg font-semibold text-gray-800">{selectedPlace?.name || selectedPlace?.structured_formatting?.main_text}</h4>
+                        <p className="text-gray-600 mt-1">{selectedPlace?.formatted_address || selectedPlace?.structured_formatting?.secondary_text}</p>
 
                         <button
                             onClick={handleUpdatePlace}
