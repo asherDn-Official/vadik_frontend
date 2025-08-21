@@ -145,7 +145,7 @@ const IntegrationDashboard = () => {
       >
         <div className="flex items-center gap-3 mb-3">
           <img src={icon} alt={title} className="w-8 h-8 object-contain" />
-          <h3 className="font-medium text-base text-[#313166] flex-grow">{title}</h3>
+          <h3 className="font-medium  text-[#313166] flex-grow">{title}</h3>
           <div className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${status === "integrated" ? "text-green-700 bg-green-100" : "text-blue-700 bg-blue-100"}`}>
             {status === "integrated" ? (
               <CheckCircle size={12} className="mr-1" />
@@ -168,10 +168,10 @@ const IntegrationDashboard = () => {
 
   const PlatformSection = ({ title, integrations, onIntegrationClick }) => {
     return (
-      <div className="mb-8">
+      <div className="mb-8 ">
         <h2 className="text-xl font-semibold mb-4 text-[#313166]">{title}</h2>
         {integrations.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-2">
             {integrations.map((integration, index) => (
               <IntegrationCard
                 key={index}
