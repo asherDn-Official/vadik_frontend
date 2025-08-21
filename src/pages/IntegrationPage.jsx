@@ -9,6 +9,16 @@ const IntegrationPage = () => {
 
   const connectedPlatforms = [
     {
+      title: "Google Place Review",
+      icon: "./assets/whatsapp-icon.png",
+      description:
+        "Export customer context, quiz responses, and analytics directly to Google Sheets for comprehensive reporting and analysis.",
+    },
+
+  ];
+
+  const campaignPlatforms = [
+    {
       title: "G-Sheets",
       icon: "./assets/whatsapp-icon.png",
       description:
@@ -32,9 +42,6 @@ const IntegrationPage = () => {
       description:
         "Connect with Facebook and Instagram audiences through targeted ads and automated social media activities.",
     },
-  ];
-
-  const campaignPlatforms = [
     {
       title: "Quiz",
       icon: "./assets/whatsapp-icon.png",
