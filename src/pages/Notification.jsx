@@ -3,7 +3,7 @@ import {
   FiBell, FiCalendar, FiGift, FiMessageSquare, 
   FiX, FiClock, FiArchive, FiCheck,
   FiUser, FiDollarSign,
-  FiSend
+  FiSend, FiEye
 } from 'react-icons/fi';
 import moment from 'moment';
 import Calendar from 'react-calendar';
@@ -30,6 +30,7 @@ const Notification = () => {
   
   const [viewedNotifications, setViewedNotifications] = useState(new Set());
   const notificationRefs = useRef({});
+  const [viewModal, setViewModal] = useState({ open: false, item: null });
 
   // Create intersection observer to detect when notifications are viewed
   useEffect(() => {
@@ -298,6 +299,7 @@ const Notification = () => {
             </div>
           ) : (
             notifications.map(notification => (
+              console.log("notification", notification),
               <div 
                 key={notification._id}
                 ref={el => notificationRefs.current[notification._id] = el}
@@ -314,7 +316,7 @@ const Notification = () => {
                   </div>
                   <div className="ml-4 flex-1">
                     <div className="flex justify-between">
-                      <h3 className="font-medium text-gray-900">{notification.title}</h3>
+                      <h3 className="font-medium text-gray-900">{notification.message}</h3>
                       <div className="flex items-center">
                         <span className="text-sm text-gray-500 mr-2">
                           {moment(notification.createdAt).fromNow()}
