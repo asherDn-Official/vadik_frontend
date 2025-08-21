@@ -20,21 +20,33 @@ const GooglePlaceReview = () => {
         }
     }, []);
 
-    const handleSearch = async (e) => {
-        e.preventDefault();
-        if (!searchQuery.trim()) return;
+    // Trigger search automatically as the user types (debounced)
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            setError('');
+            return;
+        }
+        const t = setTimeout(() => {
+            searchPlaces(searchQuery.trim());
+        }, 500);
+        return () => clearTimeout(t);
+    }, [searchQuery]);
 
+    const searchPlaces = async (query) => {
         setIsLoading(true);
         setError('');
 
         try {
-            const response = await api.get(`/api/integrationManagement/search?search="${searchQuery}"`);
+            const response = await api.get(`/api/integrationManagement/search?search="${query}"`);
             if (response.data.status) {
                 setSearchResults(response.data.data);
             } else {
+                setSearchResults([]);
                 setError('No results found. Please try a different search term.');
             }
         } catch (err) {
+            setSearchResults([]);
             setError('Failed to fetch search results. Please try again.');
             console.error('Search error:', err);
         } finally {
@@ -150,7 +162,7 @@ const GooglePlaceReview = () => {
                 </div>
             ) : (
                 <div className="mb-6">
-                    <form onSubmit={handleSearch} className="mb-4">
+                    <div className="mb-4">
                         <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
                             Search for your business
                         </label>
@@ -163,19 +175,15 @@ const GooglePlaceReview = () => {
                                 placeholder="Enter your business name"
                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
-                            <button
-                                type="submit"
-                                disabled={isLoading || !searchQuery.trim()}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-                            >
-                                {isLoading ? 'Searching...' : 'Search'}
-                            </button>
                         </div>
-                    </form>
+                    </div>
 
-                    {searchResults.length > 0 && (
+                    {(isLoading || searchResults.length > 0) && (
                         <div className="mt-4">
                             <h3 className="text-sm font-medium text-gray-700 mb-2">Search Results</h3>
+                            {isLoading && (
+                                <p className="text-sm text-gray-500">Searching...</p>
+                            )}
                             <div className="space-y-3">
                                 {searchResults.map((place) => (
                                     <div
