@@ -447,6 +447,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         grandTotal: grandTotal,
         paymentStatus: data.paymentStatus || "Unpaid",
       },
+      applyLoyalty: true  // if users  use loyalty points is true otherwise is false
     };
 
     try {
