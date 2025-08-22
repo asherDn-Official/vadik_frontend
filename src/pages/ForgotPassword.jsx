@@ -5,6 +5,7 @@ import * as yup from "yup";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { FiEye, FiEyeOff, FiMail, FiArrowLeft } from "react-icons/fi";
 import api from "../api/apiconfig";
+import showToasts from '../utils/ToastNotification';
 
 // Create two separate schemas for different form states
 const emailSchema = yup.object({
@@ -102,11 +103,6 @@ function ForgotPassword() {
     }
   };
 
-  // Function to show toast notifications
-  const showToast = (message, type = "info") => {
-    console.log(`${type}: ${message}`);
-    alert(`${type.toUpperCase()}: ${message}`);
-  };
 
   // Function to send OTP
   const handleSendOtp = async (data) => {
@@ -114,13 +110,13 @@ function ForgotPassword() {
 
     try {
       const response = await api.post("/api/auth/password/send-otp", { email: data.email });
-      showToast(response.data.message || "OTP sent successfully", "success");
+      showToasts(response.data.message || "OTP sent successfully", "success");
       setEmail(data.email);
       setOtpSent(true);
       setStep(2);
     } catch (err) {
       console.log(err);
-      showToast(err.response?.data?.message || "Failed to send OTP. Please try again.", "error");
+      showToasts(err.response?.data?.message || "Failed to send OTP. Please try again.", "error");
     } finally {
       setSendOtpLoading(false);
     }
@@ -138,11 +134,10 @@ function ForgotPassword() {
 
     try {
       const response = await api.post("/api/auth/password/send-otp", { email });
-      showToast(response.data.message || "OTP sent successfully", "success");
+      showToasts(response.data.message || "OTP sent successfully", "success");
       setResendSuccess(true);
     } catch (err) {
-      console.log(err);
-      showToast(err.response?.data?.message || "Failed to send OTP. Please try again.", "error");
+      showToasts(err.response?.data?.message || "Failed to send OTP. Please try again.", "error");
     } finally {
       setResendLoading(false);
     }
@@ -160,13 +155,13 @@ function ForgotPassword() {
 
     try {
       const response = await api.post("/api/auth/password/reset", payload);
-      showToast(response.data.message || "Password reset successfully", "success");
+      showToasts(response.data.message || "Password reset successfully", "success");
       setTimeout(() => {
-        navigate("/account");
+        navigate("/");
       }, 1500);
     } catch (err) {
       console.log(err);
-      showToast(err.response?.data?.message || "An error occurred", "error");
+      showToasts(err.response?.data?.message || "An error occurred", "error");
     } finally {
       setLoading(false);
       reset();
@@ -225,7 +220,7 @@ function ForgotPassword() {
             <div className="mt-6 text-center text-sm">
               <p>
                 Remember your password?{" "}
-                <Link to="/account" className="font-medium hover:underline">
+                <Link to="/" className="font-medium hover:underline">
                   Sign in here
                 </Link>
               </p>
