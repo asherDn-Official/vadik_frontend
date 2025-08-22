@@ -144,11 +144,20 @@ const Login = () => {
             </button>
           </div>
 
-          <div className="text-right " onClick={() => navigate('/forgot-password')}>
-            <a  className="hover:underline">
-              Reset password?
-            </a>
+          <div className="flex items-center justify-between">
+            <div className="text-right cursor-pointer " onClick={() => navigate('/forgot-password')}>
+              <a className="hover:underline">
+                Reset password?
+              </a>
+            </div>
+             <div className="text-right cursor-pointer " onClick={() => navigate('/forgot-password')}>
+              <a className="hover:underline">
+                Forgot password?
+              </a>
+            </div>
           </div>
+
+
 
           <button
             type="submit"
