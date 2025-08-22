@@ -144,24 +144,10 @@ const Login = () => {
             </button>
           </div>
 
-          <div className="flex items-center justify-between">
-            {/* <div className="flex items-center">
-              <input
-                type="checkbox"
-                name="rememberMe"
-                id="rememberMe"
-                checked={credentials.rememberMe}
-                onChange={handleChange}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <label htmlFor="rememberMe" className="ml-2 block text-sm">
-                Remember me
-              </label>
-            </div> */}
-
-            {/* <a href="#" className="text-sm hover:underline">
-              Forgot password?
-            </a> */}
+          <div className="text-right " onClick={() => navigate('/forgot-password')}>
+            <a  className="hover:underline">
+              Reset password?
+            </a>
           </div>
 
           <button
