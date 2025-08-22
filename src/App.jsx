@@ -17,6 +17,7 @@ import { useAuth } from "./context/AuthContext";
 import CustomerAdd from "./pages/CustomerAdd";
 import api from "./api/apiconfig";
 import Notification from "./pages/Notification";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function App() {
   const { auth, loading, checkAuth } = useAuth();
@@ -74,6 +75,7 @@ function App() {
       <Routes>
         {/* Public */}
         <Route index element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route
           path="/register/*"
           element={<Register formData={formData} updateFormData={updateFormData} />}

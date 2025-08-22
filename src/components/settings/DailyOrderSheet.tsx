@@ -503,6 +503,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       setShowProductSuggestions({});
       setCurrentProductSearches({});
       setNewColor("");
+      setLoyaltyPoints(null);
     } catch (error) {
       showToast("Error saving order. Please try again.", "error");
     }
