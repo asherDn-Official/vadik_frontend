@@ -69,6 +69,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
   });
+  const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null);
+  const [isAutofilled, setIsAutofilled] = useState<boolean>(false);
 
   const formData = watch();
   const products = formData.products || [];
@@ -98,10 +100,18 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       setValue("gender", customer.additionalData?.gender || customer.gender || "");
       setValue("source", customer.source || "");
 
+      // Autofill flags and points
+      setIsAutofilled(true);
+      const lp = typeof customer.loyaltyPoints === 'number' ? customer.loyaltyPoints : null;
+      setLoyaltyPoints(lp);
+
       // Clear validation errors for auto-filled fields
       setTimeout(() => {
         clearErrors(["phoneNumber", "firstName", "lastName", "gender", "source"]);
       }, 100);
+    } else {
+      setIsAutofilled(false);
+      setLoyaltyPoints(null);
     }
   }, [customer, setValue, clearErrors]);
 
@@ -204,17 +214,27 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       trigger(field);
     }, 300);
 
-    if (field === "phoneNumber" && value.length >= 3) {
-      searchCustomers(value);
-    } else if (field === "phoneNumber") {
-      setSearchResults([]);
-      setShowSuggestions(false);
+    if (field === "phoneNumber") {
+      // Any manual edit should mark as not autofilled and hide points
+      setIsAutofilled(false);
+      setLoyaltyPoints(null);
+
+      if (value.length >= 3) {
+        searchCustomers(value);
+      } else {
+        setSearchResults([]);
+        setShowSuggestions(false);
+      }
     }
   };
 
    const handlePhoneChange = (value, country) => {
     // Remove the country code prefix to get just the local number
     const localNumber = value.replace(country.dialCode, "");
+
+    // Any change in phone input is considered manual until a suggestion is selected
+    setIsAutofilled(false);
+    setLoyaltyPoints(null);
     
     setValue("phoneNumber", value);
     clearErrors("phoneNumber");
@@ -254,6 +274,11 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     setValue("lastName", customer.lastname || "");
     setValue("gender", customer.gender || "");
     setValue("source", customer.source || "");
+
+    // Autofill flags and points
+    setIsAutofilled(true);
+    const lp = typeof customer.loyaltyPoints === 'number' ? customer.loyaltyPoints : null;
+    setLoyaltyPoints(lp);
 
     // Clear validation errors for all customer fields
     clearErrors(["phoneNumber", "firstName", "lastName", "gender", "source"]);
@@ -506,6 +531,11 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number
               </label>
+              {isAutofilled && typeof loyaltyPoints === 'number' && (
+                <div className="inline-flex items-center px-2 py-1 ml-2 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 align-middle">
+                  Loyalty Points: {loyaltyPoints}
+                </div>
+              )}
               <Controller
                 name="phoneNumber"
                 control={control}
