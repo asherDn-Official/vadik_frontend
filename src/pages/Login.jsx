@@ -151,9 +151,9 @@ const Login = () => {
               </a>
             </div>
              <div className="text-right cursor-pointer " onClick={() => navigate('/forgot-password')}>
-              <a className="hover:underline">
+              {/* <a className="hover:underline">
                 Forgot password?
-              </a>
+              </a> */}
             </div>
           </div>
 
