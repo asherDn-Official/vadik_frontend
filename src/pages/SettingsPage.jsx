@@ -6,7 +6,11 @@ import {
   FiFileText,
   FiUsers,
   FiSettings,
+
 } from "react-icons/fi";
+
+import { FaCoins } from "react-icons/fa";
+
 import { LuTicketPercent } from "react-icons/lu";
 import MyProfile from "../components/settings/MyProfile";
 import Inventory from "../components/settings/Inventory";
@@ -15,6 +19,7 @@ import CustomerFieldPreferences from "../components/settings/CustomerFieldPrefer
 import RolesAndPermissions from "../components/settings/RolesAndPermissions";
 import AddProduct from "../components/settings/AddProduct";
 import Coupon from "../components/settings/Coupon";
+import LoyaltyPoint from "../components/settings/LoyaltyPoint";
 
 const SettingsPage = () => {
   const { tab } = useParams();
@@ -76,6 +81,12 @@ const SettingsPage = () => {
             isActive={activeTab === "coupon"}
             onClick={() => handleTabChange("coupon")}
           />
+          <SettingsTab
+            icon={<FaCoins />}
+            text="Loyalty Points"
+            isActive={activeTab === "loyalty"}
+            onClick={() => handleTabChange("loyalty")}
+          />
         </div>
       </div>
 
@@ -92,6 +103,7 @@ const SettingsPage = () => {
         {activeTab === "customer-preferences" && <CustomerFieldPreferences />}
         {activeTab === "roles-permissions" && <RolesAndPermissions />}
         {activeTab === "coupon" && <Coupon />}
+        {activeTab === "loyalty" && <LoyaltyPoint />}
       </div>
     </div>
   );
