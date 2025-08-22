@@ -74,6 +74,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const [loyaltyRule, setLoyaltyRule] = useState<any | null>(null);
   const [selectedTierIndex, setSelectedTierIndex] = useState<number | null>(null);
 
+
   const formData = watch();
   const products = formData.products || [];
 
@@ -234,17 +235,17 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     }
   };
 
-   const handlePhoneChange = (value, country) => {
+  const handlePhoneChange = (value, country) => {
     // Remove the country code prefix to get just the local number
     const localNumber = value.replace(country.dialCode, "");
 
     // Any change in phone input is considered manual until a suggestion is selected
     setIsAutofilled(false);
     setLoyaltyPoints(null);
-    
+
     setValue("phoneNumber", value);
     clearErrors("phoneNumber");
-    
+
     // Trigger validation after a short delay
     setTimeout(() => {
       trigger("phoneNumber");
@@ -447,7 +448,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         grandTotal: grandTotal,
         paymentStatus: data.paymentStatus || "Unpaid",
       },
-      applyLoyalty: true  // if users  use loyalty points is true otherwise is false
+      applyLoyalty: selectedTierIndex !== null  // if users  use loyalty points is true otherwise is false
     };
 
     try {
@@ -485,7 +486,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       setCurrentProductSearches({});
       setNewColor("");
     } catch (error) {
-      showToast("Error saving order. Please try again.","error");
+      showToast("Error saving order. Please try again.", "error");
     }
   };
 
@@ -844,8 +845,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                             )
                           }
                           className={`w-24 px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500 ${product.isAutoPopulated
-                              ? "border-green-300 bg-green-50"
-                              : "border-gray-300"
+                            ? "border-green-300 bg-green-50"
+                            : "border-gray-300"
                             }`}
                           placeholder="0.00"
                           title={
