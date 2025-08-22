@@ -71,6 +71,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   });
   const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null);
   const [isAutofilled, setIsAutofilled] = useState<boolean>(false);
+  const [loyaltyRule, setLoyaltyRule] = useState<any | null>(null);
+  const [selectedTierIndex, setSelectedTierIndex] = useState<number | null>(null);
 
   const formData = watch();
   const products = formData.products || [];
@@ -105,6 +107,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       const lp = typeof customer.loyaltyPoints === 'number' ? customer.loyaltyPoints : null;
       setLoyaltyPoints(lp);
 
+      // Clear previous tier selection
+      setSelectedTierIndex(null);
+
       // Clear validation errors for auto-filled fields
       setTimeout(() => {
         clearErrors(["phoneNumber", "firstName", "lastName", "gender", "source"]);
@@ -112,6 +117,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     } else {
       setIsAutofilled(false);
       setLoyaltyPoints(null);
+      setSelectedTierIndex(null);
     }
   }, [customer, setValue, clearErrors]);
 
@@ -280,6 +286,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     const lp = typeof customer.loyaltyPoints === 'number' ? customer.loyaltyPoints : null;
     setLoyaltyPoints(lp);
 
+    // Reset loyalty tier selection on new customer
+    setSelectedTierIndex(null);
+
     // Clear validation errors for all customer fields
     clearErrors(["phoneNumber", "firstName", "lastName", "gender", "source"]);
 
@@ -382,7 +391,39 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     (sum, product) => sum + (product.quantity || 0),
     0
   );
-  const grandTotal = subtotal - (formData.discount || 0);
+
+  // Fetch loyalty rules for retailer
+  useEffect(() => {
+    const fetchRule = async () => {
+      try {
+        const res = await api.get(`/api/loyalty/rule`, { params: { retailerId } });
+        setLoyaltyRule(res.data || null);
+      } catch (e) {
+        console.error('Failed to fetch loyalty rule', e);
+        setLoyaltyRule(null);
+      }
+    };
+    if (retailerId) fetchRule();
+  }, [retailerId]);
+
+  // Helper: max discount from rule percent
+  const maxDiscountFromRule = (() => {
+    if (!loyaltyRule?.maxDiscountPercent) return Infinity;
+    return (subtotal * loyaltyRule.maxDiscountPercent) / 100;
+  })();
+
+  // Compute applied discount considering selected tier and manual input
+  const selectedTier = (selectedTierIndex != null && loyaltyRule?.tiers?.[selectedTierIndex]) ? loyaltyRule.tiers[selectedTierIndex] : null;
+  const tierDiscount = selectedTier?.discountAmount || 0;
+
+  // Use form discount field, but when tier selected, set the field to tierDiscount (we handle in UI events too)
+  const effectiveDiscount = Math.min(
+    formData.discount || 0,
+    subtotal, // cannot exceed subtotal
+    maxDiscountFromRule // respect max discount percent
+  );
+
+  const grandTotal = Math.max(0, subtotal - effectiveDiscount);
 
   const onSubmit = async (data) => {
     const orderData = {
@@ -915,6 +956,47 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <span className="font-medium">₹{subtotal.toFixed(2)}</span>
             </div>
 
+            {isAutofilled && typeof loyaltyPoints === 'number' && loyaltyRule?.tiers?.length > 0 && (
+              <div className="flex flex-col gap-2 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600 whitespace-nowrap">Use Loyalty:</span>
+                  <select
+                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                    value={selectedTierIndex ?? ''}
+                    onChange={(e) => {
+                      const idx = e.target.value === '' ? null : Number(e.target.value);
+                      setSelectedTierIndex(idx);
+                      if (idx === null) {
+                        // Clear discount when no tier selected
+                        setValue('discount', 0);
+                      } else {
+                        const tier = loyaltyRule?.tiers?.[idx];
+                        const discount = tier?.discountAmount || 0;
+                        // Respect max discount percent dynamically
+                        const capped = Math.min(discount, subtotal, maxDiscountFromRule);
+                        setValue('discount', capped);
+                      }
+                      clearErrors('discount');
+                    }}
+                    disabled={subtotal < (loyaltyRule?.minOrderAmount || 0)}
+                  >
+                    <option value="">Select Tier</option>
+                    {loyaltyRule.tiers.map((t, i) => (
+                      <option key={i} value={i} disabled={typeof loyaltyPoints === 'number' ? loyaltyPoints < t.pointsRequired : true}>
+                        {t.pointsRequired} pts → ₹{t.discountAmount}
+                      </option>
+                    ))}
+                  </select>
+                  {subtotal < (loyaltyRule?.minOrderAmount || 0) && (
+                    <span className="text-xs text-gray-500">Min order ₹{loyaltyRule?.minOrderAmount} to use points</span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500">
+                  Max discount {loyaltyRule?.maxDiscountPercent ?? 0}% of subtotal
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Discount:</span>
               <div className="flex items-center gap-2">
@@ -926,17 +1008,20 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                       message: "Discount cannot be negative"
                     },
                     max: {
-                      value: subtotal,
-                      message: "Discount cannot exceed subtotal"
+                      value: Math.min(subtotal, maxDiscountFromRule),
+                      message: `Discount cannot exceed ₹${Math.min(subtotal, maxDiscountFromRule).toFixed(2)}`
                     }
                   })}
                   type="number"
                   step="0.01"
                   min="0"
-                  max={subtotal}
-                  className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                  max={Math.min(subtotal, maxDiscountFromRule)}
+                  className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
                   onChange={(e) => {
-                    setValue("discount", parseFloat(e.target.value) || 0);
+                    const val = parseFloat(e.target.value) || 0;
+                    // If user edits discount manually, clear tier selection
+                    setSelectedTierIndex(null);
+                    setValue("discount", val);
                     clearErrors("discount");
                   }}
                 />
