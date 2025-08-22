@@ -56,7 +56,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         },
       ],
       discount: 0,
-      paymentStatus: "paid",
+      paymentStatus: "Paid",
     },
   });
 
@@ -73,10 +73,28 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const [isAutofilled, setIsAutofilled] = useState<boolean>(false);
   const [loyaltyRule, setLoyaltyRule] = useState<any | null>(null);
   const [selectedTierIndex, setSelectedTierIndex] = useState<number | null>(null);
+  const [genderOptions, setGenderOptions] = useState<string[]>([]);
 
 
   const formData = watch();
   const products = formData.products || [];
+
+
+  const getgenderOptions = async () => {
+    try {
+      const response = await api.get('/api/retailer/getSource')
+      // console.log(response);
+      const responseData = ["website", "walkin", "socialMedia"];
+      setGenderOptions(responseData)
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  // Gender
+  useEffect(() => {
+    getgenderOptions()
+  }, [])
 
   // Create a ref for the suggestions dropdown
   const suggestionsRef = useOutsideClick(() => {
@@ -665,8 +683,11 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 onChange={(e) => handleInputChange("source", e.target.value)}
               >
                 <option value="">Select Source</option>
-                <option value="walk-in">Walk-in</option>
-                <option value="online">Online</option>
+                {genderOptions.map((option, index) => (
+                  <option key={index} value={option}>
+                    {option}
+                  </option>
+                ))}
               </select>
               {errors.source && (
                 <p className="text-red-500 text-sm mt-1">{errors.source.message}</p>
