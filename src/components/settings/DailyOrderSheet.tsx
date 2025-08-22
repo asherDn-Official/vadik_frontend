@@ -56,7 +56,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         },
       ],
       discount: 0,
-      paymentStatus: "Unpaid",
+      paymentStatus: "paid",
     },
   });
 
@@ -458,7 +458,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
       // Reset form
       reset({
-        phoneNumber: "",
+        phoneNumber: "91",
         firstName: "",
         lastName: "",
         gender: "",
@@ -475,7 +475,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
           },
         ],
         discount: 0,
-        paymentStatus: "Unpaid",
+        paymentStatus: "Paid",
       });
 
       // Clear search states
