@@ -239,6 +239,7 @@ const CustomerDetails = ({
           isOptedIn: transformedCustomer?.isOptedIn ?? null,
           optinMessageSent: transformedCustomer?.optinMessageSent ?? null,
           gender: transformedCustomer?.gender || '',
+          isActive: transformedCustomer?.isActive || ''
         },
         additionalData: transformedCustomer?.additionalData || {},
         advancedDetails: transformedCustomer?.advancedDetails || {},
@@ -257,6 +258,7 @@ const CustomerDetails = ({
         isOptedIn: null,
         optinMessageSent: null,
         gender: '',
+        isActive: false
       },
       additionalData: {},
       advancedDetails: {},
@@ -292,6 +294,7 @@ const CustomerDetails = ({
           customerId: transformedCustomer?.customerId || '',
           firstVisit: transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : '',
           loyaltyPoints: transformedCustomer?.loyaltyPoints || '',
+          isActive: transformedCustomer?.isActive || ''
         },
         additionalData: transformedCustomer?.additionalData || {},
         advancedDetails: transformedCustomer?.advancedDetails || {},
@@ -673,6 +676,15 @@ const CustomerDetails = ({
                         isEditing={isEditing}
                       />
 
+                      <FieldItem
+                        label="Status"
+                        name="isActive"
+                        defaultValue={transformedCustomer?.isActive === true ? 'Active' : 'InActive'}
+                        value={formData?.basic?.isActive}
+                        onChange={handleInputChange}
+                        customer={customer}
+                        isEditing={isEditing}
+                      />
 
                     </div>
 
