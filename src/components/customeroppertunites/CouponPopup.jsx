@@ -12,12 +12,13 @@ import {
     FiFilter,
     FiSearch,
     FiChevronDown,
-    FiChevronUp
+    FiChevronUp,
+    FiChevronLeft
 } from "react-icons/fi";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 
-const CouponPopup = () => {
+const CouponPopup = ({ onClose }) => {
     const [coupons, setCoupons] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -299,7 +300,15 @@ const CouponPopup = () => {
     }
 
     return (
-        <div className="p-6 max-w-2xl mx-auto">
+        <div className="p-6 max-w-4xl mx-auto">
+            {onClose && (
+                <button
+                    onClick={onClose}
+                    className="mb-4 px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 flex items-center"
+                >
+                    <FiChevronLeft className="mr-2" /> Back
+                </button>
+            )}
             {/* Modal for adding/editing coupons */}
             {showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

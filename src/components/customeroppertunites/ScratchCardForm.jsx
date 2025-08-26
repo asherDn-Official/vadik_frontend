@@ -180,7 +180,9 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
     formState: { errors, isSubmitting },
     setValue,
     watch,
-    reset
+    reset,
+    clearErrors,
+    setError,
   } = useForm({
     defaultValues: {
       name: "",
@@ -197,16 +199,17 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
   const [loadingCoupons, setLoadingCoupons] = useState(true);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isCouponPopupOpen, setIsCouponPopupOpen] = useState(false);
 
   const formData = watch();
-  const selectedCoupon = coupons.find(c => c._id === formData.couponId);
+  const selectedCoupon = coupons.find((c) => c._id === formData.couponId);
   const couponCode = selectedCoupon ? selectedCoupon.code : "";
 
   // Format date for input field (YYYY-MM-DD)
   const formatDateForInput = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   };
 
   // Fetch dropdown data
@@ -225,7 +228,9 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
     const fetchQuizzes = async () => {
       try {
         const res = await api.get("/api/quiz");
-        const list = Array.isArray(res?.data) ? res.data : (res?.data?.docs || []);
+        const list = Array.isArray(res?.data)
+          ? res.data
+          : res?.data?.docs || [];
         setQuizzes(list);
       } catch (e) {
         console.error("Failed to load quizzes", e);
@@ -248,7 +253,8 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
         couponId: campaign.couponId || "",
         allocatedQuizCampainId: campaign.allocatedQuizCampainId || "",
         expiryDate: formatDateForInput(campaign.expiryDate),
-        isActive: typeof campaign.isActive === "boolean" ? campaign.isActive : true,
+        isActive:
+          typeof campaign.isActive === "boolean" ? campaign.isActive : true,
       };
 
       reset(values);
@@ -269,7 +275,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
     if (!date) {
       setError("expiryDate", {
         type: "manual",
-        message: "Expiry date is required"
+        message: "Expiry date is required",
       });
     } else {
       const today = new Date();
@@ -277,21 +283,21 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
       if (date < today) {
         setError("expiryDate", {
           type: "manual",
-          message: "Expiry date must be today or in the future"
+          message: "Expiry date must be today or in the future",
         });
       }
     }
   };
 
-
   const onSubmit = async (data) => {
-
     let isoDate = null;
 
     if (data.expiryDate) {
       const d = new Date(data.expiryDate);
       // Force UTC midnight
-      isoDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
+      isoDate = new Date(
+        Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+      ).toISOString();
     }
 
     // Build backend payload
@@ -324,7 +330,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6 relative">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-slate-800 mb-2">
           {campaign?._id ? "Edit Scratch Card" : "Create Scratch Card"}
@@ -344,7 +350,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
           </div>
 
           {/* Right Column - Form */}
-          <div className="space-y-6">
+          <div className="space-y-3">
             {/* Name (backend) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -356,43 +362,58 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
                   required: "Name is required",
                   minLength: {
                     value: 2,
-                    message: "Name must be at least 2 characters"
+                    message: "Name must be at least 2 characters",
                   },
                   maxLength: {
                     value: 50,
-                    message: "Name must not exceed 50 characters"
-                  }
+                    message: "Name must not exceed 50 characters",
+                  },
                 })}
                 placeholder="Enter Scratch Card Name"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
               />
               {errors.name && (
-                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.name.message}
+                </p>
               )}
             </div>
 
             {/* Coupon Select */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Coupon *
-              </label>
-              <select
-                {...register("couponId", {
-                  required: "Coupon is required"
-                })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
-                disabled={loadingCoupons}
-              >
-                <option value="">{loadingCoupons ? "Loading..." : "Select Coupon"}</option>
-                {!loadingCoupons && coupons?.map((c) => (
-                  <option key={c._id} value={c._id}>
-                    {c.name} ({c.code})
+            <div className=" flex  flex-col gap-2 ">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Coupon *
+                </label>
+                <select
+                  {...register("couponId", {
+                    required: "Coupon is required",
+                  })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+                  disabled={loadingCoupons}
+                >
+                  <option value="">
+                    {loadingCoupons ? "Loading..." : "Select Coupon"}
                   </option>
-                ))}
-              </select>
-              {errors.couponId && (
-                <p className="mt-1 text-sm text-red-600">{errors.couponId.message}</p>
-              )}
+                  {!loadingCoupons &&
+                    coupons?.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.name} ({c.code})
+                      </option>
+                    ))}
+                </select>
+                {errors.couponId && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.couponId.message}
+                  </p>
+                )}
+              </div>
+              <div
+                className="text-sm text-blue-900 cursor-pointer text-end  underline"
+                onClick={() => setIsCouponPopupOpen(true)}
+              >
+                Create Coupon
+              </div>
             </div>
 
             {/* Expiry Date */}
@@ -411,7 +432,9 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
                 isClearable
               />
               {errors.expiryDate && (
-                <p className="mt-1 text-sm text-red-600">{errors.expiryDate.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.expiryDate.message}
+                </p>
               )}
             </div>
 
@@ -422,20 +445,25 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
               </label>
               <select
                 {...register("allocatedQuizCampainId", {
-                  required: "Quiz selection is required"
+                  required: "Quiz selection is required",
                 })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
                 disabled={loadingQuizzes}
               >
-                <option value="">{loadingQuizzes ? "Loading..." : "Select Quiz"}</option>
-                {!loadingQuizzes && quizzes?.map((q) => (
-                  <option key={q._id} value={q._id}>
-                    {q.campaignName}
-                  </option>
-                ))}
+                <option value="">
+                  {loadingQuizzes ? "Loading..." : "Select Quiz"}
+                </option>
+                {!loadingQuizzes &&
+                  quizzes?.map((q) => (
+                    <option key={q._id} value={q._id}>
+                      {q.campaignName}
+                    </option>
+                  ))}
               </select>
               {errors.allocatedQuizCampainId && (
-                <p className="mt-1 text-sm text-red-600">{errors.allocatedQuizCampainId.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.allocatedQuizCampainId.message}
+                </p>
               )}
             </div>
 
@@ -447,7 +475,9 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
                 {...register("isActive")}
                 className="h-4 w-4 text-pink-600 border-gray-300 rounded"
               />
-              <label htmlFor="isActive" className="text-sm text-gray-700">Is Active</label>
+              <label htmlFor="isActive" className="text-sm text-gray-700">
+                Is Active
+              </label>
             </div>
 
             <div className="flex justify-end space-x-4 pt-4">
@@ -461,19 +491,31 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`px-6 py-2 rounded-lg transition-colors text-white ${isSubmitting ? "bg-pink-400 cursor-not-allowed" : "bg-pink-600 hover:bg-pink-700"}`}
+                className={`px-6 py-2 rounded-lg transition-colors text-white ${
+                  isSubmitting
+                    ? "bg-pink-400 cursor-not-allowed"
+                    : "bg-pink-600 hover:bg-pink-700"
+                }`}
               >
                 {campaign?._id
-                  ? (isSubmitting ? "Updating..." : "Update Scratch Card")
-                  : (isSubmitting ? "Creating..." : "Create Scratch Card")
-                }
+                  ? isSubmitting
+                    ? "Updating..."
+                    : "Update Scratch Card"
+                  : isSubmitting
+                  ? "Creating..."
+                  : "Create Scratch Card"}
               </button>
             </div>
           </div>
         </div>
       </form>
-
-      <CouponPopup/>
+      {isCouponPopupOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-auto">
+            <CouponPopup onClose={() => setIsCouponPopupOpen(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
