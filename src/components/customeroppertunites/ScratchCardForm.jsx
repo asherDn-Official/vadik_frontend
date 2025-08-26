@@ -5,6 +5,7 @@ import showToast from "../../utils/ToastNotification";
 import { useForm } from "react-hook-form";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import CouponPopup from "./CouponPopup";
 
 
 const ScratchCard = ({ offer, title, CoupanName }) => {
@@ -471,6 +472,8 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
           </div>
         </div>
       </form>
+
+      <CouponPopup/>
     </div>
   );
 };
