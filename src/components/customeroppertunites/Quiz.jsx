@@ -8,14 +8,16 @@ import { get } from "react-hook-form";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 
 const Quiz = () => {
-  const [quizzes, setQuizzes] = useState();
+  const [quizzes, setQuizzes] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState(null);
+  const [pagination, setPagination] = useState(null);
 
-  async function getQuizeList() {
+  async function getQuizeList(page = 1, limit = 10) {
     try {
-      let res = await api.get('/api/quiz');
-      setQuizzes(res.data);
+      let res = await api.get(`/api/quiz?page=${page}&limit=${limit}`);
+      setQuizzes(res.data.docs);
+      setPagination(res.data);
     } catch (err) {
       console.log("err", err)
     }
@@ -24,6 +26,10 @@ const Quiz = () => {
   useEffect(() => {
     getQuizeList()
   }, [])
+
+  const handlePageChange = (page, limit) => {
+    getQuizeList(page, limit);
+  };
 
   const handleCreate = () => {
     setEditingQuiz(null);
@@ -80,7 +86,7 @@ const Quiz = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-slate-800">
-          {quizzes?.length} Quiz Activities
+          {pagination?.totalDocs || quizzes.length} Quiz Activities
         </h3>
         <button
           onClick={handleCreate}
@@ -91,8 +97,10 @@ const Quiz = () => {
       </div>
       <QuizList
         activities={quizzes}
+        pagination={pagination}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onPageChange={handlePageChange}
       />
     </div>
   );
