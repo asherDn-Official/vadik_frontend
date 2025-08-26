@@ -86,6 +86,7 @@ const ScratchCard = () => {
                     <ScratchCardForm
                         campaign={editingScratchCard}
                         onSave={handleSave}
+                        onRefresh={fetchScratchCards}
                         onCancel={() => setShowForm(false)}
                     />
                 </div>

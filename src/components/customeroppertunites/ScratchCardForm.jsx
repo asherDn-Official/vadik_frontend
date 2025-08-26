@@ -168,7 +168,7 @@ const ScratchCard = ({ offer, title, CoupanName }) => {
   );
 };
 
-const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
+const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
 
   const [formData, setFormData] = useState({
     // Backend fields
@@ -329,11 +329,13 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
       if (campaign) {
         // Update existing
         await api.patch(`/api/scratchCards/${campaign._id}`, payload);
+        await onRefresh()
         showToast("Scratch Card Updated Successfully!", "success");
       } else {
 
         // Create new
         await api.post(`/api/scratchCards/`, payload);
+        await onRefresh()
         showToast("Scratch Card Created Successfully!", "success");
       }
     } catch (error) {
