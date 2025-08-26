@@ -11,11 +11,12 @@ const ScratchCard = () => {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingScratchCard, setEditingScratchCard] = useState(null);
+    const [pagination, setPagination] = useState(null);
 
-    const fetchScratchCards = async () => {
+    const fetchScratchCards = async (page = 1, limit = 10) => {
         try {
             setLoading(true);
-            const res = await api.get('/api/scratchCards/scratchCard/all');
+            const res = await api.get(`/api/scratchCards/scratchCard/all?page=${page}&limit=${limit}`);
             const list = res?.data?.data || [];
             // Normalize to existing list card shape for display
             const mapped = list.map((item) => ({
@@ -25,6 +26,7 @@ const ScratchCard = () => {
                 raw: item,
             }));
             setScratchCards(mapped);
+            setPagination(res?.data?.pagination || null);
         } catch (e) {
             console.error('Failed to load scratch cards', e);
         } finally {
@@ -66,6 +68,10 @@ const ScratchCard = () => {
         deleteConfirmTostNotification('', onConfirm)
     };
 
+    const handlePageChange = (page, limit) => {
+        fetchScratchCards(page, limit);
+    };
+
     if (showForm) {
         return (
             <div className="min-h-screen bg-gray-50">
@@ -103,8 +109,10 @@ const ScratchCard = () => {
             </div>
             <ScratchCardList
                 activities={scratchCards}
+                pagination={pagination}
                 onEdit={handleEdit}
                 onDelete={(id) => handleDelete(id)}
+                onPageChange={handlePageChange}
             />
         </div>
     );

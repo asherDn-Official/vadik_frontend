@@ -11,7 +11,7 @@ const SpinWheelList = ({ activities, pagination, onEdit, onDelete, onPageChange 
   const currentLimit = pagination?.limit || itemsPerPage;
   const currentPageFromApi = pagination?.page || 1;
 
-  console.log(pagination)
+  // console.log(pagination)
 
   // Update state when pagination prop changes
   useEffect(() => {
