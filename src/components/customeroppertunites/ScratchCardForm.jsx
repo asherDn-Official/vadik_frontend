@@ -3,6 +3,9 @@ import { Edit, Trash2, Gift } from "lucide-react";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import { useForm } from "react-hook-form";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
 
 const ScratchCard = ({ offer, title, CoupanName }) => {
   const canvasRef = useRef(null);
@@ -192,7 +195,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
   const [loadingCoupons, setLoadingCoupons] = useState(true);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
-  
+
   const formData = watch();
   const selectedCoupon = coupons.find(c => c._id === formData.couponId);
   const couponCode = selectedCoupon ? selectedCoupon.code : "";
@@ -245,7 +248,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
         expiryDate: formatDateForInput(campaign.expiryDate),
         isActive: typeof campaign.isActive === "boolean" ? campaign.isActive : true,
       };
-      
+
       reset(values);
       setIsInitialized(true);
     };
@@ -256,13 +259,36 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
     }
   }, [campaign, loadingCoupons, loadingQuizzes, reset, isInitialized]);
 
+  const handleDateChange = (date) => {
+    setValue("expiryDate", date);
+    clearErrors("expiryDate");
+
+    // Manual validation
+    if (!date) {
+      setError("expiryDate", {
+        type: "manual",
+        message: "Expiry date is required"
+      });
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (date < today) {
+        setError("expiryDate", {
+          type: "manual",
+          message: "Expiry date must be today or in the future"
+        });
+      }
+    }
+  };
+
+
   const onSubmit = async (data) => {
     // Build backend payload
     const payload = {
       name: data.name.trim(),
       couponId: data.couponId,
       allocatedQuizCampainId: data.allocatedQuizCampainId,
-      expiryDate: data.expiryDate ? `${data.expiryDate}T00:00:00.000Z` : "",
+      expiryDate: data.expiryDate ? new Date(data.expiryDate).toISOString() : null,
       isActive: data.isActive,
     };
 
@@ -359,23 +385,19 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
             </div>
 
             {/* Expiry Date */}
-            <div>
+            <div className=" ">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Expiry Date *
               </label>
-              <input
-                type="date"
-                {...register("expiryDate", {
-                  required: "Expiry date is required",
-                  validate: (value) => {
-                    if (!value) return "Expiry date is required";
-                    const selectedDate = new Date(value);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    return selectedDate >= today || "Expiry date must be today or in the future";
-                  }
-                })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+              <DatePicker
+                selected={formData.expiryDate}
+                onChange={handleDateChange}
+                minDate={new Date()}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Select expiry date"
+                className="w-full min-w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+                wrapperClassName="w-full"
+                isClearable
               />
               {errors.expiryDate && (
                 <p className="mt-1 text-sm text-red-600">{errors.expiryDate.message}</p>
@@ -430,8 +452,8 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
                 disabled={isSubmitting}
                 className={`px-6 py-2 rounded-lg transition-colors text-white ${isSubmitting ? "bg-pink-400 cursor-not-allowed" : "bg-pink-600 hover:bg-pink-700"}`}
               >
-                {campaign?._id 
-                  ? (isSubmitting ? "Updating..." : "Update Scratch Card") 
+                {campaign?._id
+                  ? (isSubmitting ? "Updating..." : "Update Scratch Card")
                   : (isSubmitting ? "Creating..." : "Create Scratch Card")
                 }
               </button>
