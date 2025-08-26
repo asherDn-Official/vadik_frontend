@@ -331,7 +331,6 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
         await api.patch(`/api/scratchCards/${campaign._id}`, payload);
         showToast("Scratch Card Updated Successfully!", "success");
       } else {
-            console.log("clicked form submittted")
 
         // Create new
         await api.post(`/api/scratchCards/`, payload);
