@@ -90,9 +90,10 @@ const FilterPanel = ({
           firstname: { type: "string" },
           lastname: { type: "string" },
           mobileNumber: { type: "number" },
-          gender: [ "Male", "Female", "Others"],
+          gender: ["Male", "Female", "Others"],
           firstVisit: { type: "date" },
-          source: [ "Walk In", "Website", "Social Media"],
+          source: ["Walk In", "Website", "Social Media"],
+          isActive: ['true', 'false'],
         };
 
         // Process dynamic filters from mergedData.allData
@@ -102,7 +103,7 @@ const FilterPanel = ({
 
             if (item.type === "options" && item.options) {
               // Add "All" option at the beginning for multi-select filters
-              processedOptions[filterKey] = [ ...item.options];
+              processedOptions[filterKey] = [...item.options];
             } else if (item.type === "string") {
               processedOptions[filterKey] = { type: "string" };
             } else if (item.type === "date") {
@@ -136,11 +137,10 @@ const FilterPanel = ({
             return (
               <button
                 key={option}
-                className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${
-                  isActive
-                    ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
-                    : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
-                }`}
+                className={`px-2 py-1 rounded-md border text-[10px] transition-colors duration-200 ${isActive
+                  ? "bg-[#2e2d5f] text-white border-[#2e2d5f]"
+                  : "bg-transparent text-[#2e2d5f] border-[#2e2d5f]"
+                  }`}
                 onClick={() => onFilterChange(filterKey, option)}
               >
                 {option}
@@ -224,7 +224,7 @@ const FilterPanel = ({
             className=" w-full p-2 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
             isClearable={false}
           />
-    
+
           {filters[filterKey] && (
             <button
               className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
@@ -264,11 +264,10 @@ const FilterPanel = ({
             {years.map((year) => (
               <button
                 key={year}
-                className={`p-2 rounded-md text-sm transition-colors ${
-                  selectedYear === year
-                    ? "bg-[#313166] text-white"
-                    : "bg-gray-100 text-[#313166] hover:bg-gray-200"
-                }`}
+                className={`p-2 rounded-md text-sm transition-colors ${selectedYear === year
+                  ? "bg-[#313166] text-white"
+                  : "bg-gray-100 text-[#313166] hover:bg-gray-200"
+                  }`}
                 onClick={() => {
                   onFilterChange("periodValue", year.toString());
                   setShowPeriodPicker(false);
@@ -288,11 +287,10 @@ const FilterPanel = ({
             {quarters.map((quarter) => (
               <button
                 key={quarter}
-                className={`p-2 rounded-md ${
-                  filters.periodValue === quarter
-                    ? "bg-[#2e2d5f] text-white"
-                    : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
-                }`}
+                className={`p-2 rounded-md ${filters.periodValue === quarter
+                  ? "bg-[#2e2d5f] text-white"
+                  : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
+                  }`}
                 onClick={() => {
                   onFilterChange("periodValue", quarter);
                   setShowPeriodPicker(false);
@@ -325,11 +323,10 @@ const FilterPanel = ({
             {months.map((month) => (
               <button
                 key={month.value}
-                className={`p-2 rounded-md text-sm ${
-                  filters.periodValue === month.value
-                    ? "bg-[#2e2d5f] text-white"
-                    : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
-                }`}
+                className={`p-2 rounded-md text-sm ${filters.periodValue === month.value
+                  ? "bg-[#2e2d5f] text-white"
+                  : "bg-gray-100 text-[#2e2d5f] hover:bg-gray-200"
+                  }`}
                 onClick={() => {
                   onFilterChange("periodValue", month.value);
                   setShowPeriodPicker(false);
@@ -417,6 +414,7 @@ const FilterPanel = ({
       { key: "gender", name: "Gender", iconName: "person" },
       { key: "firstVisit", name: "First Visit", iconName: "calendar" },
       { key: "source", name: "Source", iconName: "location" },
+      { key: "isActive", name: "Active", iconName: "activity" }
     ];
 
     // Get dynamic filters from API data
@@ -475,11 +473,10 @@ const FilterPanel = ({
           {["Yearly", "Quarterly", "Monthly"].map((period) => (
             <button
               key={period}
-              className={`px-1.5 py-1 rounded text-[13px] transition-colors ${
-                selectedPeriod === period
-                  ? "bg-[#313166] text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
+              className={`px-1.5 py-1 rounded text-[13px] transition-colors ${selectedPeriod === period
+                ? "bg-[#313166] text-white"
+                : "text-gray-600 hover:bg-gray-100"
+                }`}
               onClick={() => {
                 onPeriodChange(period);
                 if (period === "Yearly" && !filters.periodValue) {

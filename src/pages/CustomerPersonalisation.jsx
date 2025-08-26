@@ -13,8 +13,7 @@ const CustomerPersonalisation = () => {
   const [appliedFiltersCount, setAppliedFiltersCount] = useState(0);
   const [filteredData, setFilteredData] = useState([]);
   const dropdownRef = useRef(null);
-
-
+  
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,

@@ -10,17 +10,22 @@ const SpinWheel = () => {
   const [spinWheels, setSpinWheels] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingSpinWheel, setEditingSpinWheel] = useState(null);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0
+  });
 
 
-  const getAllWheelData = async () => {
+  const getAllWheelData = async (page = 1, limit = 10) => {
     try {
-      const response = await api.get('/api/spinWheels/spinWheel/all');
+      const response = await api.get(`/api/spinWheels/spinWheel/all?page=${page}`);
       setSpinWheels(response.data.data);
-
+      setPagination(response.data.pagination); // You'll need to create this state
     } catch (error) {
       showToast(error.response.data.message, "error")
     }
-
   }
 
   useEffect(() => {
@@ -147,6 +152,8 @@ const SpinWheel = () => {
         activities={spinWheels}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onPageChange={(page, limit) => getAllWheelData(page, limit)}
+        pagination={pagination}
       />
     </div>
   );

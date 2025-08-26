@@ -17,7 +17,8 @@ const CustomerList = ({
     "mobileNumber",
     "gender",
     "firstVisit",
-    "source"
+    "source",
+    "isActive"
   ]);
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
@@ -25,7 +26,7 @@ const CustomerList = ({
 
   // Function to safely get nested values from customer object
   const getNestedValue = (obj, path) => {
-    return path.split('.').reduce((o, p) => (o || {})[p], obj) ;
+    return path.split('.').reduce((o, p) => (o || {})[p], obj);
   };
 
   const allSelected = customers.length > 0 &&
@@ -51,6 +52,7 @@ const CustomerList = ({
             "gender",
             "firstVisit",
             "source",
+            "isActive",
             ...keysArray
           ])
         ];
@@ -83,9 +85,11 @@ const CustomerList = ({
         return customer.gender || '';
       case 'firstVisit':
         return customer.firstVisit ?
-          new Date(customer.firstVisit).toLocaleDateString() : '';
+          new Date(customer.firstVisit).toLocaleDateString() : '-';
       case 'source':
         return customer.source ? customer.source.charAt(0).toUpperCase() + customer.source.slice(1) : '';
+      case 'isActive':
+        return customer.isActive ? 'Active' : 'InActive';
       default:
         // Check nested properties
         // Check nested properties (returns empty string if value is "")
@@ -94,7 +98,7 @@ const CustomerList = ({
           getNestedValue(customer, `advancedDetails.${header}.value`) ??
           getNestedValue(customer, `advancedPrivacyDetails.${header}.value`);
 
-          // Return "-" if value is still undefined or null
+        // Return "-" if value is still undefined or null
         return nestedValue !== "" ? nestedValue : '-';
     }
   };
@@ -117,8 +121,8 @@ const CustomerList = ({
           key={i}
           onClick={() => onPageChange(i)}
           className={`px-3 py-1 mx-1 rounded ${currentPage === i
-              ? "bg-[#7E57C2] text-white"
-              : "bg-white text-gray-600 hover:bg-gray-100"
+            ? "bg-[#7E57C2] text-white"
+            : "bg-white text-gray-600 hover:bg-gray-100"
             }`}
         >
           {i}
@@ -216,8 +220,8 @@ const CustomerList = ({
               onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className={`p-1 rounded ${currentPage === 1
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-gray-600 hover:bg-gray-100"
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-gray-600 hover:bg-gray-100"
                 }`}
             >
               <ChevronLeft size={18} />
@@ -231,8 +235,8 @@ const CustomerList = ({
               }
               disabled={currentPage === pagination.totalPages}
               className={`p-1 rounded ${currentPage === pagination.totalPages
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-gray-600 hover:bg-gray-100"
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-gray-600 hover:bg-gray-100"
                 }`}
             >
               <ChevronRight size={18} />
