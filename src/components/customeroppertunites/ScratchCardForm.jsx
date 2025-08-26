@@ -510,8 +510,8 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
         </div>
       </form>
       {isCouponPopupOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[90vh] overflow-auto">
+        <div onClick={(e) => setIsCouponPopupOpen(false)} className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50">
+          <div className="bg-white rounded-lg  w-full max-w-2xl max-h-[90vh] overflow-auto">
             <CouponPopup onClose={() => setIsCouponPopupOpen(false)} />
           </div>
         </div>
