@@ -169,6 +169,7 @@ const ScratchCard = ({ offer, title, CoupanName }) => {
 };
 
 const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
+
   const [formData, setFormData] = useState({
     // Backend fields
     name: "",
@@ -201,7 +202,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
-        const res = await api.get("https://app.vadik.ai/api/coupons/all");
+        const res = await api.get("/api/coupons/all");
         const list = res?.data?.data || [];
         setCoupons(list);
       } catch (e) {
@@ -212,8 +213,8 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
     };
     const fetchQuizzes = async () => {
       try {
-        const res = await api.get("https://app.vadik.ai/api/quiz");
-        const list = Array.isArray(res?.data) ? res.data : (res?.data?.data || []);
+        const res = await api.get("/api/quiz");
+        const list = Array.isArray(res?.data) ? res.data : (res?.data?.docs || []);
         setQuizzes(list);
       } catch (e) {
         console.error("Failed to load quizzes", e);
@@ -310,6 +311,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
   };
 
   const handleSubmit = async () => {
+
     // Build backend payload
     const payload = {
       name: formData.name?.trim() || formData.title?.trim() || "",
@@ -324,11 +326,13 @@ const ScratchCardForm = ({ campaign, onSave, onCancel }) => {
 
     try {
       setSubmitting(true);
-      if (campaign._id) {
+      if (campaign) {
         // Update existing
         await api.patch(`/api/scratchCards/${campaign._id}`, payload);
         showToast("Scratch Card Updated Successfully!", "success");
       } else {
+            console.log("clicked form submittted")
+
         // Create new
         await api.post(`/api/scratchCards/`, payload);
         showToast("Scratch Card Created Successfully!", "success");

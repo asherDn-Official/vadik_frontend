@@ -54,8 +54,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const res = await api.get("https://app.vadik.ai/api/quiz");
-        const list = Array.isArray(res?.data) ? res.data : (res?.data?.data || []);
+        const res = await api.get("/api/quiz");
+        const list = Array.isArray(res?.data) ? res.data : (res?.data?.docs || []);
         setQuizzes(list);
       } catch (error) {
         console.error("Error fetching quizzes:", error);
