@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { Edit, Trash2, Gift } from "lucide-react";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
-import { useForm } from "react-hook-form";
+import { set, useForm } from "react-hook-form";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import CouponPopup from "./CouponPopup";
+import Quiz from "./Quiz";
 
 
 const ScratchCard = ({ offer, title, CoupanName }) => {
@@ -200,6 +201,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isCouponPopupOpen, setIsCouponPopupOpen] = useState(false);
+  const [isQuizePopupOpen, setIsQuizePopupOpen] = useState(false);
 
   const formData = watch();
   const selectedCoupon = coupons.find((c) => c._id === formData.couponId);
@@ -439,32 +441,40 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
             </div>
 
             {/* Quiz Select (Select Blog) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Quiz *
-              </label>
-              <select
-                {...register("allocatedQuizCampainId", {
-                  required: "Quiz selection is required",
-                })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
-                disabled={loadingQuizzes}
+            <div className=" flex  flex-col gap-2 ">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Quiz *
+                </label>
+                <select
+                  {...register("allocatedQuizCampainId", {
+                    required: "Quiz selection is required",
+                  })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+                  disabled={loadingQuizzes}
+                >
+                  <option value="">
+                    {loadingQuizzes ? "Loading..." : "Select Quiz"}
+                  </option>
+                  {!loadingQuizzes &&
+                    quizzes?.map((q) => (
+                      <option key={q._id} value={q._id}>
+                        {q.campaignName}
+                      </option>
+                    ))}
+                </select>
+                {errors.allocatedQuizCampainId && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.allocatedQuizCampainId.message}
+                  </p>
+                )}
+              </div>
+              <div
+                className="text-sm text-blue-900 cursor-pointer text-end  underline"
+                onClick={() => setIsQuizePopupOpen(true)}
               >
-                <option value="">
-                  {loadingQuizzes ? "Loading..." : "Select Quiz"}
-                </option>
-                {!loadingQuizzes &&
-                  quizzes?.map((q) => (
-                    <option key={q._id} value={q._id}>
-                      {q.campaignName}
-                    </option>
-                  ))}
-              </select>
-              {errors.allocatedQuizCampainId && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.allocatedQuizCampainId.message}
-                </p>
-              )}
+                Create Quize
+              </div>
             </div>
 
             {/* Is Active */}
@@ -491,19 +501,18 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`px-6 py-2 rounded-lg transition-colors text-white ${
-                  isSubmitting
-                    ? "bg-pink-400 cursor-not-allowed"
-                    : "bg-pink-600 hover:bg-pink-700"
-                }`}
+                className={`px-6 py-2 rounded-lg transition-colors text-white ${isSubmitting
+                  ? "bg-pink-400 cursor-not-allowed"
+                  : "bg-pink-600 hover:bg-pink-700"
+                  }`}
               >
                 {campaign?._id
                   ? isSubmitting
                     ? "Updating..."
                     : "Update Scratch Card"
                   : isSubmitting
-                  ? "Creating..."
-                  : "Create Scratch Card"}
+                    ? "Creating..."
+                    : "Create Scratch Card"}
               </button>
             </div>
           </div>
@@ -513,6 +522,14 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
         <div onClick={(e) => setIsCouponPopupOpen(false)} className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50">
           <div className="bg-white rounded-lg  w-full max-w-2xl max-h-[90vh] overflow-auto">
             <CouponPopup onClose={() => setIsCouponPopupOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      {isQuizePopupOpen && (
+        <div onClick={(e) => setIsQuizePopupOpen(false)} className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50">
+          <div className="bg-white rounded-lg  p-5 w-full max-w-2xl max-h-[90vh] overflow-auto">
+            <Quiz onClose={() => setIsQuizePopupOpen(false)} />
           </div>
         </div>
       )}
