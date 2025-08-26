@@ -187,7 +187,8 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
       allocatedQuizCampainId: "",
       expiryDate: "",
       isActive: true,
-    }
+    },
+    mode: "onChange",
   });
 
   const [coupons, setCoupons] = useState([]);
@@ -348,8 +349,8 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
                     message: "Name must be at least 2 characters"
                   },
                   maxLength: {
-                    value: 25,
-                    message: "Name must not exceed 25 characters"
+                    value: 50,
+                    message: "Name must not exceed 50 characters"
                   }
                 })}
                 placeholder="Enter Scratch Card Name"
