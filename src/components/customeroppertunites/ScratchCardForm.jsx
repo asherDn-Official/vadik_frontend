@@ -284,12 +284,21 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
 
 
   const onSubmit = async (data) => {
+
+    let isoDate = null;
+
+    if (data.expiryDate) {
+      const d = new Date(data.expiryDate);
+      // Force UTC midnight
+      isoDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
+    }
+
     // Build backend payload
     const payload = {
       name: data.name.trim(),
       couponId: data.couponId,
       allocatedQuizCampainId: data.allocatedQuizCampainId,
-      expiryDate: data.expiryDate ? new Date(data.expiryDate).toISOString() : null,
+      expiryDate: isoDate,
       isActive: data.isActive,
     };
 
