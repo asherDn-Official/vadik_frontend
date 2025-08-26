@@ -241,7 +241,13 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     // Validation
     const newErrors = {};
 
-    if (!formData.name?.trim()) newErrors.name = "Name is required";
+    if (!formData.name?.trim()) {
+      newErrors.name = "Name is required";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    } else if (formData.name.trim().length > 50) {
+      newErrors.name = "Name must be less than or equal to 50 characters";
+    }
 
     const noOfSpinsNum = Number(formData.noOfSpins);
     if (!Number.isInteger(noOfSpinsNum) || noOfSpinsNum < 1)
@@ -339,8 +345,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                   handleInputChange("noOfSpins", parseInt(e.target.value || '0', 10))
                 }
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.noOfSpins ? 'border-red-500' : 'border-gray-300'}`}
-                // min="1"
-                // max="4"
+              // min="1"
+              // max="4"
               />
               {errors.noOfSpins && <p className="mt-1 text-sm text-red-600">{errors.noOfSpins}</p>}
             </div>
