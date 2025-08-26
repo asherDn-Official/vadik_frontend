@@ -279,37 +279,6 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
     }));
   };
 
-  const handleOfferChange = (offerId, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      offers: prev.offers.map((o) =>
-        o.id === offerId ? { ...o, [field]: value } : o
-      ),
-    }));
-  };
-
-  const addOffer = () => {
-    const newOffer = {
-      id: Date.now(),
-      title: "Enter Title Name",
-      offer: "0",
-      couponCode: "Enter here",
-    };
-    setFormData((prev) => ({
-      ...prev,
-      offers: [...prev.offers, newOffer],
-    }));
-  };
-
-  const removeOffer = (offerId) => {
-    if (formData.offers.length > 1) {
-      setFormData((prev) => ({
-        ...prev,
-        offers: prev.offers.filter((o) => o.id !== offerId),
-      }));
-    }
-  };
-
   const handleSubmit = async () => {
 
     // Build backend payload
@@ -344,8 +313,6 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
       setSubmitting(false);
     }
   };
-
-  const currentOffer = formData.offers[selectedOffer] || formData.offers[0];
 
   return (
     <div className="max-w-6xl mx-auto p-6">
