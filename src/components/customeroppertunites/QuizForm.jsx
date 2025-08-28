@@ -293,9 +293,14 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
       newErrors.loyaltyPoints = 'Loyalty points is required';
     } else if (!/^\d+$/.test(formData.loyaltyPoints)) {
       newErrors.loyaltyPoints = 'Loyalty points must contain only numbers';
-    }
-    else if (isNaN(formData.loyaltyPoints) || parseInt(formData.loyaltyPoints) <= 0) {
-      newErrors.loyaltyPoints = 'Loyalty points must be a positive number';
+    } else {
+      const points = parseInt(formData.loyaltyPoints, 10);
+
+      if (points <= 0) {
+        newErrors.loyaltyPoints = 'Loyalty points must be a positive number';
+      } else if (points > 10000) {
+        newErrors.loyaltyPoints = 'Loyalty points cannot exceed 10,000';
+      }
     }
 
     // Validate questions
@@ -426,19 +431,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
           )}
         </div>
 
-        {/* <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Description
-          </label>
-          <textarea
-            placeholder="Enter quiz description"
-            value={formData.description}
-            onChange={(e) => handleInputChange("description", e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
-            rows={3}
-          />
-        </div> */}
-
+    
         {/* Questions Section */}
         {formData.questions.map((question, qIndex) => (
           <div
