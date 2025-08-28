@@ -17,7 +17,6 @@ const SpinWheel = () => {
     totalPages: 0
   });
 
-
   const getAllWheelData = async (page = 1, limit = 10) => {
     try {
       const response = await api.get(`/api/spinWheels/spinWheel/all?page=${page}`);

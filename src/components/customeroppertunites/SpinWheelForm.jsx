@@ -4,13 +4,15 @@ import { X, Plus } from "lucide-react";
 import SpinWheelPreview from "./SpinWheelPreview";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
+import Quiz from "./Quiz";
 
 const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const [coupons, setCoupons] = useState([]);
   const [loadingCoupons, setLoadingCoupons] = useState(true);
   const [quizzes, setQuizzes] = useState([]);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
-  
+  const [isQuizePopupOpen, setIsQuizePopupOpen] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -124,7 +126,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         segments,
         _id
       } = campaign;
-      
+
       setValue("name", name ?? "");
       setValue("noOfSpins", noOfSpins ?? 0);
       setValue("couponOptions", Array.isArray(couponOptions) ? couponOptions : []);
@@ -142,12 +144,12 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       s.id === segmentId ? { ...s, [field]: value } : s
     );
     setValue("segments", updatedSegments);
-    
+
     // Clear segments validation if at least three couponIds are present
     const count = updatedSegments
       .map((s) => s.couponId)
       .filter((id) => id && String(id).trim().length > 0).length;
-      
+
     if (count >= 3) {
       clearErrors("segments");
     }
@@ -162,7 +164,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       image: null,
       couponId: "",
     };
-    
+
     const updatedSegments = [...(formData.segments || []), newSegment];
     setValue("segments", updatedSegments);
     setValue("noOfSpins", updatedSegments.length);
@@ -200,14 +202,14 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
           couponType: data.couponType,
         } : s
       );
-      
+
       setValue("segments", updatedSegments);
 
       // Clear table validation if at least 3 coupons selected
       const count = updatedSegments
         .map((s) => s.couponId)
         .filter((id) => id && String(id).trim().length > 0).length;
-        
+
       if (count >= 3) {
         clearErrors("segments");
       }
@@ -364,6 +366,11 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                   </select>
                 )}
               />
+              <div className="text-sm text-blue-900 cursor-pointer text-end  underline" onClick={() => setIsQuizePopupOpen(true)}
+              >
+                Create Quize
+              </div>
+
             </div>
 
             {formData.targetedCoupons?.length > 0 && (
@@ -564,6 +571,15 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
           </button>
         </div>
       </form>
+
+      
+      {isQuizePopupOpen && (
+        <div onClick={() => setIsQuizePopupOpen(false)} className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50">
+          <div className="bg-white rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <Quiz backButton={true} onClose={() => setIsQuizePopupOpen(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
