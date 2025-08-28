@@ -33,6 +33,12 @@ const PersonalizationCampaign = () => {
   const [pageSize, setPageSize] = useState(15); // customers per page selector
   const [formErrors, setFormErrors] = useState({});
 
+  // Pre-check modal state
+  const [showCheckModal, setShowCheckModal] = useState(false);
+  const [checkResults, setCheckResults] = useState([]); // API response rows
+  const [checkFilter, setCheckFilter] = useState("all"); // all | true | false
+  const [checking, setChecking] = useState(false);
+
   // Excel import state
   const fileInputRef = useRef(null);
   const [importedRows, setImportedRows] = useState([]); // rows as read from Excel
@@ -41,14 +47,13 @@ const PersonalizationCampaign = () => {
   const [unresolvedImports, setUnresolvedImports] = useState([]); // rows we couldn't map to an existing customer
   const [resolvableImportedIds, setResolvableImportedIds] = useState([]); // unique list of resolvable IDs from import
 
-
   // Fetch activities data on component mount
   useEffect(() => {
     const fetchActivities = async () => {
       try {
         // Fetch quiz activities
         const quizResponse = await api.get("/api/quiz");
-        setQuizActivities(quizResponse.data);
+        setQuizActivities(quizResponse.data.docs);
 
         // Fetch spin wheel activities
         const spinWheelResponse = await api.get("/api/spinWheels/spinWheel/all");
@@ -324,6 +329,46 @@ const PersonalizationCampaign = () => {
     e.target.value = ""; // reset input
   };
 
+  // Build merged selected customer IDs from list and import
+  const buildMergedSelectedIds = () => {
+    return [...new Set([
+      ...selectedCustomers,
+      ...selectedImported,
+    ].filter(Boolean))];
+  };
+
+  // Pre-check before sending: call /api/customerOpportunities/check and show modal
+  const handlePreCheckAndOpenModal = async () => {
+    const errs = {};
+    if (!selectedCampaignType) errs.selectedCampaignType = "Please select Activities Type";
+    if (!selectedCampaign) errs.selectedCampaign = "Please select an activity from 'Select Activities'";
+
+    const merged = buildMergedSelectedIds();
+    if (!merged || merged.length === 0) {
+      errs.selectedCustomers = "Please select at least one customer (from list or import).";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFormErrors(errs);
+      return;
+    }
+
+    try {
+      setChecking(true);
+      setCheckFilter("all");
+      // Build opportunities payload
+      const opportunities = merged.map((id) => ({ customerId: id, campaignId: selectedCampaign }));
+      const resp = await api.post("/api/customerOpportunities/check", { opportunities });
+      const rows = resp?.data?.data || [];
+      setCheckResults(rows);
+      setShowCheckModal(true);
+    } catch (e) {
+      showToast(e?.response?.data?.message || "Failed to check already shared status", "error");
+    } finally {
+      setChecking(false);
+    }
+  };
+
   const handleSendCampaign = async () => {
     // Frontend validations -> show inline errors
     const newErrors = {};
@@ -590,13 +635,83 @@ const PersonalizationCampaign = () => {
         </div>
       )}
 
+      {/* Pre-check Modal */}
+      {showCheckModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 max-h-[85vh] overflow-auto">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <h3 className="text-lg font-semibold text-slate-800">Already Shared Check</h3>
+              <button
+                onClick={() => setShowCheckModal(false)}
+                className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
+              >
+                Close
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <label className="text-sm text-gray-600">Filter:</label>
+                <select
+                  value={checkFilter}
+                  onChange={(e) => setCheckFilter(e.target.value)}
+                  className="px-2 py-1 border rounded-md text-sm"
+                >
+                  <option value="all">All</option>
+                  <option value="true">Already Shared: true</option>
+                  <option value="false">Already Shared: false</option>
+                </select>
+                <span className="text-sm text-gray-600">Total: {checkResults.length}</span>
+              </div>
+              <div className="overflow-x-auto border rounded-lg">
+                <table className="min-w-full">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Customer ID</th>
+                      <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Campaign ID</th>
+                      <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Already Shared</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {checkResults
+                      .filter((r) => checkFilter === 'all' ? true : r.alreadyShared === (checkFilter === 'true'))
+                      .map((row, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50">
+                          <td className="px-3 py-2 text-xs font-mono break-all">{row.customerId}</td>
+                          <td className="px-3 py-2 text-xs font-mono break-all">{row.campaignId}</td>
+                          <td className="px-3 py-2">{String(row.alreadyShared)}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  onClick={() => setShowCheckModal(false)}
+                  className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"
+                >
+                  Close
+                </button>
+                <button
+                  disabled={loading}
+                  onClick={handleSendCampaign}
+                  className="px-6 py-2 bg-pink-600 text-white rounded hover:bg-pink-700 disabled:opacity-60"
+                >
+                  {loading ? 'Sending...' : 'Send Now'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Send Button */}
       <div className="flex justify-start">
         <button
-          onClick={handleSendCampaign}
-          className="px-8 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
+          onClick={handlePreCheckAndOpenModal}
+          className="px-8 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors disabled:opacity-60"
+          disabled={checking}
         >
-          Send Activities
+          {checking ? 'Checking...' : 'Check & Send'}
         </button>
       </div>
     </div>
