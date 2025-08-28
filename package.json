@@ -34,7 +34,7 @@
     "react-slider": "^2.0.6",
     "react-toastify": "^11.0.5",
     "react-tooltip": "^5.29.1",
-    "recharts": "^2.15.3",
+    "recharts": "^2.15.4",
     "slick-carousel": "^1.8.1",
     "xlsx": "^0.18.5",
     "yup": "^1.7.0"

@@ -13,6 +13,7 @@ import * as yup from 'yup';
 import { extractFieldValue, transformCustomerData, transformFormDataToAPI, formatFieldForDisplay, getInputType, getFieldType } from "../../utils/customerDataUtils";
 import EditIcon from '../../../public/assets/edit-icon.png';
 import profileImg from '../../../public/assets/profile.png';
+import PurchaseHistory from "../customeroppertunites/PurchaseHistory";
 
 // Memoized FieldItem component to prevent unnecessary re-renders
 const FieldItem = React.memo(({
@@ -740,61 +741,7 @@ const CustomerDetails = ({
                     {transformedCustomer?.advancedPrivacyDetails && renderDynamicFields(transformedCustomer?.advancedPrivacyDetails, "advancedPrivacyDetails")}
 
                     {/* Purchase History Section */}
-                    <div className="p-6 border-t border-gray-200">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-medium text-gray-900">Purchase History</h3>
-                        <div className="flex space-x-2">
-                          <button
-                            type="button"
-                            onClick={() => setShowPurchaseList(!showPurchaseList)}
-                            className="p-2 bg-gray-100 rounded hover:bg-gray-200"
-                          >
-                            {showPurchaseList ? <BarChart className="w-5 h-5" /> : <List className="w-5 h-5" />}
-                          </button>
-                        </div>
-                      </div>
-
-                      {!showPurchaseList ? (
-                        <div className="mb-6 h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={transformedCustomer?.chartData || []}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                              <Tooltip />
-                              <Line
-                                type="monotone"
-                                dataKey="value"
-                                stroke="#e11d48"
-                                strokeWidth={2}
-                                dot={{ fill: "#e11d48", strokeWidth: 2, r: 4 }}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {(transformedCustomer?.purchaseHistory || []).slice(0, showAllPurchases ? undefined : 5).map((purchase, index) => (
-                            <div key={index} className="flex justify-between items-center py-2">
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">{purchase.item}</p>
-                                <p className="text-xs text-gray-500">{purchase.date}</p>
-                              </div>
-                              <p className="text-sm font-medium text-gray-900">{purchase.amount}</p>
-                            </div>
-                          ))}
-                          {(transformedCustomer?.purchaseHistory || []).length > 5 && (
-                            <button
-                              type="button"
-                              onClick={() => setShowAllPurchases(!showAllPurchases)}
-                              className="text-pink-600 text-sm font-medium hover:text-pink-700"
-                            >
-                              {showAllPurchases ? "Show Less" : "See More"}
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    <PurchaseHistory mobileNumber={transformedCustomer?.mobileNumber} />
                   </div>
                 )}
 
