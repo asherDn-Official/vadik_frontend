@@ -7,7 +7,8 @@ import showToast from "../../utils/ToastNotification";
 import { get } from "react-hook-form";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 
-const Quiz = () => {
+// Add optional props: backButton to control visibility and onClose to notify parent (e.g., close modal)
+const Quiz = ({ backButton = false, onClose }) => {
   const [quizzes, setQuizzes] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState(null);
@@ -65,13 +66,15 @@ const Quiz = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="p-8">
-          <button
-            onClick={() => setShowForm(false)}
-            className="flex items-center text-slate-600 hover:text-slate-800 transition-colors mb-6"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back
-          </button>
+          {backButton && (
+            <button
+              onClick={() => (onClose ? onClose() : setShowForm(false))}
+              className="flex items-center text-slate-600 hover:text-slate-800 transition-colors mb-6"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Back
+            </button>
+          )}
           <QuizForm
             quiz={editingQuiz}
             onSave={handleSave}
@@ -85,9 +88,20 @@ const Quiz = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-semibold text-slate-800">
-          {pagination?.totalDocs || quizzes.length} Quiz Activities
-        </h3>
+        <div className="flex items-center gap-3">
+          {backButton && (
+            <button
+              onClick={() => (onClose ? onClose() : null)}
+              className="flex items-center text-slate-600 hover:text-slate-800 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 mr-1" />
+              Back
+            </button>
+          )}
+          <h3 className="text-lg font-semibold text-slate-800">
+            {pagination?.totalDocs || quizzes.length} Quiz Activities
+          </h3>
+        </div>
         <button
           onClick={handleCreate}
           className="flex items-center text-[#313166] px-4 py-2 bg-white border border-[#313166] rounded-[10px] hover:bg-gray-50 transition-colors"

@@ -527,9 +527,9 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
       )}
 
       {isQuizePopupOpen && (
-        <div onClick={(e) => isQuizePopupOpen(false)} className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50">
-          <div className="bg-white rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-auto">
-            <Quiz  />
+        <div onClick={() => setIsQuizePopupOpen(false)} className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50">
+          <div className="bg-white rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <Quiz backButton={true} onClose={() => setIsQuizePopupOpen(false)} />
           </div>
         </div>
       )}
