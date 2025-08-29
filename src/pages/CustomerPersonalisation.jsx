@@ -41,7 +41,7 @@ const CustomerPersonalisation = () => {
       // Prepare the request payload
       const payload = {
         page: currentPage,
-        // limit: pagination.limit,
+        limit: pagination.limit,
         filters: filtersArray.length > 0 ? filtersArray : undefined,
         // Period filters (handled separately)
         ...(selectedPeriod === "Yearly" && filters.periodValue && {
@@ -79,7 +79,7 @@ const CustomerPersonalisation = () => {
 
   useEffect(() => {
     fetchCustomers();
-  }, [currentPage, filters]);
+  }, [currentPage, filters, pagination.limit]);
 
   
   useEffect(() => {
@@ -178,7 +178,25 @@ const CustomerPersonalisation = () => {
                 Customer List ({pagination.total})
               </h1>
             </div>
-            <div className="flex gap-4 relative" ref={dropdownRef}>
+            <div className="flex items-center gap-4 relative" ref={dropdownRef}>
+              {/* Per page selector */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Per page:</label>
+                <select
+                  className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                  value={pagination.limit}
+                  onChange={(e) => {
+                    const newLimit = parseInt(e.target.value, 10);
+                    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+                    setCurrentPage(1);
+                  }}
+                >
+                  {[10, 20, 50, 100].map((size) => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+              </div>
+
               <button
                 className="px-4 bg-[#3131661A] py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
                 onClick={() => setShowExport(!showExport)}
