@@ -13,44 +13,21 @@ const PurchaseHistory = ({mobileNumber}) => {
 
   const [showPurchaseList, setShowPurchaseList] = useState(false);
   const [showAllPurchases, setShowAllPurchases] = useState(false);
+  const [purchaseHistoryData ,SetPurchaseHistoryData]= useState([]);
 
 
   const getOrderHistrory = async() =>{
-    const respose  =await api.get(`/api/orderHistory/getCustomerPurchaseData?mobileNumber=${mobileNumber}`);
- 
+     try{
+          const respose  =await api.get(`/api/orderHistory/getCustomerPurchaseData?mobileNumber=${mobileNumber}`);
+          SetPurchaseHistoryData(respose.data);
+     }catch(err){
+         console.log("error",err)
+     }
   }
 
   useEffect(()=>{
-     
+     getOrderHistrory()
   },[])
-
-  // Sample data matching your structure
-  const purchaseHistoryData = [
-    {
-      totalAmount: 750,
-      totalOrders: 2,
-      month: "August",
-      year: 2025
-    },
-    {
-      totalAmount: 650,
-      totalOrders: 3,
-      month: "June",
-      year: 2025
-    },
-    {
-      totalAmount: 920,
-      totalOrders: 4,
-      month: "July",
-      year: 2025
-    },
-    {
-      totalAmount: 480,
-      totalOrders: 1,
-      month: "May",
-      year: 2025
-    }
-  ];
 
   // Prepare data for pie chart
   const pieChartData = purchaseHistoryData.map(item => ({
