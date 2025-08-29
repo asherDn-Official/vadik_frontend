@@ -5,6 +5,9 @@ import SpinWheelPreview from "./SpinWheelPreview";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import Quiz from "./Quiz";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { format } from "date-fns";
 
 const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const [coupons, setCoupons] = useState([]);
@@ -132,7 +135,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       setValue("couponOptions", Array.isArray(couponOptions) ? couponOptions : []);
       setValue("targetedCoupons", Array.isArray(targetedCoupons) ? targetedCoupons : []);
       setValue("isActive", typeof isActive === 'boolean' ? isActive : true);
-      setValue("expiryDate", expiryDate ? expiryDate.slice(0, 10) : "");
+      // Convert incoming ISO/string to Date object for DatePicker
+      setValue("expiryDate", expiryDate ? new Date(expiryDate) : null);
       setValue("allocatedQuizCampainId", allocatedQuizCampainId ?? "");
       setValue("segments", Array.isArray(segments) ? segments : []);
       setValue("_id", _id);
@@ -239,8 +243,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       return;
     }
 
-    // Convert YYYY-MM-DD to ISO midnight
-    const expiryIso = data.expiryDate ? `${data.expiryDate}T00:00:00.000Z` : "";
+    // Convert Date to ISO midnight in UTC
+    const expiryIso = data.expiryDate ? `${format(data.expiryDate, "yyyy-MM-dd")}T00:00:00.000Z` : "";
 
     const payload = {
       name: data.name.trim(),
@@ -333,12 +337,22 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Expiry Date
               </label>
-              <input
-                type="date"
-                {...register("expiryDate", {
-                  required: "Expiry Date is required"
-                })}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'}`}
+              <Controller
+                name="expiryDate"
+                control={control}
+                rules={{ required: "Expiry Date is required" }}
+                render={({ field }) => (
+                  <DatePicker
+                    selected={field.value}
+                    onChange={(date) => field.onChange(date)}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="DD/MM/YYYY"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'}`}
+                    minDate={new Date()}
+                    wrapperClassName="w-full"    
+                    isClearable
+                  />
+                )}
               />
               {errors.expiryDate && <p className="mt-1 text-sm text-red-600">{errors.expiryDate.message}</p>}
             </div>
