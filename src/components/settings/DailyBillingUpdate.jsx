@@ -10,6 +10,8 @@ import {
 import PurchasedCustomerList from "./PurchasedCustomerList";
 import DailyOrderSheet from "./DailyOrderSheet";
 import { format, parseISO } from "date-fns";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import api from "../../api/apiconfig";
 
 const DailyBillingUpdate = () => {
@@ -46,8 +48,8 @@ const DailyBillingUpdate = () => {
         retailerId,
         page: pagination.page,
         limit: pagination.limit,
-        ...(startDate && { startDate: startDate }),
-        ...(startDate && { endDate: endDate }),
+        ...(startDate && { startDate: format(startDate, "yyyy-MM-dd") }),
+        ...(endDate && { endDate: format(endDate, "yyyy-MM-dd") }),
       };
 
       const response = await api.get(
@@ -172,23 +174,23 @@ const DailyBillingUpdate = () => {
 
   const handleReset = () => {
     console.log("Resetting filters...");
-    setStartDate("");
-    setEndDate("");
+    setStartDate(null);
+    setEndDate(null);
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  const handleDateChange = (type, value) => {
+  const handleDateChange = (type, date) => {
     if (type === "start") {
-      setStartDate(value);
+      setStartDate(date);
       // If end date is before new start date, update end date to match
-      if (value > endDate) {
-        setEndDate(value);
+      if (endDate && date && date > endDate) {
+        setEndDate(date);
       }
     } else {
-      setEndDate(value);
+      setEndDate(date);
       // If start date is after new end date, update start date to match
-      if (value < startDate) {
-        setStartDate(value);
+      if (startDate && date && date < startDate) {
+        setStartDate(date);
       }
     }
     // Reset to first page when dates change
@@ -257,31 +259,28 @@ const DailyBillingUpdate = () => {
 
       <div className="flex items-center gap-2  max-w-20 ">
         <div className="relative ">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => handleDateChange("start", e.target.value)}
-            max={endDate}
-            className="w-full pl-3 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+          <DatePicker
+            selected={startDate}
+            onChange={(date) => handleDateChange("start", date)}
+            dateFormat="dd/MM/yyyy"
+            placeholderText="DD/MM/YYYY"
+            className=" w-64 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 text-[#313166]"
+            maxDate={endDate || new Date()}
+            isClearable
           />
-          {/* <Calendar
-            // className="absolute right-3 top-2.5 text-gray-400 pointer-events-none"
-            size={16}
-          /> */}
         </div>
         <span className="text-gray-500 mx-1">to</span>
         <div className="relative ">
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => handleDateChange("end", e.target.value)}
-            min={startDate}
-            className="w-full pl-3 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+          <DatePicker
+            selected={endDate}
+            onChange={(date) => handleDateChange("end", date)}
+            dateFormat="dd/MM/yyyy"
+            placeholderText="DD/MM/YYYY"
+            className=" w-64 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 text-[#313166]"
+            minDate={startDate}
+            maxDate={new Date()}
+            isClearable
           />
-          {/* <Calendar
-            className="absolute right-3 top-2.5 text-gray-400 pointer-events-none"
-            size={16}
-          /> */}
         </div>
         <button
           onClick={handleReset}
