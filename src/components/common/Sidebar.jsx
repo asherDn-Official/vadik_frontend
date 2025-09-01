@@ -90,7 +90,7 @@ function Sidebar() {
   };
 
   return (
-    <aside className="w-full md:w-48 lg:w-64 xl:w-72 bg-[#313166] text-white flex flex-col h-screen  overflow-y-auto">
+    <aside className="w-full md:w-48 lg:w-64 xl:w-72 bg-[#313166] text-white flex flex-col min-h-full  overflow-y-auto">
       <div className="p-4 md:p-6 font-medium text-base md:text-lg lg:text-xl text-center truncate">
         Vadik AI
       </div>
