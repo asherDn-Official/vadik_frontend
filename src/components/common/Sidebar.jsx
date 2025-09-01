@@ -1,13 +1,12 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { LogOut } from "lucide-react";
-// import icon from './assets'
 
 function Sidebar() {
   const location = useLocation();
   const { auth } = useAuth();
   const userRole = auth?.data?.role;
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
 
   const isActive = (path) => {
     if (path === "/" && location.pathname === "/") return true;
@@ -87,16 +86,16 @@ function Sidebar() {
   const handleLogout = () => {
     localStorage.removeItem("retailerId");
     localStorage.removeItem("token");
-    navigate('/')
+    navigate('/');
   };
 
   return (
-    <aside className="w-[290px] bg-[#313166] text-white flex flex-col">
-      <div className="p-6 font-[400] text-[18px] text-center">
+    <aside className="w-full md:w-48 lg:w-64 xl:w-72 bg-[#313166] text-white flex flex-col h-screen  overflow-y-auto">
+      <div className="p-4 md:p-6 font-medium text-base md:text-lg lg:text-xl text-center truncate">
         Vadik AI
       </div>
 
-      <nav className="flex-1 py-4">
+      <nav className="flex-1 py-2 md:py-4">
         {sidebarItems.map((item) => {
           if (!canAccess(item.module)) return null;
 
@@ -104,20 +103,26 @@ function Sidebar() {
             <NavLink
               key={item.path}
               to={item.path}
-              className={`sidebar-icon flex items-center px-6 py-5 text-white no-underline transition-colors hover:bg-[#3d3b83] ${isActive(item.path) ? "sidebar-active" : ""
+              className={`sidebar-icon flex items-center px-4 md:px-6 py-3 md:py-4 text-white no-underline transition-colors hover:bg-[#3d3b83] ${isActive(item.path) ? "sidebar-active bg-[#3d3b83]" : ""
                 }`}
             >
-              <img src={item.icon} alt={item.label} className="w-5 h-5 mr-3" />
-              <span>{item.label}</span>
+              <img 
+                src={item.icon} 
+                alt={item.label} 
+                className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 mr-2 md:mr-3 flex-shrink-0" 
+              />
+              <span className="text-xs md:text-sm lg:text-base truncate">{item.label}</span>
             </NavLink>
           );
         })}
-        <button onClick={handleLogout} className="flex flex-1 w-full items-center px-6 py-5 text-white no-underline transition-colors hover:bg-[#3d3b83]">
-          <LogOut size={20} className="mr-5 w-5 h-5" />
-          Logout
+        <button 
+          onClick={handleLogout} 
+          className="flex w-full items-center px-4 md:px-6 py-3 md:py-4 text-white no-underline transition-colors hover:bg-[#3d3b83] mt-auto"
+        >
+          <LogOut size={16} className="mr-2 md:mr-3 w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+          <span className="text-xs md:text-sm lg:text-base">Logout</span>
         </button>
       </nav>
-
     </aside>
   );
 }
