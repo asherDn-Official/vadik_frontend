@@ -962,7 +962,7 @@ const RolesAndPermissions = () => {
       case "userManagement":
         return <UserManagementList />;
       case "addEmployee":
-        return <AddEmployeeForm />;
+        return <AddEmployeeForm setCurrentView={setCurrentView} fetchStaff={fetchStaff} />;
       case "userPermissions":
         return <UserPermissionsForm />;
       default:
