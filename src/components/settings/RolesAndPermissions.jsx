@@ -974,7 +974,9 @@ const RolesAndPermissions = () => {
                   </div>
                   <div className="ml-3">
                     <h3 className="font-medium">{user.fullName}</h3>
-                    <p className="text-sm text-gray-500">{user.designation}</p>
+                    {user.designation.length > 15
+    ? user.designation.substring(0, 15) + "..."
+    : user.designation}
                   </div>
                 </div>
                 <button
