@@ -442,7 +442,7 @@ const FilterPanel = ({
   };
 
   return (
-    <div className="bg-white rounded-tl-[20px] rounded-bl-[20px] shadow-sm h-full overflow-hidden flex flex-col">
+    <div className="bg-white rounded-tl-[20px] rounded-bl-[20px] shadow-sm h-full overflow-hidden flex flex-col min-h-0">
       {/* Filter Header with Applied Count & Clear */}
 
       <div className="flex items-center justify-between p-4 border-b">
@@ -523,12 +523,13 @@ const FilterPanel = ({
       )}
 
       {/* Filter Groups */}
-      <div className="space-y-2 overflow-y-auto flex-1">
+      <div className="space-y-2 flex-1 min-h-0 overflow-y-auto scroll-m-3">
         {false ? (
-          // <div className="p-4 text-center">Loading filters...</div>
           <></>
         ) : (
-          renderFilterItems()
+          <div className="min-h-full max-h-10">
+            {renderFilterItems()}
+          </div>
         )}
       </div>
     </div>
