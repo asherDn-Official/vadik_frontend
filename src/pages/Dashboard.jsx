@@ -22,8 +22,8 @@ navigate("/notifications");
   return (
     <div className="min-h-screen bg-gray-50">
       <div className=" ">
-        <div className="bg-white p-4">
-          <header className="flex justify-between items-center  px-6 ">
+        <div className="bg-white px-2 py-3 sm:p-4">
+          <header className="flex justify-between items-center  sm:px-6 ">
             <h1 className="text-2xl font-semibold text-gray-800">
               Welcome, Admin
             </h1>
@@ -52,7 +52,7 @@ navigate("/notifications");
         </div>
 
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 max-w-[1600px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:p-6 max-w-[1600px] mx-auto">
           {/* First Column */}
           <div className="space-y-6">
             <CustomerProfileCollection />
