@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
-import api from "../../api/apiconfig"; // adjust this path as needed
+// import api from "../../api/apiconfig"; // adjust this path as needed
 
 ChartJS.register(ArcElement, Tooltip);
 
@@ -14,9 +14,9 @@ useEffect(() => {
   const timer = setTimeout(() => {
     const fetchCustomerData = async () => {
       try {
-        const res = await api.get("api/dashboard/activeInactiveCustomerCount");
-        setActive(res.data.active || 0);
-        setInactive(res.data.inactive || 0);
+        // const res = await api.get("api/dashboard/activeInactiveCustomerCount");
+        // setActive(res.data.active || 0);
+        // setInactive(res.data.inactive || 0);
       } catch (err) {
         console.error("Error fetching customer profile data:", err);
       } finally {
