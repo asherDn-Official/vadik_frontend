@@ -51,42 +51,42 @@ const SettingsPage = () => {
             isActive={activeTab === "my-profile"}
             onClick={() => handleTabChange("my-profile")}
           />
-          <SettingsTab
+          {/* <SettingsTab
             icon={<FiPackage />}
             text="Inventory"
             isActive={activeTab === "inventory"}
             onClick={() => handleTabChange("inventory")}
-          />
-          <SettingsTab
+          /> */}
+          {/* <SettingsTab
             icon={<FiFileText />}
             text="Daily Billing Update"
             isActive={activeTab === "daily-billing"}
             onClick={() => handleTabChange("daily-billing")}
-          />
-          <SettingsTab
+          /> */}
+          {/* <SettingsTab
             icon={<FiUsers />}
             text="Customer Field Preferences"
             isActive={activeTab === "customer-preferences"}
             onClick={() => handleTabChange("customer-preferences")}
-          />
+          /> */}
           <SettingsTab
             icon={<FiSettings />}
             text="Roles And Permissions"
             isActive={activeTab === "roles-permissions"}
             onClick={() => handleTabChange("roles-permissions")}
           />
-          <SettingsTab
+          {/* <SettingsTab
             icon={<LuTicketPercent />}
             text="Coupons"
             isActive={activeTab === "coupon"}
             onClick={() => handleTabChange("coupon")}
-          />
-          <SettingsTab
+          /> */}
+          {/* <SettingsTab
             icon={<FaCoins />}
             text="Loyalty Points"
             isActive={activeTab === "loyalty"}
             onClick={() => handleTabChange("loyalty")}
-          />
+          /> */}
         </div>
       </div>
 
@@ -99,11 +99,11 @@ const SettingsPage = () => {
         {activeTab === "inventory" && showAddProduct && (
           <AddProduct onBack={() => setShowAddProduct(false)} />
         )}
-        {activeTab === "daily-billing" && <DailyBillingUpdate />}
-        {activeTab === "customer-preferences" && <CustomerFieldPreferences />}
+        {/* {activeTab === "daily-billing" && <DailyBillingUpdate />} */}
+        {/* {activeTab === "customer-preferences" && <CustomerFieldPreferences />} */}
         {activeTab === "roles-permissions" && <RolesAndPermissions />}
-        {activeTab === "coupon" && <Coupon />}
-        {activeTab === "loyalty" && <LoyaltyPoint />}
+        {/* {activeTab === "coupon" && <Coupon />} */}
+        {/* {activeTab === "loyalty" && <LoyaltyPoint />} */}
       </div>
     </div>
   );
