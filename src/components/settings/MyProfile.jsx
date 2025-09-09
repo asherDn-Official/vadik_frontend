@@ -4,8 +4,8 @@ import axios from "axios";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import api from "../../api/apiconfig";
-import { useAuth } from "../../context/AuthContext";
 import showToast from "../../utils/ToastNotification";
+import { useAuth } from "../../context/AuthContext";
 
 const MyProfile = () => {
   const {
