@@ -92,10 +92,10 @@ function Sidebar() {
 
   return (
     <aside className="w-full md:w-48 lg:w-64 xl:w-72 bg-[#313166] text-white flex flex-col min-h-full  overflow-y-auto">
-      <div className=" md:py-4  font-medium text-base md:text-lg lg:text-xl text-center truncate">
+      <div className=" md:pt-4  font-medium text-base md:text-lg lg:text-xl text-center truncate">
         Vadik AI
       </div>
-      <div className=" my-1">
+      <div className=" my-3">
         <ToggleBadge />
       </div>
 
