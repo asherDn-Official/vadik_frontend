@@ -909,9 +909,7 @@ const RolesAndPermissions = () => {
       },
       mode: "onChange"
     });
-            const [showPassword, setShowPassword] = useState(false);
-
-
+    const [showPassword, setShowPassword] = useState(false);
     const [permissions, setPermissions] = useState([
       {
         "module": "dashboard",
@@ -1022,13 +1020,34 @@ const RolesAndPermissions = () => {
     };
 
     const onSubmit = async (data) => {
+
+      // Extract phone code and number from the formatted phone value
+      let phoneCode = "91"; // default
+      let phoneNumber = "";
+
+      if (data.phone) {
+        const phoneParts = data.phone.replace('+', '').split(' ');
+        if (phoneParts.length > 1) {
+          phoneCode = phoneParts[0];
+          phoneNumber = phoneParts.slice(1).join('');
+        } else {
+          // If no country code detected, assume it's the local number
+          phoneNumber = data.phone.replace(/\D/g, '');
+          // Ensure it's exactly 10 digits
+          if (phoneNumber.length === 10) {
+            phoneCode = "91"; // default to India
+          }
+        }
+      }
+
       try {
         const payload = {
           fullName: data.fullName,
           email: data.email,
-          phone: data.phone,
+          phone: data.phone.slice(-10),
+          phoneCode: phoneCode,
           designation: data.designation,
-          password: data.password || undefined,
+          ...(data.password && { password: data.password }),
           permissions: permissions.filter(perm =>
             perm.canCreate || perm.canRead || perm.canUpdate || perm.canDelete
           ),
@@ -1179,17 +1198,46 @@ const RolesAndPermissions = () => {
               )}
             </div>
 
-            {/* Phone */}
+            {/*   Phone */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone
+                Phone *
               </label>
-              <input
-                type="tel"
-                {...register("phone", {
-                  required: "Phone number is required"
-                })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-[10px]"
+              <Controller
+                name="phone"
+                control={control}
+                rules={{
+                  required: "Phone number is required",
+                  validate: (value) => {
+                    // if (!value) return "Phone number is required";
+
+                    // // Remove all non-digit characters except plus
+                    // const cleanedValue = value.replace(/[^\d+]/g, '');
+
+                    // // Check if it has country code
+                    // if (cleanedValue.startsWith('+')) {
+                    //   const withoutPlus = cleanedValue.slice(1);
+                    //   // Should have country code + phone number (at least 8 digits total)
+                    //   return withoutPlus.length >= 11 || "Invalid phone number format";
+                    // } else {
+                    //   // Local number without country code - should be exactly 10 digits
+                    //   return cleanedValue.length === 10 || "Phone must be exactly 10 digits";
+                    // }
+                  }
+                }}
+                render={({ field }) => (
+                  <PhoneInput
+                    international
+                    countryCallingCodeEditable={false}
+                    defaultCountry="IN"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    className="w-full"
+                    inputClassName="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    dropdownClassName="z-50"
+                  />
+                )}
               />
               {errors.phone && (
                 <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
