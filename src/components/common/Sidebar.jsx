@@ -1,6 +1,7 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { LogOut } from "lucide-react";
+import ToggleBadge from "./ToggleBadge";
 
 function Sidebar() {
   const location = useLocation();
@@ -91,11 +92,14 @@ function Sidebar() {
 
   return (
     <aside className="w-full md:w-48 lg:w-64 xl:w-72 bg-[#313166] text-white flex flex-col min-h-full  overflow-y-auto">
-      <div className="p-4 md:p-6 font-medium text-base md:text-lg lg:text-xl text-center truncate">
+      <div className=" md:py-4  font-medium text-base md:text-lg lg:text-xl text-center truncate">
         Vadik AI
       </div>
+      <div className=" my-1">
+        <ToggleBadge />
+      </div>
 
-      <nav className="flex-1 py-2 md:py-4">
+      <nav className="flex-1 pb-2 md:pb-4">
         {sidebarItems.map((item) => {
           if (!canAccess(item.module)) return null;
 
