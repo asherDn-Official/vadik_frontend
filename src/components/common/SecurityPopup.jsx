@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 export default function SecurityPopup() {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(true); // Set to true to show initially
 
   const handleConfirm = () => {
     console.log('User confirmed - redirect to login');
@@ -13,23 +13,15 @@ export default function SecurityPopup() {
     setIsVisible(false);
   };
 
+  // Don't render anything if not visible
   if (!isVisible) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <button 
-          onClick={() => setIsVisible(true)}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Show Security Popup
-        </button>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 relative">
+    <div className="fixed inset-0 z-40">
       {/* Backdrop overlay */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+      <div className="fixed inset-0 bg-black bg-opacity-50"></div>
       
       {/* Popup positioned at top center */}
       <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
@@ -69,12 +61,6 @@ export default function SecurityPopup() {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Demo content behind the popup */}
-      <div className="p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Demo Application</h1>
-        <p className="text-gray-600">This is the background content that appears behind the security popup.</p>
       </div>
     </div>
   );
