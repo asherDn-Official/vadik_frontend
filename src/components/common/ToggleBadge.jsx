@@ -1,7 +1,11 @@
 import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ToggleBadge() {
-  const [isLive, setIsLive] = useState(true);
+  
+  const {auth }= useAuth();
+  const [isLive, setIsLive] = useState(!auth.user.demo);
+
 
   return (
     <div className="flex items-center justify-center">
