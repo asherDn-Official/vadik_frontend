@@ -24,15 +24,18 @@ export default function ToggleBadge() {
       const response = await api.patch("/api/retailer/demo/status", {
         demo: demoStatus
       });
-      
+
       if (response.data.status === "success") {
         setIsLive(!demoStatus);
         // If switching to live mode, log user out
-        if (!demoStatus) {
-          logout();
-          navigate("/login");
-        }
+        // logout();
+        localStorage.removeItem("retailerId");
+        localStorage.removeItem("token");
+        localStorage.removeItem("place_id");
+        navigate("/login");
       }
+
+
     } catch (error) {
       console.error("Error updating demo status:", error);
       // Revert UI state on error
@@ -68,7 +71,7 @@ export default function ToggleBadge() {
               ${isLive ? 'transform translate-x-0' : 'transform translate-x-full'}
             `}
           />
-          
+
           {/* Live Button */}
           <button
             onClick={() => handleToggle(true)}
@@ -76,10 +79,9 @@ export default function ToggleBadge() {
             className={`
               relative z-10 px-4 py-1.5 rounded-full font-medium text-xs
               transition-all duration-300 ease-in-out min-w-16
-              ${
-                isLive
-                  ? "text-green-600"
-                  : "text-gray-600 hover:text-green-500"
+              ${isLive
+                ? "text-green-600"
+                : "text-gray-600 hover:text-green-500"
               }
               ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
             `}
@@ -89,7 +91,7 @@ export default function ToggleBadge() {
               <span>LIVE</span>
             </span>
           </button>
-          
+
           {/* Demo Button */}
           <button
             onClick={() => handleToggle(false)}
@@ -97,10 +99,9 @@ export default function ToggleBadge() {
             className={`
               relative z-10 px-4 py-1.5 rounded-full font-medium text-xs
               transition-all duration-300 ease-in-out min-w-16
-              ${
-                !isLive
-                  ? "text-red-600"
-                  : "text-gray-600 hover:text-red-500"
+              ${!isLive
+                ? "text-red-600"
+                : "text-gray-600 hover:text-red-500"
               }
               ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
             `}
@@ -111,10 +112,10 @@ export default function ToggleBadge() {
             </span>
           </button>
         </div>
-        
+
         {/* Security Popup */}
         {showPopup && (
-          <SecurityPopup 
+          <SecurityPopup
             onConfirm={handleConfirm}
             onCancel={handleCancel}
             isLoading={isLoading}
