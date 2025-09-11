@@ -1,23 +1,4 @@
-import { useState } from 'react';
-
-export default function SecurityPopup() {
-  const [isVisible, setIsVisible] = useState(true); // Set to true to show initially
-
-  const handleConfirm = () => {
-    console.log('User confirmed - redirect to login');
-    setIsVisible(false);
-  };
-
-  const handleCancel = () => {
-    console.log('User cancelled');
-    setIsVisible(false);
-  };
-
-  // Don't render anything if not visible
-  if (!isVisible) {
-    return null;
-  }
-
+export default function SecurityPopup({ onConfirm, onCancel, isLoading, targetMode }) {
   return (
     <div className="fixed inset-0 z-40">
       {/* Backdrop overlay */}
@@ -41,23 +22,27 @@ export default function SecurityPopup() {
           {/* Content */}
           <div className="px-6 py-4">
             <p className="text-gray-700 leading-relaxed">
-              For security reasons, when switching from demo data to live data, you will need to log in again. This ensures your account and data remain protected.
+              You are about to switch to <span className="font-semibold">{targetMode}</span> mode. 
+              For security reasons, you will need to log in again when switching modes. 
+              This ensures your account and data remain protected.
             </p>
           </div>
           
           {/* Footer with buttons */}
           <div className="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
             <button
-              onClick={handleCancel}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+              onClick={onCancel}
+              disabled={isLoading}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
-              onClick={handleConfirm}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              onClick={onConfirm}
+              disabled={isLoading}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50"
             >
-              Continue to Login
+              {isLoading ? "Processing..." : "Continue to Login"}
             </button>
           </div>
         </div>

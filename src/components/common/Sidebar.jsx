@@ -99,9 +99,6 @@ function Sidebar() {
       <div className=" my-3">
         <ToggleBadge />
       </div>
-      <div>
-        <SecurityPopup/>
-      </div>
       <nav className="flex-1 pb-2 md:pb-4">
         {sidebarItems.map((item) => {
           if (!canAccess(item.module)) return null;
