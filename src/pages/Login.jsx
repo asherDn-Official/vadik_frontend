@@ -56,8 +56,10 @@ const Login = () => {
             navigate(`/register/basic/${data.retailer._id}`);
           }
           localStorage.setItem("retailerId", data.retailer._id);
+          localStorage.setItem('email', data.retailer.email);
         } else if (loginType === "staff" && data.staff?._id) {
           localStorage.setItem("retailerId", data.staff._id);
+          localStorage.setItem('email', data.staff.email);
           navigate("/dashboard");
         }
       }

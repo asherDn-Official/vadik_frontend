@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/apiconfig";
@@ -6,12 +6,26 @@ import SecurityPopup from "./SecurityPopup";
 
 export default function ToggleBadge() {
   const { auth } = useAuth();
-  console.log("is Demo",auth?.user?.email);
+  // console.log("is Demo",auth?.user?.email); 
   const navigate = useNavigate();
-  const [isLive, setIsLive] = useState(!auth?.user?.demo);
+  const [isLive, setIsLive] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingMode, setPendingMode] = useState(null);
+  const [email, setEmail] = useState(localStorage.getItem("email"));
+
+  async function getDemoStatus() {
+    try {
+      const response = await api.get(`/api/retailer/demo/status/${email}`);
+      setIsLive(!response?.data?.data?.demo);
+    } catch (error) {
+      console.log('error', error)
+    }
+  }
+
+  useEffect(() => {
+    getDemoStatus();
+  }, []);
 
   const handleToggle = (newIsLive) => {
     // Always show security popup for any mode change
