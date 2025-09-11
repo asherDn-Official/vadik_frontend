@@ -32,7 +32,7 @@ export default function ToggleBadge() {
         localStorage.removeItem("retailerId");
         localStorage.removeItem("token");
         localStorage.removeItem("place_id");
-        navigate("/login");
+        navigate("/");
       }
 
 
