@@ -36,7 +36,7 @@ export default function ToggleBadge() {
   const updateDemoStatus = async (demoStatus) => {
     setIsLoading(true);
     try {
-      const response = await api.patch(`/api/retailer/demo/status/${auth?.user?.email}`, {
+      const response = await api.patch(`/api/retailer/demo/status/${email}`, {
         demo: demoStatus
       });
 
