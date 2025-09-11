@@ -5,9 +5,10 @@ import api from "../../api/apiconfig";
 import SecurityPopup from "./SecurityPopup";
 
 export default function ToggleBadge() {
-  const { auth, logout } = useAuth();
+  const { auth } = useAuth();
+  console.log("is Demo",auth?.user?.email);
   const navigate = useNavigate();
-  const [isLive, setIsLive] = useState(!auth.user.demo);
+  const [isLive, setIsLive] = useState(!auth?.user?.demo);
   const [showPopup, setShowPopup] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingMode, setPendingMode] = useState(null);
@@ -21,7 +22,7 @@ export default function ToggleBadge() {
   const updateDemoStatus = async (demoStatus) => {
     setIsLoading(true);
     try {
-      const response = await api.patch("/api/retailer/demo/status", {
+      const response = await api.patch(`/api/retailer/demo/status/${auth?.user?.email}`, {
         demo: demoStatus
       });
 
