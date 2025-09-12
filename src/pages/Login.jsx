@@ -45,7 +45,6 @@ const Login = () => {
       if (data.token) {
         localStorage.setItem("token", data.token);
         await checkAuth();
-        localStorage.setItem('place_id', data.retailer.placeId);
         // navigate("/dashboard");
 
         // Store appropriate ID based on login type
@@ -58,8 +57,9 @@ const Login = () => {
           localStorage.setItem("retailerId", data.retailer._id);
           localStorage.setItem('email', data.retailer.email);
         } else if (loginType === "staff" && data.staff?._id) {
-          localStorage.setItem("retailerId", data.staff._id);
+          localStorage.setItem("retailerId", data.staff.retailerId);
           localStorage.setItem('email', data.staff.email);
+          localStorage.setItem('place_id', data.staff.placeId);
           navigate("/dashboard");
         }
       }
@@ -152,7 +152,7 @@ const Login = () => {
                 Reset password?
               </a>
             </div>
-             <div className="text-right cursor-pointer " onClick={() => navigate('/forgot-password')}>
+            <div className="text-right cursor-pointer " onClick={() => navigate('/forgot-password')}>
               {/* <a className="hover:underline">
                 Forgot password?
               </a> */}

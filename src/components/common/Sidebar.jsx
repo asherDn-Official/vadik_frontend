@@ -97,7 +97,9 @@ function Sidebar() {
         Vadik AI
       </div>
       <div className=" my-3">
-        <ToggleBadge />
+        {userRole === "retailer" && (
+          <ToggleBadge />
+        )}
       </div>
       <nav className="flex-1 pb-2 md:pb-4">
         {sidebarItems.map((item) => {
@@ -110,17 +112,17 @@ function Sidebar() {
               className={`sidebar-icon flex items-center px-4 md:px-6 py-3 md:py-4 text-white no-underline transition-colors hover:bg-[#3d3b83] ${isActive(item.path) ? "sidebar-active bg-[#3d3b83]" : ""
                 }`}
             >
-              <img 
-                src={item.icon} 
-                alt={item.label} 
-                className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 mr-2 md:mr-3 flex-shrink-0" 
+              <img
+                src={item.icon}
+                alt={item.label}
+                className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 mr-2 md:mr-3 flex-shrink-0"
               />
               <span className="text-xs md:text-sm lg:text-base truncate">{item.label}</span>
             </NavLink>
           );
         })}
-        <button 
-          onClick={handleLogout} 
+        <button
+          onClick={handleLogout}
           className="flex w-full items-center px-4 md:px-6 py-3 md:py-4 text-white no-underline transition-colors hover:bg-[#3d3b83] mt-auto"
         >
           <LogOut size={16} className="mr-2 md:mr-3 w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />

@@ -8,7 +8,7 @@ export default function ToggleBadge() {
   const { auth } = useAuth();
   // console.log("is Demo",auth?.user?.email); 
   const navigate = useNavigate();
-  const [isLive, setIsLive] = useState(false);
+  const [isLive, setIsLive] = useState(true);
   const [showPopup, setShowPopup] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingMode, setPendingMode] = useState(null);
