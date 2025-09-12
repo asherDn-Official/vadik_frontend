@@ -448,10 +448,10 @@ const RolesAndPermissions = () => {
                           className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform m-0.5 ${(perm.canCreate && perm.canRead && perm.canUpdate && perm.canDelete) ? "translate-x-5" : "translate-x-0"}`}
                         />
                       </div>
-                      <span className="ml-2 text-sm font-medium text-gray-700">Select all</span>
+                      {/* <span className="ml-2 text-sm font-medium text-gray-700">Select all</span> */}
                     </label>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {['canCreate', 'canRead', 'canUpdate', 'canDelete'].map((permType) => (
                       <div key={permType} className="flex items-center">
                         <label className="relative inline-flex items-center cursor-pointer">
@@ -480,7 +480,7 @@ const RolesAndPermissions = () => {
                         </label>
                       </div>
                     ))}
-                  </div>
+                  </div> */}
                 </div>
               ))}
             </div>
@@ -982,11 +982,11 @@ const RolesAndPermissions = () => {
                               className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform m-0.5 ${(perm.canCreate && perm.canRead && perm.canUpdate && perm.canDelete) ? "translate-x-5" : "translate-x-0"}`}
                             />
                           </div>
-                          <span className="ml-2 text-sm font-medium text-gray-700">Select all</span>
+                          {/* <span className="ml-2 text-sm font-medium text-gray-700">Select all</span> */}
                         </label>
                       </div>
 
-                      <div className="ml-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {/* <div className="ml-6 grid grid-cols-2 md:grid-cols-4 gap-4">
                         {['canCreate', 'canRead', 'canUpdate', 'canDelete'].map((permType) => (
                           <div key={permType} className="flex items-center">
                             <label className="relative inline-flex items-center cursor-pointer">
@@ -1017,7 +1017,7 @@ const RolesAndPermissions = () => {
                             </label>
                           </div>
                         ))}
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 </div>
