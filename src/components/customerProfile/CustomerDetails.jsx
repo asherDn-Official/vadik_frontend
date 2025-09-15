@@ -15,6 +15,9 @@ import EditIcon from '../../../public/assets/edit-icon.png';
 import profileImg from '../../../public/assets/profile.png';
 import PurchaseHistory from "../customeroppertunites/PurchaseHistory";
 import { formatIndianMobile } from "./formatIndianMobile";
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import DetailItem from './components/DetailItem'
 
 // Memoized FieldItem component to prevent unnecessary re-renders
 const FieldItem = React.memo(({
@@ -86,81 +89,6 @@ const FieldItem = React.memo(({
   );
 });
 
-// Memoized DetailItem component to prevent unnecessary re-renders
-const DetailItem = React.memo(({
-  label,
-  name,
-  defaultValue,
-  section = 'basic',
-  isEditable = false,
-  value,
-  onChange,
-  customer,
-  isEditing,
-  error
-}) => {
-  // Get field data from the nested structure
-  const fieldData = customer?.[section]?.[name] || {};
-  const fieldType = fieldData.type || getFieldType(customer, section, name);
-  const inputType = getInputType(fieldType);
-  const options = fieldData.options || [];
-
-  const handleInputChange = useCallback((e) => {
-    onChange(section, name, e.target.value);
-  }, [onChange, section, name]);
-
-  const handleSelectChange = useCallback((e) => {
-    onChange(section, name, e.target.value);
-  }, [onChange, section, name]);
-
-  return (
-    <div className="flex items-center justify-between p-4 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
-      <div className="flex items-center gap-x-3">
-        {fieldData.iconUrl && (
-          <img src={fieldData.iconUrl} alt={label} className="w-12 h-12" />
-        )}
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-900">{label}</p>
-          {isEditing && isEditable ? (
-            fieldType === 'options' ? (
-              <div>
-                <select
-                  value={value || ''}
-                  onChange={handleSelectChange}
-                  className={`mt-1 px-2 py-1 border ${error ? 'border-red-500' : 'border-gray-300'} rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
-                >
-                  <option value="">Select an option</option>
-                  {options.map((option, index) => (
-                    <option key={index} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-              </div>
-            ) : (
-              <div>
-                <input
-                  type={inputType}
-                  value={value || ''}
-                  onChange={handleInputChange}
-                  className={`mt-1 px-2 py-1 border ${error ? 'border-red-500' : 'border-gray-300'} rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
-                  placeholder={`Enter ${label.toLowerCase()}`}
-                  autoComplete="off"
-                />
-                {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-              </div>
-            )
-          ) : (
-            <p className="text-sm text-gray-600">
-              {formatFieldForDisplay(fieldData.value || defaultValue, fieldType)}
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-});
 
 // Set display names for debugging
 FieldItem.displayName = 'FieldItem';
