@@ -38,30 +38,49 @@ const CustomerProfile = () => {
     setIsEditing(false);
   };
 
+  function convertDateObjectToISO(dateObject) {
+    const result = {};
+
+    for (const [key, value] of Object.entries(dateObject)) {
+      if (typeof value === 'string' && value.includes('/')) {
+        const [day, month, year] = value.split('/');
+        const date = new Date(year, month - 1, day);
+        result[key] = date.toISOString();
+      } else {
+        result[key] = value;
+      }
+    }
+
+    return result;
+  }
+
   const handleSave = async (formData) => {
+
+    // console.log(formData);
+
     try {
       setIsLoading(true);
-      
+
       // Normalize gender to lowercase if present
-      const payload = {
-        ...formData.basic,
-        ...(formData.basic?.gender ? { gender: String(formData.basic.gender).toLowerCase() } : {}),
-        additionalData: formData.additionalData || {},
-        advancedDetails: formData.advancedDetails || {},
-        advancedPrivacyDetails: formData.advancedPrivacyDetails || {}
-      };
+      // const payload = {
+      //   ...formData.basic,
+      //   ...(formData.basic?.gender ? { gender: String(formData.basic.gender).toLowerCase() } : {}),
+      //   additionalData: formData.additionalData || {},
+      //   advancedDetails: formData.advancedDetails || {},
+      //   advancedPrivacyDetails: formData.advancedPrivacyDetails || {}
+      // };
 
       const response = await api.patch(
         `/api/customers/${selectedCustomer._id}`,
-        formData
+        convertDateObjectToISO(formData)
       );
-      showToast('Customer data updated successfully!','success');
+      showToast('Customer data updated successfully!', 'success');
       const updatedCustomer = response.data;
       setSelectedCustomer(updatedCustomer);
       setIsEditing(false);
     } catch (error) {
       // console.error("Error updating customer:", error);
-      showToast('Failed to update customer. Please try again','error');
+      showToast('Failed to update customer. Please try again', 'error');
       alert("Failed to update customer. Please try again.");
     } finally {
       setIsLoading(false);
@@ -79,7 +98,7 @@ const CustomerProfile = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="flex-1 flex">
-        <CustomerSidebar/>
+        <CustomerSidebar />
         <CustomerDetails
           customer={selectedCustomer}
           activeTab={activeTab}
