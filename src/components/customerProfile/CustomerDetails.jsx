@@ -14,6 +14,7 @@ import { extractFieldValue, transformCustomerData, transformFormDataToAPI, forma
 import EditIcon from '../../../public/assets/edit-icon.png';
 import profileImg from '../../../public/assets/profile.png';
 import PurchaseHistory from "../customeroppertunites/PurchaseHistory";
+import { formatIndianMobile } from "./formatIndianMobile";
 
 // Memoized FieldItem component to prevent unnecessary re-renders
 const FieldItem = React.memo(({
@@ -479,7 +480,7 @@ const CustomerDetails = ({
     });
   }, [formData, isEditing, handleInputChange, customer, errors]);
 
-
+  
 
   const defaultImage = {
     menDefaultImgUrl: "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg",
@@ -597,7 +598,7 @@ const CustomerDetails = ({
                       <FieldItem
                         label="Mobile Number"
                         name="mobileNumber"
-                        defaultValue={transformedCustomer?.mobileNumber}
+                        defaultValue={formatIndianMobile(transformedCustomer?.mobileNumber)}
                         isEditable={isEditing}
                         value={formData?.basic?.mobileNumber}
                         onChange={handleInputChange}
