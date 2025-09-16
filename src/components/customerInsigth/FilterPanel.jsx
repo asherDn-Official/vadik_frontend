@@ -436,7 +436,7 @@ const FilterPanel = ({
         // icon={getIconComponent(iconName)}
         expanded={expandedFilter === key}
         onToggle={() => toggleFilter(key)}
-        isActive={filters[key] !== undefined && filters[key] !== ''}
+        isActive={filters[name] !== undefined && filters[name] !== ''}
       >
         {renderFilterInput(name, apiFilterOptions[key])}
       </FilterItem>
