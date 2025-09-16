@@ -98,8 +98,28 @@ const CustomerList = ({
           getNestedValue(customer, `advancedDetails.${header}.value`) ??
           getNestedValue(customer, `advancedPrivacyDetails.${header}.value`);
 
-        // Return "-" if value is still undefined or null
-        return nestedValue !== "" ? nestedValue : '-';
+        // Handle null/undefined values
+        if (nestedValue === null || nestedValue === undefined || nestedValue === '') {
+          return '-';
+        }
+
+        // Check if the value is a date string in ISO format
+        if (typeof nestedValue === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(nestedValue)) {
+          try {
+            const date = new Date(nestedValue);
+            // Format as dd/mm/yyyy
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+          } catch (error) {
+            // If date parsing fails, return original value
+            return nestedValue;
+          }
+        }
+
+        // Return the original value for non-date strings/values
+        return nestedValue;
     }
   };
 
