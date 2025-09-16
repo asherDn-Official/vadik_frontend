@@ -424,6 +424,8 @@ const FilterPanel = ({
       iconName: item.iconName || "filter",
     }));
 
+    console.log(dynamicFilters)
+
     // Combine static filters with dynamic filters
     const allFilters = [...staticFilters, ...dynamicFilters];
 
@@ -436,7 +438,7 @@ const FilterPanel = ({
         onToggle={() => toggleFilter(key)}
         isActive={filters[key] !== undefined && filters[key] !== ''}
       >
-        {renderFilterInput(key, apiFilterOptions[key])}
+        {renderFilterInput(name, apiFilterOptions[key])}
       </FilterItem>
     ));
   };
