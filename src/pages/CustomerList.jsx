@@ -20,6 +20,7 @@ const CustomerList = () => {
   const itemsPerPage = 10;
   const navigate = useNavigate();
   const searchTerm = searchParams.get("search") || "";
+  const [source, setSource] = useState("");
 
   const fetchCustomers = useCallback(async () => {
     try {
@@ -31,6 +32,7 @@ const CustomerList = () => {
         page: pagination.currentPage,
         limit: itemsPerPage,
         ...(searchTerm && { search: searchTerm }),
+        ...(source && {source:source})
       });
 
       const response = await api.get(
@@ -50,7 +52,7 @@ const CustomerList = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.currentPage, searchTerm]);
+  }, [pagination.currentPage, searchTerm,source]);
 
   useEffect(() => {
     fetchCustomers();
@@ -151,6 +153,15 @@ const CustomerList = () => {
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
+              </div>
+              <div >
+                <select name="" id="" class=" py-2 border px-5 border-gray-300 rounded-lg  outline-none" onChange={(e)=>setSource(e.target.value)}>
+                  <option value="">select source</option>
+                  <option value="walk-in">walk-in</option>
+                  <option value="website">website</option>
+                  <option value="social-media">social-media</option>
+                  <option value="others">others</option>
+                </select>
               </div>
               <button onClick={handleAddNewCustomer} className="ml-4 bg-[#313166] text-white px-4 py-2 rounded-md">
                 Add New Customer
