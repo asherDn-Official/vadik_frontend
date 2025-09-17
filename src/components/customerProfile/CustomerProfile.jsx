@@ -54,25 +54,24 @@ const CustomerProfile = () => {
     return result;
   }
 
+  const removePlusFromPhone = (phone) => {
+    if (!phone) return '';
+    return phone.replace(/^\+/, '');
+  };
+
   const handleSave = async (formData) => {
 
-    // console.log(formData);
+    const payloadData = {
+      ...formData,
+      mobileNumber: removePlusFromPhone(formData.mobileNumber)
+    };
 
     try {
       setIsLoading(true);
 
-      // Normalize gender to lowercase if present
-      // const payload = {
-      //   ...formData.basic,
-      //   ...(formData.basic?.gender ? { gender: String(formData.basic.gender).toLowerCase() } : {}),
-      //   additionalData: formData.additionalData || {},
-      //   advancedDetails: formData.advancedDetails || {},
-      //   advancedPrivacyDetails: formData.advancedPrivacyDetails || {}
-      // };
-
       const response = await api.patch(
         `/api/customers/${selectedCustomer._id}`,
-        convertDateObjectToISO(formData)
+        convertDateObjectToISO(payloadData)
       );
       showToast('Customer data updated successfully!', 'success');
       const updatedCustomer = response.data;

@@ -18,6 +18,8 @@ import { formatIndianMobile } from "./formatIndianMobile";
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import DetailItem from './components/DetailItem'
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 // Memoized FieldItem component to prevent unnecessary re-renders
 const FieldItem = React.memo(({
@@ -35,6 +37,7 @@ const FieldItem = React.memo(({
   // Get field data from the nested structure
   const fieldData = customer?.[section]?.[name] || {};
   const isGender = section === 'basic' && name === 'gender';
+  const isMobileNumber = section === 'basic' && name === 'mobileNumber';
   const fieldType = isGender ? 'options' : (fieldData.type || getFieldType(customer, section, name));
   const inputType = getInputType(fieldType);
   const options = isGender ? ['Male', 'Female', 'Others'] : (fieldData.options || []);
@@ -46,6 +49,34 @@ const FieldItem = React.memo(({
   const handleSelectChange = useCallback((e) => {
     onChange(section, name, e.target.value);
   }, [onChange, section, name]);
+
+  const handlePhoneChange = useCallback((phoneValue) => {
+    onChange(section, name, phoneValue);
+  }, [onChange, section, name]);
+
+  // Special rendering for mobile number field
+  if (isMobileNumber && isEditing && isEditable) {
+    return (
+      <div className="mb-4">
+        <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">{label}</p>
+        <div className={`phone-input-container border ${error ? 'border-red-500' : 'border-gray-300'} rounded focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent`}>
+          <PhoneInput
+            international
+            // countryCallingCodeEditable={true}
+            defaultCountry="IN"
+            value={value || ''}
+            onChange={handlePhoneChange}
+            className="w-full"
+            inputClassName="!border-none !focus:ring-0 !w-full !py-2 !px-3 !text-sm !font-medium !text-gray-900"
+            numberInputProps={{
+              className: "focus:ring-0 focus:outline-none"
+            }}
+          />
+        </div>
+        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="mb-4">
@@ -89,7 +120,6 @@ const FieldItem = React.memo(({
   );
 });
 
-
 // Set display names for debugging
 FieldItem.displayName = 'FieldItem';
 DetailItem.displayName = 'DetailItem';
@@ -114,7 +144,11 @@ const basicSchema = yup.object().shape({
   mobileNumber: yup
     .string()
     .required('Mobile number is required')
-    .matches(/^91[6-9]\d{9}$/, 'Enter a valid 12-digit Indian mobile number (e.g., 919894584104)')
+    .test('is-indian-number', 'Enter a valid 10-digit Indian mobile number after +91 (e.g., +919876543210)', value => {
+      if (!value) return false;
+      const normalized = String(value).replace(/\s/g, '');
+      return /^\+?91[6-9]\d{9}$/.test(normalized);
+    })
 });
 
 // Validation schema for store information fields
@@ -161,7 +195,7 @@ const CustomerDetails = ({
         basic: {
           firstname: transformedCustomer?.firstname || '',
           lastname: transformedCustomer?.lastname || '',
-          mobileNumber: transformedCustomer?.mobileNumber || '',
+          mobileNumber: '+'+transformedCustomer?.mobileNumber || '',
           source: transformedCustomer?.source || '',
           customerId: transformedCustomer?.customerId || '',
           firstVisit: transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : '',
@@ -196,6 +230,8 @@ const CustomerDetails = ({
     };
   });
 
+  console.log(formData.basic.mobileNumber);
+
   // State for validation errors
   const [errors, setErrors] = useState({
     basic: {},
@@ -219,7 +255,7 @@ const CustomerDetails = ({
         basic: {
           firstname: transformedCustomer?.firstname || '',
           lastname: transformedCustomer?.lastname || '',
-          mobileNumber: transformedCustomer?.mobileNumber || '',
+          mobileNumber: "+"+transformedCustomer?.mobileNumber || '',
           source: transformedCustomer?.source || '',
           customerId: transformedCustomer?.customerId || '',
           firstVisit: transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : '',
