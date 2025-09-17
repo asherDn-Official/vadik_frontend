@@ -66,7 +66,7 @@ const FieldItem = React.memo(({
             defaultCountry="IN"
             value={value || ''}
             onChange={handlePhoneChange}
-            className="w-full"
+            className="w-full py-1.5 px-0.5"
             inputClassName="!border-none !focus:ring-0 !w-full !py-2 !px-3 !text-sm !font-medium !text-gray-900"
             numberInputProps={{
               className: "focus:ring-0 focus:outline-none"
