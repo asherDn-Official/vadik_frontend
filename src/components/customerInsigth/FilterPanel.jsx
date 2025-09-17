@@ -92,7 +92,7 @@ const FilterPanel = ({
           mobileNumber: { type: "number" },
           gender: ["Male", "Female", "Others"],
           firstVisit: { type: "date" },
-          source: ["Walk In", "Website", "Social Media"],
+          source: ["walk-in","website","social-media","others"],
           isActive: ['true', 'false'],
         };
 
@@ -408,13 +408,13 @@ const FilterPanel = ({
 
     // Define the order of static filters
     const staticFilters = [
-      { key: "firstname", name: "FirstName", iconName: "person" },
-      { key: "lastname", name: "LastName", iconName: "person" },
-      { key: "mobileNumber", name: "Mobile Number", iconName: "phone" },
-      { key: "gender", name: "Gender", iconName: "person" },
-      { key: "firstVisit", name: "First Visit", iconName: "calendar" },
-      { key: "source", name: "Source", iconName: "location" },
-      { key: "isActive", name: "Active", iconName: "activity" }
+      { key: "firstname", name: "firstname", iconName: "person" },
+      { key: "lastname", name: "lastname", iconName: "person" },
+      { key: "mobileNumber", name: "mobileNumber", iconName: "phone" },
+      { key: "gender", name: "gender", iconName: "person" },
+      { key: "firstVisit", name: "firstVisit", iconName: "calendar" },
+      { key: "source", name: "source", iconName: "location" },
+      { key: "isActive", name: "isActive", iconName: "activity" }
     ];
 
     // Get dynamic filters from API data
