@@ -106,14 +106,7 @@ const MyProfile = () => {
     }
   }, [auth, setValue]);
 
-
   const gstValue = watch("GSTNumber");
-
-  useEffect(() => {
-    if (gstValue) {
-      trigger("GSTNumber");
-    }
-  }, [gstValue, trigger]);
 
   const handlePhoneChange = (value) => {
     setValue("phone", value);
@@ -204,24 +197,16 @@ const MyProfile = () => {
   }
 
 
-  const validateGstOnBlur = (e) => {
-    const gst = e.target.value?.trim().toUpperCase();
+  const validateGstNumber = (value) => {
+    if (!value) return "GST is required";
+
+    const gst = value.trim().toUpperCase();
     const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
-    if (!gst) {
-      clearErrors('GSTNumber');
-      setValue('GSTNumber', '');
-      return;
-    }
+    if (gst.length !== 15) return "GST number must be 15 characters";
+    if (!gstRegex.test(gst)) return "Invalid GST number format";
 
-    if (gst.length !== 15) {
-      setError('GSTNumber', { message: 'GST number must be 15 characters' });
-    } else if (!gstRegex.test(gst)) {
-      setError('GSTNumber', { message: 'Invalid GST number format' });
-    } else {
-      clearErrors('GSTNumber');
-      setValue('GSTNumber', gst);
-    }
+    return true;
   };
 
 
@@ -445,13 +430,14 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("GSTNumber", { required: "GST is required" })}
-                  onBlur={validateGstOnBlur}
+                  {...register("GSTNumber", {
+                    required: "GST is required",
+                    validate: validateGstNumber
+                  })}
                   onChange={(e) => {
-                    // Auto-uppercase as user types
-                    setValue('GSTNumber', e.target.value.toUpperCase());
+                    const value = e.target.value.toUpperCase();
+                    setValue("GSTNumber", value, { shouldValidate: true });
                   }}
-
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                   placeholder="Enter GST number"
                 />
