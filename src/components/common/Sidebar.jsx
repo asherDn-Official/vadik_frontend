@@ -2,7 +2,6 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { LogOut } from "lucide-react";
 import ToggleBadge from "./ToggleBadge";
-import SecurityPopup from "./SecurityPopup";
 
 function Sidebar() {
   const location = useLocation();
@@ -92,11 +91,11 @@ function Sidebar() {
   };
 
   return (
-    <aside className="w-full md:w-48 lg:w-64 xl:w-72 bg-[#313166] text-white flex flex-col min-h-full  overflow-y-auto">
-      <div className=" md:pt-4  font-medium text-base md:text-lg lg:text-xl text-center truncate">
+    <aside className="sticky left-0 top-0 h-screen w-full md:w-48 lg:w-64 xl:w-72 bg-[#313166] text-white flex flex-col overflow-y-auto">
+      <div className="pt-4 font-medium text-base md:text-lg lg:text-xl text-center truncate">
         Vadik AI
       </div>
-      <div className=" my-3">
+      <div className="my-3">
         {userRole === "retailer" && (
           <ToggleBadge />
         )}
