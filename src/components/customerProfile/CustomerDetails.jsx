@@ -59,14 +59,14 @@ const FieldItem = React.memo(({
     return (
       <div className="mb-4">
         <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">{label}</p>
-        <div className={`phone-input-container border ${error ? 'border-red-500' : 'border-gray-300'} rounded focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent`}>
+        <div className={`phone-input-container border ${error ? 'border-red-500' : 'border-gray-300'} rounded `}>
           <PhoneInput
             international
             // countryCallingCodeEditable={true}
             defaultCountry="IN"
             value={value || ''}
             onChange={handlePhoneChange}
-            className="w-full py-1.5 px-0.5"
+            className="w-full py-1.5 px-0.5 outline-none"
             inputClassName="!border-none !focus:ring-0 !w-full !py-2 !px-3 !text-sm !font-medium !text-gray-900"
             numberInputProps={{
               className: "focus:ring-0 focus:outline-none"
