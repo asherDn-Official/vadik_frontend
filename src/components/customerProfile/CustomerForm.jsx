@@ -24,7 +24,7 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
       mobileNumber: "",
       source: "walk-in",
       gender: "",
-      firstVisit: null,
+      firstVisit: new Date(),
     },
     mode: "onChange", // Change validation mode to onChange for real-time
   });
