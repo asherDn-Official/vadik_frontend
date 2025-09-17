@@ -12,7 +12,10 @@ const MyProfile = () => {
     register,
     handleSubmit,
     formState: { errors },
+    setError,
+    clearErrors,
     setValue,
+    trigger ,
     watch,
   } = useForm({
     defaultValues: {
@@ -41,7 +44,6 @@ const MyProfile = () => {
 
   const [uploadError, setUploadError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [retailerId, setRetailerId] = useState(null);
   const fileInputRef = useRef(null);
@@ -103,6 +105,15 @@ const MyProfile = () => {
       fetchProfileData();
     }
   }, [auth, setValue]);
+
+
+  const gstValue = watch("GSTNumber");
+
+useEffect(() => {
+  if (gstValue) {
+    trigger("GSTNumber");
+  }
+}, [gstValue, trigger]);
 
   const handlePhoneChange = (value) => {
     setValue("phone", value);
@@ -192,6 +203,28 @@ const MyProfile = () => {
     return <div className="px-10 py-3 mx-auto">Loading profile data...</div>;
   }
 
+
+  const validateGstOnBlur = (e) => {
+    const gst = e.target.value?.trim().toUpperCase();
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+
+    if (!gst) {
+      clearErrors('GSTNumber');
+      setValue('GSTNumber', '');
+      return;
+    }
+
+    if (gst.length !== 15) {
+      setError('GSTNumber', { message: 'GST number must be 15 characters' });
+    } else if (!gstRegex.test(gst)) {
+      setError('GSTNumber', { message: 'Invalid GST number format' });
+    } else {
+      clearErrors('GSTNumber');
+      setValue('GSTNumber', gst);
+    }
+  };
+
+
   return (
     <div className="px-10 py-3 mx-auto">
       <h2 className="text-[#313166] text-[14px] font-medium mb-6">
@@ -203,9 +236,9 @@ const MyProfile = () => {
           {successMessage}
         </div>
       )}
-      {error && (
+      {/* {error && (
         <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">{error}</div>
-      )}
+      )} */}
 
       <div className="flex flex-col md:flex-row gap-10">
         <div className="flex-1">
@@ -344,7 +377,7 @@ const MyProfile = () => {
                 Store Address
               </label>
               <textarea
-                {...register("address", { required: "Store address is required",minLength:{ value:10 , message:"Must be atleast 10 characters" },maxLength:{ value:250,message:"Cannot exceed 250 characters"} })}
+                {...register("address", { required: "Store address is required", minLength: { value: 10, message: "Must be atleast 10 characters" }, maxLength: { value: 250, message: "Cannot exceed 250 characters" } })}
                 className="w-full h-36 p-2 border border-gray-300 rounded text-[#313166]"
                 placeholder="Enter store address"
               />
@@ -391,7 +424,7 @@ const MyProfile = () => {
                       value: 1,
                       message: "Loyal customer period must be at least 1 day"
                     },
-                     max: {
+                    max: {
                       value: 90,
                       message: "Loyal customer period cannot exceed 90 days"
                     }
@@ -413,6 +446,12 @@ const MyProfile = () => {
                 <input
                   type="text"
                   {...register("GSTNumber", { required: "GST is required" })}
+                  onBlur={validateGstOnBlur}
+                  onChange={(e) => {
+                    // Auto-uppercase as user types
+                    setValue('GSTNumber', e.target.value.toUpperCase());
+                  }}
+
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                   placeholder="Enter GST number"
                 />
@@ -536,6 +575,7 @@ const MyProfile = () => {
                   {...register("storeType", { required: "Store type is required" })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                   placeholder="Enter store type"
+                  disabled
                 />
                 {errors.storeType && (
                   <p className="text-red-500 text-xs mt-1">{errors.storeType.message}</p>
