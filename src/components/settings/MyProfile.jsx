@@ -15,7 +15,7 @@ const MyProfile = () => {
     setError,
     clearErrors,
     setValue,
-    trigger ,
+    trigger,
     watch,
   } = useForm({
     defaultValues: {
@@ -109,11 +109,11 @@ const MyProfile = () => {
 
   const gstValue = watch("GSTNumber");
 
-useEffect(() => {
-  if (gstValue) {
-    trigger("GSTNumber");
-  }
-}, [gstValue, trigger]);
+  useEffect(() => {
+    if (gstValue) {
+      trigger("GSTNumber");
+    }
+  }, [gstValue, trigger]);
 
   const handlePhoneChange = (value) => {
     setValue("phone", value);
