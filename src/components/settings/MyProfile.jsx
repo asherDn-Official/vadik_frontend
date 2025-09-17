@@ -150,7 +150,7 @@ const MyProfile = () => {
       if (response.data.status === "success") {
         showToast("Profile Updated Successfully!", "success");
 
-        if (response.data.data?.avatarUrl) { 
+        if (response.data.data?.avatarUrl) {
           setValue("profilePicture", response.data.data.avatarUrl);
         }
       }
@@ -248,10 +248,10 @@ const MyProfile = () => {
                   type="text"
                   {...register("lastName", {
                     required: "Last Name is required",
-                    // minLength: {
-                    //   value: 2,
-                    //   message: "Must be at least 2 characters",
-                    // },
+                    minLength: {
+                      value: 2,
+                      message: "Must be at least 2 characters",
+                    },
                     maxLength: {
                       value: 20,
                       message: "Cannot exceed 20 characters",
@@ -264,6 +264,9 @@ const MyProfile = () => {
                   placeholder="Enter last name"
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                 />
+                {errors.lastName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>
+                )}
               </div>
             </div>
 
@@ -279,6 +282,7 @@ const MyProfile = () => {
                   inputClass="w-full p-2 border border-gray-300 rounded text-[#313166]"
                   inputStyle={{ width: "100%" }}
                   dropdownClass="text-gray-700"
+                  disabled
                 />
                 {errors.phone && (
                   <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
@@ -339,10 +343,9 @@ const MyProfile = () => {
               <label className="block text-sm text-[#31316680]">
                 Store Address
               </label>
-              <input
-                type="text"
-                {...register("address", { required: "Store address is required" })}
-                className="w-full p-2 border border-gray-300 rounded text-[#313166]"
+              <textarea
+                {...register("address", { required: "Store address is required",minLength:{ value:10 , message:"Must be atleast 10 characters" },maxLength:{ value:250,message:"Cannot exceed 250 characters"} })}
+                className="w-full h-36 p-2 border border-gray-300 rounded text-[#313166]"
                 placeholder="Enter store address"
               />
               {errors.address && (
@@ -362,6 +365,10 @@ const MyProfile = () => {
                     min: {
                       value: 1,
                       message: "Retention period must be at least 1 day"
+                    },
+                    max: {
+                      value: 90,
+                      message: "Retention period cannot exceed 90 days"
                     }
                   })}
                   placeholder="Enter retention period in days"
@@ -383,6 +390,10 @@ const MyProfile = () => {
                     min: {
                       value: 1,
                       message: "Loyal customer period must be at least 1 day"
+                    },
+                     max: {
+                      value: 90,
+                      message: "Loyal customer period cannot exceed 90 days"
                     }
                   })}
                   placeholder="Enter loyal customer period in days"
