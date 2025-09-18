@@ -81,6 +81,14 @@ const AddProduct = ({ onBack, product: editProduct }) => {
   });
 
   const watchedValues = watch();
+  const isOutOfStock = watch('status') === 'Out of Stock';
+
+  useEffect(() => {
+    // When status is Out of Stock, force stock to 0
+    if (isOutOfStock) {
+      setValue('stock', 0, { shouldValidate: true, shouldDirty: true });
+    }
+  }, [isOutOfStock, setValue]);
 
   // Authentication check
   useEffect(() => {
@@ -214,7 +222,8 @@ const AddProduct = ({ onBack, product: editProduct }) => {
       formData.append("price", data.price);
       formData.append("status", data.status);
       formData.append("category", data.category);
-      formData.append("stock", data.stock);
+      const stockToSend = data.status === 'Out of Stock' ? 0 : data.stock;
+      formData.append("stock", stockToSend);
       formData.append("colors", colors.join(","));
 
       // Add images to remove
@@ -618,8 +627,9 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                     valueAsNumber: true
                   })}
                   min="0"
-                  className={`w-full p-2 border rounded-md ${errors.stock ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                  disabled={isOutOfStock}
+                  title={isOutOfStock ? 'Stock is set to 0 when status is Out of Stock' : undefined}
+                  className={`w-full p-2 border rounded-md ${errors.stock ? 'border-red-500' : 'border-gray-300'} ${isOutOfStock ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 />
                 {errors.stock ? (
                   <p className="text-xs text-red-500 mt-1">
