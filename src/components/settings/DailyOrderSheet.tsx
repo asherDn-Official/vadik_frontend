@@ -555,6 +555,10 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                   minLength: {
                     value: 2,
                     message: "First name must be at least 2 characters"
+                  },
+                  maxLength: {
+                    value: 50,
+                    message: "First name can't be more than 50 characters"
                   }
                 })}
                 type="text"
@@ -577,7 +581,11 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                   minLength: {
                     value: 1,
                     message: "Last name must be at least 2 characters"
-                  }
+                  },
+                  maxLength: {
+                    value: 50,
+                    message: "Last name can't be more than 50 characters"
+                }
                 })}
                 type="text"
                 placeholder="Enter last name"
@@ -606,7 +614,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                   validate: (value) => {
                     // Remove any non-digit characters for validation
                     const digitsOnly = value.replace(/\D/g, '');
-                    return digitsOnly.length >= 10 || "Please enter a valid phone number";
+                    return digitsOnly.length >= 12 || "Please enter a valid phone number";
                   }
                 }}
                 render={({ field }) => (
