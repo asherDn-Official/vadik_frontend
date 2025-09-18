@@ -299,8 +299,8 @@ const Inventory = () => {
               }}
               className="w-full p-2 border border-gray-300 rounded-md"
             >
-              <option value="productName:asc">Name (A-Z)</option>
-              <option value="productName:desc">Name (Z-A)</option>
+              <option value="productname:asc">Name (A-Z)</option>
+              <option value="productname:desc">Name (Z-A)</option>
               <option value="price:asc">Price (Low to High)</option>
               <option value="price:desc">Price (High to Low)</option>
             </select>
