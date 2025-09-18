@@ -107,7 +107,7 @@ const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All Category");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [sortBy, setSortBy] = useState("productName:asc");
+  const [sortBy, setSortBy] = useState("productName");
   const [sortOrder, setSortOrder] = useState("asc");
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
@@ -284,7 +284,7 @@ const Inventory = () => {
               <option>All Status</option>
               <option>In Stock</option>
               <option>Out of Stock</option>
-              <option>Low Stock</option>
+              {/* <option>Low Stock</option> */}
             </select>
           </div>
 
@@ -332,7 +332,7 @@ const Inventory = () => {
                             className="w-10 h-10 mr-3 object-cover rounded-md"
                           />
                         )}
-                        <span>{product.productname}</span>
+                        <span>{product.productname.length > 32 ? `${product.productname.slice(0, 32)}...` : product.productname}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">{product.category}</td>
