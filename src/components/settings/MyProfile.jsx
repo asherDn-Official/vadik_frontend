@@ -108,8 +108,21 @@ const MyProfile = () => {
 
   const gstValue = watch("GSTNumber");
 
-  const handlePhoneChange = (value) => {
-    setValue("phone", value);
+  const handlePhoneChange = (phoneValue) => {
+    setValue("phone", phoneValue, { shouldValidate: true });
+
+    // Custom validation for 10 digits
+    if (phoneValue) {
+      const digitsOnly = phoneValue.replace(/\D/g, '');
+      if (digitsOnly.length !== 12) {
+        setError('phone', {
+          type: 'manual',
+          message: 'Phone number must be 10 digits'
+        });
+      } else {
+        clearErrors('phone');
+      }
+    }
   };
 
   const onSubmit = async (data) => {
@@ -300,7 +313,7 @@ const MyProfile = () => {
                   inputClass="w-full p-2 border border-gray-300 rounded text-[#313166]"
                   inputStyle={{ width: "100%" }}
                   dropdownClass="text-gray-700"
-                  disabled
+
                 />
                 {errors.phone && (
                   <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
