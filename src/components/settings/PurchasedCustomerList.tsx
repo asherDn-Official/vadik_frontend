@@ -115,7 +115,7 @@ const PurchasedCustomerList = ({ billingData, onBack, onCustomerClick, onPageCha
                   <tr
                     key={customer.id || index}
                     className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => onCustomerClick(customer)}
+                    // onClick={() => onCustomerClick(customer)}
                   >
                     <td className="px-4 py-3 text-sm whitespace-nowrap">
                       {String(startIndex + index + 1).padStart(2, "0")}

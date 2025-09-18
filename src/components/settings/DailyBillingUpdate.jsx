@@ -242,10 +242,10 @@ const DailyBillingUpdate = () => {
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <div className="flex gap-2">
-            <button className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors whitespace-nowrap">
+            {/* <button className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors whitespace-nowrap">
               <Upload size={16} />
               Import
-            </button>
+            </button> */}
             <button
               onClick={handleNewOrder}
               className="flex items-center gap-2 px-4 py-2 border border-pink-600 text-pink-600 rounded-md hover:bg-pink-50 transition-colors whitespace-nowrap"

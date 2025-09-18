@@ -143,7 +143,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const searchProducts = async (query, productId) => {
     try {
       const response = await api.get(
-        `/api/inventory?retailerId=${retailerId}&search=${query}`
+        `/api/inventory?retailerId=${retailerId}&search=${query}&status=In+Stock`
       );
       setProductSearchResults((prev) => ({
         ...prev,
@@ -523,13 +523,13 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         </div>
 
         <div className="flex gap-3">
-          <button
+          {/* <button
             onClick={onBack}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
           >
             <Scan size={16} />
             Scanner
-          </button>
+          </button> */}
           <button
             onClick={onNewOrder}
             className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700 transition-colors"
