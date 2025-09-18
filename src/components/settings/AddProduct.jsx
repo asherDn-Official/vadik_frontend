@@ -392,6 +392,10 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                     minLength: {
                       value: 2,
                       message: "Product name must be at least 2 characters long"
+                    },
+                    maxLength: {
+                      value: 100,
+                      message: "Product name must not exceed 100 characters"
                     }
                   })}
                   className={`w-full p-2 border rounded-md ${errors.productname ? 'border-red-500' : 'border-gray-300'
@@ -419,6 +423,10 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                     minLength: {
                       value: 10,
                       message: "Product description must be at least 10 characters long"
+                    },
+                    maxLength: {
+                      value: 500,
+                      message: "Product description must not exceed 500 characters"
                     }
                   })}
                   rows="4"
@@ -510,6 +518,10 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                       min: {
                         value: 0.01,
                         message: "Price must be greater than 0"
+                      },
+                      max:{
+                        value: 100000,
+                        message: "Price must be less than 1 lakh"
                       },
                       valueAsNumber: true
                     })}
@@ -632,6 +644,10 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                     min: {
                       value: 0,
                       message: "Stock quantity cannot be negative"
+                    },
+                    max:{
+                      value: 1000000000,
+                      message: "Stock quantity cannot exceed  more than 1 billion items"
                     },
                     valueAsNumber: true
                   })}

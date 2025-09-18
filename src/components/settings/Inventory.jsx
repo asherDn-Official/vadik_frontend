@@ -107,7 +107,7 @@ const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All Category");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [sortBy, setSortBy] = useState("productName");
+  const [sortBy, setSortBy] = useState("productName:asc");
   const [sortOrder, setSortOrder] = useState("asc");
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
@@ -291,7 +291,7 @@ const Inventory = () => {
           <div>
             <label className="block text-sm text-gray-600 mb-1">Sort By</label>
             <select
-              value={sortBy}
+              value={`${sortBy}:${sortOrder}`}
               onChange={(e) => {
                 const [newSortBy, newSortOrder] = e.target.value.split(":");
                 setSortBy(newSortBy);
@@ -408,7 +408,7 @@ const Inventory = () => {
                     key={pageNum}
                     className={`px-3 py-1 border rounded-md ${
                       pagination.page === pageNum
-                        ? "bg-sidebar text-white"
+                        ? "bg-sidebar "
                         : "border-gray-300 hover:bg-gray-100"
                     }`}
                     onClick={() => handlePageChange(pageNum)}
