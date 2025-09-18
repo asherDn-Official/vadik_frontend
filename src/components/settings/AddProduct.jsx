@@ -525,9 +525,8 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                     className={`w-full p-2 border rounded-md appearance-none ${errors.status ? 'border-red-500' : 'border-gray-300'
                       }`}
                   >
-                    <option value="In Stock">In Stock</option>
-                    <option value="Out of Stock">Out of Stock</option>
-                    <option value="Low Stock">Low Stock</option>
+                    <option value='In Stock'>In Stock</option>
+                    <option value='Out of Stock'>Out of Stock</option>
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                     <svg
