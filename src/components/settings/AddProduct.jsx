@@ -76,6 +76,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
       status: "In Stock",
       category: "",
       stock: "",
+      colors: []
     },
     mode: "onChange"
   });
@@ -114,6 +115,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
           setValue("stock", product.stock);
           
           setColors(product.colors || []);
+          setValue('colors', product.colors || [], { shouldValidate: true });
           if (product.images) {
             setImagePreviews(product.images);
           }
@@ -182,6 +184,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     if (newColor.trim() && !colors.includes(newColor.trim())) {
       const updatedColors = [...colors, newColor.trim()];
       setColors(updatedColors);
+      setValue('colors', updatedColors, { shouldValidate: true, shouldDirty: true });
       setNewColor("");
     }
   };
@@ -189,6 +192,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
   const handleRemoveColor = (colorToRemove) => {
     const updatedColors = colors.filter((color) => color !== colorToRemove);
     setColors(updatedColors);
+    setValue('colors', updatedColors, { shouldValidate: true, shouldDirty: true });
   };
 
   const onSubmit = async (data) => {
@@ -206,11 +210,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
       return;
     }
 
-    // Validate colors
-    if (colors.length === 0) {
-      setError("At least one color is required");
-      return;
-    }
+
 
     setLoading(true);
 
@@ -465,6 +465,15 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                     Add
                   </button>
                 </div>
+                <input
+                  type="hidden"
+                  {...register('colors', {
+                    validate: (value) => (Array.isArray(value) && value.length > 0) || 'alteast one colores is required'
+                  })}
+                />
+                {errors.colors && (
+                  <p className="text-xs text-red-500 mt-1">{errors.colors.message}</p>
+                )}
                 {colors.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {colors.map((color) => (
