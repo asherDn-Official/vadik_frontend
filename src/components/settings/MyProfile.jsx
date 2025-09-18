@@ -349,7 +349,13 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("storeName", { required: "Store name is required", minLength: { value: 3, message: "Must be at least 3 characters" }, maxLength: { value: 50, message: "Cannot exceed 50 characters" } })}
+                  {...register("storeName", {
+                    required: "Store name is required", minLength: { value: 3, message: "Must be at least 3 characters" }, maxLength: { value: 50, message: "Cannot exceed 50 characters" },
+                    pattern: {
+                      value: /^[a-zA-Z\u00C0-\u017F\s'-]+$/,
+                      message: "Only letters, hyphens, and apostrophes allowed",
+                    },
+                  })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                   placeholder="Enter store name"
                 />
@@ -465,7 +471,13 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("storeOwnerName", { required: "Store owner name is required", minLength: { value: 3, message: "Must be at least 3 characters" }, maxLength: { value: 50, message: "Cannot exceed 50 characters" } })}
+                  {...register("storeOwnerName", {
+                    required: "Store owner name is required", minLength: { value: 3, message: "Must be at least 3 characters" }, maxLength: { value: 50, message: "Cannot exceed 50 characters" },
+                    pattern: {
+                      value: /^[a-zA-Z\u00C0-\u017F\s'-]+$/,
+                      message: "Only letters, hyphens, and apostrophes allowed",
+                    },
+                  })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                   placeholder="Enter store owner name"
                 />
@@ -524,7 +536,21 @@ const MyProfile = () => {
                 </label>
                 <input
                   type="text"
-                  {...register("storeCity", { required: "Store city is required" })}
+                  {...register("storeCity", {
+                    required: "Store city is required",
+                    minLength: {
+                      value: 3,
+                      message: "Must be at least 3 characters",
+                    },
+                    maxLength: {
+                      value: 50,
+                      message: "Cannot exceed 50 characters",
+                    },
+                    pattern: {
+                      value: /^[a-zA-Z\u00C0-\u017F\s'-]+$/,
+                      message: "Only letters, hyphens, and apostrophes allowed",
+                    },
+                  })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                   placeholder="Enter store city"
                 />
@@ -538,8 +564,13 @@ const MyProfile = () => {
                   Store Pincode
                 </label>
                 <input
-                  type="text"
-                  {...register("storePincode", { required: "Store pincode is required" })}
+                  type="number"
+                  {...register("storePincode", {
+                    required: "Store pincode is required",
+                    min: { value: 100000, message: "Must be 6 digits" },
+                    max: { value: 999999, message: "Cannot exceed 6 digits" }
+                  }
+                  )}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                   placeholder="Enter store pincode"
                 />
@@ -555,8 +586,9 @@ const MyProfile = () => {
                   Store Contact Number
                 </label>
                 <input
-                  type="text"
-                  {...register("storeContactNumber", { required: "Store contact number is required" })}
+                  type="number"
+                  {...register("storeContactNumber", { required: "Store contact number is required",minLength: { value: 10, message: "Must be 10 digits" }, maxLength: { value: 10, message: "Cannot exceed 10 digits"}}
+                  )}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
                   placeholder="Enter store contact number"
                 />
