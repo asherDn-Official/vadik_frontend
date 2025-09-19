@@ -218,8 +218,8 @@ const RolesAndPermissions = () => {
                     message: "Designation must be at least 2 characters"
                   },
                   maxLength: {
-                    value: 30,
-                    message: "Full name cannot exceed 30 characters"
+                    value: 100,
+                    message: "Full name cannot exceed 100 characters"
                   }
                 })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-[10px] focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none"
@@ -243,7 +243,7 @@ const RolesAndPermissions = () => {
                   validate: (value) => {
                     // Remove any non-digit characters for validation
                     const digitsOnly = value.replace(/\D/g, '');
-                    return digitsOnly.length >= 10 || "Please enter a valid phone number";
+                    return digitsOnly.length >= 12 || "Please enter a valid phone number";
                   }
                 }}
                 render={({ field }) => (
@@ -258,7 +258,7 @@ const RolesAndPermissions = () => {
                       height: "42px"
                     }}
                     dropdownClass="text-gray-700"
-                    enableSearch={true}
+                    enableSearch={false}
                     countryCodeEditable={false}
                   />
                 )}
