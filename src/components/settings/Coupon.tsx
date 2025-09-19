@@ -83,11 +83,8 @@ const CouponManagement = () => {
           .number()
           .typeError("Discount must be a number")
           .positive("Discount must be greater than 0")
-          .when("couponType", (couponType, schema) =>
-            couponType === "percentage"
-              ? schema.max(100, "Percentage discount cannot exceed 100")
-              : schema
-          ),
+          .min(0, "Discount must be greater than or equal to 0")
+          .max(100, "Discount cannot exceed 100"),
       expiryDate: yup
         .string()
         .required("Expiry date is required")
@@ -104,7 +101,10 @@ const CouponManagement = () => {
           }
         ),
       couponType: yup.mixed().oneOf(["amount", "percentage", "product"]).required(),
-      description: yup.string().nullable(),
+      description: yup
+        .string()
+        .nullable()
+        .max(100, "Description must be at most 100 characters"),
       isActive: yup.boolean().default(true),
       condition: yup.boolean().default(false),
       conditionType: yup.mixed().oneOf(["greater", "lesser", "equal"]).default("greater"),
@@ -449,7 +449,7 @@ const CouponManagement = () => {
                   >
                     <option value="amount">Amount (e.g., ₹50 off)</option>
                     <option value="percentage">Percentage (e.g., 10% off)</option>
-                    <option value="product">Product (e.g., Free Gift)</option>
+                    {/* <option value="product">Product (e.g., Free Gift)</option> */}
                   </select>
                 </div>
 
@@ -514,6 +514,9 @@ const CouponManagement = () => {
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     placeholder="Brief description of the coupon"
                   />
+                  {errors.description && (
+                    <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                  )}
                 </div>
               </div>
 
