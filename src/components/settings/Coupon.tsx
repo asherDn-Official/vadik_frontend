@@ -406,7 +406,15 @@ const CouponManagement = () => {
                   <input
                     type="text"
                     {...register("code")}
-                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.code ? "border-red-500" : "border-gray-300"}`}
+                    onChange={(e) => {
+                      const uppercased = e.target.value.toUpperCase();
+                      // update input value
+                      e.target.value = uppercased;
+                      // update react-hook-form state
+                      setValue("code", uppercased, { shouldValidate: true });
+                    }}
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.code ? "border-red-500" : "border-gray-300"
+                      }`}
                     placeholder="e.g., FLAT50"
                   />
                   {errors.code && (
