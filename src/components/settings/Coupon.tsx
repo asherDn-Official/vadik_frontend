@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { 
-  FiPlus, 
-  FiSave, 
-  FiX, 
-  FiTag, 
-  FiDollarSign, 
-  FiPercent, 
+import {
+  FiPlus,
+  FiSave,
+  FiX,
+  FiTag,
+  FiDollarSign,
+  FiPercent,
   FiGift,
   FiEdit,
   FiTrash2,
@@ -45,7 +45,8 @@ const CouponManagement = () => {
     discount: "",
     conditionType: ""
   });
-  
+
+
   const initialCouponData = {
     name: "",
     code: "",
@@ -59,24 +60,34 @@ const CouponManagement = () => {
     conditionValue: 0,
     productId: ""
   };
-  
-  const [couponData, setCouponData] = useState(initialCouponData);
-  const [formError, setFormError] = useState(null);
 
   // react-hook-form schema and setup
   const couponSchema = yup
     .object({
-      name: yup.string().trim().required("Name is required"),
-      code: yup.string().trim().required("Code is required"),
-      discount: yup
-        .number()
-        .typeError("Discount must be a number")
-        .positive("Discount must be greater than 0")
-        .when("couponType", (couponType, schema) =>
-          couponType === "percentage"
-            ? schema.max(100, "Percentage discount cannot exceed 100")
-            : schema
-        ),
+      name: yup.string().trim().required("Name is required").min(3, "Name should have at least 3 characters").max(50, "Name can't exceed 50 characters"),
+      code: yup
+        .string()
+        .trim()
+        .required("Code is required")
+        .matches(/^[A-Za-z0-9!@#$%^&*()_\-+=<>?{}[\]~`.,;:'"\\|/ ]+$/, "Invalid characters") // allow specials
+        .test(
+          "min-letters",
+          "Code must contain at least 4 letters",
+          (value) => (value.match(/[A-Za-z]/g) || []).length >= 4
+        )
+        .test(
+          "min-numbers",
+          "Code must contain at least 2 numbers",
+          (value) => (value.match(/[0-9]/g) || []).length >= 2
+        ), discount: yup
+          .number()
+          .typeError("Discount must be a number")
+          .positive("Discount must be greater than 0")
+          .when("couponType", (couponType, schema) =>
+            couponType === "percentage"
+              ? schema.max(100, "Percentage discount cannot exceed 100")
+              : schema
+          ),
       expiryDate: yup
         .string()
         .required("Expiry date is required")
@@ -87,7 +98,7 @@ const CouponManagement = () => {
             if (!value) return false;
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            const d = new Date(value as string);
+            const d = new Date(value);
             d.setHours(0, 0, 0, 0);
             return d >= today;
           }
@@ -123,7 +134,7 @@ const CouponManagement = () => {
   } = useForm({
     resolver: yupResolver(couponSchema),
     defaultValues: initialCouponData,
-    mode: "onSubmit",
+    mode: "OnChange",
   });
 
   const watchCouponType = watch("couponType");
@@ -141,14 +152,14 @@ const CouponManagement = () => {
         search: searchQuery,
         ...filters
       };
-      
+
       // Remove empty filters
       Object.keys(params).forEach(key => {
         if (params[key] === "" || params[key] === undefined) {
           delete params[key];
         }
       });
-      
+
       const response = await api.get("/api/coupons/all", { params });
       setCoupons(response.data.data);
       setTotalCoupons(response.data.pagination.total);
@@ -169,9 +180,7 @@ const CouponManagement = () => {
   const startAddingCoupon = () => {
     setIsAddingCoupon(true);
     setEditingCouponId(null);
-    setCouponData(initialCouponData);
     reset(initialCouponData);
-    setFormError(null);
   };
 
   const startEditingCoupon = (coupon) => {
@@ -190,86 +199,45 @@ const CouponManagement = () => {
       conditionValue: coupon.conditionValue || 0,
       productId: coupon.productId || ""
     };
-    setCouponData(editData);
     reset(editData);
-    setFormError(null);
   };
 
   const cancelForm = () => {
     setIsAddingCoupon(false);
     setEditingCouponId(null);
-    setCouponData(initialCouponData);
-    setFormError(null);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setCouponData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  const validateCoupon = () => {
-    if (!couponData.name.trim()) {
-      return "Coupon name is required";
-    }
-    
-    if (!couponData.code.trim()) {
-      return "Coupon code is required";
-    }
-    
-    if (!couponData.expiryDate) {
-      return "Expiry date is required";
-    }
-    
-    if (couponData.discount <= 0) {
-      return "Discount must be greater than 0";
-    }
-    
-    if (couponData.couponType === "percentage" && couponData.discount > 100) {
-      return "Percentage discount cannot exceed 100%";
-    }
-    
-    if (couponData.couponType === "product" && !couponData.productId) {
-      return "Product ID is required for product coupons";
-    }
-    
-    if (couponData.condition && couponData.conditionValue <= 0) {
-      return "Condition value must be greater than 0";
-    }
-    
-    return null;
-  };
-
-  const handleSaveCoupon = async () => {
-    const validationError = validateCoupon();
-    if (validationError) {
-      setFormError(validationError);
-      showToast(validationError, "error");
-      return;
-    }
-
+  const handleSaveCoupon = async (data) => {
     setIsSaving(true);
-    setFormError(null);
-    
+
     try {
+      // Prepare the payload
+      const payload = {
+        ...data,
+        // Ensure conditionValue is 0 if condition is false
+        conditionValue: data.condition ? data.conditionValue : 0,
+        // Ensure productId is empty string if not a product coupon
+        productId: data.couponType === "product" ? data.productId : ""
+      };
+
+
       if (editingCouponId) {
         // Update existing coupon
-        await api.put(`/api/coupons/coupon/${editingCouponId}`, couponData);
+        await api.put(`/api/coupons/coupon/${editingCouponId}`, payload);
         showToast("Coupon updated successfully", "success");
       } else {
+
+        console.log(payload);
         // Create new coupon
-        await api.post("/api/coupons/", couponData);
+        await api.post("/api/coupons/", payload);
         showToast("Coupon created successfully", "success");
       }
-      
+
       fetchCoupons();
       cancelForm();
     } catch (err) {
       console.error("Error saving coupon:", err);
       const errorMsg = err.response?.data?.message || "Failed to save coupon. Please try again.";
-      setFormError(errorMsg);
       showToast(errorMsg, "error");
     } finally {
       setIsSaving(false);
@@ -278,7 +246,7 @@ const CouponManagement = () => {
 
   const handleRemoveCoupon = async (couponId) => {
     if (!window.confirm("Are you sure you want to delete this coupon?")) return;
-    
+
     setIsDeleting(couponId);
     try {
       await api.delete(`/api/coupons/coupon/${couponId}`);
@@ -292,7 +260,7 @@ const CouponManagement = () => {
       setIsDeleting(false);
     }
   };
-  
+
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
@@ -329,7 +297,7 @@ const CouponManagement = () => {
     setSearchQuery("");
     setCurrentPage(1);
   };
-  
+
   const getCouponIcon = (type) => {
     switch (type) {
       case "amount":
@@ -396,13 +364,13 @@ const CouponManagement = () => {
               </button>
             )}
           </div>
-          
+
           {isAddingCoupon && (
             <form onSubmit={handleSubmit(handleSaveCoupon)} className="mb-6 rounded-lg border bg-gray-50 p-6">
               <h3 className="text-lg font-semibold mb-4">
                 {editingCouponId ? "Edit Coupon" : "Add New Coupon"}
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                 {/* Coupon Name */}
                 <div className="col-span-1 md:col-span-2">
@@ -416,10 +384,10 @@ const CouponManagement = () => {
                     placeholder="e.g., Summer Sale Discount"
                   />
                   {errors.name && (
-                    <p className="mt-1 text-sm text-red-600">{errors.name.message as string}</p>
+                    <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
                   )}
                 </div>
-                
+
                 {/* Coupon Code */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -432,10 +400,10 @@ const CouponManagement = () => {
                     placeholder="e.g., FLAT50"
                   />
                   {errors.code && (
-                    <p className="mt-1 text-sm text-red-600">{errors.code.message as string}</p>
+                    <p className="mt-1 text-sm text-red-600">{errors.code.message}</p>
                   )}
                 </div>
-                
+
                 {/* Discount */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -443,17 +411,17 @@ const CouponManagement = () => {
                   </label>
                   <input
                     type="number"
-                    {...register("discount")}
+                    {...register("discount", { valueAsNumber: true })}
                     className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.discount ? "border-red-500" : "border-gray-300"}`}
                     placeholder="e.g., 50 or 10"
                     min={0}
                     step={watchCouponType === "percentage" ? 0.1 : 1}
                   />
                   {errors.discount && (
-                    <p className="mt-1 text-sm text-red-600">{errors.discount.message as string}</p>
+                    <p className="mt-1 text-sm text-red-600">{errors.discount.message}</p>
                   )}
                 </div>
-                
+
                 {/* Expiry Date */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -466,10 +434,10 @@ const CouponManagement = () => {
                     min={new Date().toISOString().split('T')[0]}
                   />
                   {errors.expiryDate && (
-                    <p className="mt-1 text-sm text-red-600">{errors.expiryDate.message as string}</p>
+                    <p className="mt-1 text-sm text-red-600">{errors.expiryDate.message}</p>
                   )}
                 </div>
-                
+
                 {/* Coupon Type */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -484,7 +452,7 @@ const CouponManagement = () => {
                     <option value="product">Product (e.g., Free Gift)</option>
                   </select>
                 </div>
-                
+
                 {/* Product ID (only for product coupons) */}
                 {watchCouponType === "product" && (
                   <div>
@@ -498,47 +466,43 @@ const CouponManagement = () => {
                       placeholder="Enter product ID"
                     />
                     {errors.productId && (
-                      <p className="mt-1 text-sm text-red-600">{errors.productId.message as string}</p>
+                      <p className="mt-1 text-sm text-red-600">{errors.productId.message}</p>
                     )}
                   </div>
                 )}
-                
+
                 {/* Active Status */}
                 <div className="flex items-center gap-2 mt-6">
                   <input
                     type="checkbox"
-                    name="isActive"
-                    checked={couponData.isActive}
-                    onChange={handleInputChange}
+                    {...register("isActive")}
                     className="w-5 h-5 rounded text-primary focus:ring-primary"
                     id="isActiveCheckbox"
                   />
-                  <label 
+                  <label
                     htmlFor="isActiveCheckbox"
                     className="text-sm font-medium text-gray-700"
                   >
                     Active Coupon
                   </label>
                 </div>
-                
+
                 {/* Condition */}
                 <div className="flex items-center gap-2 mt-6">
                   <input
                     type="checkbox"
-                    name="condition"
-                    checked={couponData.condition}
-                    onChange={handleInputChange}
+                    {...register("condition")}
                     className="w-5 h-5 rounded text-primary focus:ring-primary"
                     id="conditionCheckbox"
                   />
-                  <label 
+                  <label
                     htmlFor="conditionCheckbox"
                     className="text-sm font-medium text-gray-700"
                   >
                     Apply Condition
                   </label>
                 </div>
-                
+
                 {/* Description */}
                 <div className="col-span-1 md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -552,17 +516,15 @@ const CouponManagement = () => {
                   />
                 </div>
               </div>
-              
-              {couponData.condition && (
+
+              {watchCondition && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Condition Type
                     </label>
                     <select
-                      name="conditionType"
-                      value={couponData.conditionType}
-                      onChange={handleInputChange}
+                      {...register("conditionType")}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
                     >
                       <option value="greater">Greater than</option>
@@ -576,23 +538,18 @@ const CouponManagement = () => {
                     </label>
                     <input
                       type="number"
-                      name="conditionValue"
-                      value={couponData.conditionValue}
-                      onChange={handleInputChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      {...register("conditionValue", { valueAsNumber: true })}
+                      className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.conditionValue ? "border-red-500" : "border-gray-300"}`}
                       placeholder="e.g., 299"
                       min="0"
                     />
+                    {errors.conditionValue && (
+                      <p className="mt-1 text-sm text-red-600">{errors.conditionValue.message}</p>
+                    )}
                   </div>
                 </div>
               )}
-              
-              {formError && (
-                <div className="mt-4 p-3 bg-red-100 border border-red-200 rounded-lg">
-                  <div className="text-red-700 text-sm">{formError}</div>
-                </div>
-              )}
-              
+
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
                 <button
                   onClick={cancelForm}
@@ -602,7 +559,7 @@ const CouponManagement = () => {
                   <FiX className="mr-2" /> Cancel
                 </button>
                 <button
-                  onClick={handleSaveCoupon}
+                  type="submit"
                   disabled={isSaving}
                   className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
                 >
@@ -622,11 +579,10 @@ const CouponManagement = () => {
                   )}
                 </button>
               </div>
-
             </form>
-            // </div>
           )}
-          
+
+
           {/* Search and Filter Section */}
           <div className="mb-6 bg-gray-50 rounded-lg p-4">
             <div className="flex flex-wrap gap-4 items-center">
@@ -643,24 +599,24 @@ const CouponManagement = () => {
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
-              
-              <button 
+
+              <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                <FiFilter className="mr-2" /> 
-                Filters 
+                <FiFilter className="mr-2" />
+                Filters
                 {showFilters ? <FiChevronUp className="ml-1" /> : <FiChevronDown className="ml-1" />}
               </button>
-              
-              <button 
+
+              <button
                 onClick={clearFilters}
                 className="px-4 py-2 text-gray-600 hover:text-gray-900"
               >
                 Clear All
               </button>
             </div>
-            
+
             {showFilters && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
                 {/* Status Filter */}
@@ -679,7 +635,7 @@ const CouponManagement = () => {
                     <option value="false">Inactive</option>
                   </select>
                 </div>
-                
+
                 {/* Coupon Type Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -697,7 +653,7 @@ const CouponManagement = () => {
                     <option value="product">Product</option>
                   </select>
                 </div>
-                
+
                 {/* Condition Type Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -715,7 +671,7 @@ const CouponManagement = () => {
                     <option value="equal">Equal to</option>
                   </select>
                 </div>
-                
+
                 {/* Expiry Date Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -729,7 +685,7 @@ const CouponManagement = () => {
                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
-                
+
                 {/* Product ID Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -744,7 +700,7 @@ const CouponManagement = () => {
                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
-                
+
                 {/* Discount Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -763,51 +719,48 @@ const CouponManagement = () => {
               </div>
             )}
           </div>
-          
+
           {/* Sorting Controls */}
           <div className="flex flex-wrap gap-4 mb-4">
             <span className="text-sm text-gray-700 font-medium">Sort by:</span>
-            
-            <button 
+
+            <button
               onClick={() => handleSort("createdAt")}
-              className={`px-3 py-1 rounded-full text-sm ${
-                sortField === "createdAt" 
-                  ? "bg-[#313166] text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              className={`px-3 py-1 rounded-full text-sm ${sortField === "createdAt"
+                ? "bg-[#313166] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
             >
               Created Date {sortField === "createdAt" && (
                 sortOrder === "asc" ? "↑" : "↓"
               )}
             </button>
-            
-            <button 
+
+            <button
               onClick={() => handleSort("expiryDate")}
-              className={`px-3 py-1 rounded-full text-sm ${
-                sortField === "expiryDate" 
-                  ? "bg-[#313166] text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              className={`px-3 py-1 rounded-full text-sm ${sortField === "expiryDate"
+                ? "bg-[#313166] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
             >
               Expiry Date {sortField === "expiryDate" && (
                 sortOrder === "asc" ? "↑" : "↓"
               )}
             </button>
-            
-            <button 
+
+            <button
               onClick={() => handleSort("discount")}
-              className={`px-3 py-1 rounded-full text-sm ${
-                sortField === "discount" 
-                  ? "bg-[#313166] text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              className={`px-3 py-1 rounded-full text-sm ${sortField === "discount"
+                ? "bg-[#313166] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
             >
               Discount Amount {sortField === "discount" && (
                 sortOrder === "asc" ? "↑" : "↓"
               )}
             </button>
           </div>
-          
+
           {/* Items Per Page Selector */}
           <div className="flex items-center gap-2 mb-4">
             <span className="text-sm text-gray-700">Items per page:</span>
@@ -825,7 +778,7 @@ const CouponManagement = () => {
               <option value="50">50</option>
             </select>
           </div>
-          
+
           <div className="space-y-4">
             {coupons.length > 0 ? (
               coupons.map((coupon) => (
@@ -920,21 +873,20 @@ const CouponManagement = () => {
               </div>
             )}
           </div>
-          
+
           {totalPages > 1 && (
             <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`px-4 py-2 rounded-lg ${
-                  currentPage === 1 
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
+                className={`px-4 py-2 rounded-lg ${currentPage === 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
               >
                 Previous
               </button>
-              
+
               <div className="flex items-center gap-2">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum;
@@ -947,35 +899,33 @@ const CouponManagement = () => {
                   } else {
                     pageNum = currentPage - 2 + i;
                   }
-                  
+
                   return (
                     <button
                       key={pageNum}
                       onClick={() => handlePageChange(pageNum)}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        currentPage === pageNum
-                          ? "bg-[#313166] text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${currentPage === pageNum
+                        ? "bg-[#313166] text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
                     >
                       {pageNum}
                     </button>
                   );
                 })}
-                
+
                 {totalPages > 5 && (
                   <span className="px-2 text-gray-500">...</span>
                 )}
               </div>
-              
+
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`px-4 py-2 rounded-lg ${
-                  currentPage === totalPages 
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
+                className={`px-4 py-2 rounded-lg ${currentPage === totalPages
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
               >
                 Next
               </button>
@@ -998,7 +948,7 @@ const SkeletonLoader = () => (
           </div>
           <div className="h-12 bg-gray-200 rounded-lg w-36 animate-pulse"></div>
         </div>
-        
+
         {/* Form Skeleton */}
         <div className="mb-6 rounded-lg border bg-gray-50 p-6 animate-pulse">
           <div className="h-6 bg-gray-200 rounded w-48 mb-6"></div>
@@ -1015,7 +965,7 @@ const SkeletonLoader = () => (
             <div className="h-10 bg-gray-200 rounded w-32"></div>
           </div>
         </div>
-        
+
         {/* Coupon List Skeleton */}
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
