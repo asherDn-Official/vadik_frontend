@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import api from '../../api/apiconfig';
 import showToast from '../../utils/ToastNotification';
+import deleteConfirmTostNotification from '../../utils/deleteConfirmTostNotification';
 
 function LoyaltyPoint() {
   const [rules, setRules] = useState(null);
@@ -11,10 +12,10 @@ function LoyaltyPoint() {
   const [success, setSuccess] = useState('');
 
   // React Hook Form initialization
-  const { 
-    control, 
-    handleSubmit, 
-    formState: { errors }, 
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
     reset,
     watch,
     setValue
@@ -25,7 +26,7 @@ function LoyaltyPoint() {
       maxDiscountPercent: 0,
       tiers: [{ pointsRequired: 0, discountAmount: 0 }]
     },
-    mode:"onChange"
+    mode: "onChange"
   });
 
   // For managing tier array fields
@@ -81,25 +82,26 @@ function LoyaltyPoint() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete all loyalty rules?')) {
-      return;
+
+    const onConfirm = async () => {
+      try {
+        await api.delete('/api/loyalty/rule');
+        showToast('Loyalty rules deleted successfully!', 'success');
+        setRules(null);
+        reset({
+          isActive: false,
+          minOrderAmount: 0,
+          maxDiscountPercent: 0,
+          tiers: [{ pointsRequired: 0, discountAmount: 0 }]
+        });
+      } catch (err) {
+        const errorMessage = err.response?.data?.message || 'Failed to delete loyalty rules';
+        showToast(errorMessage, 'error');
+        console.error('Error deleting rules:', err);
+      }
     }
 
-    try {
-      await api.delete('/api/loyalty/rule');
-      showToast('Loyalty rules deleted successfully!', 'success');
-      setRules(null);
-      reset({
-        isActive: false,
-        minOrderAmount: 0,
-        maxDiscountPercent: 0,
-        tiers: [{ pointsRequired: 0, discountAmount: 0 }]
-      });
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Failed to delete loyalty rules';
-      showToast(errorMessage, 'error');
-      console.error('Error deleting rules:', err);
-    }
+    deleteConfirmTostNotification("", onConfirm);
   };
 
   const addTier = () => {
