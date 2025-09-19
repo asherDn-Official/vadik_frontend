@@ -6,6 +6,7 @@ import "react-phone-input-2/lib/style.css";
 import { Eye, EyeOff } from "lucide-react";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
+import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 
 const RolesAndPermissions = () => {
   const [currentView, setCurrentView] = useState("userManagement");
@@ -158,7 +159,8 @@ const RolesAndPermissions = () => {
         };
 
         await api.post(END_POINT, payload);
-        showToast("Successfully added employee", "success ");
+        await fetchStaff();
+        showToast("Successfully added employee","success");
         reset();
         setCurrentView("userManagement");
       } catch (err) {
@@ -732,17 +734,20 @@ const RolesAndPermissions = () => {
     };
 
     const handleDelete = async () => {
-      if (window.confirm("Are you sure you want to delete this staff member?")) {
+      const onConfirm = async () => {
         try {
           await api.delete(`${END_POINT}/${selectedUser._id}`);
           await fetchStaff();
           setCurrentView("userManagement");
           setSelectedUser(null);
+          showToast("Staff member deleted successfully!", "success");
         } catch (err) {
           showToast("Failed to delete staff member", "error");
           console.error(err);
         }
       }
+
+      deleteConfirmTostNotification('', onConfirm);
     };
 
     const getInitials = (name) => {
@@ -1128,7 +1133,7 @@ const RolesAndPermissions = () => {
                     // Handle menu click here
                   }}
                 >
-                  <MoreHorizontal />
+                  {/* <MoreHorizontal /> */}
                 </button>
               </div>
             </div>
