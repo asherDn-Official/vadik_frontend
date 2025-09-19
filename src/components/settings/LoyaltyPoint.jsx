@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import api from '../../api/apiconfig';
 import showToast from '../../utils/ToastNotification';
 
@@ -9,13 +10,31 @@ function LoyaltyPoint() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Form state
-  const [formData, setFormData] = useState({
-    isActive: false,
-    minOrderAmount: 0,
-    maxDiscountPercent: 0,
-    tiers: [{ pointsRequired: 0, discountAmount: 0 }]
+  // React Hook Form initialization
+  const { 
+    control, 
+    handleSubmit, 
+    formState: { errors }, 
+    reset,
+    watch,
+    setValue
+  } = useForm({
+    defaultValues: {
+      isActive: false,
+      minOrderAmount: 0,
+      maxDiscountPercent: 0,
+      tiers: [{ pointsRequired: 0, discountAmount: 0 }]
+    },
+    mode:"onChange"
   });
+
+  // For managing tier array fields
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "tiers"
+  });
+
+  const watchIsActive = watch("isActive");
 
   useEffect(() => {
     fetchRules();
@@ -27,7 +46,8 @@ function LoyaltyPoint() {
       const response = await api.get('/api/loyalty/rule');
       if (response.data) {
         setRules(response.data);
-        setFormData({
+        // Reset form with fetched data
+        reset({
           isActive: response.data.isActive,
           minOrderAmount: response.data.minOrderAmount,
           maxDiscountPercent: response.data.maxDiscountPercent,
@@ -42,18 +62,18 @@ function LoyaltyPoint() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setSaving(true);
     setError('');
     setSuccess('');
 
     try {
-      await api.post('/api/loyalty/rule', formData);
+      await api.post('/api/loyalty/rule', data);
       showToast('Loyalty rules saved successfully!', 'success');
       await fetchRules(); // Refresh the data
     } catch (err) {
-      showToast(err.response.data.message, 'success');
+      const errorMessage = err.response?.data?.message || 'Failed to save loyalty rules';
+      showToast(errorMessage, 'error');
       console.error('Error saving rules:', err);
     } finally {
       setSaving(false);
@@ -69,36 +89,21 @@ function LoyaltyPoint() {
       await api.delete('/api/loyalty/rule');
       showToast('Loyalty rules deleted successfully!', 'success');
       setRules(null);
-      setFormData({
+      reset({
         isActive: false,
         minOrderAmount: 0,
         maxDiscountPercent: 0,
         tiers: [{ pointsRequired: 0, discountAmount: 0 }]
       });
     } catch (err) {
-      showToast(err.response.data.message, 'error')
+      const errorMessage = err.response?.data?.message || 'Failed to delete loyalty rules';
+      showToast(errorMessage, 'error');
       console.error('Error deleting rules:', err);
     }
   };
 
-  const handleTierChange = (index, field, value) => {
-    const newTiers = [...formData.tiers];
-    newTiers[index][field] = Number(value);
-    setFormData({ ...formData, tiers: newTiers });
-  };
-
   const addTier = () => {
-    setFormData({
-      ...formData,
-      tiers: [...formData.tiers, { pointsRequired: 0, discountAmount: 0 }]
-    });
-  };
-
-  const removeTier = (index) => {
-    if (formData.tiers.length > 1) {
-      const newTiers = formData.tiers.filter((_, i) => i !== index);
-      setFormData({ ...formData, tiers: newTiers });
-    }
+    append({ pointsRequired: 0, discountAmount: 0 });
   };
 
   if (loading) {
@@ -110,13 +115,13 @@ function LoyaltyPoint() {
   }
 
   return (
-    <div className="min-h-screen  py-8">
-      <div className=" mx-auto px-4 sm:px-6 lg:px-8">
-        <div className=" shadow-xl  overflow-hidden">
+    <div className="min-h-screen py-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="shadow-xl overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r  px-6 py-4">
-            <h1 className="text-2xl font-bold ">Loyalty Point Rules</h1>
-            <p className=" mt-1">Configure your loyalty program settings</p>
+          <div className="bg-gradient-to-r px-6 py-4">
+            <h1 className="text-2xl font-bold">Loyalty Point Rules</h1>
+            <p className="mt-1">Configure your loyalty program settings</p>
           </div>
 
           {/* Content */}
@@ -133,22 +138,28 @@ function LoyaltyPoint() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Active Toggle */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>
                   <h3 className="font-semibold text-gray-900">Enable Loyalty Program</h3>
                   <p className="text-sm text-gray-600">Turn the loyalty program on or off</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
+                <Controller
+                  name="isActive"
+                  control={control}
+                  render={({ field }) => (
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  )}
+                />
               </div>
 
               {/* Minimum Order Amount */}
@@ -158,15 +169,33 @@ function LoyaltyPoint() {
                     Minimum Order Amount
                   </label>
                   <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.minOrderAmount}
-                      onChange={(e) => setFormData({ ...formData, minOrderAmount: Number(e.target.value) })}
-                      className="w-full pl-8 pr-4 py-2 outline-none border border-gray-300 rounded-lg "
-                      placeholder="Enter amount"
+                    <Controller
+                      name="minOrderAmount"
+                      control={control}
+                      rules={{
+                        required: "Minimum order amount is required",
+                        min: {
+                          value: 500,
+                          message: "Minimum order amount must be at least ₹500"
+                        }
+                      }}
+                      render={({ field }) => (
+                        <>
+                          <input
+                            {...field}
+                            type="number"
+                            min="500"
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            className="w-full pl-8 pr-4 py-2 outline-none border border-gray-300 rounded-lg"
+                            placeholder="Enter amount"
+                          />
+                          <span className="absolute left-3 top-2.5 text-gray-500">₹</span>
+                        </>
+                      )}
                     />
-                    <span className="absolute left-3 top-2.5 text-gray-500">₹</span>
+                    {errors.minOrderAmount && (
+                      <p className="mt-1 text-sm text-red-600">{errors.minOrderAmount.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -176,16 +205,38 @@ function LoyaltyPoint() {
                     Maximum Discount Percentage
                   </label>
                   <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={formData.maxDiscountPercent}
-                      onChange={(e) => setFormData({ ...formData, maxDiscountPercent: Number(e.target.value) })}
-                      className="w-full pr-12 pl-4 py-2 border border-gray-300 rounded-lg  outline-none"
-                      placeholder="Enter percentage"
+                    <Controller
+                      name="maxDiscountPercent"
+                      control={control}
+                      rules={{
+                        required: "Maximum discount percentage is required",
+                        min: {
+                          value: 0,
+                          message: "Discount percentage cannot be negative"
+                        },
+                        max: {
+                          value: 100,
+                          message: "Discount percentage cannot exceed 100%"
+                        }
+                      }}
+                      render={({ field }) => (
+                        <>
+                          <input
+                            {...field}
+                            type="number"
+                            min="0"
+                            max="100"
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            className="w-full pr-12 pl-4 py-2 border border-gray-300 rounded-lg outline-none"
+                            placeholder="Enter percentage"
+                          />
+                          <span className="absolute right-3 top-2.5 text-gray-500">%</span>
+                        </>
+                      )}
                     />
-                    <span className="absolute right-3 top-2.5 text-gray-500">%</span>
+                    {errors.maxDiscountPercent && (
+                      <p className="mt-1 text-sm text-red-600">{errors.maxDiscountPercent.message}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -207,14 +258,14 @@ function LoyaltyPoint() {
                 </div>
 
                 <div className="space-y-4">
-                  {formData.tiers.map((tier, index) => (
-                    <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                  {fields.map((field, index) => (
+                    <div key={field.id} className="bg-gray-50 p-4 rounded-lg">
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium text-gray-700">Tier {index + 1}</span>
-                        {formData.tiers.length > 1 && (
+                        {fields.length > 1 && (
                           <button
                             type="button"
-                            onClick={() => removeTier(index)}
+                            onClick={() => remove(index)}
                             className="text-red-600 hover:text-red-800 text-sm font-medium"
                           >
                             Remove
@@ -227,13 +278,38 @@ function LoyaltyPoint() {
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Points Required
                           </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={tier.pointsRequired}
-                            onChange={(e) => handleTierChange(index, 'pointsRequired', e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
-                            placeholder="Points required"
+                          <Controller
+                            name={`tiers.${index}.pointsRequired`}
+                            control={control}
+                            rules={{
+                              required: "Points required is mandatory",
+                              min: {
+                                value: 1,
+                                message: "Points must be at least 1"
+                              },
+                              max: {
+                                value: 1000000000,
+                                message: "Points cannot exceed 1 billion"
+                              }
+                            }}
+                            render={({ field }) => (
+                              <>
+                                <input
+                                  {...field}
+                                  type="number"
+                                  min="1"
+                                  max="1000000000"
+                                  onChange={(e) => field.onChange(Number(e.target.value))}
+                                  className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                                  placeholder="Points required"
+                                />
+                                {errors.tiers?.[index]?.pointsRequired && (
+                                  <p className="mt-1 text-sm text-red-600">
+                                    {errors.tiers[index].pointsRequired.message}
+                                  </p>
+                                )}
+                              </>
+                            )}
                           />
                         </div>
 
@@ -242,15 +318,40 @@ function LoyaltyPoint() {
                             Discount Amount
                           </label>
                           <div className="relative">
-                            <input
-                              type="number"
-                              min="0"
-                              value={tier.discountAmount}
-                              onChange={(e) => handleTierChange(index, 'discountAmount', e.target.value)}
-                              className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg  outline-none"
-                              placeholder="Discount amount"
+                            <Controller
+                              name={`tiers.${index}.discountAmount`}
+                              control={control}
+                              rules={{
+                                required: "Discount amount is required",
+                                min: {
+                                  value: 0,
+                                  message: "Discount amount cannot be negative"
+                                },
+                                max: {
+                                  value: 100,
+                                  message: "Discount amount cannot exceed ₹100"
+                                }
+                              }}
+                              render={({ field }) => (
+                                <>
+                                  <input
+                                    {...field}
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    onChange={(e) => field.onChange(Number(e.target.value))}
+                                    className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg outline-none"
+                                    placeholder="Discount amount"
+                                  />
+                                  <span className="absolute left-3 top-2.5 text-gray-500">₹</span>
+                                  {errors.tiers?.[index]?.discountAmount && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                      {errors.tiers[index].discountAmount.message}
+                                    </p>
+                                  )}
+                                </>
+                              )}
                             />
-                            <span className="absolute left-3 top-2.5 text-gray-500">₹</span>
                           </div>
                         </div>
                       </div>
