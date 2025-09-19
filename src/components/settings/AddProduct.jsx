@@ -645,13 +645,20 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                       value: 0,
                       message: "Stock quantity cannot be negative"
                     },
-                    max:{
+                    max: {
                       value: 1000000000,
                       message: "Stock quantity cannot exceed  more than 1 billion items"
                     },
+                    validate: (value) => {
+                      // If status is In Stock, enforce stock to be at least 1
+                      if (watch('status') === 'In Stock') {
+                        return Number(value) >= 1 || "stock must be start with one";
+                      }
+                      return true;
+                    },
                     valueAsNumber: true
                   })}
-                  min="0"
+                  min={isOutOfStock ? 0 : 1}
                   disabled={isOutOfStock}
                   title={isOutOfStock ? 'Stock is set to 0 when status is Out of Stock' : undefined}
                   className={`w-full p-2 border rounded-md ${errors.stock ? 'border-red-500' : 'border-gray-300'} ${isOutOfStock ? 'bg-gray-100 cursor-not-allowed' : ''}`}
