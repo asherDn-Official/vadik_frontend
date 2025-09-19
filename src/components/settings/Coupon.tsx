@@ -16,6 +16,9 @@ import {
 } from "react-icons/fi";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 
 const CouponManagement = () => {
   const [coupons, setCoupons] = useState([]);
@@ -60,6 +63,72 @@ const CouponManagement = () => {
   const [couponData, setCouponData] = useState(initialCouponData);
   const [formError, setFormError] = useState(null);
 
+  // react-hook-form schema and setup
+  const couponSchema = yup
+    .object({
+      name: yup.string().trim().required("Name is required"),
+      code: yup.string().trim().required("Code is required"),
+      discount: yup
+        .number()
+        .typeError("Discount must be a number")
+        .positive("Discount must be greater than 0")
+        .when("couponType", (couponType, schema) =>
+          couponType === "percentage"
+            ? schema.max(100, "Percentage discount cannot exceed 100")
+            : schema
+        ),
+      expiryDate: yup
+        .string()
+        .required("Expiry date is required")
+        .test(
+          "future",
+          "Expiry date must be today or later",
+          (value) => {
+            if (!value) return false;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const d = new Date(value as string);
+            d.setHours(0, 0, 0, 0);
+            return d >= today;
+          }
+        ),
+      couponType: yup.mixed().oneOf(["amount", "percentage", "product"]).required(),
+      description: yup.string().nullable(),
+      isActive: yup.boolean().default(true),
+      condition: yup.boolean().default(false),
+      conditionType: yup.mixed().oneOf(["greater", "lesser", "equal"]).default("greater"),
+      conditionValue: yup
+        .number()
+        .typeError("Condition value must be a number")
+        .when("condition", {
+          is: true,
+          then: (s) => s.positive("Condition value must be greater than 0").required("Condition value is required"),
+          otherwise: (s) => s.transform(() => 0).default(0),
+        }),
+      productId: yup.string().when("couponType", {
+        is: "product",
+        then: (s) => s.required("Product ID is required for product coupons"),
+        otherwise: (s) => s.transform(() => "").default(""),
+      }),
+    })
+    .required();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(couponSchema),
+    defaultValues: initialCouponData,
+    mode: "onSubmit",
+  });
+
+  const watchCouponType = watch("couponType");
+  const watchCondition = watch("condition");
+
   const fetchCoupons = async () => {
     setIsLoading(true);
     setError(null);
@@ -101,13 +170,14 @@ const CouponManagement = () => {
     setIsAddingCoupon(true);
     setEditingCouponId(null);
     setCouponData(initialCouponData);
+    reset(initialCouponData);
     setFormError(null);
   };
 
   const startEditingCoupon = (coupon) => {
     setIsAddingCoupon(true);
     setEditingCouponId(coupon._id);
-    setCouponData({
+    const editData = {
       name: coupon.name,
       code: coupon.code,
       discount: coupon.discount,
@@ -119,7 +189,9 @@ const CouponManagement = () => {
       conditionType: coupon.conditionType || "greater",
       conditionValue: coupon.conditionValue || 0,
       productId: coupon.productId || ""
-    });
+    };
+    setCouponData(editData);
+    reset(editData);
     setFormError(null);
   };
 
@@ -326,7 +398,7 @@ const CouponManagement = () => {
           </div>
           
           {isAddingCoupon && (
-            <div className="mb-6 rounded-lg border bg-gray-50 p-6">
+            <form onSubmit={handleSubmit(handleSaveCoupon)} className="mb-6 rounded-lg border bg-gray-50 p-6">
               <h3 className="text-lg font-semibold mb-4">
                 {editingCouponId ? "Edit Coupon" : "Add New Coupon"}
               </h3>
@@ -339,12 +411,13 @@ const CouponManagement = () => {
                   </label>
                   <input
                     type="text"
-                    name="name"
-                    value={couponData.name}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    {...register("name")}
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.name ? "border-red-500" : "border-gray-300"}`}
                     placeholder="e.g., Summer Sale Discount"
                   />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-600">{errors.name.message as string}</p>
+                  )}
                 </div>
                 
                 {/* Coupon Code */}
@@ -354,12 +427,13 @@ const CouponManagement = () => {
                   </label>
                   <input
                     type="text"
-                    name="code"
-                    value={couponData.code}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    {...register("code")}
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.code ? "border-red-500" : "border-gray-300"}`}
                     placeholder="e.g., FLAT50"
                   />
+                  {errors.code && (
+                    <p className="mt-1 text-sm text-red-600">{errors.code.message as string}</p>
+                  )}
                 </div>
                 
                 {/* Discount */}
@@ -369,14 +443,15 @@ const CouponManagement = () => {
                   </label>
                   <input
                     type="number"
-                    name="discount"
-                    value={couponData.discount}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    {...register("discount")}
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.discount ? "border-red-500" : "border-gray-300"}`}
                     placeholder="e.g., 50 or 10"
-                    min="0"
-                    step={couponData.couponType === "percentage" ? "0.1" : "1"}
+                    min={0}
+                    step={watchCouponType === "percentage" ? 0.1 : 1}
                   />
+                  {errors.discount && (
+                    <p className="mt-1 text-sm text-red-600">{errors.discount.message as string}</p>
+                  )}
                 </div>
                 
                 {/* Expiry Date */}
@@ -386,12 +461,13 @@ const CouponManagement = () => {
                   </label>
                   <input
                     type="date"
-                    name="expiryDate"
-                    value={couponData.expiryDate}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    {...register("expiryDate")}
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.expiryDate ? "border-red-500" : "border-gray-300"}`}
                     min={new Date().toISOString().split('T')[0]}
                   />
+                  {errors.expiryDate && (
+                    <p className="mt-1 text-sm text-red-600">{errors.expiryDate.message as string}</p>
+                  )}
                 </div>
                 
                 {/* Coupon Type */}
@@ -400,9 +476,7 @@ const CouponManagement = () => {
                     Coupon Type
                   </label>
                   <select
-                    name="couponType"
-                    value={couponData.couponType}
-                    onChange={handleInputChange}
+                    {...register("couponType")}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
                   >
                     <option value="amount">Amount (e.g., ₹50 off)</option>
@@ -412,19 +486,20 @@ const CouponManagement = () => {
                 </div>
                 
                 {/* Product ID (only for product coupons) */}
-                {couponData.couponType === "product" && (
+                {watchCouponType === "product" && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Product ID *
                     </label>
                     <input
                       type="text"
-                      name="productId"
-                      value={couponData.productId}
-                      onChange={handleInputChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      {...register("productId")}
+                      className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.productId ? "border-red-500" : "border-gray-300"}`}
                       placeholder="Enter product ID"
                     />
+                    {errors.productId && (
+                      <p className="mt-1 text-sm text-red-600">{errors.productId.message as string}</p>
+                    )}
                   </div>
                 )}
                 
@@ -471,9 +546,7 @@ const CouponManagement = () => {
                   </label>
                   <input
                     type="text"
-                    name="description"
-                    value={couponData.description}
-                    onChange={handleInputChange}
+                    {...register("description")}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     placeholder="Brief description of the coupon"
                   />
@@ -549,7 +622,9 @@ const CouponManagement = () => {
                   )}
                 </button>
               </div>
-            </div>
+
+            </form>
+            // </div>
           )}
           
           {/* Search and Filter Section */}
