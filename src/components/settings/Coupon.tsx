@@ -19,6 +19,8 @@ import showToast from "../../utils/ToastNotification";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const CouponManagement = () => {
   const [coupons, setCoupons] = useState([]);
@@ -37,6 +39,8 @@ const CouponManagement = () => {
   const [sortOrder, setSortOrder] = useState("desc");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [expiryDate, setExpiryDate] = useState(null);
+
   const [filters, setFilters] = useState({
     isActive: "",
     couponType: "",
@@ -45,6 +49,12 @@ const CouponManagement = () => {
     discount: "",
     conditionType: ""
   });
+
+
+  const handleDateChange = (date) => {
+    setExpiryDate(date);
+    setValue("expiryDate", date, { shouldValidate: true });
+  };
 
 
   const initialCouponData = {
@@ -427,12 +437,25 @@ const CouponManagement = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Expiry Date *
                   </label>
-                  <input
-                    type="date"
-                    {...register("expiryDate")}
-                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.expiryDate ? "border-red-500" : "border-gray-300"}`}
-                    min={new Date().toISOString().split('T')[0]}
+                  <DatePicker
+                    selected={expiryDate}
+                    onChange={handleDateChange}
+                    minDate={new Date()}
+                    dateFormat="dd/MM/yyyy"
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.expiryDate ? "border-red-500" : "border-gray-300"
+                      }`}
+                    placeholderText="Select expiry date"
                   />
+
+                  {/* Hidden input for react-hook-form registration */}
+                  <input
+                    type="hidden"
+                    {...register("expiryDate", {
+                      required: "Expiry date is required",
+                      validate: value => value && value >= new Date() || "Expiry date must be today or later"
+                    })}
+                  />
+
                   {errors.expiryDate && (
                     <p className="mt-1 text-sm text-red-600">{errors.expiryDate.message}</p>
                   )}
