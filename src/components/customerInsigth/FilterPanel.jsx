@@ -545,7 +545,7 @@ const FilterItem = ({ name, expanded, onToggle, children, icon, isActive }) => {
         className="w-full flex justify-between items-center py-2 text-[14px] font-[400] text-[#313166]"
         onClick={onToggle}
       >
-        <div className="flex items-center">
+        <div className="flex items-center capitalize">
           {/* {icon && <span className=\"mr-2\">{icon}</span>} */}
           <span className={`${isActive ? 'font-semibold text-[#313166]' : ''}`}>{name}</span>
         </div>

@@ -627,7 +627,11 @@ const CouponManagement = () => {
                   placeholder="Search by name or code..."
                   value={searchQuery}
                   onChange={(e) => {
-                    setSearchQuery(e.target.value);
+                    const inputValue = e.target.value;
+                    // Allow only letters, numbers, and spaces
+                    const filteredValue = inputValue.replace(/[^a-zA-Z0-9\s]/g, '');
+
+                    setSearchQuery(filteredValue);
                     setCurrentPage(1);
                   }}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"

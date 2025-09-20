@@ -2,6 +2,14 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { LogOut } from "lucide-react";
 import ToggleBadge from "./ToggleBadge";
+import dashboardIcon from "../../../public/assets/mage_dashboard-icon.png"
+import customersIcon from "../../../public/assets/bi_person-fill-icon.png"
+import personalisationIcon from "../../../public/assets/fluent-insights.png"
+import customerOpportunitiesIcon from "../../../public/assets/user-check-icon.png"
+import performanceIcon from "../../../public/assets/mdi_performance-icon.png"
+import integrationIcon from "../../../public/assets/integration-icon.png"
+import kycIcon from "../../../public/assets/kyc-icon.png"
+import settingsIcon from "../../../public/assets/settings-icon.png"
 
 function Sidebar() {
   const location = useLocation();
@@ -36,49 +44,49 @@ function Sidebar() {
     {
       path: "/dashboard",
       module: "dashboard",
-      icon: "./assets/mage_dashboard-icon.png",
+      icon: dashboardIcon,
       label: "Dashboard",
     },
     {
       path: "/customers",
       module: "customers",
-      icon: "./assets/bi_person-fill-icon.png",
+      icon: customersIcon,
       label: "Customer Profile",
     },
     {
       path: "/personalisation",
       module: "personalisation",
-      icon: "./assets/fluent-insights.png",
+      icon: personalisationIcon,
       label: "Personalisation Insight",
     },
     {
       path: "/customeropportunities",
       module: "customerOpportunities",
-      icon: "./assets/user-check-icon.png",
+      icon: customerOpportunitiesIcon,
       label: "Customer Opportunities",
     },
     {
       path: "/performance",
       module: "performance",
-      icon: "./assets/mdi_performance-icon.png",
+      icon: performanceIcon,
       label: "Performance Tracking",
     },
     {
       path: "/integration",
       module: "integration",
-      icon: "./assets/integration-icon.png",
+      icon: integrationIcon,
       label: "Integration Management",
     },
     {
       path: "/kyc",
       module: "kyc",
-      icon: "./assets/kyc-icon.png",
+      icon: kycIcon,
       label: "Quick Search",
     },
     {
       path: "/settings",
       module: "settings",
-      icon: "./assets/settings-icon.png",
+      icon: settingsIcon,
       label: "Settings",
     },
   ];
