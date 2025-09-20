@@ -334,9 +334,9 @@ const CouponManagement = () => {
     }
   };
 
-  if (isLoading) {
-    return <SkeletonLoader />;
-  }
+  // if (isLoading) {
+  //   return <SkeletonLoader />;
+  // }
 
   if (error) {
     return (
