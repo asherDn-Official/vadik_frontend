@@ -46,6 +46,23 @@ const FilterPanel = ({
   });
 
 
+  // Date helpers to ensure YYYY-MM-DD format without timezone shifts
+  const formatDateToYMD = (date) => {
+    if (!date) return "";
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
+  const parseYMDToLocalDate = (ymd) => {
+    if (!ymd) return null;
+    const [y, m, d] = ymd.split("-").map(Number);
+    if (!y || !m || !d) return null;
+    // Construct local date to avoid UTC offset issues
+    return new Date(y, m - 1, d);
+  };
+
   // Helper function to convert display name to filter key
   const getFilterKey = (displayName) => {
     return displayName
@@ -217,8 +234,16 @@ const FilterPanel = ({
       return (
         <div className="mt-2 relative ">
           <DatePicker
-            selected={filters[filterKey] ? new Date(filters[filterKey]) : null}
-            onChange={(date) => onFilterChange(filterKey, date || '')}
+            selected={
+              filters[filterKey]
+                ? (typeof filters[filterKey] === "string"
+                    ? parseYMDToLocalDate(filters[filterKey])
+                    : filters[filterKey] instanceof Date
+                      ? filters[filterKey]
+                      : null)
+                : null
+            }
+            onChange={(date) => onFilterChange(filterKey, date ? formatDateToYMD(date) : '')}
             dateFormat="dd/MM/yyyy"
             placeholderText="Select date"
             className=" w-full p-2 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"

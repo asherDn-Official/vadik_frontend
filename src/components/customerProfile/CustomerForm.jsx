@@ -58,12 +58,17 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
   const onFormSubmit = (data) => {
     // Format mobile number by removing all non-digit characters
     const formattedMobile = data.mobileNumber.replace(/\D/g, "");
-    const formattedDate = data.firstVisit ? `${data.firstVisit}T00:00:00Z` : "";
+
+    // Ensure firstVisit is sent as YYYY-MM-DD string
+    const firstVisitDate = data.firstVisit ? new Date(data.firstVisit) : null;
+    const formattedFirstVisit = firstVisitDate
+      ? `${firstVisitDate.getFullYear()}-${String(firstVisitDate.getMonth() + 1).padStart(2, "0")}-${String(firstVisitDate.getDate()).padStart(2, "0")}`
+      : null;
 
     onSubmit({
       ...data,
       mobileNumber: formattedMobile,
-      firstVisit: data.firstVisit,
+      firstVisit: formattedFirstVisit,
     });
   };
 
