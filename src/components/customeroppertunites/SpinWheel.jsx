@@ -45,16 +45,23 @@ const SpinWheel = () => {
       // Get unique coupon IDs to avoid duplicate API calls
       const uniqueCouponIds = [...new Set(spineWheelSingledata.couponOptions)];
 
-      // Fetch details for all coupons in parallel
-      const couponPromises = uniqueCouponIds.map(async (couponId) => {
-        const res = await api.post("/api/coupons/couponforCampains", { coupons: couponId });
-        return { [couponId]: res?.data?.data || {} };
-      });
+      // Fetch details for all coupons in parallel; do not fail if any request fails
+      const couponResults = await Promise.allSettled(
+        uniqueCouponIds.map(async (couponId) => {
+          try {
+            const res = await api.post("/api/coupons/couponforCampains", { coupons: couponId });
+            return { couponId, data: res?.data?.data || null };
+          } catch {
+            return { couponId, data: null };
+          }
+        })
+      );
 
-      // Wait for all promises and merge results
-      const couponResults = await Promise.all(couponPromises);
-      couponResults.forEach(result => {
-        Object.assign(couponDetails, result);
+      // Merge successful results into couponDetails map
+      couponResults.forEach((result) => {
+        if (result.status === "fulfilled" && result.value?.couponId) {
+          couponDetails[result.value.couponId] = result.value.data;
+        }
       });
 
       const colors = [
@@ -79,6 +86,7 @@ const SpinWheel = () => {
           couponType: couponDetails[couponId]?.couponType,
           color: colors[index % colors.length], // Assign a single color based on index
           isTargeted: spineWheelSingledata.targetedCoupons?.includes(couponId) || false,
+          couponDetail: couponDetails[couponId] || null, // full coupon response object for the segment
           // Add other segment properties as needed
         }))
       };
