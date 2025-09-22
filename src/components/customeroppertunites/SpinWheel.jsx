@@ -50,16 +50,17 @@ const SpinWheel = () => {
         uniqueCouponIds.map(async (couponId) => {
           try {
             const res = await api.post("/api/coupons/couponforCampains", { coupons: couponId });
-            return { couponId, data: res?.data?.data || null };
+            const isOk = res?.data?.status === true;
+            return { couponId, status: isOk, data: isOk ? (res?.data?.data ?? null) : null };
           } catch {
-            return { couponId, data: null };
+            return { couponId, status: false, data: null };
           }
         })
       );
 
-      // Merge successful results into couponDetails map
+      // Merge successful results into couponDetails map (only when API status is true)
       couponResults.forEach((result) => {
-        if (result.status === "fulfilled" && result.value?.couponId) {
+        if (result.status === "fulfilled" && result.value?.couponId && result.value?.status) {
           couponDetails[result.value.couponId] = result.value.data;
         }
       });
@@ -76,9 +77,10 @@ const SpinWheel = () => {
       ];
 
       // Transform the spin wheel data into your editing format
+      const validCouponIds = spineWheelSingledata.couponOptions.filter((couponId) => !!couponDetails[couponId]?.name);
       const transformedData = {
         ...spineWheelSingledata,
-        segments: spineWheelSingledata.couponOptions.map((couponId, index) => ({
+        segments: validCouponIds.map((couponId, index) => ({
           id: `segment-${index}`, // or use actual segment IDs if available
           couponId,
           productName: couponDetails[couponId]?.name || "",
@@ -90,6 +92,8 @@ const SpinWheel = () => {
           // Add other segment properties as needed
         }))
       };
+
+      console.log('transformedData', transformedData);
 
       setEditingSpinWheel(transformedData);
       setShowForm(true);
