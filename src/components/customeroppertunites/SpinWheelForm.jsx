@@ -16,6 +16,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [isQuizePopupOpen, setIsQuizePopupOpen] = useState(false);
 
+
+
   const {
     register,
     handleSubmit,
@@ -78,22 +80,23 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     fetchCoupons();
   }, [getValues, setValue, clearErrors]);
 
-  // Fetch quizzes for "Select Blog" dropdown
+
+  const fetchQuizzes = async () => {
+    try {
+      const res = await api.get("/api/quiz");
+      const list = Array.isArray(res?.data) ? res.data : (res?.data?.docs || []);
+      setQuizzes(list);
+    } catch (error) {
+      console.error("Error fetching quizzes:", error);
+      showToast(error?.response?.data?.message || "Failed to load quizzes", "error");
+    } finally {
+      setLoadingQuizzes(false);
+    }
+  };
   useEffect(() => {
-    const fetchQuizzes = async () => {
-      try {
-        const res = await api.get("/api/quiz");
-        const list = Array.isArray(res?.data) ? res.data : (res?.data?.docs || []);
-        setQuizzes(list);
-      } catch (error) {
-        console.error("Error fetching quizzes:", error);
-        showToast(error?.response?.data?.message || "Failed to load quizzes", "error");
-      } finally {
-        setLoadingQuizzes(false);
-      }
-    };
     fetchQuizzes();
-  }, []);
+  }, [isQuizePopupOpen]);
+
 
   // Ensure selected quiz (by allocatedQuizCampainId) is present in dropdown by fetching its details
   useEffect(() => {
@@ -349,7 +352,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                     placeholderText="DD/MM/YYYY"
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'}`}
                     minDate={new Date()}
-                    wrapperClassName="w-full"    
+                    wrapperClassName="w-full"
                     isClearable
                   />
                 )}
@@ -586,7 +589,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         </div>
       </form>
 
-      
+
       {isQuizePopupOpen && (
         <div onClick={() => setIsQuizePopupOpen(false)} className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50">
           <div className="bg-white rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
