@@ -214,6 +214,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
     return date.toISOString().split("T")[0];
   };
 
+
   // Fetch dropdown data
   useEffect(() => {
     const fetchCoupons = async () => {
@@ -227,6 +228,11 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
         setLoadingCoupons(false);
       }
     };
+
+    fetchCoupons();
+  }, [isCouponPopupOpen]);
+
+  useEffect(() => {
     const fetchQuizzes = async () => {
       try {
         const res = await api.get("/api/quiz");
@@ -240,9 +246,9 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
         setLoadingQuizzes(false);
       }
     };
-    fetchCoupons();
     fetchQuizzes();
-  }, []);
+  }, [isQuizePopupOpen]);
+
 
   // Prefill from campaign prop (edit mode)
   useEffect(() => {
