@@ -220,13 +220,13 @@ const KYCPage = () => {
               <p className="text-red-600 text-sm mt-1">{errors.query.message}</p>
             )}
           </div>
-          <button
+          {/* <button
             type="submit"
             className="px-6 py-3 bg-[#313166] text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
             disabled={loading}
           >
             {loading ? "Searching..." : "Search"}
-          </button>
+          </button> */}
         </form>
       </div>
 
