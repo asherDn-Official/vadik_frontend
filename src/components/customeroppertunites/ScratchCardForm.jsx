@@ -454,7 +454,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
                 </label>
                 <select
                   {...register("allocatedQuizCampainId", {
-                    required: "Quiz selection is required",
+                    required: campaign?._id ? "Select a quiz to update" : "Quiz selection is required",
                   })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
                   disabled={loadingQuizzes}
@@ -465,7 +465,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
                   {!loadingQuizzes &&
                     quizzes?.map((q) => (
                       <option key={q._id} value={q._id}>
-                        {q.campaignName}
+                        {q.campaignName || q.quizName || q.name || q.title || "Untitled"}
                       </option>
                     ))}
                 </select>
