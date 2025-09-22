@@ -21,6 +21,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 
 const CouponManagement = () => {
   const [coupons, setCoupons] = useState([]);
@@ -255,20 +256,22 @@ const CouponManagement = () => {
   };
 
   const handleRemoveCoupon = async (couponId) => {
-    if (!window.confirm("Are you sure you want to delete this coupon?")) return;
 
-    setIsDeleting(couponId);
-    try {
-      await api.delete(`/api/coupons/coupon/${couponId}`);
-      showToast("Coupon deleted successfully", "success");
-      fetchCoupons();
-    } catch (err) {
-      console.error("Error removing coupon:", err);
-      showToast("Failed to delete coupon", "error");
-      setError("Failed to delete coupon.");
-    } finally {
-      setIsDeleting(false);
+    const onConfirm = async () => {
+      setIsDeleting(couponId);
+      try {
+        await api.delete(`/api/coupons/coupon/${couponId}`);
+        showToast("Coupon deleted successfully", "success");
+        fetchCoupons();
+      } catch (err) {
+        console.error("Error removing coupon:", err);
+        showToast("Failed to delete coupon", "error");
+      } finally {
+        setIsDeleting(false);
+      }
     }
+
+    deleteConfirmTostNotification("",onConfirm)
   };
 
   const handlePageChange = (newPage) => {
