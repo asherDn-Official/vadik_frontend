@@ -39,7 +39,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       allocatedQuizCampainId: "",
       isActive: true,
       segments: [],
-    }
+    },
+    mode: "onChange",
   });
 
   const colors = [

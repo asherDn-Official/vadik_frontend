@@ -4,6 +4,7 @@ import api from "../api/apiconfig";
 import showToast from "../utils/ToastNotification";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useForm } from "react-hook-form";
 
 
 const KYCPage = () => {
@@ -29,6 +30,36 @@ const KYCPage = () => {
     dateTo: "",
     productName: ""
   });
+
+  const { register, handleSubmit, formState: { errors }, reset, setValue, clearErrors } = useForm({ mode: "onChange" });
+
+  const getValidationRules = () => {
+    switch (searchType) {
+      case "phone":
+        return {
+          required: "Phone is required",
+          pattern: { value: /^[0-9]+$/, message: "Only numbers allowed" },
+        };
+      case "name":
+        return {
+          required: "Name is required",
+          pattern: { value: /^[A-Za-z ]+$/, message: "Only letters and spaces" },
+          maxLength: { value: 15, message: "Max length 15" },
+        };
+      case "email":
+        return {
+          required: "Email is required",
+          pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Invalid email" },
+        };
+      default:
+        return {};
+    }
+  };
+
+  const onSubmit = (data) => {
+    setSearchQuery(data.query);
+    handleSearch(data.query, searchType);
+  };
 
   const handleSearch = async (query, type) => {
     if (!query.trim()) {
@@ -134,7 +165,7 @@ const KYCPage = () => {
           {["phone", "name", "email"].map(type => (
             <button
               key={type}
-              onClick={() => setSearchType(type)}
+              onClick={() => { setSearchType(type); reset({ query: "" }); clearErrors("query"); setSearchQuery(""); }}
               className={`px-4 py-2 rounded-full capitalize ${searchType === type
                 ? "bg-[#313166] text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -145,22 +176,33 @@ const KYCPage = () => {
           ))}
         </div>
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder={`Search by ${searchType}...`}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
+        <form className="flex gap-2" onSubmit={handleSubmit(onSubmit)}>
+          <div className="flex-1">
+            <input
+              type={searchType === "email" ? "email" : "text"}
+              inputMode={searchType === "phone" ? "numeric" : undefined}
+              maxLength={searchType === "name" ? 15 : undefined}
+              placeholder={`Search by ${searchType}...`}
+              {...register("query", getValidationRules())}
+              onChange={(e) => {
+                const value = searchType === "phone" ? e.target.value.replace(/\D/g, "") : e.target.value;
+                setValue("query", value, { shouldValidate: true });
+                setSearchQuery(value);
+              }}
+              className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.query ? "border-red-400" : "border-gray-300"}`}
+            />
+            {errors.query && (
+              <p className="text-red-600 text-sm mt-1">{errors.query.message}</p>
+            )}
+          </div>
           <button
-            onClick={() => handleSearch(searchQuery, searchType)}
-            className="px-6 py-3 bg-[#313166] text-white rounded-lg hover:bg-gray-800 transition-colors"
+            type="submit"
+            className="px-6 py-3 bg-[#313166] text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
             disabled={loading}
           >
             {loading ? "Searching..." : "Search"}
           </button>
-        </div>
+        </form>
       </div>
 
       {loading && <SkeletonLoader />}

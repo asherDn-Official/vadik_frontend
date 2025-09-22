@@ -152,7 +152,7 @@ const SpinWheel = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-slate-800">
-          {spinWheels.length} Quiz Activities
+          {pagination.total} Spine Wheel Activities
         </h3>
         <button
           onClick={handleCreate}
