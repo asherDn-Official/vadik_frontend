@@ -5,6 +5,7 @@ import showToast from "../utils/ToastNotification";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useForm } from "react-hook-form";
+import { Search, SearchX } from "lucide-react";
 
 
 const KYCPage = () => {
@@ -16,6 +17,7 @@ const KYCPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -58,8 +60,20 @@ const KYCPage = () => {
 
   const onSubmit = (data) => {
     setSearchQuery(data.query);
+    setHasSearched(true);
     handleSearch(data.query, searchType);
   };
+
+  // Debounced auto-search on change
+  useEffect(() => {
+    const q = searchQuery?.trim();
+    if (!q) return; // only when there is something
+    const id = setTimeout(() => {
+      setHasSearched(true);
+      handleSearch(q, searchType);
+    }, 500);
+    return () => clearTimeout(id);
+  }, [searchQuery, searchType]);
 
   const handleSearch = async (query, type) => {
     if (!query.trim()) {
@@ -85,16 +99,27 @@ const KYCPage = () => {
         }
       });
 
-      const { customer, statistics, orderHistory } = response.data.data;
+      const { customer, statistics, orderHistory } = response.data.data || {};
+      if (!customer) {
+        setCustomerData(null);
+        setStatistics(null);
+        setOrderHistory([]);
+        setTotalPages(1);
+        setError("Customer not found for this retailer");
+        return;
+      }
+      setError(null);
       setCustomerData(customer);
       setStatistics(statistics);
       setOrderHistory(orderHistory.orders);
       setTotalPages(orderHistory.pagination.totalPages);
-      showToast("Customer data loaded", "success");
     } catch (err) {
       console.error("Error fetching customer data:", err);
-      setError(err.response?.data?.message || "Failed to fetch customer data");
-      showToast("Failed to fetch customer data", "error");
+      setCustomerData(null);
+      setStatistics(null);
+      setOrderHistory([]);
+      setTotalPages(1);
+      setError("Customer not found for this retailer");
     } finally {
       setLoading(false);
     }
@@ -208,14 +233,18 @@ const KYCPage = () => {
       {loading && <SkeletonLoader />}
 
       {error && (
-        <div className="p-4 mb-6 bg-red-50 border border-red-200 rounded-lg">
-          <div className="text-red-700">{error}</div>
-          <button
-            onClick={() => fetchCustomerData(searchQuery)}
-            className="mt-2 px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200"
-          >
-            Retry
-          </button>
+        <div className="p-4 mb-6 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+          <SearchX className="w-5 h-5 text-red-700" />
+          <div className="text-red-700">Customer not found for this retailer</div>
+        </div>
+      )}
+
+      {!hasSearched && !loading && !customerData && (
+        <div className="bg-white rounded-lg shadow-sm p-10 mb-6 text-center text-gray-500">
+          <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Search className="w-8 h-8 text-gray-400" />
+          </div>
+          <p>Start by searching a customer using phone, name, or email.</p>
         </div>
       )}
 
