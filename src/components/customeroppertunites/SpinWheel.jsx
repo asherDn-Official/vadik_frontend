@@ -86,8 +86,10 @@ const SpinWheel = () => {
       setEditingSpinWheel(transformedData);
       setShowForm(true);
     } catch (error) {
-      showToast("Error editing spin wheel:", "error");
+      // showToast("Error editing spin wheel:", "error");
       // Handle error (show toast, etc.)
+            setShowForm(true);
+
     }
   };
 
