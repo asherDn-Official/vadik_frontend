@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Plus, Send, Heart, CalendarDays, Delete, Trash } from "lucide-react";
 import Markdown from 'react-markdown'
-import api from "../../api/apiconfig";
+import api, { API_BASE_URL } from "../../api/apiconfig";
 
 const CustomerRecommendation = () => {
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
+  });
+   const [token, setToken] = useState(() => {
+    return localStorage.getItem("token") || "";
   });
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -174,11 +177,18 @@ const CustomerRecommendation = () => {
     try {
       setIsStreaming(true);
 
-      const response = await api.post(
-        `/api/customerChat/chat-stream/${currentThreadId}`,
+      const response = await fetch(
+        `${API_BASE_URL}/api/customerChat/chat-stream/${currentThreadId}`,
         {
-          userId: retailerId,
-          message: inputMessage,
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            userId: retailerId,
+            message: inputMessage,
+          })
         }
       );
 
