@@ -15,6 +15,8 @@ const AuthProvider = ({ children }) => {
             } else {
                 setAuth(null);
             }
+
+            return response.data;
         } catch (error) {
             console.error("Error fetching auth status:", error);
             setAuth(null);

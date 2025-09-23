@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { FiEye, FiEyeOff } from "react-icons/fi"; // Added eye icons
 import api from "../api/apiconfig";
 import { useAuth } from "../context/AuthContext";
+import { getModulePath } from "../utils/getModulePath";
 
 const Login = () => {
   const [loginType, setLoginType] = useState("retailer"); // 'retailer' or 'staff'
@@ -44,9 +45,7 @@ const Login = () => {
 
       if (data.token) {
         localStorage.setItem("token", data.token);
-        await checkAuth();
-        // navigate("/dashboard");
-
+        const response = await checkAuth();
         // Store appropriate ID based on login type
         if (loginType === "retailer" && data.retailer?._id) {
           if (data.retailer.onboarding) {
@@ -60,7 +59,8 @@ const Login = () => {
           localStorage.setItem("retailerId", data.staff.retailerId);
           localStorage.setItem('email', data.staff.email);
           localStorage.setItem('place_id', data.staff.placeId);
-          navigate("/dashboard");
+          const navigatepath = getModulePath(response.user.permissions[0].module)
+          navigate(navigatepath);
         }
       }
     } catch (err) {
