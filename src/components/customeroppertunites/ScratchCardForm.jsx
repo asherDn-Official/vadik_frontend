@@ -219,7 +219,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
-        const res = await api.get("/api/coupons/all");
+        const res = await api.get("/api/coupons/all?fully=true");
         const list = res?.data?.data || [];
         setCoupons(list);
       } catch (e) {
@@ -235,7 +235,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const res = await api.get("/api/quiz");
+        const res = await api.get("/api/quiz?fully=true");
         const list = Array.isArray(res?.data)
           ? res.data
           : res?.data?.docs || [];
