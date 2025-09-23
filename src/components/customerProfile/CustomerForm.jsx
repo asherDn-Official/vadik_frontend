@@ -70,21 +70,27 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
   const validateMobileNumber = (value) => {
     if (!value) return "Mobile Number is required";
 
-    // Check if the phone number is valid
+    // Check if the phone number is valid (using libphonenumber-js or similar)
     if (!isValidPhoneNumber(value)) {
       return "Invalid phone number";
     }
 
-    // Extract just the national number (without country code)
+    // Extract just the national number (last 10 digits)
     const nationalNumber = value.replace(/\D/g, '').slice(-10);
 
-    // For India, check if it's exactly 10 digits (national number)
+    // Must be exactly 10 digits
     if (nationalNumber.length !== 10) {
       return "Mobile number must be exactly 10 digits";
     }
 
+    // Must start with 6, 7, 8, or 9 (India mobile numbers)
+    if (!/^[6-9]\d{9}$/.test(nationalNumber)) {
+      return "Mobile number must be valid India mobile number";
+    }
+
     return true;
   };
+
 
   const onFormSubmit = (data) => {
     // Format mobile number by removing all non-digit characters
