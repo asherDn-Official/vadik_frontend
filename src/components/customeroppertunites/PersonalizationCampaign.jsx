@@ -52,15 +52,15 @@ const PersonalizationCampaign = () => {
     const fetchActivities = async () => {
       try {
         // Fetch quiz activities
-        const quizResponse = await api.get("/api/quiz");
+        const quizResponse = await api.get("/api/quiz?fully=true");
         setQuizActivities(quizResponse.data.docs);
 
         // Fetch spin wheel activities
-        const spinWheelResponse = await api.get("/api/spinWheels/spinWheel/all");
+        const spinWheelResponse = await api.get("/api/spinWheels/spinWheel/all?fully=true");
         setSpinWheelActivities(spinWheelResponse.data.data);
 
         // Fetch scratch card activities
-        const scratchCardResponse = await api.get("/api/scratchCards/scratchCard/all");
+        const scratchCardResponse = await api.get("/api/scratchCards/scratchCard/all?fully=true");
         setScratchCardActivities(scratchCardResponse.data.data);
       } catch (error) {
         console.error("Error fetching activities:", error);
