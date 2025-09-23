@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Upload } from "lucide-react";
+import { Upload, CheckCircle, XCircle } from "lucide-react";
 import FilterPanel from "../customerInsigth/FilterPanel";
 import CustomerList from "../customerInsigth/CustomerList";
 import api from "../../api/apiconfig";
@@ -36,8 +36,9 @@ const PersonalizationCampaign = () => {
   // Pre-check modal state
   const [showCheckModal, setShowCheckModal] = useState(false);
   const [checkResults, setCheckResults] = useState([]); // API response rows
-  const [checkFilter, setCheckFilter] = useState("all"); // all | true | false
+  const [checkFilter, setCheckFilter] = useState("false"); // default: show not yet shared
   const [checking, setChecking] = useState(false);
+  const [customerNames, setCustomerNames] = useState({}); // map of id -> firstname
 
   // Excel import state
   const fileInputRef = useRef(null);
@@ -355,12 +356,32 @@ const PersonalizationCampaign = () => {
 
     try {
       setChecking(true);
-      setCheckFilter("all");
+      setCheckFilter("false");
       // Build opportunities payload
       const opportunities = merged.map((id) => ({ customerId: id, campaignId: selectedCampaign }));
       const resp = await api.post("/api/customerOpportunities/check", { opportunities });
       const rows = resp?.data?.data || [];
       setCheckResults(rows);
+
+      // Fetch customer names for display in modal
+      try {
+        const uniqueIds = [...new Set(rows.map((r) => r.customerId).filter(Boolean))];
+        const nameEntries = await Promise.all(
+          uniqueIds.map(async (id) => {
+            try {
+              const r = await api.get(`/api/customers/${id}`);
+              const firstname = r?.data?.firstname || r?.data?.data?.firstname || "";
+              return [id, firstname];
+            } catch (_) {
+              return [id, ""];
+            }
+          })
+        );
+        setCustomerNames((prev) => ({ ...prev, ...Object.fromEntries(nameEntries) }));
+      } catch (_) {
+        // ignore name fetch failures
+      }
+
       setShowCheckModal(true);
     } catch (e) {
       showToast(e?.response?.data?.message || "Failed to check already shared status", "error");
@@ -666,8 +687,8 @@ const PersonalizationCampaign = () => {
                 <table className="min-w-full">
                   <thead className="bg-gray-100">
                     <tr>
-                      <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Customer ID</th>
-                      <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Campaign ID</th>
+                      <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Customer</th>
+                      {/* <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Campaign ID</th> */}
                       <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Already Shared</th>
                     </tr>
                   </thead>
@@ -676,9 +697,25 @@ const PersonalizationCampaign = () => {
                       .filter((r) => checkFilter === 'all' ? true : r.alreadyShared === (checkFilter === 'true'))
                       .map((row, idx) => (
                         <tr key={idx} className="hover:bg-gray-50">
-                          <td className="px-3 py-2 text-xs font-mono break-all">{row.customerId}</td>
+                          {/* <td className="px-3 py-2 text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{customerNames[row.customerId] || ""}</span>
+                            </div>
+                          </td> */}
                           <td className="px-3 py-2 text-xs font-mono break-all">{row.campaignId}</td>
-                          <td className="px-3 py-2">{String(row.alreadyShared)}</td>
+                          <td className="px-3 py-2">
+                            {row.alreadyShared ? (
+                              <div className="flex items-center gap-1 text-green-600">
+                                <CheckCircle size={18} />
+                                <span className="text-xs">Already Shared</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-red-600">
+                                <XCircle size={18} />
+                                <span className="text-xs">Not Shared</span>
+                              </div>
+                            )}
+                          </td>
                         </tr>
                       ))}
                   </tbody>
