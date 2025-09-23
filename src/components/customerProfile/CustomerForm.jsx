@@ -6,6 +6,7 @@ import "react-phone-number-input/style.css";
 
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { format, isValid } from "date-fns";
 
 
 const CustomerForm = ({ onSubmit, resetForm }) => {
@@ -35,6 +36,36 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
       reset();
     }
   }, [resetForm, reset]);
+
+  const validateDateFormat = (value) => {
+    if (!value) return "First Visit Date is required";
+
+    // Check if it's a valid Date object
+    if (!(value instanceof Date) || !isValid(value)) {
+      return "Please enter a valid date";
+    }
+
+    // Reject unrealistic years (e.g., 1111)
+    const year = value.getFullYear();
+    const minYear = 2000;
+    const maxYear = new Date().getFullYear();
+    if (year < minYear) {
+      return "Date must be 2000 or later";
+    }
+    if (year > maxYear) {
+      return "Date cannot be in the future";
+    }
+
+    // Additional format validation if needed
+    const formattedDate = format(value, 'dd/MM/yyyy');
+    const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+
+    if (!dateRegex.test(formattedDate)) {
+      return "Date must be in DD/MM/YYYY format";
+    }
+
+    return true;
+  };
 
   const validateMobileNumber = (value) => {
     if (!value) return "Mobile Number is required";
@@ -205,7 +236,7 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
           <Controller
             name="firstVisit"
             control={control}
-            rules={{ required: "First Visit Date is required" }}
+            rules={{ required: "First Visit Date is required", validate: validateDateFormat }}
             render={({ field }) => (
               <DatePicker
                 selected={field.value}
@@ -214,7 +245,10 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
                 placeholderText="DD/MM/YYYY"
                 className={`w-full p-2 border ${errors.firstVisit ? "border-red-500" : "border-gray-300"
                   } rounded text-[#313166]`}
+                minDate={new Date(2000, 0, 1)}
                 maxDate={new Date()}
+                showYearDropdown
+                scrollableYearDropdown
               />
             )}
           />
