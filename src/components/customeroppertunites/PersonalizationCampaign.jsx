@@ -693,16 +693,30 @@ const PersonalizationCampaign = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {checkResults
-                      .filter((r) => checkFilter === 'all' ? true : r.alreadyShared === (checkFilter === 'true'))
-                      .map((row, idx) => (
+                    {(() => {
+                      const filtered = checkResults.filter((r) =>
+                        checkFilter === 'all' ? true : r.alreadyShared === (checkFilter === 'true')
+                      );
+                      if (filtered.length === 0) {
+                        return (
+                          <tr>
+                            <td colSpan={2} className="px-3 py-6 text-center text-sm text-gray-500">
+                              {checkFilter === 'true'
+                                ? 'No data: Already Shared is true'
+                                : checkFilter === 'false'
+                                ? 'No data: Already Shared is false'
+                                : 'No data'}
+                            </td>
+                          </tr>
+                        );
+                      }
+                      return filtered.map((row, idx) => (
                         <tr key={idx} className="hover:bg-gray-50">
-                          {/* <td className="px-3 py-2 text-xs">
+                          <td className="px-3 py-2 text-xs">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{customerNames[row.customerId] || ""}</span>
                             </div>
-                          </td> */}
-                          <td className="px-3 py-2 text-xs font-mono break-all">{row.campaignId}</td>
+                          </td>
                           <td className="px-3 py-2">
                             {row.alreadyShared ? (
                               <div className="flex items-center gap-1 text-green-600">
@@ -717,7 +731,8 @@ const PersonalizationCampaign = () => {
                             )}
                           </td>
                         </tr>
-                      ))}
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>
