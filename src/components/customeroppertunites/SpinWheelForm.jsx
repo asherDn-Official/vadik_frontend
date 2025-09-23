@@ -84,7 +84,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
 
   const fetchQuizzes = async () => {
     try {
-      const res = await api.get("/api/quiz");
+      const res = await api.get("/api/quiz?fully=true");
       const list = Array.isArray(res?.data) ? res.data : (res?.data?.docs || []);
       setQuizzes(list);
     } catch (error) {
