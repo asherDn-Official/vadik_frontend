@@ -352,8 +352,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                     dateFormat="dd/MM/yyyy"
                     placeholderText="DD/MM/YYYY"
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'}`}
-                    minDate={new Date(2025, 0, 1)}
-                    maxDate={new Date()}
+                    minDate={new Date()}
                     wrapperClassName="w-full"
                     isClearable
                   />

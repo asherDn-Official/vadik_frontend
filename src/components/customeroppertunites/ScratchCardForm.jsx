@@ -432,8 +432,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
               <DatePicker
                 selected={formData.expiryDate}
                 onChange={handleDateChange}
-                minDate={new Date(2025, 0, 1)}
-                maxDate={new Date()}
+                minDate={new Date()}
                 dateFormat="dd/MM/yyyy"
                 placeholderText="Select expiry date"
                 className="w-full min-w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
