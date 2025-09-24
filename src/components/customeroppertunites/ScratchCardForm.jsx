@@ -432,7 +432,8 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
               <DatePicker
                 selected={formData.expiryDate}
                 onChange={handleDateChange}
-                minDate={new Date()}
+                minDate={new Date(2025, 0, 1)}
+                maxDate={new Date()}
                 dateFormat="dd/MM/yyyy"
                 placeholderText="Select expiry date"
                 className="w-full min-w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
@@ -525,7 +526,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
         </div>
       </form>
       {isCouponPopupOpen && (
-        <div  className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50" onClick={(e) => setIsCouponPopupOpen(false)}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50" onClick={(e) => setIsCouponPopupOpen(false)}>
           <div className="bg-white rounded-lg  w-full max-w-2xl max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
             <CouponPopup onClose={() => setIsCouponPopupOpen(false)} />
           </div>
