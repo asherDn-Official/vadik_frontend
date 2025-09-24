@@ -107,7 +107,7 @@ const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All Category");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [sortBy, setSortBy] = useState("productName");
+  const [sortBy, setSortBy] = useState("productname");
   const [sortOrder, setSortOrder] = useState("asc");
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
