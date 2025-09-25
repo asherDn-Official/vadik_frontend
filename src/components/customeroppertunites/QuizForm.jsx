@@ -28,6 +28,8 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
           type: "string",
           section: "additionalData",
           options: [],
+          iconUrl: "",
+          iconName: ""
         },
       ],
     },
@@ -46,6 +48,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
     try {
       const response = await api.get(`/api/customer-preferences/${retailerId}`);
       const preference = response?.data;
+
 
       const combinedPreferences = [
         ...(preference.additionalData?.map(item => ({
@@ -74,6 +77,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
   }, []);
 
   useEffect(() => {
+
     if (quiz) {
       setValue("title", quiz.campaignName || "");
       setValue("loyaltyPoints", quiz.loyaltyPoints || "");
@@ -84,7 +88,8 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
         type: q.type || "string",
         section: q.section || "additionalData",
         options: Array.isArray(q.options) ? q.options : [],
-        iconUrl: q.iconUrl || ""
+        iconUrl: q.iconUrl || "",
+        iconName: q.iconName
       })));
     }
   }, [quiz, setValue]);
@@ -93,7 +98,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
     const selectedPref = allPreferences.find(item => item.key === key);
     if (selectedPref) {
       const questionPath = `questions.${questionIndex}`;
-      
+
       setValue(`${questionPath}.key`, selectedPref.key);
       setValue(`${questionPath}.type`, selectedPref.type);
       setValue(`${questionPath}.section`, selectedPref.section);
@@ -101,6 +106,10 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
         ? `When is your ${selectedPref.key}?`
         : `What is your ${selectedPref.key}?`);
       setValue(`${questionPath}.options`, selectedPref.options || []);
+
+      // Add these two lines to set the icon properties
+      setValue(`${questionPath}.iconUrl`, selectedPref.iconUrl || "");
+      setValue(`${questionPath}.iconName`, selectedPref.iconName || "");
 
       // Clear errors for this question
       clearErrors(`questions.${questionIndex}.key`);
@@ -120,7 +129,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
     const currentOptions = questions[questionIndex]?.options || [];
     const newOptions = [...currentOptions, ""];
     setValue(`questions.${questionIndex}.options`, newOptions);
-    
+
     // Clear options error
     clearErrors(`questions.${questionIndex}.options`);
   };
@@ -156,6 +165,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
   };
 
   const onSubmit = async (data) => {
+
     const baseData = {
       campaignName: data.title,
       quizName: data.title,
@@ -168,7 +178,8 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
         type: q.type,
         section: q.section,
         ...(Array.isArray(q.options) && q.options.length > 0 && { options: q.options }),
-        ...(q.iconUrl && { iconUrl: q.iconUrl })
+        iconName: q.iconName || "", // Ensure this is included
+        iconUrl: q.iconUrl || "" // Ensure this is include
       }))
     };
 
@@ -199,11 +210,11 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
   const validateLoyaltyPoints = (value) => {
     if (!value) return 'Loyalty points is required';
     if (!/^\d+$/.test(value)) return 'Loyalty points must contain only numbers';
-    
+
     const points = parseInt(value, 10);
     if (points <= 0) return 'Loyalty points must be a positive number';
     if (points > 10000) return 'Loyalty points cannot exceed 10,000';
-    
+
     return true;
   };
 
@@ -222,9 +233,8 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
               {...register("loyaltyPoints", {
                 validate: validateLoyaltyPoints
               })}
-              className={`px-3 py-1 border rounded-md focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
-                errors.loyaltyPoints ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`px-3 py-1 border rounded-md focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.loyaltyPoints ? 'border-red-500' : 'border-gray-300'
+                }`}
             />
             {errors.loyaltyPoints && (
               <span className="text-red-500 text-xs mt-1">{errors.loyaltyPoints.message}</span>
@@ -246,9 +256,8 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
               minLength: { value: 3, message: 'Title should have at least 3 characters' },
               maxLength: { value: 50, message: 'Title should not exceed 50 characters' }
             })}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
-              errors.title ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.title ? 'border-red-500' : 'border-gray-300'
+              }`}
           />
           {errors.title && (
             <span className="text-red-500 text-sm mt-1 block">{errors.title.message}</span>
@@ -273,9 +282,8 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
                     <button
                       type="button"
                       onClick={() => togglePreferenceDropdown(qIndex)}
-                      className={`flex items-center justify-between w-48 px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
-                        errors.questions?.[qIndex]?.key ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`flex items-center justify-between w-48 px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.questions?.[qIndex]?.key ? 'border-red-500' : 'border-gray-300'
+                        }`}
                     >
                       <span className="text-sm truncate">
                         {question.key || "Select a preference"}
@@ -331,9 +339,8 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
                     {...field}
                     type="text"
                     placeholder="Enter your Question"
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white ${
-                      errors.questions?.[qIndex]?.question ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white ${errors.questions?.[qIndex]?.question ? 'border-red-500' : 'border-gray-300'
+                      }`}
                   />
                 )}
               />
@@ -393,9 +400,8 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
                     question.type === "number" ? "number" :
                       question.type === "boolean" ? "checkbox" : "text"}
                   placeholder={`Enter your ${question.key || "answer"}`}
-                  className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white ${
-                    question.type === "checkbox" ? "w-auto" : ""
-                  }`}
+                  className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white ${question.type === "checkbox" ? "w-auto" : ""
+                    }`}
                 />
               </div>
             )}
@@ -422,11 +428,10 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`px-6 py-2 text-white rounded-lg transition-colors ${
-              isSubmitting
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-pink-600 hover:bg-pink-700'
-            }`}
+            className={`px-6 py-2 text-white rounded-lg transition-colors ${isSubmitting
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-pink-600 hover:bg-pink-700'
+              }`}
           >
             {isSubmitting ? (quiz ? 'Updating Quiz...' : 'Creating Quiz...') : (quiz ? 'Update Quiz' : 'Create Quiz')}
           </button>
