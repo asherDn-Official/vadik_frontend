@@ -204,6 +204,7 @@ const CustomerList = ({
                   <tr
                     key={customer._id}
                     className={`hover:bg-gray-50 transition-colors ${customer.isOptedIn !== true ? 'opacity-50' : ''}`}
+                    title={customer.isOptedIn !== true ? 'Customer not allowed the campaign' : ''}
                   >
                     <td className="px-4 py-3">
                       <input
