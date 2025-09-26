@@ -32,8 +32,27 @@ const CustomerList = ({
     return path.split('.').reduce((o, p) => (o || {})[p], obj);
   };
 
-  const allSelected = customers.length > 0 &&
-    selectedCustomers.length === customers.length;
+  const enabledCustomers = customers.filter(c => c.isOptedIn === true);
+  const allSelected = enabledCustomers.length > 0 &&
+    enabledCustomers.every(c => selectedCustomers.includes(c._id));
+
+  const handleToggleAll = () => {
+    if (allSelected) {
+      // Deselect all enabled customers
+      enabledCustomers.forEach(customer => {
+        if (selectedCustomers.includes(customer._id)) {
+          toggleCustomerSelection(customer._id);
+        }
+      });
+    } else {
+      // Select all enabled customers
+      enabledCustomers.forEach(customer => {
+        if (!selectedCustomers.includes(customer._id)) {
+          toggleCustomerSelection(customer._id);
+        }
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
@@ -183,7 +202,7 @@ const CustomerList = ({
                   <input
                     type="checkbox"
                     checked={allSelected}
-                    onChange={toggleAllCustomers}
+                    onChange={handleToggleAll}
                     className="rounded border-gray-300 text-[#7E57C2] focus:ring-[#7E57C2]"
                   />
                 </th>
