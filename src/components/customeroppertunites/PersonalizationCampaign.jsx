@@ -37,6 +37,7 @@ const PersonalizationCampaign = () => {
   const [showCheckModal, setShowCheckModal] = useState(false);
   const [checkResults, setCheckResults] = useState([]); // API response rows
   const [checkFilter, setCheckFilter] = useState("false"); // default: show not yet shared
+  const [quizCheckFilter, setQuizCheckFilter] = useState("false"); // filter for quizAlreadyShared
   const [checking, setChecking] = useState(false);
   const [customerNames, setCustomerNames] = useState({}); // map of id -> firstname
 
@@ -444,6 +445,7 @@ const PersonalizationCampaign = () => {
         return;
       }
       showToast('Activities sent successfully!', 'success');
+      setShowCheckModal(false);
     } catch (error) {
       showToast(error?.response?.data?.message || 'Failed to send', 'error');
     } finally {
@@ -681,6 +683,16 @@ const PersonalizationCampaign = () => {
                   <option value="true">Already Shared: true</option>
                   <option value="false">Already Shared: false</option>
                 </select>
+                <label className="text-sm text-gray-600">Quiz Filter:</label>
+                <select
+                  value={quizCheckFilter}
+                  onChange={(e) => setQuizCheckFilter(e.target.value)}
+                  className="px-2 py-1 border rounded-md text-sm"
+                >
+                  <option value="all">All</option>
+                  <option value="true">Quiz Already Shared: true</option>
+                  <option value="false">Quiz Already Shared: false</option>
+                </select>
                 <span className="text-sm text-gray-600">Total: {checkResults.length}</span>
               </div>
               <div className="overflow-x-auto border rounded-lg">
@@ -690,22 +702,21 @@ const PersonalizationCampaign = () => {
                       <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Customer</th>
                       {/* <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Campaign ID</th> */}
                       <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Already Shared</th>
+                      <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">is quiz Shared</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {(() => {
-                      const filtered = checkResults.filter((r) =>
-                        checkFilter === 'all' ? true : r.alreadyShared === (checkFilter === 'true')
-                      );
+                      const filtered = checkResults.filter((r) => {
+                        const matchAlready = checkFilter === 'all' ? true : r.alreadyShared === (checkFilter === 'true');
+                        const matchQuiz = quizCheckFilter === 'all' ? true : r.quizAlreadyShared === (quizCheckFilter === 'true');
+                        return matchAlready && matchQuiz;
+                      });
                       if (filtered.length === 0) {
                         return (
                           <tr>
-                            <td colSpan={2} className="px-3 py-6 text-center text-sm text-gray-500">
-                              {checkFilter === 'true'
-                                ? 'No data: Already Shared is true'
-                                : checkFilter === 'false'
-                                ? 'No data: Already Shared is false'
-                                : 'No data'}
+                            <td colSpan={3} className="px-3 py-6 text-center text-sm text-gray-500">
+                              No data matching filters
                             </td>
                           </tr>
                         );
@@ -719,6 +730,19 @@ const PersonalizationCampaign = () => {
                           </td>
                           <td className="px-3 py-2">
                             {row.alreadyShared ? (
+                              <div className="flex items-center gap-1 text-green-600">
+                                <CheckCircle size={18} />
+                                <span className="text-xs">Already Shared</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-red-600">
+                                <XCircle size={18} />
+                                <span className="text-xs">Not Shared</span>
+                              </div>
+                            )}
+                          </td>
+                            <td className="px-3 py-2">
+                            {row.quizAlreadyShared ? (
                               <div className="flex items-center gap-1 text-green-600">
                                 <CheckCircle size={18} />
                                 <span className="text-xs">Already Shared</span>
