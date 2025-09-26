@@ -24,6 +24,9 @@ const CustomerList = ({
     return localStorage.getItem("retailerId") || "";
   });
 
+  
+  console.log(customers.isOptedIn); // null  //false    
+
   // Function to safely get nested values from customer object
   const getNestedValue = (obj, path) => {
     return path.split('.').reduce((o, p) => (o || {})[p], obj);
@@ -200,13 +203,14 @@ const CustomerList = ({
                 return (
                   <tr
                     key={customer._id}
-                    className="hover:bg-gray-50 transition-colors"
+                    className={`hover:bg-gray-50 transition-colors ${customer.isOptedIn !== true ? 'opacity-50' : ''}`}
                   >
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
                         checked={selectedCustomers.includes(customer._id)}
                         onChange={() => toggleCustomerSelection(customer._id)}
+                        disabled={customer.isOptedIn !== true}
                         className="rounded border-gray-300 text-[#7E57C2] focus:ring-[#7E57C2]"
                       />
                     </td>
