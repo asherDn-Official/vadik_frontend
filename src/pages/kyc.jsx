@@ -152,6 +152,50 @@ const KYCPage = () => {
     }
   };
 
+  function formatPhone(raw) {
+    if (!raw && raw !== "") return "";
+
+    // remove non-digits
+    const digits = String(raw).replace(/\D+/g, "");
+
+    // if digits empty
+    if (!digits) return "";
+
+    // decide country code length:
+    // If total length > 10, assume country code exists. Use upto 3 digits for CC.
+    let country = "";
+    let national = digits;
+
+    if (digits.length > 10) {
+      // pick country code as digits.length - 10 (so last 10 digits become national)
+      // but clamp to 1..3
+      const ccLen = Math.min(3, Math.max(1, digits.length - 10));
+      country = digits.slice(0, ccLen);
+      national = digits.slice(ccLen);
+    }
+
+    // split national into two groups for display
+    let left, right;
+    if (national.length >= 10) {
+      // prefer 5 + rest (like the example)
+      left = national.slice(0, 5);
+      right = national.slice(5);
+    } else if (national.length > 1) {
+      const mid = Math.ceil(national.length / 2);
+      left = national.slice(0, mid);
+      right = national.slice(mid);
+    } else {
+      left = national;
+      right = "";
+    }
+
+    const countryPart = country ? `${country}+ ` : "";
+    const rightPart = right ? ` ${right}` : "";
+
+    // Normalize spaces (if you want the double space in your example, change below)
+    return `${countryPart}${left}${rightPart}`.replace(/\s+/g, " ");
+  }
+
   useEffect(() => {
     if (searchQuery) {
       fetchCustomerData(searchQuery);
@@ -180,6 +224,14 @@ const KYCPage = () => {
     }
     return true;
   });
+
+  function formatDate(isoDate) {
+    const date = new Date(isoDate);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
 
   return (
     <div className="p-8">
@@ -262,7 +314,7 @@ const KYCPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Mobile</p>
-                    <p className="font-medium">{customerData.mobileNumber}</p>
+                    <p className="font-medium">{formatPhone(customerData.mobileNumber)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Customer ID</p>
@@ -271,7 +323,7 @@ const KYCPage = () => {
                   <div>
                     <p className="text-sm text-gray-500">First Visit</p>
                     <p className="font-medium">
-                      {new Date(customerData.firstVisit).toLocaleDateString()}
+                      {formatDate(customerData.firstVisit)}
                     </p>
                   </div>
                 </div>
