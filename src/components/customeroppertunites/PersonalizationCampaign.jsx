@@ -37,7 +37,7 @@ const PersonalizationCampaign = () => {
   const [showCheckModal, setShowCheckModal] = useState(false);
   const [checkResults, setCheckResults] = useState([]); // API response rows
   const [checkFilter, setCheckFilter] = useState("false"); // default: show not yet shared
-  const [quizCheckFilter, setQuizCheckFilter] = useState("false"); // filter for quizAlreadyShared
+  const [quizCheckFilter, setQuizCheckFilter] = useState("all"); // filter for quizAlreadyShared
   const [checking, setChecking] = useState(false);
   const [customerNames, setCustomerNames] = useState({}); // map of id -> firstname
 
@@ -231,7 +231,7 @@ const PersonalizationCampaign = () => {
 
   // ===== Import Customers from Excel =====
   const acceptedColumns = [
-    "_id","firstname","lastname","mobileNumber","gender","source","customerId","firstVisit","loyaltyPoints","additionalData","advancedDetails","advancedPrivacyDetails","createdAt","updatedAt","__v"
+    "_id", "firstname", "lastname", "mobileNumber", "gender", "source", "customerId", "firstVisit", "loyaltyPoints", "additionalData", "advancedDetails", "advancedPrivacyDetails", "createdAt", "updatedAt", "__v"
   ];
 
   const handleImportClick = () => {
@@ -305,7 +305,7 @@ const PersonalizationCampaign = () => {
               resolvedIds.push(found);
               continue;
             }
-          } catch (e) {}
+          } catch (e) { }
         }
         unresolved.push(row);
       }
@@ -521,16 +521,16 @@ const PersonalizationCampaign = () => {
               >
                 Select Customer
               </button>
-               <button  className="px-4 py-2 border  text-blue-950 rounded-sm border-blue-950 flex items-center gap-2" onClick={handleImportClick}>
-                  <Upload size={16} /> Import Customers
-               </button>
-               <input
-                 ref={fileInputRef}
-                 type="file"
-                 accept=".xlsx,.xls"
-                 onChange={onFileChange}
-                 className="hidden"
-               />
+              <button className="px-4 py-2 border  text-blue-950 rounded-sm border-blue-950 flex items-center gap-2" onClick={handleImportClick}>
+                <Upload size={16} /> Import Customers
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={onFileChange}
+                className="hidden"
+              />
             </div>
             <div className="flex items-center gap-3">
               <label className="text-sm text-gray-600">Customers per page:</label>
@@ -683,7 +683,7 @@ const PersonalizationCampaign = () => {
                   <option value="true">Already Shared: true</option>
                   <option value="false">Already Shared: false</option>
                 </select>
-                <label className="text-sm text-gray-600">Quiz Filter:</label>
+                {/* <label className="text-sm text-gray-600">Quiz Filter:</label>
                 <select
                   value={quizCheckFilter}
                   onChange={(e) => setQuizCheckFilter(e.target.value)}
@@ -692,7 +692,7 @@ const PersonalizationCampaign = () => {
                   <option value="all">All</option>
                   <option value="true">Quiz Already Shared: true</option>
                   <option value="false">Quiz Already Shared: false</option>
-                </select>
+                </select> */}
                 <span className="text-sm text-gray-600">Total: {checkResults.length}</span>
               </div>
               <div className="overflow-x-auto border rounded-lg">
@@ -702,7 +702,7 @@ const PersonalizationCampaign = () => {
                       <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Customer</th>
                       {/* <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Campaign ID</th> */}
                       <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Already Shared</th>
-                      <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">is quiz Shared</th>
+                      {/* <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">is quiz Shared</th> */}
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -741,7 +741,7 @@ const PersonalizationCampaign = () => {
                               </div>
                             )}
                           </td>
-                            <td className="px-3 py-2">
+                          {/* <td className="px-3 py-2">
                             {row.quizAlreadyShared ? (
                               <div className="flex items-center gap-1 text-green-600">
                                 <CheckCircle size={18} />
@@ -753,7 +753,7 @@ const PersonalizationCampaign = () => {
                                 <span className="text-xs">Not Shared</span>
                               </div>
                             )}
-                          </td>
+                          </td> */}
                         </tr>
                       ));
                     })()}
