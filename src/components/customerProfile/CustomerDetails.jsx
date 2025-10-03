@@ -230,7 +230,7 @@ const CustomerDetails = ({
     };
   });
 
-  console.log(formData.basic.mobileNumber);
+  // console.log(formData.basic.mobileNumber);
 
   // State for validation errors
   const [errors, setErrors] = useState({
@@ -374,7 +374,7 @@ const CustomerDetails = ({
     }
   }, [formData, touched, isEditing]);
 
-  const tabs = ["AdditionalData", "Advanced Details", "Advanced Privacy", "Referral"];
+  const tabs = ["Additional Data", "Advanced Details", "Advanced Privacy", "Referral"];
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
   const [recipientNumber, setRecipientNumber] = useState("");
   const [messageType, setMessageType] = useState("birthday");
@@ -710,7 +710,7 @@ const CustomerDetails = ({
                   </div>
                 )}
 
-                {activeTab === "AdditionalData" && (
+                {activeTab === "Additional Data" && (
                   <div className="grid grid-cols-2 gap-4">
                     {transformedCustomer?.additionalData && Object.keys(transformedCustomer.additionalData).length > 0 ? (
                       renderDynamicFields(transformedCustomer?.additionalData, "additionalData")
