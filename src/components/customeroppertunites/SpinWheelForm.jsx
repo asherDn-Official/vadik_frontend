@@ -147,6 +147,17 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     }
   }, [campaign, setValue]);
 
+  // Ensure targetedCoupons is valid when segments change
+  useEffect(() => {
+    const segmentCouponIds = formData.segments?.map(s => s.couponId).filter(id => id && String(id).trim().length > 0) || [];
+    const currentTargeted = getValues("targetedCoupons") || [];
+    if (currentTargeted.length > 0 && !segmentCouponIds.includes(currentTargeted[0])) {
+      // Reset if not valid
+      setValue("targetedCoupons", []);
+      clearErrors("targetedCoupons");
+    }
+  }, [formData.segments, getValues, setValue, clearErrors]);
+
   const handleSegmentChange = (segmentId, field, value) => {
     const updatedSegments = formData.segments.map((s) =>
       s.id === segmentId ? { ...s, [field]: value } : s
@@ -540,38 +551,51 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
           </button>
         </div>
 
-        <div className="mt-6">
-          <h3 className="text-lg font-medium text-gray-700 mb-2">Targeted Coupons</h3>
-          <p className="text-sm text-gray-500 mb-2">
-            Select coupons that will be targeted for this spin wheel campaign.
-          </p>
-          {errors.targetedCoupons && (
-            <p className="mb-2 text-sm text-red-600">{errors.targetedCoupons.message}</p>
-          )}
-          {loadingCoupons ? (
-            <div>Loading coupons...</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {coupons.map(coupon => (
-                <label key={coupon._id} className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer">
-                  <input
-                    type="radio"
-                    name="targetedCoupons"
-                    checked={formData.targetedCoupons?.includes(coupon._id)}
-                    onChange={() => handleTargetedCouponChange(coupon._id)}
-                    className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
-                  />
-                  <div className="ml-3">
-                    <div className="text-sm font-medium text-gray-700">{coupon.name}</div>
-                    <div className="text-xs text-gray-500">
-                      {coupon.code} - {coupon.discount}{coupon.couponType === 'percentage' ? '%' : '₹'} off
-                    </div>
-                  </div>
-                </label>
-              ))}
+        {(() => {
+          const segmentCouponIds = formData.segments?.map(s => s.couponId).filter(id => id && String(id).trim().length > 0) || [];
+          const availableTargetedCoupons = coupons.filter(coupon => segmentCouponIds.includes(coupon._id));
+          const hasAvailableCoupons = availableTargetedCoupons.length > 0;
+          return (
+            <div className={`mt-6 ${!hasAvailableCoupons ? 'opacity-50' : ''}`}>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">Targeted Coupons</h3>
+              <p className="text-sm text-gray-500 mb-2">
+                Select coupons that will be targeted for this spin wheel campaign. Only coupons selected in the spin wheel segments are available.
+              </p>
+              {errors.targetedCoupons && (
+                <p className="mb-2 text-sm text-red-600">{errors.targetedCoupons.message}</p>
+              )}
+              {!hasAvailableCoupons && (
+                <p className="text-sm text-orange-600 mb-2">
+                  No coupons available. Please add coupons to the spin wheel segments first.
+                </p>
+              )}
+              {loadingCoupons ? (
+                <div>Loading coupons...</div>
+              ) : (
+                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${!hasAvailableCoupons ? 'pointer-events-none' : ''}`}>
+                  {availableTargetedCoupons.map(coupon => (
+                    <label key={coupon._id} className={`flex items-center p-3 border border-gray-200 rounded-lg ${!hasAvailableCoupons ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                      <input
+                        type="radio"
+                        name="targetedCoupons"
+                        checked={formData.targetedCoupons?.includes(coupon._id)}
+                        onChange={() => handleTargetedCouponChange(coupon._id)}
+                        disabled={!hasAvailableCoupons}
+                        className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
+                      />
+                      <div className="ml-3">
+                        <div className="text-sm font-medium text-gray-700">{coupon.name}</div>
+                        <div className="text-xs text-gray-500">
+                          {coupon.code} - {coupon.discount}{coupon.couponType === 'percentage' ? '%' : '₹'} off
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })()}
 
         <div className="flex justify-end space-x-4 pt-8">
           <button
