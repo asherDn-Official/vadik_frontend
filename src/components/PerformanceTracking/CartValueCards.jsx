@@ -11,27 +11,43 @@ import "react-datepicker/dist/react-datepicker.css";
 import api from "../../api/apiconfig";
 
 const CartValueCards = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [dateRange, setDateRange] = useState([null, null]);
-  const [startDate, endDate] = dateRange;
- const [noOfCustomer,setNoOfCustomer]=useState(0)
-  const [lastMonthTurnOver,setLastMonthTurnOver]=useState(0)
-  const [avgTurnoverPerDay,setAvgTurnoverPerDay]=useState(0)
-  const [avgTurnoverPerCustomer,setAvgTurnoverPerCustomer]=useState(0)
-  useEffect(()=>{
-    const fetchData=async()=>{
-      try{
-        const response=await api.get("api/performanceTracking/cartStatistics");
-        setNoOfCustomer(response.data.customersCreated)
-        setAvgTurnoverPerCustomer(response.data.avgTurnoverPerCustomer)
-        setAvgTurnoverPerDay(response.data.avgTurnoverPerDay)
-        setLastMonthTurnOver(response.data.lastMonthTurnover)
-      }catch(error){
-        console.error('Error fetching data:',error);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [noOfCustomer, setNoOfCustomer] = useState(0);
+  const [lastMonthTurnOver, setLastMonthTurnOver] = useState(0);
+  const [avgTurnoverPerDay, setAvgTurnoverPerDay] = useState(0);
+  const [avgTurnoverPerCustomer, setAvgTurnoverPerCustomer] = useState(0);
+
+  // Format date to DD/MM/YYYY
+  const formatDate = (date) => {
+    if (!date) return "";
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${year}-${month}-${day}`;
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const formattedDate = formatDate(selectedDate);
+        
+        const response = await api.get("api/performanceTracking/cartStatistics", {
+          params: {
+            singleDate: formattedDate
+          }
+        });
+        
+        setNoOfCustomer(response.data.customersCreated);
+        setAvgTurnoverPerCustomer(response.data.avgTurnoverPerCustomer);
+        setAvgTurnoverPerDay(response.data.avgTurnoverPerDay);
+        setLastMonthTurnOver(response.data.lastMonthTurnover);
+      } catch (error) {
+        console.error('Error fetching data:', error);
       }
-    }
+    };
     fetchData();
-  },[])
+  }, [selectedDate]); // Re-fetch when selectedDate changes
+
   const cardData = [
     {
       icon: Users,
@@ -70,15 +86,13 @@ const CartValueCards = () => {
 
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <Calendar className="w-4 h-4 text-gray-500" />
-          {/* <DatePicker
+          <DatePicker
             selected={selectedDate}
             onChange={(date) => setSelectedDate(date)}
-            selectsStart
-            startDate={selectedDate}
             className="border border-gray-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 w-full sm:w-40"
             placeholderText="Select date"
-          /> */}
-          <div className="text-sm text-gray-600">Today</div>
+            dateFormat="dd/MM/yyyy"
+          />
         </div>
       </div>
 
