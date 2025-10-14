@@ -8,13 +8,11 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, isValid } from "date-fns";
 import api from "../../api/apiconfig";
+import ManageSourcesPopup from "./components/ManageSourcesPopup.jsx";
 
 const CustomerForm = ({ onSubmit, resetForm }) => {
   const [sources, setSources] = React.useState([]);
-  const [popupSources, setPopupSources] = React.useState([]);
   const [showSourcePopup, setShowSourcePopup] = React.useState(false);
-  const [newSource, setNewSource] = React.useState("");
-  const [sourceError, setSourceError] = React.useState("");
   const [loading, setLoading] = React.useState(false);
 
   const sanitizeSourceName = React.useCallback((value = "") => value.trim().toLowerCase(), []);
@@ -44,14 +42,6 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
   React.useEffect(() => {
     fetchSources();
   }, []);
-
-  React.useEffect(() => {
-    if (showSourcePopup) {
-      setPopupSources(sources);
-      setNewSource("");
-      setSourceError("");
-    }
-  }, [showSourcePopup, sources]);
 
   // Reset form when resetForm prop changes
   React.useEffect(() => {
@@ -108,82 +98,16 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
     }
   };
 
-  // Add new source
-  const handleAddSource = () => {
-    setSourceError("");
-    const sanitizedSource = sanitizeSourceName(newSource);
+  // Handle sources update from popup
+  const handleSourcesUpdate = (updatedSources) => {
+    setSources(updatedSources);
+    
+    const currentSource = getValues("source");
+    const nextSelection = currentSource && updatedSources.includes(currentSource)
+      ? currentSource
+      : updatedSources[0] ?? "";
 
-    if (!sanitizedSource) {
-      setSourceError("Please enter a source name.");
-      return;
-    }
-
-    if (popupSources.includes(sanitizedSource)) {
-      setSourceError("This source already exists!");
-      return;
-    }
-
-    setPopupSources((prev) => [...prev, sanitizedSource]);
-    setNewSource("");
-  };
-
-  const handleUpdateSourceName = (index, value) => {
-    setSourceError("");
-    const sanitizedSource = sanitizeSourceName(value);
-    setPopupSources((prev) => {
-      const next = [...prev];
-      next[index] = sanitizedSource;
-      return next;
-    });
-  };
-
-  const handleRemoveSource = (index) => {
-    setSourceError("");
-    setPopupSources((prev) => prev.filter((_, idx) => idx !== index));
-  };
-
-  const handleSaveSources = async () => {
-    setSourceError("");
-
-    const sanitizedList = popupSources
-      .map((item) => sanitizeSourceName(item))
-      .filter((item) => item.length > 0);
-
-    if (sanitizedList.length !== popupSources.length) {
-      setSourceError("Source names cannot be empty.");
-      return;
-    }
-
-    const uniqueList = Array.from(new Set(sanitizedList));
-
-    if (uniqueList.length !== sanitizedList.length) {
-      setSourceError("Duplicate source names are not allowed.");
-      return;
-    }
-
-    if (uniqueList.length === 0) {
-      setSourceError("Please keep at least one source.");
-      return;
-    }
-
-    const { success, sources: refreshedSources } = await updateSources(uniqueList);
-
-    if (success) {
-      const nextSources = refreshedSources ?? uniqueList;
-      setSources(nextSources);
-      setPopupSources(nextSources);
-      setNewSource("");
-      setShowSourcePopup(false);
-
-      const currentSource = getValues("source");
-      const nextSelection = currentSource && nextSources.includes(currentSource)
-        ? currentSource
-        : nextSources[0] ?? "";
-
-      setValue("source", nextSelection);
-    } else {
-      setSourceError("Unable to update sources. Please try again.");
-    }
+    setValue("source", nextSelection);
   };
 
   const validateDateFormat = (value) => {
@@ -262,60 +186,17 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
 
   return (
     <>
-      {/* Add Source Popup */}
-      {showSourcePopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-[#313166]">Add New Source</h3>
-              <button
-                onClick={() => setShowSourcePopup(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ×
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-[#31316680] mb-2">Add New Source</label>
-                <input
-                  type="text"
-                  value={newSource}
-                  onChange={(e) => setNewSource(e.target.value)}
-                  placeholder="Enter source name"
-                  className="w-full p-2 border border-gray-300 rounded text-[#313166]"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddSource();
-                    }
-                  }}
-                />
-                {sourceError && (
-                  <p className="text-red-500 text-xs mt-1">{sourceError}</p>
-                )}
-              </div>
-              
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setShowSourcePopup(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddSource}
-                  disabled={loading || !newSource.trim()}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? "Adding..." : "Add Source"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Manage Sources Popup */}
+      <ManageSourcesPopup
+        show={showSourcePopup}
+        onClose={() => setShowSourcePopup(false)}
+        sources={sources}
+        onSourcesUpdate={handleSourcesUpdate}
+        updateSources={updateSources}
+        loading={loading}
+        setLoading={setLoading}
+        sanitizeSourceName={sanitizeSourceName}
+      />
 
       <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-1 gap-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -424,10 +305,10 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
             <div className="flex items-center justify-between">
               <label className="block text-sm text-[#31316680]">Source *</label>
               <div 
-                className="text-sm text-blue-400 underline cursor-pointer hover:text-blue-600"
+                className="text-sm text-blue-400 underline cursor-pointer hover:text-blue-600 transition-colors"
                 onClick={() => setShowSourcePopup(true)}
               >
-                Add Source
+                Manage Sources
               </div>
             </div>
             <select
