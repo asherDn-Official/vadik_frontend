@@ -9,168 +9,217 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import * as yup from 'yup';
-import { extractFieldValue, transformCustomerData, transformFormDataToAPI, formatFieldForDisplay, getInputType, getFieldType } from "../../utils/customerDataUtils";
-import EditIcon from '../../../public/assets/edit-icon.png';
-import profileImg from '../../../public/assets/profile.png';
+import * as yup from "yup";
+import {
+  extractFieldValue,
+  transformCustomerData,
+  transformFormDataToAPI,
+  formatFieldForDisplay,
+  getInputType,
+  getFieldType,
+} from "../../utils/customerDataUtils";
+import EditIcon from "../../../public/assets/edit-icon.png";
+import profileImg from "../../../public/assets/profile.png";
 import PurchaseHistory from "../customeroppertunites/PurchaseHistory";
 import { formatIndianMobile } from "./formatIndianMobile";
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import DetailItem from './components/DetailItem'
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import DetailItem from "./components/DetailItem";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+import api from "../../api/apiconfig";
 
 // Memoized FieldItem component to prevent unnecessary re-renders
-const FieldItem = React.memo(({
-  label,
-  name,
-  defaultValue,
-  section = 'basic',
-  isEditable = false,
-  value,
-  onChange,
-  customer,
-  isEditing,
-  error
-}) => {
-  // Get field data from the nested structure
-  const fieldData = customer?.[section]?.[name] || {};
-  const isGender = section === 'basic' && name === 'gender';
-  const isMobileNumber = section === 'basic' && name === 'mobileNumber';
-  const fieldType = isGender ? 'options' : (fieldData.type || getFieldType(customer, section, name));
-  const inputType = getInputType(fieldType);
-  const options = isGender ? ['Male', 'Female', 'Others'] : (fieldData.options || []);
+const FieldItem = React.memo(
+  ({
+    label,
+    name,
+    defaultValue,
+    section = "basic",
+    isEditable = false,
+    value,
+    onChange,
+    customer,
+    isEditing,
+    error,
+    options: externalOptions, // Add this prop for external options
+    fieldType: externalFieldType, // Add this to override field type
+  }) => {
+    // Get field data from the nested structure
+    const fieldData = customer?.[section]?.[name] || {};
+    const isGender = section === "basic" && name === "gender";
+    const isMobileNumber = section === "basic" && name === "mobileNumber";
+    const isSource = section === "basic" && name === "source";
 
-  const handleInputChange = useCallback((e) => {
-    onChange(section, name, e.target.value);
-  }, [onChange, section, name]);
+    // Determine field type - use external override first, then specific checks
+    const fieldType =
+      externalFieldType || isGender
+        ? "options"
+        : isSource
+        ? "options"
+        : fieldData.type || getFieldType(customer, section, name);
 
-  const handleSelectChange = useCallback((e) => {
-    onChange(section, name, e.target.value);
-  }, [onChange, section, name]);
+    const inputType = getInputType(fieldType);
 
-  const handlePhoneChange = useCallback((phoneValue) => {
-    onChange(section, name, phoneValue);
-  }, [onChange, section, name]);
+    // Determine options - use external options first, then specific cases
+    const options =
+      externalOptions ||
+      (isGender ? ["Male", "Female", "Others"] : fieldData.options || []);
 
-  // Special rendering for mobile number field
-  if (isMobileNumber && isEditing && isEditable) {
+    const handleInputChange = useCallback(
+      (e) => {
+        onChange(section, name, e.target.value);
+      },
+      [onChange, section, name]
+    );
+
+    const handleSelectChange = useCallback(
+      (e) => {
+        onChange(section, name, e.target.value);
+      },
+      [onChange, section, name]
+    );
+
+    const handlePhoneChange = useCallback(
+      (phoneValue) => {
+        onChange(section, name, phoneValue);
+      },
+      [onChange, section, name]
+    );
+
+    // Special rendering for mobile number field
+    if (isMobileNumber && isEditing && isEditable) {
+      return (
+        <div className="mb-4">
+          <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">
+            {label}
+          </p>
+          <div
+            className={`phone-input-container border ${
+              error ? "border-red-500" : "border-gray-300"
+            } rounded `}
+          >
+            <PhoneInput
+              international
+              defaultCountry="IN"
+              value={value || ""}
+              onChange={handlePhoneChange}
+              className="w-full py-1.5 px-0.5 outline-none"
+              inputClassName="!border-none !focus:ring-0 !w-full !py-2 !px-3 !text-sm !font-medium !text-gray-900"
+              numberInputProps={{
+                className: "focus:ring-0 focus:outline-none",
+              }}
+            />
+          </div>
+          {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        </div>
+      );
+    }
+
     return (
       <div className="mb-4">
-        <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">{label}</p>
-        <div className={`phone-input-container border ${error ? 'border-red-500' : 'border-gray-300'} rounded `}>
-          <PhoneInput
-            international
-            // countryCallingCodeEditable={true}
-            defaultCountry="IN"
-            value={value || ''}
-            onChange={handlePhoneChange}
-            className="w-full py-1.5 px-0.5 outline-none"
-            inputClassName="!border-none !focus:ring-0 !w-full !py-2 !px-3 !text-sm !font-medium !text-gray-900"
-            numberInputProps={{
-              className: "focus:ring-0 focus:outline-none"
-            }}
-          />
-        </div>
-        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">
+          {label}
+        </p>
+        {isEditing && isEditable ? (
+          fieldType === "options" ? (
+            <div>
+              <select
+                value={value || ""}
+                onChange={handleSelectChange}
+                className={`text-sm font-medium text-gray-900 border ${
+                  error ? "border-red-500" : "border-gray-300"
+                } rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
+              >
+                <option value="">Select an option</option>
+                {options.map((option, index) => (
+                  <option key={index} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+            </div>
+          ) : (
+            <div>
+              <input
+                type={inputType}
+                value={value || ""}
+                onChange={handleInputChange}
+                className={`text-sm font-medium text-gray-900 border ${
+                  error ? "border-red-500" : "border-gray-300"
+                } rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
+                placeholder={`Enter ${label.toLowerCase()}`}
+                autoComplete="off"
+              />
+              {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+            </div>
+          )
+        ) : (
+          <p className="font-medium text-[16px] leading-[30px] tracking-normal text-[#313166]">
+            {formatFieldForDisplay(fieldData.value || defaultValue, fieldType)}
+          </p>
+        )}
       </div>
     );
   }
-
-  return (
-    <div className="mb-4">
-      <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">{label}</p>
-      {isEditing && isEditable ? (
-        fieldType === 'options' ? (
-          <div>
-            <select
-              value={value || ''}
-              onChange={handleSelectChange}
-              className={`text-sm font-medium text-gray-900 border ${error ? 'border-red-500' : 'border-gray-300'} rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
-            >
-              <option value="">Select an option</option>
-              {options.map((option, index) => (
-                <option key={index} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-          </div>
-        ) : (
-          <div>
-            <input
-              type={inputType}
-              value={value || ''}
-              onChange={handleInputChange}
-              className={`text-sm font-medium text-gray-900 border ${error ? 'border-red-500' : 'border-gray-300'} rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
-              placeholder={`Enter ${label.toLowerCase()}`}
-              autoComplete="off"
-            />
-            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-          </div>
-        )
-      ) : (
-        <p className="font-medium text-[16px] leading-[30px] tracking-normal text-[#313166]">
-          {formatFieldForDisplay(fieldData.value || defaultValue, fieldType)}
-        </p>
-      )}
-    </div>
-  );
-});
+);
 
 // Set display names for debugging
-FieldItem.displayName = 'FieldItem';
-DetailItem.displayName = 'DetailItem';
+FieldItem.displayName = "FieldItem";
+DetailItem.displayName = "DetailItem";
 
 // Validation schema for basic fields
 const basicSchema = yup.object().shape({
   firstname: yup
     .string()
-    .required('First name is required')
-    .matches(/^[A-Za-z\s]+$/, 'Only letters are allowed')
-    .min(3, 'Must be at least 3 characters')
-    .max(15, 'Must be 15 characters or less'),
+    .required("First name is required")
+    .matches(/^[A-Za-z\s]+$/, "Only letters are allowed")
+    .min(3, "Must be at least 3 characters")
+    .max(15, "Must be 15 characters or less"),
   lastname: yup
     .string()
-    .required('Last name is required')
-    .matches(/^[A-Za-z\s]+$/, 'Only letters are allowed')
-    .min(1, 'Must be at least 1 character')
-    .max(15, 'Must be 15 characters or less'),
+    .required("Last name is required")
+    .matches(/^[A-Za-z\s]+$/, "Only letters are allowed")
+    .min(1, "Must be at least 1 character")
+    .max(15, "Must be 15 characters or less"),
   source: yup.string().optional(),
   customerId: yup.string().optional(),
   firstVisit: yup.string().optional(),
   mobileNumber: yup
     .string()
-    .required('Mobile number is required')
-    .test('is-indian-number', 'Enter a valid 10-digit Indian mobile number after +91 (e.g., +919876543210)', value => {
-      if (!value) return false;
-      const normalized = String(value).replace(/\s/g, '');
-      return /^\+?91[6-9]\d{9}$/.test(normalized);
-    })
+    .required("Mobile number is required")
+    .test(
+      "is-indian-number",
+      "Enter a valid 10-digit Indian mobile number after +91 (e.g., +919876543210)",
+      (value) => {
+        if (!value) return false;
+        const normalized = String(value).replace(/\s/g, "");
+        return /^\+?91[6-9]\d{9}$/.test(normalized);
+      }
+    ),
 });
 
 // Validation schema for store information fields
 const storeSchema = yup.object().shape({
   storeName: yup
     .string()
-    .required('Store name is required')
-    .min(3, 'Store name must be at least 3 characters')
-    .max(18, 'Store name cannot exceed 18 characters'),
+    .required("Store name is required")
+    .min(3, "Store name must be at least 3 characters")
+    .max(18, "Store name cannot exceed 18 characters"),
   address: yup
     .string()
-    .required('Address is required')
-    .min(10, 'Address must be at least 10 characters')
-    .max(40, 'Address cannot exceed 40 characters'),
+    .required("Address is required")
+    .min(10, "Address must be at least 10 characters")
+    .max(40, "Address cannot exceed 40 characters"),
   city: yup
     .string()
-    .required('City/Town is required')
-    .max(18, 'City/Town cannot exceed 18 characters'),
+    .required("City/Town is required")
+    .max(18, "City/Town cannot exceed 18 characters"),
   pincode: yup
     .string()
-    .required('Pincode is required')
-    .matches(/^\d{6}$/, 'Pincode must be exactly 6 digits')
+    .required("Pincode is required")
+    .matches(/^\d{6}$/, "Pincode must be exactly 6 digits"),
 });
 
 const CustomerDetails = ({
@@ -186,52 +235,56 @@ const CustomerDetails = ({
   isLoading,
 }) => {
   // Transform customer data to handle new nested structure
-  const transformedCustomer = useMemo(() => transformCustomerData(customer), [customer]);
+  const transformedCustomer = useMemo(
+    () => transformCustomerData(customer),
+    [customer]
+  );
 
   // Initialize form data with proper default values
   const [formData, setFormData] = useState(() => {
     if (transformedCustomer) {
       return {
         basic: {
-          firstname: transformedCustomer?.firstname || '',
-          lastname: transformedCustomer?.lastname || '',
-          mobileNumber: '+'+transformedCustomer?.mobileNumber || '',
-          source: transformedCustomer?.source || '',
-          customerId: transformedCustomer?.customerId || '',
-          firstVisit: transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : '',
-          loyaltyPoints: transformedCustomer?.loyaltyPoints ?? '',
+          firstname: transformedCustomer?.firstname || "",
+          lastname: transformedCustomer?.lastname || "",
+          mobileNumber: "+" + transformedCustomer?.mobileNumber || "",
+          source: transformedCustomer?.source || "",
+          customerId: transformedCustomer?.customerId || "",
+          firstVisit: transformedCustomer?.firstVisit
+            ? new Date(transformedCustomer.firstVisit).toLocaleDateString()
+            : "",
+          loyaltyPoints: transformedCustomer?.loyaltyPoints ?? "",
           isOptedIn: transformedCustomer?.isOptedIn ?? null,
           optinMessageSent: transformedCustomer?.optinMessageSent ?? null,
-          gender: transformedCustomer?.gender || '',
-          isActive: transformedCustomer?.isActive || ''
+          gender: transformedCustomer?.gender || "",
+          isActive: transformedCustomer?.isActive || "",
         },
         additionalData: transformedCustomer?.additionalData || {},
         advancedDetails: transformedCustomer?.advancedDetails || {},
-        advancedPrivacyDetails: transformedCustomer?.advancedPrivacyDetails || {},
+        advancedPrivacyDetails:
+          transformedCustomer?.advancedPrivacyDetails || {},
       };
     }
     return {
       basic: {
-        firstname: '',
-        lastname: '',
-        mobileNumber: '',
-        source: '',
-        customerId: '',
-        firstVisit: '',
-        loyaltyPoints: '',
+        firstname: "",
+        lastname: "",
+        mobileNumber: "",
+        source: "",
+        customerId: "",
+        firstVisit: "",
+        loyaltyPoints: "",
         isOptedIn: null,
         optinMessageSent: null,
-        gender: '',
-        isActive: false
+        gender: "",
+        isActive: false,
       },
       additionalData: {},
       advancedDetails: {},
       advancedPrivacyDetails: {},
     };
   });
-
-  // console.log(formData.basic.mobileNumber);
-
+  const [sourceOptions, setSourceOptions] = useState([]);
   // State for validation errors
   const [errors, setErrors] = useState({
     basic: {},
@@ -239,7 +292,6 @@ const CustomerDetails = ({
     advancedDetails: {},
     advancedPrivacyDetails: {},
   });
-
   // Track touched fields
   const [touched, setTouched] = useState({
     basic: {},
@@ -253,51 +305,54 @@ const CustomerDetails = ({
     if (transformedCustomer) {
       const newFormData = {
         basic: {
-          firstname: transformedCustomer?.firstname || '',
-          lastname: transformedCustomer?.lastname || '',
-          mobileNumber: "+"+transformedCustomer?.mobileNumber || '',
-          source: transformedCustomer?.source || '',
-          customerId: transformedCustomer?.customerId || '',
-          firstVisit: transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : '',
-          loyaltyPoints: transformedCustomer?.loyaltyPoints || '',
-          isActive: transformedCustomer?.isActive || ''
+          firstname: transformedCustomer?.firstname || "",
+          lastname: transformedCustomer?.lastname || "",
+          mobileNumber: "+" + transformedCustomer?.mobileNumber || "",
+          source: transformedCustomer?.source || "",
+          customerId: transformedCustomer?.customerId || "",
+          firstVisit: transformedCustomer?.firstVisit
+            ? new Date(transformedCustomer.firstVisit).toLocaleDateString()
+            : "",
+          loyaltyPoints: transformedCustomer?.loyaltyPoints || "",
+          isActive: transformedCustomer?.isActive || "",
         },
         additionalData: transformedCustomer?.additionalData || {},
         advancedDetails: transformedCustomer?.advancedDetails || {},
-        advancedPrivacyDetails: transformedCustomer?.advancedPrivacyDetails || {},
+        advancedPrivacyDetails:
+          transformedCustomer?.advancedPrivacyDetails || {},
       };
       // Include gender if present on transformed customer
-      newFormData.basic.gender = transformedCustomer?.gender || '';
+      newFormData.basic.gender = transformedCustomer?.gender || "";
       setFormData(newFormData);
     }
   }, [transformedCustomer]);
 
   // Memoized callback for handling input changes
   const handleInputChange = useCallback((section, name, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [section]: {
         ...prev[section],
-        [name]: value
-      }
+        [name]: value,
+      },
     }));
 
     // Mark field as touched
-    setTouched(prev => ({
+    setTouched((prev) => ({
       ...prev,
       [section]: {
         ...prev[section],
-        [name]: true
-      }
+        [name]: true,
+      },
     }));
 
     // Clear error for this field
-    setErrors(prev => ({
+    setErrors((prev) => ({
       ...prev,
       [section]: {
         ...prev[section],
-        [name]: null
-      }
+        [name]: null,
+      },
     }));
   }, []);
 
@@ -306,64 +361,64 @@ const CustomerDetails = ({
     const validateForm = async () => {
       try {
         // Validate basic fields
-        await basicSchema.validateAt('firstname', formData.basic);
-        setErrors(prev => ({
+        await basicSchema.validateAt("firstname", formData.basic);
+        setErrors((prev) => ({
           ...prev,
           basic: {
             ...prev.basic,
-            firstname: null
-          }
+            firstname: null,
+          },
         }));
       } catch (err) {
         if (touched.basic?.firstname) {
-          setErrors(prev => ({
+          setErrors((prev) => ({
             ...prev,
             basic: {
               ...prev.basic,
-              firstname: err.message
-            }
+              firstname: err.message,
+            },
           }));
         }
       }
 
       try {
-        await basicSchema.validateAt('lastname', formData.basic);
-        setErrors(prev => ({
+        await basicSchema.validateAt("lastname", formData.basic);
+        setErrors((prev) => ({
           ...prev,
           basic: {
             ...prev.basic,
-            lastname: null
-          }
+            lastname: null,
+          },
         }));
       } catch (err) {
         if (touched.basic?.lastname) {
-          setErrors(prev => ({
+          setErrors((prev) => ({
             ...prev,
             basic: {
               ...prev.basic,
-              lastname: err.message
-            }
+              lastname: err.message,
+            },
           }));
         }
       }
 
       try {
-        await basicSchema.validateAt('mobileNumber', formData.basic);
-        setErrors(prev => ({
+        await basicSchema.validateAt("mobileNumber", formData.basic);
+        setErrors((prev) => ({
           ...prev,
           basic: {
             ...prev.basic,
-            mobileNumber: null
-          }
+            mobileNumber: null,
+          },
         }));
       } catch (err) {
         if (touched.basic?.mobileNumber) {
-          setErrors(prev => ({
+          setErrors((prev) => ({
             ...prev,
             basic: {
               ...prev.basic,
-              mobileNumber: err.message
-            }
+              mobileNumber: err.message,
+            },
           }));
         }
       }
@@ -374,12 +429,30 @@ const CustomerDetails = ({
     }
   }, [formData, touched, isEditing]);
 
-  const tabs = ["Additional Data", "Advanced Details", "Advanced Privacy", "Referral"];
+  const tabs = [
+    "Additional Data",
+    "Advanced Details",
+    "Advanced Privacy",
+    "Referral",
+  ];
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
   const [recipientNumber, setRecipientNumber] = useState("");
   const [messageType, setMessageType] = useState("birthday");
   const [showPurchaseList, setShowPurchaseList] = useState(false);
   const [showAllPurchases, setShowAllPurchases] = useState(false);
+
+  useEffect(() => {
+    async function fetchSourceOptions() {
+      try {
+        const response = await api.get("/api/retailer/getSource");
+        setSourceOptions(response.data.data);
+      } catch (error) {
+         console.log(error)
+      }
+    }
+
+    fetchSourceOptions();
+  }, []);
 
   const renderStars = (rating) => {
     if (!rating) return null;
@@ -388,68 +461,91 @@ const CustomerDetails = ({
     const hasHalfStar = rating % 1 !== 0;
 
     for (let i = 0; i < fullStars; i++) {
-      stars.push(<span key={i} className="text-yellow-400">★</span>);
+      stars.push(
+        <span key={i} className="text-yellow-400">
+          ★
+        </span>
+      );
     }
 
     if (hasHalfStar) {
-      stars.push(<span key="half" className="text-yellow-400">☆</span>);
+      stars.push(
+        <span key="half" className="text-yellow-400">
+          ☆
+        </span>
+      );
     }
 
     const remainingStars = 5 - Math.ceil(rating);
     for (let i = 0; i < remainingStars; i++) {
-      stars.push(<span key={`empty-${i}`} className="text-gray-300">★</span>);
+      stars.push(
+        <span key={`empty-${i}`} className="text-gray-300">
+          ★
+        </span>
+      );
     }
 
     return stars;
   };
 
   // Memoized function to render dynamic fields
-  const renderDynamicFields = useCallback((fields, section) => {
-    if (!fields) return null;
+  const renderDynamicFields = useCallback(
+    (fields, section) => {
+      if (!fields) return null;
 
-    return Object.entries(fields).map(([key, value]) => {
-      const isEditable = isEditing;
+      return Object.entries(fields).map(([key, value]) => {
+        const isEditable = isEditing;
 
-      if (section === 'advancedPrivacyDetails' && key.toLowerCase().includes('satisfaction')) {
-        return (
-          <div key={key} className="flex items-center p-4 border-b border-gray-100">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
-              <img src="../assets/score-icon.png" alt={key} className="w-12 h-12" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-500 mb-1">{key}</p>
-              <div className="flex items-center">
-                {renderStars(value)}
+        if (
+          section === "advancedPrivacyDetails" &&
+          key.toLowerCase().includes("satisfaction")
+        ) {
+          return (
+            <div
+              key={key}
+              className="flex items-center p-4 border-b border-gray-100"
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
+                <img
+                  src="../assets/score-icon.png"
+                  alt={key}
+                  className="w-12 h-12"
+                />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-500 mb-1">{key}</p>
+                <div className="flex items-center">{renderStars(value)}</div>
               </div>
             </div>
-          </div>
-        );
-      } else {
-        return (
-          <DetailItem
-            key={key}
-            label={key}
-            name={key}
-            defaultValue={value}
-            section={section}
-            isEditable={isEditable}
-            value={formData?.[section]?.[key]}
-            onChange={handleInputChange}
-            customer={customer}
-            isEditing={isEditing}
-            error={errors?.[section]?.[key]}
-          />
-        );
-      }
-    });
-  }, [formData, isEditing, handleInputChange, customer, errors]);
-
-  
+          );
+        } else {
+          return (
+            <DetailItem
+              key={key}
+              label={key}
+              name={key}
+              defaultValue={value}
+              section={section}
+              isEditable={isEditable}
+              value={formData?.[section]?.[key]}
+              onChange={handleInputChange}
+              customer={customer}
+              isEditing={isEditing}
+              error={errors?.[section]?.[key]}
+            />
+          );
+        }
+      });
+    },
+    [formData, isEditing, handleInputChange, customer, errors]
+  );
 
   const defaultImage = {
-    menDefaultImgUrl: "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg",
-    femaleDefaultImgUrl: "https://cdn.vectorstock.com/i/750p/96/68/female-silhouette-head-vector-32409668.avif"
-  }
+    menDefaultImgUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg",
+    femaleDefaultImgUrl:
+      "https://cdn.vectorstock.com/i/750p/96/68/female-silhouette-head-vector-32409668.avif",
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -466,24 +562,27 @@ const CustomerDetails = ({
     } catch (err) {
       if (err instanceof yup.ValidationError) {
         const newErrors = {};
-        err.inner.forEach(error => {
+        err.inner.forEach((error) => {
           newErrors[error.path] = error.message;
         });
-        setErrors(prev => ({
+        setErrors((prev) => ({
           ...prev,
           basic: {
             ...prev.basic,
-            ...newErrors
-          }
+            ...newErrors,
+          },
         }));
       }
     }
   };
 
+
   return (
     <div className="flex-1 flex flex-col bg-[#F4F5F9]">
       <div className="pr-6 pt-6 pl-6">
-        <h1 className="text-xl font-semibold text-gray-900">Customer Profile</h1>
+        <h1 className="text-xl font-semibold text-gray-900">
+          Customer Profile
+        </h1>
       </div>
 
       <div className="flex-1 p-6 overflow-y-auto">
@@ -491,15 +590,18 @@ const CustomerDetails = ({
           <div className="rounded-lg shadow-sm">
             {/* Profile Header */}
             <div className="p-6 border-b border-gray-200 mb-5 bg-white rounded-[20px]   ">
-              <div className="flex items-start justify-between " >
+              <div className="flex items-start justify-between ">
                 <div className="flex items-center w-full">
                   <div className="relative">
                     <img
-                      src={transformedCustomer?.profileImage || transformedCustomer?.gender === 'male'
-                        ? defaultImage.menDefaultImgUrl
-                        : transformedCustomer?.gender === 'female'
+                      src={
+                        transformedCustomer?.profileImage ||
+                        transformedCustomer?.gender === "male"
+                          ? defaultImage.menDefaultImgUrl
+                          : transformedCustomer?.gender === "female"
                           ? defaultImage.femaleDefaultImgUrl
-                          : ""}
+                          : ""
+                      }
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
                       className="w-[148px] h-[212px] rounded-lg  object-contain"
                     />
@@ -507,14 +609,20 @@ const CustomerDetails = ({
                   {/* Basic Details Sections */}
                   <div className="ml-14 w-full">
                     <div className="flex items-center justify-between mb-6">
-                      <h2 className=" font-bold text-[18px] leading-[30px] tracking-normal text-[#313166] underline font-poppins">Basic Details</h2>
+                      <h2 className=" font-bold text-[18px] leading-[30px] tracking-normal text-[#313166] underline font-poppins">
+                        Basic Details
+                      </h2>
                       {!isEditing ? (
                         <button
                           type="button"
                           onClick={onEdit}
                           className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center"
                         >
-                          <img src={EditIcon} className="w-4 h-4 mr-2" alt="Edit" />
+                          <img
+                            src={EditIcon}
+                            className="w-4 h-4 mr-2"
+                            alt="Edit"
+                          />
                           Edit
                         </button>
                       ) : (
@@ -562,7 +670,9 @@ const CustomerDetails = ({
                       <FieldItem
                         label="Mobile Number"
                         name="mobileNumber"
-                        defaultValue={formatIndianMobile(transformedCustomer?.mobileNumber)}
+                        defaultValue={formatIndianMobile(
+                          transformedCustomer?.mobileNumber
+                        )}
                         isEditable={isEditing}
                         value={formData?.basic?.mobileNumber}
                         onChange={handleInputChange}
@@ -577,6 +687,7 @@ const CustomerDetails = ({
                         isEditable={isEditing}
                         value={formData?.basic?.source}
                         onChange={handleInputChange}
+                        options={sourceOptions}
                         customer={customer}
                         isEditing={isEditing}
                       />
@@ -592,7 +703,13 @@ const CustomerDetails = ({
                       <FieldItem
                         label="First Visit"
                         name="firstVisit"
-                        defaultValue={transformedCustomer?.firstVisit ? new Date(transformedCustomer.firstVisit).toLocaleDateString() : ''}
+                        defaultValue={
+                          transformedCustomer?.firstVisit
+                            ? new Date(
+                                transformedCustomer.firstVisit
+                              ).toLocaleDateString()
+                            : ""
+                        }
                         value={formData?.basic?.firstVisit}
                         onChange={handleInputChange}
                         customer={customer}
@@ -602,7 +719,7 @@ const CustomerDetails = ({
                       <FieldItem
                         label="Gender"
                         name="gender"
-                        defaultValue={transformedCustomer?.gender || ''}
+                        defaultValue={transformedCustomer?.gender || ""}
                         value={formData?.basic?.gender}
                         onChange={handleInputChange}
                         customer={customer}
@@ -615,7 +732,7 @@ const CustomerDetails = ({
                       <FieldItem
                         label="Loyalty Points"
                         name="loyaltyPoints"
-                        defaultValue={transformedCustomer?.loyaltyPoints ?? ''}
+                        defaultValue={transformedCustomer?.loyaltyPoints ?? ""}
                         value={formData?.basic?.loyaltyPoints}
                         onChange={handleInputChange}
                         customer={customer}
@@ -625,7 +742,11 @@ const CustomerDetails = ({
                       <FieldItem
                         label="Allow Notifications"
                         name="isOptedIn"
-                        defaultValue={transformedCustomer?.isOptedIn === true ? 'Opt-In' : 'Opt-Out'}
+                        defaultValue={
+                          transformedCustomer?.isOptedIn === true
+                            ? "Opt-In"
+                            : "Opt-Out"
+                        }
                         value={formData?.basic?.isOptedIn}
                         onChange={handleInputChange}
                         customer={customer}
@@ -635,7 +756,11 @@ const CustomerDetails = ({
                       <FieldItem
                         label="Notifications status"
                         name="optinMessageSent"
-                        defaultValue={transformedCustomer?.optinMessageSent === true ? 'Sent' : 'Not Sent'}
+                        defaultValue={
+                          transformedCustomer?.optinMessageSent === true
+                            ? "Sent"
+                            : "Not Sent"
+                        }
                         value={formData?.basic?.optinMessageSent}
                         onChange={handleInputChange}
                         customer={customer}
@@ -645,16 +770,17 @@ const CustomerDetails = ({
                       <FieldItem
                         label="Status"
                         name="isActive"
-                        defaultValue={transformedCustomer?.isActive === true ? 'Active' : 'InActive'}
+                        defaultValue={
+                          transformedCustomer?.isActive === true
+                            ? "Active"
+                            : "InActive"
+                        }
                         value={formData?.basic?.isActive}
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
                       />
-
                     </div>
-
-
                   </div>
                 </div>
               </div>
@@ -670,10 +796,11 @@ const CustomerDetails = ({
                       key={tab}
                       type="button"
                       onClick={() => setActiveTab(tab)}
-                      className={`py-4 px-4 border-b-2 font-medium rounded-[10px] text-sm ${activeTab === tab
-                        ? "bg-[#EC396F1A] text-[#EC396F]"
-                        : "border-transparent text-gray-500 hover:text-[#EC396F] hover:bg-[#EC396F1A]"
-                        }`}
+                      className={`py-4 px-4 border-b-2 font-medium rounded-[10px] text-sm ${
+                        activeTab === tab
+                          ? "bg-[#EC396F1A] text-[#EC396F]"
+                          : "border-transparent text-gray-500 hover:text-[#EC396F] hover:bg-[#EC396F1A]"
+                      }`}
                     >
                       {tab}
                     </button>
@@ -685,7 +812,11 @@ const CustomerDetails = ({
                         onClick={onEdit}
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center"
                       >
-                        <img src={EditIcon} className="w-4 h-4 mr-2" alt="Edit" />
+                        <img
+                          src={EditIcon}
+                          className="w-4 h-4 mr-2"
+                          alt="Edit"
+                        />
                         Edit
                       </button>
                     )}
@@ -697,23 +828,38 @@ const CustomerDetails = ({
               <div className="p-2 bg-white pt-5">
                 {activeTab === "Advanced Details" && (
                   <div className="grid grid-cols-2 gap-4">
-                    {transformedCustomer?.advancedDetails && renderDynamicFields(transformedCustomer?.advancedDetails, "advancedDetails")}
+                    {transformedCustomer?.advancedDetails &&
+                      renderDynamicFields(
+                        transformedCustomer?.advancedDetails,
+                        "advancedDetails"
+                      )}
                   </div>
                 )}
 
                 {activeTab === "Advanced Privacy" && (
                   <div className="space-y-6">
-                    {transformedCustomer?.advancedPrivacyDetails && renderDynamicFields(transformedCustomer?.advancedPrivacyDetails, "advancedPrivacyDetails")}
+                    {transformedCustomer?.advancedPrivacyDetails &&
+                      renderDynamicFields(
+                        transformedCustomer?.advancedPrivacyDetails,
+                        "advancedPrivacyDetails"
+                      )}
 
                     {/* Purchase History Section */}
-                    <PurchaseHistory mobileNumber={transformedCustomer?.mobileNumber} />
+                    <PurchaseHistory
+                      mobileNumber={transformedCustomer?.mobileNumber}
+                    />
                   </div>
                 )}
 
                 {activeTab === "Additional Data" && (
                   <div className="grid grid-cols-2 gap-4">
-                    {transformedCustomer?.additionalData && Object.keys(transformedCustomer.additionalData).length > 0 ? (
-                      renderDynamicFields(transformedCustomer?.additionalData, "additionalData")
+                    {transformedCustomer?.additionalData &&
+                    Object.keys(transformedCustomer.additionalData).length >
+                      0 ? (
+                      renderDynamicFields(
+                        transformedCustomer?.additionalData,
+                        "additionalData"
+                      )
                     ) : (
                       <div className="col-span-2 text-center py-8 text-gray-500">
                         No additional data available
@@ -722,50 +868,84 @@ const CustomerDetails = ({
                   </div>
                 )}
 
-
                 {activeTab === "Referral" && (
                   <div className="p-6">
                     <div className="overflow-x-auto">
                       <table className="min-w-full">
                         <thead className="bg-gray-50">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">VID.No</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Join Date</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coupon Code</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              VID.No
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Name
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Phone Number
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Join Date
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Coupon Code
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Status
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {(transformedCustomer?.referralData || []).map((referral, index) => (
-                            <tr key={index}>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral?.vidNo}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral?.name}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral?.phoneNumber}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{referral?.joinDate}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <span className={`px-2 py-1 rounded text-xs ${referral?.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                                  }`}>
-                                  {referral?.couponCode}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${referral?.status === "active" ? "bg-green-500" : "bg-red-500"
-                                  }`}>
-                                  {referral?.status === "active" ? (
-                                    <CheckCircle className="w-3 h-3 text-white" />
-                                  ) : (
-                                    <XCircle className="w-3 h-3 text-white" />
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
+                          {(transformedCustomer?.referralData || []).map(
+                            (referral, index) => (
+                              <tr key={index}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {referral?.vidNo}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {referral?.name}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {referral?.phoneNumber}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  {referral?.joinDate}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  <span
+                                    className={`px-2 py-1 rounded text-xs ${
+                                      referral?.status === "active"
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-red-100 text-red-800"
+                                    }`}
+                                  >
+                                    {referral?.couponCode}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  <div
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                                      referral?.status === "active"
+                                        ? "bg-green-500"
+                                        : "bg-red-500"
+                                    }`}
+                                  >
+                                    {referral?.status === "active" ? (
+                                      <CheckCircle className="w-3 h-3 text-white" />
+                                    ) : (
+                                      <XCircle className="w-3 h-3 text-white" />
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          )}
                         </tbody>
                       </table>
-                      {(transformedCustomer?.referralData || []).length === 0 && (
-                        <div className="text-center py-8 text-gray-500">No referral data available</div>
+                      {(transformedCustomer?.referralData || []).length ===
+                        0 && (
+                        <div className="text-center py-8 text-gray-500">
+                          No referral data available
+                        </div>
                       )}
                     </div>
                   </div>
@@ -791,9 +971,25 @@ const CustomerDetails = ({
                 >
                   {isLoading ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                       Updating...
                     </>
