@@ -10,88 +10,34 @@ import { Users, MessageSquare, Mouse, MessageCircle } from "lucide-react";
 import api from "../api/apiconfig";
 import { set } from "react-hook-form";
 const PerformanceTracking: React.FC = () => {
-const [interactionRate, setInteractionRate] = useState(24); // %
-const [whatsappOpened, setWhatsappOpened] = useState(310);
-const [clickRate, setClickRate] = useState(18); // %
-const [responded, setResponded] = useState(14); // %
+  const [interactionRate, setInteractionRate] = useState(24); // %
+  const [whatsappOpened, setWhatsappOpened] = useState(310);
+  const [clickRate, setClickRate] = useState(18); // %
+  const [responded, setResponded] = useState(14); // %
 
-const [currentYearValue, setCurrentYearValue] = useState(2500000);
-const [futureYearValue, setFutureYearValue] = useState(4000000);
-const [clvList, setClvList] = useState([
- {
-    name: "Gangadharan A",
-    mobile: "9381726371",
-    currentValue: 819.99,
-    futureValue: 898504.04,
-  },
-  {
-    name: "Meera Krishnan",
-    mobile: "9123456789",
-    currentValue: 1345.5,
-    futureValue: 452300.25,
-  },
-  {
-    name: "Rajkumar S",
-    mobile: "+919865328956",
-    currentValue: 980.75,
-    futureValue: 376845.13,
-  },
-  {
-    name: "Anita D",
-    mobile: "9831122334",
-    currentValue: 1240.0,
-    futureValue: 498731.0,
-  },
-  {
-    name: "Sundar P",
-    mobile: "7010908899",
-    currentValue: 560.45,
-    futureValue: 302145.88,
-  },
-  {
-    name: "Divya N",
-    mobile: "9988776655",
-    currentValue: 1420.25,
-    futureValue: 612345.67,
-  },
-]);
+  const [currentYearValue, setCurrentYearValue] = useState(2500000);
+  const [futureYearValue, setFutureYearValue] = useState(4000000);
 
-useEffect(() => {
-  const timer = setTimeout(() => {
-    const fetchData = async () => {
-      try {
-        const response = await api.get("api/performanceTracking/interactionRate");
-        setInteractionRate(response.data.interactionRate);
-        setWhatsappOpened(response.data.totalWhatsAppOpened);
-        setClickRate(response.data.clickRate);
-        setResponded(response.data.responseRate);
-      } catch (error) {
-        console.error('Error fetching interaction data:', error);
-      }
-    };
-    fetchData();
-  }, 1000); // ⏱ 1-second delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const fetchData = async () => {
+        try {
+          const response = await api.get(
+            "api/performanceTracking/interactionRate"
+          );
+          setInteractionRate(response.data.interactionRate);
+          setWhatsappOpened(response.data.totalWhatsAppOpened);
+          setClickRate(response.data.clickRate);
+          setResponded(response.data.responseRate);
+        } catch (error) {
+          console.error("Error fetching interaction data:", error);
+        }
+      };
+      fetchData();
+    }, 1000); // ⏱ 1-second delay
 
-  return () => clearTimeout(timer);
-}, []);
-
-useEffect(() => {
-  const timer = setTimeout(() => {
-    const getclvData = async () => {
-      try {
-        const response = await api.get("api/performanceTracking/clvSummary");
-        setCurrentYearValue(response.data.currentYearValue);
-        setFutureYearValue(response.data.futureBusinessValue);
-        setClvList(response.data.topCustomers);
-      } catch (error) {
-        console.error('Error fetching CLV data:', error);
-      }
-    };
-    getclvData();
-  }, 1000); // ⏱ 1-second delay
-
-  return () => clearTimeout(timer);
-}, []);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -149,7 +95,7 @@ useEffect(() => {
         <div className="grid grid-cols-2 lg:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
-             <div className="bg-white p-6 rounded-[10px]">
+            <div className="bg-white p-6 rounded-[10px]">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Customer Lifetime Value (CLV)
               </h3>
@@ -196,7 +142,7 @@ useEffect(() => {
             </div> */}
 
             {/* Customer Table */}
-            <CustomerTable value={clvList}/>
+            <CustomerTable />
           </div>
         </div>
       </div>
