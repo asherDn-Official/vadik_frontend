@@ -29,7 +29,7 @@ import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import api from "../../api/apiconfig";
 
-// Memoized FieldItem component to prevent unnecessary re-renders
+
 const FieldItem = React.memo(
   ({
     label,
@@ -42,8 +42,8 @@ const FieldItem = React.memo(
     customer,
     isEditing,
     error,
-    options: externalOptions, // Add this prop for external options
-    fieldType: externalFieldType, // Add this to override field type
+    options: externalOptions,
+    fieldType: externalFieldType,
   }) => {
     // Get field data from the nested structure
     const fieldData = customer?.[section]?.[name] || {};
@@ -51,7 +51,7 @@ const FieldItem = React.memo(
     const isMobileNumber = section === "basic" && name === "mobileNumber";
     const isSource = section === "basic" && name === "source";
 
-    // Determine field type - use external override first, then specific checks
+    // Determine field type
     const fieldType =
       externalFieldType || isGender
         ? "options"
@@ -61,10 +61,13 @@ const FieldItem = React.memo(
 
     const inputType = getInputType(fieldType);
 
-    // Determine options - use external options first, then specific cases
+    // Determine options
     const options =
       externalOptions ||
-      (isGender ? ["Male", "Female", "Others"] : fieldData.options || []);
+      (isGender ? ["male", "female", "others"] : fieldData.options || []);
+
+    // Get the actual value to display - prioritize props over fieldData
+    const actualValue = value !== undefined ? value : fieldData.value || defaultValue;
 
     const handleInputChange = useCallback(
       (e) => {
@@ -87,6 +90,18 @@ const FieldItem = React.memo(
       [onChange, section, name]
     );
 
+    // Debug logging (remove in production)
+    useEffect(() => {
+      if (fieldType === "options" && isEditing) {
+        console.log('Dropdown debug:', {
+          label,
+          value: actualValue,
+          options,
+          hasMatch: options.includes(actualValue)
+        });
+      }
+    }, [fieldType, isEditing, actualValue, options, label]);
+
     // Special rendering for mobile number field
     if (isMobileNumber && isEditing && isEditable) {
       return (
@@ -102,7 +117,7 @@ const FieldItem = React.memo(
             <PhoneInput
               international
               defaultCountry="IN"
-              value={value || ""}
+              value={actualValue || ""}
               onChange={handlePhoneChange}
               className="w-full py-1.5 px-0.5 outline-none"
               inputClassName="!border-none !focus:ring-0 !w-full !py-2 !px-3 !text-sm !font-medium !text-gray-900"
@@ -125,7 +140,7 @@ const FieldItem = React.memo(
           fieldType === "options" ? (
             <div>
               <select
-                value={value || ""}
+                value={actualValue || ""}
                 onChange={handleSelectChange}
                 className={`text-sm font-medium text-gray-900 border ${
                   error ? "border-red-500" : "border-gray-300"
@@ -144,7 +159,7 @@ const FieldItem = React.memo(
             <div>
               <input
                 type={inputType}
-                value={value || ""}
+                value={actualValue || ""}
                 onChange={handleInputChange}
                 className={`text-sm font-medium text-gray-900 border ${
                   error ? "border-red-500" : "border-gray-300"
@@ -157,7 +172,7 @@ const FieldItem = React.memo(
           )
         ) : (
           <p className="font-medium text-[16px] leading-[30px] tracking-normal text-[#313166]">
-            {formatFieldForDisplay(fieldData.value || defaultValue, fieldType)}
+            {formatFieldForDisplay(actualValue, fieldType)}
           </p>
         )}
       </div>
