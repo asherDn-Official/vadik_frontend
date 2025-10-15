@@ -33,6 +33,13 @@ const KYCPage = () => {
     productName: ""
   });
 
+  const searchOptions = [
+    { key: "phone", label: "Phone" },
+    { key: "name", label: "Name" },
+    { key: "email", label: "Email" },
+    { key: "customerId", label: "Customer ID" }
+  ];
+
   const { register, handleSubmit, formState: { errors }, reset, setValue, clearErrors } = useForm({ mode: "onChange" });
 
   const getValidationRules = () => {
@@ -52,6 +59,12 @@ const KYCPage = () => {
         return {
           required: "Email is required",
           pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Invalid email" },
+        };
+      case "customerId":
+        return {
+          required: "Customer ID is required",
+          pattern: { value: /^VID-[A-Z0-9]{8}$/, message: "Format VID-XXXXXXXX with uppercase letters and digits" },
+          maxLength: { value: 12, message: "Max length 12" }
         };
       default:
         return {};
@@ -239,16 +252,21 @@ const KYCPage = () => {
 
       <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
         <div className="flex flex-wrap gap-2 mb-4">
-          {["phone", "name", "email"].map(type => (
+          {searchOptions.map(option => (
             <button
-              key={type}
-              onClick={() => { setSearchType(type); reset({ query: "" }); clearErrors("query"); setSearchQuery(""); }}
-              className={`px-4 py-2 rounded-full capitalize ${searchType === type
+              key={option.key}
+              onClick={() => {
+                setSearchType(option.key);
+                reset({ query: "" });
+                clearErrors("query");
+                setSearchQuery("");
+              }}
+              className={`px-4 py-2 rounded-full capitalize ${searchType === option.key
                 ? "bg-[#313166] text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
             >
-              {type}
+              {option.label}
             </button>
           ))}
         </div>
@@ -258,11 +276,17 @@ const KYCPage = () => {
             <input
               type={searchType === "email" ? "email" : "text"}
               inputMode={searchType === "phone" ? "numeric" : undefined}
-              maxLength={searchType === "name" ? 15 : undefined}
+              maxLength={searchType === "name" ? 15 : searchType === "customerId" ? 12 : undefined}
               placeholder={`Search by ${searchType}...`}
               {...register("query", getValidationRules())}
               onChange={(e) => {
-                const value = searchType === "phone" ? e.target.value.replace(/\D/g, "") : e.target.value;
+                let value = e.target.value;
+                if (searchType === "phone") {
+                  value = value.replace(/\D/g, "");
+                }
+                if (searchType === "customerId") {
+                  value = value.toUpperCase().replace(/[^A-Z0-9-]/g, "");
+                }
                 setValue("query", value, { shouldValidate: true });
                 setSearchQuery(value);
               }}
