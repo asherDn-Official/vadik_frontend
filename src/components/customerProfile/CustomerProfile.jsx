@@ -78,9 +78,8 @@ const CustomerProfile = () => {
       setSelectedCustomer(updatedCustomer);
       setIsEditing(false);
     } catch (error) {
-      // console.error("Error updating customer:", error);
-      showToast('Failed to update customer. Please try again', 'error');
-      alert("Failed to update customer. Please try again.");
+      // console.error(error.response.data.message, error);
+      showToast(error.response.data.message, 'error');
     } finally {
       setIsLoading(false);
     }
