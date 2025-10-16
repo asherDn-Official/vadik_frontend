@@ -2,17 +2,16 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/apiconfig";
-import SecurityPopup from "./SecurityPopup";
+import { useSecurityPopup } from "../../context/SecurityPopupContext";
 
 export default function ToggleBadge() {
   const { auth } = useAuth();
   // console.log("is Demo",auth?.user?.email); 
   const navigate = useNavigate();
   const [isLive, setIsLive] = useState(true);
-  const [showPopup, setShowPopup] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [pendingMode, setPendingMode] = useState(null);
-  const [email, setEmail] = useState(localStorage.getItem("email"));
+  const { openPopup, isPopupLoading } = useSecurityPopup();
+  const [email] = useState(() => localStorage.getItem("email"));
 
   async function getDemoStatus() {
     try {
@@ -27,14 +26,7 @@ export default function ToggleBadge() {
     getDemoStatus();
   }, []);
 
-  const handleToggle = (newIsLive) => {
-    // Always show security popup for any mode change
-    setPendingMode(newIsLive);
-    setShowPopup(true);
-  };
-
   const updateDemoStatus = async (demoStatus) => {
-    setIsLoading(true);
     try {
       const response = await api.patch(`/api/retailer/demo/status/${email}`, {
         demo: demoStatus
@@ -42,36 +34,28 @@ export default function ToggleBadge() {
 
       if (response.data.status === "success") {
         setIsLive(!demoStatus);
-        // If switching to live mode, log user out
-        // logout();
         localStorage.removeItem("retailerId");
         localStorage.removeItem("token");
         localStorage.removeItem("place_id");
         navigate("/");
       }
-
-
     } catch (error) {
       console.error("Error updating demo status:", error);
-      // Revert UI state on error
       setIsLive(!demoStatus);
+      throw error;
     } finally {
-      setIsLoading(false);
-      setShowPopup(false);
       setPendingMode(null);
     }
   };
 
-  const handleConfirm = () => {
-    // Update mode based on pending selection
-    updateDemoStatus(!pendingMode);
-  };
+  const handleToggle = (newIsLive) => {
+    setPendingMode(newIsLive);
 
-  const handleCancel = () => {
-    // Simply close the popup without changing anything
-    // The toggle will remain in its previous state
-    setShowPopup(false);
-    setPendingMode(null);
+    openPopup({
+      targetMode: newIsLive ? "LIVE" : "DEMO",
+      onConfirm: () => updateDemoStatus(!newIsLive),
+      onCancel: () => setPendingMode(null),
+    });
   };
 
   return (
@@ -90,7 +74,7 @@ export default function ToggleBadge() {
           {/* Live Button */}
           <button
             onClick={() => handleToggle(true)}
-            disabled={isLoading}
+            disabled={isPopupLoading}
             className={`
               relative z-10 px-4 py-1.5 rounded-full font-medium text-xs
               transition-all duration-300 ease-in-out min-w-16
@@ -98,7 +82,7 @@ export default function ToggleBadge() {
                 ? "text-green-600"
                 : "text-gray-600 hover:text-green-500"
               }
-              ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
+              ${isPopupLoading ? "opacity-50 cursor-not-allowed" : ""}
             `}
           >
             <span className="flex items-center justify-center space-x-1">
@@ -110,7 +94,7 @@ export default function ToggleBadge() {
           {/* Demo Button */}
           <button
             onClick={() => handleToggle(false)}
-            disabled={isLoading}
+            disabled={isPopupLoading}
             className={`
               relative z-10 px-4 py-1.5 rounded-full font-medium text-xs
               transition-all duration-300 ease-in-out min-w-16
@@ -118,7 +102,7 @@ export default function ToggleBadge() {
                 ? "text-red-600"
                 : "text-gray-600 hover:text-red-500"
               }
-              ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
+              ${isPopupLoading ? "opacity-50 cursor-not-allowed" : ""}
             `}
           >
             <span className="flex items-center justify-center space-x-1">
@@ -128,15 +112,6 @@ export default function ToggleBadge() {
           </button>
         </div>
 
-        {/* Security Popup */}
-        {showPopup && (
-          <SecurityPopup
-            onConfirm={handleConfirm}
-            onCancel={handleCancel}
-            isLoading={isLoading}
-            targetMode={pendingMode ? "LIVE" : "DEMO"}
-          />
-        )}
       </div>
     </div>
   );
