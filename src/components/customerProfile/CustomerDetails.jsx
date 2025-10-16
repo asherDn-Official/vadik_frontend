@@ -445,7 +445,7 @@ const CustomerDetails = ({
   }, [formData, touched, isEditing]);
 
   const tabs = [
-    "Additional Data",
+    "Basic Data",
     "Advanced Details",
     "Advanced Privacy",
     "Referral",
@@ -866,7 +866,7 @@ const CustomerDetails = ({
                   </div>
                 )}
 
-                {activeTab === "Additional Data" && (
+                {activeTab === "Basic Data" && (
                   <div className="grid grid-cols-2 gap-4">
                     {transformedCustomer?.additionalData &&
                     Object.keys(transformedCustomer.additionalData).length >
@@ -877,7 +877,7 @@ const CustomerDetails = ({
                       )
                     ) : (
                       <div className="col-span-2 text-center py-8 text-gray-500">
-                        No additional data available
+                        No basic  data available
                       </div>
                     )}
                   </div>

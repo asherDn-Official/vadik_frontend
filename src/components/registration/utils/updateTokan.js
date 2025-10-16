@@ -10,7 +10,8 @@ export const updateToken = async (password, email) => {
     // Save token (or tokan) to localStorage
     if (response?.data?.token) {
       localStorage.setItem("token", response.data.token);
-      console.log("Token updated successfully");
+      localStorage.setItem("retailerId", response.data.retailer._id);
+      localStorage.setItem("email", response.data.retailer.email);
     } else if (response?.data?.tokan) {
       localStorage.setItem("tokan", response.data.tokan);
       console.log("Tokan updated successfully");
@@ -23,5 +24,4 @@ export const updateToken = async (password, email) => {
     console.error("Error updating token:", error);
     throw error;
   }
-
 };
