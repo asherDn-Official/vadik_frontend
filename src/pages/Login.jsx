@@ -32,9 +32,10 @@ const Login = () => {
     setError(null);
 
     try {
-      const endpoint = loginType === "retailer"
-        ? "api/auth/retailerLogin"
-        : "api/auth/staffLogin";
+      const endpoint =
+        loginType === "retailer"
+          ? "api/auth/retailerLogin"
+          : "api/auth/staffLogin";
 
       const response = await api.post(endpoint, {
         email: credentials.email,
@@ -52,22 +53,26 @@ const Login = () => {
             navigate("/dashboard");
           } else {
             navigate(`/register/basic/${data.retailer._id}`);
+            sessionStorage.setItem("loginType", "retailer");
+            sessionStorage.setItem("password", credentials.password);
           }
           localStorage.setItem("retailerId", data.retailer._id);
-          localStorage.setItem('email', data.retailer.email);
+          localStorage.setItem("email", data.retailer.email);
         } else if (loginType === "staff" && data.staff?._id) {
           localStorage.setItem("retailerId", data.staff.retailerId);
-          localStorage.setItem('email', data.staff.email);
-          localStorage.setItem('place_id', data.staff.placeId);
-          const navigatepath = getModulePath(response.user.permissions[0].module)
+          localStorage.setItem("email", data.staff.email);
+          localStorage.setItem("place_id", data.staff.placeId);
+          const navigatepath = getModulePath(
+            response.user.permissions[0].module
+          );
           navigate(navigatepath);
         }
       }
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        err.message ||
-        "An error occurred during login"
+          err.message ||
+          "An error occurred during login"
       );
       console.error("Login error:", err);
     } finally {
@@ -88,18 +93,22 @@ const Login = () => {
             <button
               type="button"
               onClick={() => setLoginType("retailer")}
-              className={`px-4 py-2 text-sm font-medium rounded-l-lg ${loginType === "retailer"
-                ? "bg-[#CB376D] text-white"
-                : "bg-white/10 text-white/70 hover:bg-white/20"}`}
+              className={`px-4 py-2 text-sm font-medium rounded-l-lg ${
+                loginType === "retailer"
+                  ? "bg-[#CB376D] text-white"
+                  : "bg-white/10 text-white/70 hover:bg-white/20"
+              }`}
             >
               Business Admin
             </button>
             <button
               type="button"
               onClick={() => setLoginType("staff")}
-              className={`px-4 py-2 text-sm font-medium rounded-r-lg ${loginType === "staff"
-                ? "bg-[#CB376D] text-white"
-                : "bg-white/10 text-white/70 hover:bg-white/20"}`}
+              className={`px-4 py-2 text-sm font-medium rounded-r-lg ${
+                loginType === "staff"
+                  ? "bg-[#CB376D] text-white"
+                  : "bg-white/10 text-white/70 hover:bg-white/20"
+              }`}
             >
               Team
             </button>
@@ -119,7 +128,9 @@ const Login = () => {
               name="email"
               value={credentials.email}
               onChange={handleChange}
-              placeholder={`Enter ${loginType === "retailer" ? "Business Admin" : "Team Member"} Email address`}
+              placeholder={`Enter ${
+                loginType === "retailer" ? "Business Admin" : "Team Member"
+              } Email address`}
               className="w-full px-4 py-3 rounded-md bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
               required
             />
@@ -147,25 +158,28 @@ const Login = () => {
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="text-right cursor-pointer " onClick={() => navigate('/forgot-password')}>
-              <a className="hover:underline">
-                Reset password?
-              </a>
+            <div
+              className="text-right cursor-pointer "
+              onClick={() => navigate("/forgot-password")}
+            >
+              <a className="hover:underline">Reset password?</a>
             </div>
-            <div className="text-right cursor-pointer " onClick={() => navigate('/forgot-password')}>
+            <div
+              className="text-right cursor-pointer "
+              onClick={() => navigate("/forgot-password")}
+            >
               {/* <a className="hover:underline">
                 Forgot password?
               </a> */}
             </div>
           </div>
 
-
-
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white font-medium py-3 px-4 rounded-md transition duration-200 ease-in-out ${loading ? "opacity-70 cursor-not-allowed" : ""
-              }`}
+            className={`w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white font-medium py-3 px-4 rounded-md transition duration-200 ease-in-out ${
+              loading ? "opacity-70 cursor-not-allowed" : ""
+            }`}
           >
             {loading ? "Signing In..." : "Sign In"}
           </button>

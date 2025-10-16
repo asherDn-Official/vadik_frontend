@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import api from "../../api/apiconfig";
+import { updateToken } from "./utils/updateTokan";
 
 const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
   const [errors, setErrors] = useState({});
@@ -241,7 +242,12 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
         },
       });
 
-      console.log("Registration successful:", response.data);
+      const email = localStorage.getItem("email");
+      const loginType = sessionStorage.getItem("loginType");
+      const password = sessionStorage.getItem("password");
+      await updateToken(password, email);
+
+      // console.log("Registration successful:", response.data);
       navigate("/completion", {
         state: {
           success: true,
