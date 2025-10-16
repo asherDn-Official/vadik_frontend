@@ -48,7 +48,7 @@ const Login = () => {
         const response = await checkAuth();
         // Store appropriate ID based on login type
         if (loginType === "retailer" && data.retailer?._id) {
-          if (false) {
+          if (data.retailer.onboarding) {
             navigate("/dashboard");
           } else {
             navigate(`/register/basic/${data.retailer._id}`);
