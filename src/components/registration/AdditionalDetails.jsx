@@ -14,7 +14,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
     customerCount: false,
     contactNumber: false,
     ownerName: false,
-    gstNumber: false
+    gstNumber: false,
   });
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
-    setTouched(prev => ({ ...prev, [name]: true }));
+    setTouched((prev) => ({ ...prev, [name]: true }));
 
     if (type === "file") {
       handleFileUpload(files[0]);
@@ -86,49 +86,70 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
   };
 
   const handleBlur = (field) => {
-    setTouched(prev => ({ ...prev, [field]: true }));
+    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
   // Individual validation functions
   const validateStaffCount = () => {
     if (!formData.staffCount) {
-      setErrors(prev => ({ ...prev, staffCount: "Number of staff is required" }));
+      setErrors((prev) => ({
+        ...prev,
+        staffCount: "Number of staff is required",
+      }));
     } else {
-      setErrors(prev => ({ ...prev, staffCount: "" }));
+      setErrors((prev) => ({ ...prev, staffCount: "" }));
     }
   };
 
   const validateCustomerCount = () => {
     if (!formData.customerCount) {
-      setErrors(prev => ({ ...prev, customerCount: "Number of customers is required" }));
+      setErrors((prev) => ({
+        ...prev,
+        customerCount: "Number of customers is required",
+      }));
     } else {
-      setErrors(prev => ({ ...prev, customerCount: "" }));
+      setErrors((prev) => ({ ...prev, customerCount: "" }));
     }
   };
 
   const validateContactNumber = () => {
     if (!formData.contactNumber) {
-      setErrors(prev => ({ ...prev, contactNumber: "Contact number is required" }));
+      setErrors((prev) => ({
+        ...prev,
+        contactNumber: "Contact number is required",
+      }));
     } else if (!/^\d{10}$/.test(formData.contactNumber)) {
-      setErrors(prev => ({ ...prev, contactNumber: "Enter a valid 10-digit number" }));
+      setErrors((prev) => ({
+        ...prev,
+        contactNumber: "Enter a valid 10-digit number",
+      }));
     } else {
-      setErrors(prev => ({ ...prev, contactNumber: "" }));
+      setErrors((prev) => ({ ...prev, contactNumber: "" }));
     }
   };
 
   const validateOwnerName = () => {
     if (!formData.ownerName) {
-      setErrors(prev => ({ ...prev, ownerName: "Owner name is required" }));
+      setErrors((prev) => ({ ...prev, ownerName: "Owner name is required" }));
     } else if (formData.ownerName.length < 4) {
-      setErrors(prev => ({ ...prev, ownerName: "Minimum 4 characters required" }));
+      setErrors((prev) => ({
+        ...prev,
+        ownerName: "Minimum 4 characters required",
+      }));
+    } else if (formData.ownerName.length > 30) {
+      setErrors((prev) => ({
+        ...prev,
+        ownerName: "Maximum 30 characters allowed",
+      }));
     } else {
-      setErrors(prev => ({ ...prev, ownerName: "" }));
+      setErrors((prev) => ({ ...prev, ownerName: "" }));
     }
   };
 
   const validateGstNumber = () => {
     const gst = formData.gstNumber?.trim().toUpperCase();
-    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    const gstRegex =
+      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
     // If empty, clear error and skip validation
     if (!gst) {
@@ -142,9 +163,15 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
 
     // Validate only when GST is provided
     if (gst.length !== 15) {
-      setErrors((prev) => ({ ...prev, gstNumber: "GST number must be 15 characters" }));
+      setErrors((prev) => ({
+        ...prev,
+        gstNumber: "GST number must be 15 characters",
+      }));
     } else if (!gstRegex.test(gst)) {
-      setErrors((prev) => ({ ...prev, gstNumber: "Invalid GST number format" }));
+      setErrors((prev) => ({
+        ...prev,
+        gstNumber: "Invalid GST number format",
+      }));
     } else {
       setErrors((prev) => {
         const { gstNumber, ...rest } = prev;
@@ -154,7 +181,6 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
     }
   };
 
-
   const validateForm = () => {
     validateStaffCount();
     validateCustomerCount();
@@ -162,7 +188,8 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
     validateOwnerName();
     validateGstNumber();
 
-    return !errors.staffCount &&
+    return (
+      !errors.staffCount &&
       !errors.customerCount &&
       !errors.contactNumber &&
       !errors.ownerName &&
@@ -170,7 +197,8 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
       formData.staffCount &&
       formData.customerCount &&
       formData.contactNumber &&
-      formData.ownerName;
+      formData.ownerName
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -194,7 +222,8 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
       data.append("storeContactNumber", formData.contactNumber);
       data.append("storeCity", formData.city);
       data.append("storePincode", formData.pincode);
-      if (formData?.gstNumber) data.append("GSTNumber", formData.gstNumber || "");
+      if (formData?.gstNumber)
+        data.append("GSTNumber", formData.gstNumber || "");
       data.append("numberOfEmployees", formData.staffCount);
       data.append("numberOfCustomers", formData.customerCount);
       data.append("status", "active");
@@ -219,12 +248,11 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
           data: [],
         },
       });
-
     } catch (error) {
       console.error("Registration failed:", error);
       setSubmitError(
         error.response?.data?.message ||
-        "Registration failed. Please try again."
+          "Registration failed. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -263,8 +291,9 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             Upload Store Logo or Photo (optional)
           </label>
           <div
-            className={`border-2 border-dashed rounded-md p-6 text-center transition-colors ${isDragging ? "border-primary bg-primary/10" : "border-gray-300"
-              }`}
+            className={`border-2 border-dashed rounded-md p-6 text-center transition-colors ${
+              isDragging ? "border-primary bg-primary/10" : "border-gray-300"
+            }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -329,8 +358,11 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             name="staffCount"
             value={formData.staffCount || ""}
             onChange={handleChange}
-            onBlur={() => handleBlur('staffCount')}
-            className={`form-input ${errors.staffCount ? "border-red-500" : ""}`}
+            onBlur={() => handleBlur("staffCount")}
+            className={`form-input ${
+              errors.staffCount ? "border-red-500" : ""
+            }`}
+            autocomplete="off"
           >
             <option value="">Select Number of Staff</option>
             {staffOptions.map((option) => (
@@ -357,8 +389,11 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             name="customerCount"
             value={formData.customerCount || ""}
             onChange={handleChange}
-            onBlur={() => handleBlur('customerCount')}
-            className={`form-input ${errors.customerCount ? "border-red-500" : ""}`}
+            onBlur={() => handleBlur("customerCount")}
+            className={`form-input ${
+              errors.customerCount ? "border-red-500" : ""
+            }`}
+            autocomplete="off"
           >
             <option value="">Select Number of Customers</option>
             {customerOptions.map((option) => (
@@ -386,11 +421,13 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             name="contactNumber"
             value={formData.contactNumber || ""}
             onChange={handleChange}
-            onBlur={() => handleBlur('contactNumber')}
-            className={`form-input ${errors.contactNumber ? "border-red-500" : ""
-              }`}
+            onBlur={() => handleBlur("contactNumber")}
+            className={`form-input ${
+              errors.contactNumber ? "border-red-500" : ""
+            }`}
             placeholder="Store Contact Number"
             maxLength={10}
+            autocomplete="off"
           />
           {errors.contactNumber && (
             <p className="text-red-500 text-xs mt-1">{errors.contactNumber}</p>
@@ -411,9 +448,10 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             name="ownerName"
             value={formData.ownerName || ""}
             onChange={handleChange}
-            onBlur={() => handleBlur('ownerName')}
+            onBlur={() => handleBlur("ownerName")}
             className={`form-input ${errors.ownerName ? "border-red-500" : ""}`}
             placeholder="Owner Name"
+            autocomplete="off"
           />
           {errors.ownerName && (
             <p className="text-red-500 text-xs mt-1">{errors.ownerName}</p>
@@ -434,10 +472,11 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             name="gstNumber"
             value={formData.gstNumber || ""}
             onChange={handleChange}
-            onBlur={() => handleBlur('gstNumber')}
+            onBlur={() => handleBlur("gstNumber")}
             className={`form-input ${errors.gstNumber ? "border-red-500" : ""}`}
             placeholder="GST Number"
             maxLength={15}
+            autocomplete="off"
           />
           {errors.gstNumber && (
             <p className="text-red-500 text-xs mt-1">{errors.gstNumber}</p>
@@ -448,8 +487,9 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
         <div className="md:col-span-2 flex justify-center mt-6">
           <button
             type="submit"
-            className={`min-w-[150px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962] ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-              }`}
+            className={`min-w-[150px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962] ${
+              isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+            }`}
             disabled={isSubmitting}
           >
             {isSubmitting ? (

@@ -142,6 +142,7 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
               touched.firstName && errors.firstName ? "border-red-500" : ""
             }`}
             placeholder="First Name"
+            autocomplete="off"
           />
           {touched.firstName && errors.firstName && (
             <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
@@ -166,6 +167,7 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
               touched.lastName && errors.lastName ? "border-red-500" : ""
             }`}
             placeholder="Last Name"
+            autocomplete="off"
           />
           {touched.lastName && errors.lastName && (
             <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
@@ -219,7 +221,9 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
             className={`form-input ${
               touched.email && errors.email ? "border-red-500" : ""
             }`}
+            disabled={true}
             placeholder="Email Address"
+            autocomplete="off"
           />
           {touched.email && errors.email && (
             <p className="text-red-500 text-xs mt-1">{errors.email}</p>

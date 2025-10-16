@@ -35,8 +35,8 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
       setErrors(prev => ({ ...prev, storeName: "Store name is required" }));
     } else if (formData.storeName.length < 3) {
       setErrors(prev => ({ ...prev, storeName: "Minimum 3 characters required" }));
-    } else if (formData.storeName.length > 30) {
-      setErrors(prev => ({ ...prev, storeName: "Maximum 30 characters allowed" }));
+    } else if (formData.storeName.length > 60) {
+      setErrors(prev => ({ ...prev, storeName: "Maximum 60 characters allowed" }));
     } else {
       setErrors(prev => ({ ...prev, storeName: "" }));
     }
@@ -146,7 +146,8 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             onBlur={() => handleBlur('storeName')}
             className={`form-input ${errors.storeName ? "border-red-500" : ""}`}
             placeholder="Store Name"
-            maxLength={30}
+            maxLength={60}
+            autocomplete="off"
           />
           {errors.storeName && (
             <p className="text-red-500 text-xs mt-1">{errors.storeName}</p>
@@ -168,6 +169,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             onChange={handleChange}
             onBlur={() => handleBlur('storeType')}
             className={`form-input ${errors.storeType ? "border-red-500" : ""}`}
+            autocomplete="off"
           >
             <option value="">Select Store Type</option>
             {storeTypes.map(({ label, value }) => (
@@ -201,6 +203,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             }`}
             placeholder="Store Address"
             maxLength={40}
+            autocomplete="off"
           />
           {errors.storeAddress && (
             <p className="text-red-500 text-xs mt-1">{errors.storeAddress}</p>
@@ -225,6 +228,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             className={`form-input ${errors.city ? "border-red-500" : ""}`}
             placeholder="City / Town"
             maxLength={18}
+            autocomplete="off"
           />
           {errors.city && (
             <p className="text-red-500 text-xs mt-1">{errors.city}</p>
@@ -249,6 +253,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             className={`form-input ${errors.pincode ? "border-red-500" : ""}`}
             placeholder="Pincode"
             maxLength={6}
+            autocomplete="off"
           />
           {errors.pincode && (
             <p className="text-red-500 text-xs mt-1">{errors.pincode}</p>
