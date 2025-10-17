@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Scan, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Scan, Plus, Trash2, ArrowLeft, Upload } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
-import api from "../../api/apiconfig"
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import showToast from "../../utils/ToastNotification";
+import ExcelImport from "./ExcelImport.jsx";
+import api from "../../api/apiconfig";
+
 
 
 const useOutsideClick = (callback) => {
@@ -27,6 +29,8 @@ const useOutsideClick = (callback) => {
 };
 
 const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
+  // Add this state for Excel import
+  const [showExcelImport, setShowExcelImport] = useState(true);
   const {
     register,
     handleSubmit,
@@ -72,29 +76,27 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null);
   const [isAutofilled, setIsAutofilled] = useState<boolean>(false);
   const [loyaltyRule, setLoyaltyRule] = useState<any | null>(null);
-  const [selectedTierIndex, setSelectedTierIndex] = useState<number | null>(null);
+  const [selectedTierIndex, setSelectedTierIndex] = useState<number | null>(
+    null
+  );
   const [genderOptions, setGenderOptions] = useState<string[]>([]);
-
 
   const formData = watch();
   const products = formData.products || [];
 
-
   const getgenderOptions = async () => {
     try {
-      const response = await api.get('/api/retailer/getSource')
-      // console.log(response);
+      const response = await api.get("/api/retailer/getSource");
       const responseData = ["website", "walkin", "socialMedia"];
-      setGenderOptions(responseData)
+      setGenderOptions(responseData);
     } catch (error) {
       console.error(error);
     }
-  }
+  };
 
-  // Gender
   useEffect(() => {
-    getgenderOptions()
-  }, [])
+    getgenderOptions();
+  }, []);
 
   // Create a ref for the suggestions dropdown
   const suggestionsRef = useOutsideClick(() => {
@@ -118,12 +120,18 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       setValue("phoneNumber", customer.mobileNumber || customer.mobile || "");
       setValue("firstName", customer.firstname || customer.firstName || "");
       setValue("lastName", customer.lastname || customer.lastName || "");
-      setValue("gender", customer.additionalData?.gender || customer.gender || "");
+      setValue(
+        "gender",
+        customer.additionalData?.gender || customer.gender || ""
+      );
       setValue("source", customer.source || "");
 
       // Autofill flags and points
       setIsAutofilled(true);
-      const lp = typeof customer.loyaltyPoints === 'number' ? customer.loyaltyPoints : null;
+      const lp =
+        typeof customer.loyaltyPoints === "number"
+          ? customer.loyaltyPoints
+          : null;
       setLoyaltyPoints(lp);
 
       // Clear previous tier selection
@@ -131,7 +139,13 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
       // Clear validation errors for auto-filled fields
       setTimeout(() => {
-        clearErrors(["phoneNumber", "firstName", "lastName", "gender", "source"]);
+        clearErrors([
+          "phoneNumber",
+          "firstName",
+          "lastName",
+          "gender",
+          "source",
+        ]);
       }, 100);
     } else {
       setIsAutofilled(false);
@@ -184,7 +198,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     setValue("products", updatedProducts);
 
     // Clear validation error for this product name
-    const productIndex = products.findIndex(p => p.id === productId);
+    const productIndex = products.findIndex((p) => p.id === productId);
     if (productIndex !== -1) {
       clearErrors(`products.${productIndex}.name`);
     }
@@ -270,7 +284,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     }, 300);
 
     // Search customers when phone number is valid (at least 10 digits including country code)
-    if (value.length >= 3) { // Country code + 10 digits
+    if (value.length >= 3) {
+      // Country code + 10 digits
       searchCustomers(value);
       setShowSuggestions(true);
     } else {
@@ -302,7 +317,10 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
     // Autofill flags and points
     setIsAutofilled(true);
-    const lp = typeof customer.loyaltyPoints === 'number' ? customer.loyaltyPoints : null;
+    const lp =
+      typeof customer.loyaltyPoints === "number"
+        ? customer.loyaltyPoints
+        : null;
     setLoyaltyPoints(lp);
 
     // Reset loyalty tier selection on new customer
@@ -360,7 +378,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     setValue("products", updatedProducts);
 
     // Clear validation error for the updated field
-    const productIndex = products.findIndex(p => p.id === id);
+    const productIndex = products.findIndex((p) => p.id === id);
     if (productIndex !== -1) {
       clearErrors(`products.${productIndex}.${field}`);
     }
@@ -415,10 +433,12 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   useEffect(() => {
     const fetchRule = async () => {
       try {
-        const res = await api.get(`/api/loyalty/rule`, { params: { retailerId } });
+        const res = await api.get(`/api/loyalty/rule`, {
+          params: { retailerId },
+        });
         setLoyaltyRule(res.data || null);
       } catch (e) {
-        console.error('Failed to fetch loyalty rule', e);
+        console.error("Failed to fetch loyalty rule", e);
         setLoyaltyRule(null);
       }
     };
@@ -432,7 +452,10 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   })();
 
   // Compute applied discount considering selected tier and manual input
-  const selectedTier = (selectedTierIndex != null && loyaltyRule?.tiers?.[selectedTierIndex]) ? loyaltyRule.tiers[selectedTierIndex] : null;
+  const selectedTier =
+    selectedTierIndex != null && loyaltyRule?.tiers?.[selectedTierIndex]
+      ? loyaltyRule.tiers[selectedTierIndex]
+      : null;
   const tierDiscount = selectedTier?.discountAmount || 0;
 
   // Use form discount field, but when tier selected, set the field to tierDiscount (we handle in UI events too)
@@ -466,7 +489,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         grandTotal: grandTotal,
         paymentStatus: data.paymentStatus || "Unpaid",
       },
-      applyLoyalty: selectedTierIndex !== null  // if users  use loyalty points is true otherwise is false
+      applyLoyalty: selectedTierIndex !== null, // if users  use loyalty points is true otherwise is false
     };
 
     try {
@@ -509,8 +532,19 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
     }
   };
 
+    const handleImportSuccess = (importedData) => {
+    // You can handle the imported data here
+    console.log("Imported data:", importedData);
+    // Optionally, you can pre-fill the form with imported data
+    // or show a success message
+  };
+
+  // Update the button section in the return statement:
   return (
-    <div className="bg-white rounded-lg shadow-sm" style={{ overflow: "visible" }}>
+    <div
+      className="bg-white rounded-lg shadow-sm"
+      style={{ overflow: "visible" }}
+    >
       <div className="flex items-center justify-between p-6 border-b">
         <div className="flex items-center gap-4">
           <button
@@ -519,17 +553,22 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
           >
             <ArrowLeft size={20} />
           </button>
-          <h2 className="text-xl font-semibold text-gray-800">Daily Order sheet</h2>
+          <h2 className="text-xl font-semibold text-gray-800">
+            Daily Order sheet
+          </h2>
         </div>
 
         <div className="flex gap-3">
-          {/* <button
-            onClick={onBack}
+          {/* Excel Import Button */}
+          <button
+            type="button"
+            onClick={() => setShowExcelImport(true)}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
           >
-            <Scan size={16} />
-            Scanner
-          </button> */}
+            <Upload size={16} />
+            Import Excel
+          </button>
+
           <button
             onClick={onNewOrder}
             className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-700 transition-colors"
@@ -540,9 +579,16 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="p-6" style={{ overflow: "visible" }}>
+      {/* Rest of your existing form code remains the same */}
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="p-6"
+        style={{ overflow: "visible" }}
+      >
         <div className="mb-8">
-          <h3 className="text-lg font-medium text-gray-800 mb-4">Customer Details</h3>
+          <h3 className="text-lg font-medium text-gray-800 mb-4">
+            Customer Details
+          </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -554,12 +600,12 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                   required: "First name is required",
                   minLength: {
                     value: 2,
-                    message: "First name must be at least 2 characters"
+                    message: "First name must be at least 2 characters",
                   },
                   maxLength: {
                     value: 50,
-                    message: "First name can't be more than 50 characters"
-                  }
+                    message: "First name can't be more than 50 characters",
+                  },
                 })}
                 type="text"
                 placeholder="Enter first name"
@@ -567,7 +613,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 onChange={(e) => handleInputChange("firstName", e.target.value)}
               />
               {errors.firstName && (
-                <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.firstName.message}
+                </p>
               )}
             </div>
 
@@ -580,12 +628,12 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                   required: "Last name is required",
                   minLength: {
                     value: 1,
-                    message: "Last name must be at least 2 characters"
+                    message: "Last name must be at least 2 characters",
                   },
                   maxLength: {
                     value: 50,
-                    message: "Last name can't be more than 50 characters"
-                }
+                    message: "Last name can't be more than 50 characters",
+                  },
                 })}
                 type="text"
                 placeholder="Enter last name"
@@ -593,7 +641,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 onChange={(e) => handleInputChange("lastName", e.target.value)}
               />
               {errors.lastName && (
-                <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.lastName.message}
+                </p>
               )}
             </div>
 
@@ -601,7 +651,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number
               </label>
-              {isAutofilled && typeof loyaltyPoints === 'number' && (
+              {isAutofilled && typeof loyaltyPoints === "number" && (
                 <div className="inline-flex items-center px-2 py-1 ml-2 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 align-middle">
                   Loyalty Points: {loyaltyPoints}
                 </div>
@@ -613,9 +663,12 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                   required: "Phone number is required",
                   validate: (value) => {
                     // Remove any non-digit characters for validation
-                    const digitsOnly = value.replace(/\D/g, '');
-                    return digitsOnly.length >= 12 || "Please enter a valid phone number";
-                  }
+                    const digitsOnly = value.replace(/\D/g, "");
+                    return (
+                      digitsOnly.length >= 12 ||
+                      "Please enter a valid phone number"
+                    );
+                  },
                 }}
                 render={({ field }) => (
                   <PhoneInput
@@ -629,7 +682,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                     inputStyle={{
                       width: "100%",
                       paddingLeft: "48px",
-                      height: "42px"
+                      height: "42px",
                     }}
                     dropdownClass="text-gray-700"
                     enableSearch={true}
@@ -638,7 +691,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 )}
               />
               {errors.phoneNumber && (
-                <p className="text-red-500 text-sm mt-1">{errors.phoneNumber.message}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.phoneNumber.message}
+                </p>
               )}
               {showSuggestions && searchResults.length > 0 && (
                 <div
@@ -678,7 +733,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 <option value="other">Other</option>
               </select>
               {errors.gender && (
-                <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.gender.message}
+                </p>
               )}
             </div>
 
@@ -699,7 +756,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                 ))}
               </select>
               {errors.source && (
-                <p className="text-red-500 text-sm mt-1">{errors.source.message}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.source.message}
+                </p>
               )}
             </div>
           </div>
@@ -745,14 +804,21 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <tbody>
                 {products.map((product, index) => (
                   <tr key={product.id} className="border-b border-gray-200">
-                    <td className="px-4 py-3 relative" style={{ overflow: "visible" }}>
+                    <td
+                      className="px-4 py-3 relative"
+                      style={{ overflow: "visible" }}
+                    >
                       <input
                         {...register(`products.${index}.name`, {
-                          required: "Product name is required"
+                          required: "Product name is required",
                         })}
                         type="text"
-                        value={currentProductSearches[product.id] || product.name}
-                        onChange={(e) => handleProductNameChange(product.id, e.target.value)}
+                        value={
+                          currentProductSearches[product.id] || product.name
+                        }
+                        onChange={(e) =>
+                          handleProductNameChange(product.id, e.target.value)
+                        }
                         placeholder="Search product"
                         className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
                         onFocus={() => {
@@ -834,8 +900,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                           required: "Quantity is required",
                           min: {
                             value: 1,
-                            message: "Quantity must be at least 1"
-                          }
+                            message: "Quantity must be at least 1",
+                          },
                         })}
                         type="number"
                         min="1"
@@ -861,8 +927,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                             required: "Unit price is required",
                             min: {
                               value: 0,
-                              message: "Unit price cannot be negative"
-                            }
+                              message: "Unit price cannot be negative",
+                            },
                           })}
                           type="number"
                           step="0.01"
@@ -874,10 +940,11 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                               parseFloat(e.target.value) || 0
                             )
                           }
-                          className={`w-24 px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500 ${product.isAutoPopulated
-                            ? "border-green-300 bg-green-50"
-                            : "border-gray-300"
-                            }`}
+                          className={`w-24 px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500 ${
+                            product.isAutoPopulated
+                              ? "border-green-300 bg-green-50"
+                              : "border-gray-300"
+                          }`}
                           placeholder="0.00"
                           title={
                             product.isAutoPopulated
@@ -898,8 +965,8 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                           required: "Total price is required",
                           min: {
                             value: 0,
-                            message: "Total price cannot be negative"
-                          }
+                            message: "Total price cannot be negative",
+                          },
                         })}
                         type="number"
                         step="0.01"
@@ -929,7 +996,9 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                             {color}
                             <button
                               type="button"
-                              onClick={() => removeColor(product.id, colorIndex)}
+                              onClick={() =>
+                                removeColor(product.id, colorIndex)
+                              }
                               className="ml-1 text-red-500 hover:text-red-700"
                             >
                               <Trash2 size={12} />
@@ -988,46 +1057,66 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
               <span className="font-medium">₹{subtotal.toFixed(2)}</span>
             </div>
 
-            {isAutofilled && typeof loyaltyPoints === 'number' && loyaltyRule?.tiers?.length > 0 && (
-              <div className="flex flex-col gap-2 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600 whitespace-nowrap">Use Loyalty:</span>
-                  <select
-                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
-                    value={selectedTierIndex ?? ''}
-                    onChange={(e) => {
-                      const idx = e.target.value === '' ? null : Number(e.target.value);
-                      setSelectedTierIndex(idx);
-                      if (idx === null) {
-                        // Clear discount when no tier selected
-                        setValue('discount', 0);
-                      } else {
-                        const tier = loyaltyRule?.tiers?.[idx];
-                        const discount = tier?.discountAmount || 0;
-                        // Respect max discount percent dynamically
-                        const capped = Math.min(discount, subtotal, maxDiscountFromRule);
-                        setValue('discount', capped);
-                      }
-                      clearErrors('discount');
-                    }}
-                    disabled={subtotal < (loyaltyRule?.minOrderAmount || 0)}
-                  >
-                    <option value="">Select Tier</option>
-                    {loyaltyRule.tiers.map((t, i) => (
-                      <option key={i} value={i} disabled={typeof loyaltyPoints === 'number' ? loyaltyPoints < t.pointsRequired : true}>
-                        {t.pointsRequired} pts → ₹{t.discountAmount}
-                      </option>
-                    ))}
-                  </select>
-                  {subtotal < (loyaltyRule?.minOrderAmount || 0) && (
-                    <span className="text-xs text-gray-500">Min order ₹{loyaltyRule?.minOrderAmount} to use points</span>
-                  )}
+            {isAutofilled &&
+              typeof loyaltyPoints === "number" &&
+              loyaltyRule?.tiers?.length > 0 && (
+                <div className="flex flex-col gap-2 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600 whitespace-nowrap">
+                      Use Loyalty:
+                    </span>
+                    <select
+                      className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-pink-500"
+                      value={selectedTierIndex ?? ""}
+                      onChange={(e) => {
+                        const idx =
+                          e.target.value === "" ? null : Number(e.target.value);
+                        setSelectedTierIndex(idx);
+                        if (idx === null) {
+                          // Clear discount when no tier selected
+                          setValue("discount", 0);
+                        } else {
+                          const tier = loyaltyRule?.tiers?.[idx];
+                          const discount = tier?.discountAmount || 0;
+                          // Respect max discount percent dynamically
+                          const capped = Math.min(
+                            discount,
+                            subtotal,
+                            maxDiscountFromRule
+                          );
+                          setValue("discount", capped);
+                        }
+                        clearErrors("discount");
+                      }}
+                      disabled={subtotal < (loyaltyRule?.minOrderAmount || 0)}
+                    >
+                      <option value="">Select Tier</option>
+                      {loyaltyRule.tiers.map((t, i) => (
+                        <option
+                          key={i}
+                          value={i}
+                          disabled={
+                            typeof loyaltyPoints === "number"
+                              ? loyaltyPoints < t.pointsRequired
+                              : true
+                          }
+                        >
+                          {t.pointsRequired} pts → ₹{t.discountAmount}
+                        </option>
+                      ))}
+                    </select>
+                    {subtotal < (loyaltyRule?.minOrderAmount || 0) && (
+                      <span className="text-xs text-gray-500">
+                        Min order ₹{loyaltyRule?.minOrderAmount} to use points
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Max discount {loyaltyRule?.maxDiscountPercent ?? 0}% of
+                    subtotal
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500">
-                  Max discount {loyaltyRule?.maxDiscountPercent ?? 0}% of subtotal
-                </div>
-              </div>
-            )}
+              )}
 
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Discount:</span>
@@ -1037,12 +1126,15 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
                   {...register("discount", {
                     min: {
                       value: 0,
-                      message: "Discount cannot be negative"
+                      message: "Discount cannot be negative",
                     },
                     max: {
                       value: Math.min(subtotal, maxDiscountFromRule),
-                      message: `Discount cannot exceed ₹${Math.min(subtotal, maxDiscountFromRule).toFixed(2)}`
-                    }
+                      message: `Discount cannot exceed ₹${Math.min(
+                        subtotal,
+                        maxDiscountFromRule
+                      ).toFixed(2)}`,
+                    },
                   })}
                   type="number"
                   step="0.01"
@@ -1106,6 +1198,15 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
           </button>
         </div>
       </form>
+
+      {/* Excel Import Modal */}
+      {showExcelImport && (
+        <ExcelImport
+          retailerId={retailerId}
+          onImportSuccess={handleImportSuccess}
+          onClose={() => setShowExcelImport(false)}
+        />
+      )}
     </div>
   );
 };
