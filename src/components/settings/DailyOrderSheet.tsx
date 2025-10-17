@@ -30,7 +30,7 @@ const useOutsideClick = (callback) => {
 
 const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   // Add this state for Excel import
-  const [showExcelImport, setShowExcelImport] = useState(true);
+  const [showExcelImport, setShowExcelImport] = useState(false);
   const {
     register,
     handleSubmit,
