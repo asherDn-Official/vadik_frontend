@@ -15,7 +15,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
     formState: { errors, isSubmitting },
     setError,
     clearErrors,
-    trigger
+    trigger,
   } = useForm({
     defaultValues: {
       title: "",
@@ -29,7 +29,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
           section: "additionalData",
           options: [],
           iconUrl: "",
-          iconName: ""
+          iconName: "",
         },
       ],
     },
@@ -49,26 +49,30 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
       const response = await api.get(`/api/customer-preferences/${retailerId}`);
       const preference = response?.data;
 
-
       const combinedPreferences = [
-        ...(preference.additionalData?.map(item => ({
+        ...(preference.additionalData?.map((item) => ({
           ...item,
-          section: "additionalData"
+          section: "additionalData",
         })) || []),
-        ...(preference.advancedDetails?.map(item => ({
+        ...(preference.advancedDetails?.map((item) => ({
           ...item,
-          section: "advancedDetails"
+          section: "advancedDetails",
         })) || []),
-        ...(preference.advancedPrivacyDetails?.map(item => ({
+        ...(preference.advancedPrivacyDetails?.map((item) => ({
           ...item,
-          section: "advancedPrivacyDetails"
-        })) || [])
+          section: "advancedPrivacyDetails",
+        })) || []),
       ];
 
       setAllPreferences(combinedPreferences);
-      setIsPreferenceDropdownOpen(new Array(combinedPreferences.length).fill(false));
+      setIsPreferenceDropdownOpen(
+        new Array(combinedPreferences.length).fill(false)
+      );
     } catch (error) {
-      console.error('Error fetching preferences:', error.response?.data?.message || error.message);
+      console.error(
+        "Error fetching preferences:",
+        error.response?.data?.message || error.message
+      );
     }
   }
 
@@ -77,34 +81,39 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
   }, []);
 
   useEffect(() => {
-
     if (quiz) {
       setValue("title", quiz.campaignName || "");
       setValue("loyaltyPoints", quiz.loyaltyPoints || "");
-      setValue("questions", (quiz.questions || []).map((q, idx) => ({
-        id: typeof q.id !== 'undefined' ? q.id : Date.now() + idx,
-        key: q.key || "",
-        question: q.question || "",
-        type: q.type || "string",
-        section: q.section || "additionalData",
-        options: Array.isArray(q.options) ? q.options : [],
-        iconUrl: q.iconUrl || "",
-        iconName: q.iconName
-      })));
+      setValue(
+        "questions",
+        (quiz.questions || []).map((q, idx) => ({
+          id: typeof q.id !== "undefined" ? q.id : Date.now() + idx,
+          key: q.key || "",
+          question: q.question || "",
+          type: q.type || "string",
+          section: q.section || "additionalData",
+          options: Array.isArray(q.options) ? q.options : [],
+          iconUrl: q.iconUrl || "",
+          iconName: q.iconName,
+        }))
+      );
     }
   }, [quiz, setValue]);
 
   const handlePreferenceKeyChange = (questionIndex, key) => {
-    const selectedPref = allPreferences.find(item => item.key === key);
+    const selectedPref = allPreferences.find((item) => item.key === key);
     if (selectedPref) {
       const questionPath = `questions.${questionIndex}`;
 
       setValue(`${questionPath}.key`, selectedPref.key);
       setValue(`${questionPath}.type`, selectedPref.type);
       setValue(`${questionPath}.section`, selectedPref.section);
-      setValue(`${questionPath}.question`, selectedPref.type === "date"
-        ? `When is your ${selectedPref.key}?`
-        : `What is your ${selectedPref.key}?`);
+      setValue(
+        `${questionPath}.question`,
+        selectedPref.type === "date"
+          ? `When is your ${selectedPref.key}?`
+          : `What is your ${selectedPref.key}?`
+      );
       setValue(`${questionPath}.options`, selectedPref.options || []);
 
       // Add these two lines to set the icon properties
@@ -119,9 +128,8 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
 
   const togglePreferenceDropdown = (questionIndex, isOpen) => {
     const newDropdownState = [...isPreferenceDropdownOpen];
-    newDropdownState[questionIndex] = isOpen !== undefined
-      ? isOpen
-      : !newDropdownState[questionIndex];
+    newDropdownState[questionIndex] =
+      isOpen !== undefined ? isOpen : !newDropdownState[questionIndex];
     setIsPreferenceDropdownOpen(newDropdownState);
   };
 
@@ -165,22 +173,22 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
   };
 
   const onSubmit = async (data) => {
-
     const baseData = {
       campaignName: data.title,
       quizName: data.title,
       description: data.description,
-      loyaltyPoints: parseInt(data.loyaltyPoints),
+      loyaltyPoints: parseInt(data.loyaltyPoints) || 0,
       quizFor: "quiz",
-      questions: data.questions.map(q => ({
+      questions: data.questions.map((q) => ({
         key: q.key,
         question: q.question,
         type: q.type,
         section: q.section,
-        ...(Array.isArray(q.options) && q.options.length > 0 && { options: q.options }),
+        ...(Array.isArray(q.options) &&
+          q.options.length > 0 && { options: q.options }),
         iconName: q.iconName || "", // Ensure this is included
-        iconUrl: q.iconUrl || "" // Ensure this is include
-      }))
+        iconUrl: q.iconUrl || "", // Ensure this is include
+      })),
     };
 
     try {
@@ -190,13 +198,13 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
           ...baseData,
           retailerId,
           _id: quiz._id,
-          isActive: typeof quiz.isActive === 'boolean' ? quiz.isActive : true,
+          isActive: typeof quiz.isActive === "boolean" ? quiz.isActive : true,
         };
         response = await api.put(`/api/quiz/${quiz._id}`, payload);
-        showToast('Quiz updated successfully', 'success');
+        showToast("Quiz updated successfully", "success");
       } else {
-        response = await api.post('/api/quiz', { ...baseData, retailerId });
-        showToast('Quiz created successfully', "success");
+        response = await api.post("/api/quiz", { ...baseData, retailerId });
+        showToast("Quiz created successfully", "success");
       }
 
       if (onSave) {
@@ -208,12 +216,13 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
   };
 
   const validateLoyaltyPoints = (value) => {
-    if (!value) return 'Loyalty points is required';
-    if (!/^\d+$/.test(value)) return 'Loyalty points must contain only numbers';
+    if (value === "" || value === null || value === undefined) return true; // optional field
+
+    if (!/^\d+$/.test(value)) return "Loyalty points must contain only numbers";
 
     const points = parseInt(value, 10);
-    if (points <= 0) return 'Loyalty points must be a positive number';
-    if (points > 10000) return 'Loyalty points cannot exceed 10,000';
+    if (points < 0) return "Loyalty points cannot be negative";
+    if (points > 10000) return "Loyalty points cannot exceed 10,000";
 
     return true;
   };
@@ -221,7 +230,9 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
   return (
     <div className="mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">{quiz ? 'Edit Quiz' : 'Create Quiz'}</h2>
+        <h2 className="text-2xl font-bold text-slate-800">
+          {quiz ? "Edit Quiz" : "Create Quiz"}
+        </h2>
         <div className="flex items-center space-x-4">
           <span className="text-slate-600">Loyalty Point</span>
           <div className="flex flex-col">
@@ -231,13 +242,16 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
               step="1"
               placeholder="Enter Value"
               {...register("loyaltyPoints", {
-                validate: validateLoyaltyPoints
+                validate: validateLoyaltyPoints,
               })}
-              className={`px-3 py-1 border rounded-md focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.loyaltyPoints ? 'border-red-500' : 'border-gray-300'
-                }`}
+              className={`px-3 py-1 border rounded-md focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
+                errors.loyaltyPoints ? "border-red-500" : "border-gray-300"
+              }`}
             />
             {errors.loyaltyPoints && (
-              <span className="text-red-500 text-xs mt-1">{errors.loyaltyPoints.message}</span>
+              <span className="text-red-500 text-xs mt-1">
+                {errors.loyaltyPoints.message}
+              </span>
             )}
           </div>
         </div>
@@ -252,15 +266,24 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
             type="text"
             placeholder="Enter quiz title"
             {...register("title", {
-              required: 'Quiz title is required',
-              minLength: { value: 3, message: 'Title should have at least 3 characters' },
-              maxLength: { value: 50, message: 'Title should not exceed 50 characters' }
+              required: "Quiz title is required",
+              minLength: {
+                value: 3,
+                message: "Title should have at least 3 characters",
+              },
+              maxLength: {
+                value: 50,
+                message: "Title should not exceed 50 characters",
+              },
             })}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.title ? 'border-red-500' : 'border-gray-300'
-              }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
+              errors.title ? "border-red-500" : "border-gray-300"
+            }`}
           />
           {errors.title && (
-            <span className="text-red-500 text-sm mt-1 block">{errors.title.message}</span>
+            <span className="text-red-500 text-sm mt-1 block">
+              {errors.title.message}
+            </span>
           )}
         </div>
 
@@ -282,8 +305,11 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
                     <button
                       type="button"
                       onClick={() => togglePreferenceDropdown(qIndex)}
-                      className={`flex items-center justify-between w-48 px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.questions?.[qIndex]?.key ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                      className={`flex items-center justify-between w-48 px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
+                        errors.questions?.[qIndex]?.key
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      }`}
                     >
                       <span className="text-sm truncate">
                         {question.key || "Select a preference"}
@@ -333,14 +359,17 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
               <Controller
                 name={`questions.${qIndex}.question`}
                 control={control}
-                rules={{ required: 'Question text is required' }}
+                rules={{ required: "Question text is required" }}
                 render={({ field }) => (
                   <input
                     {...field}
                     type="text"
                     placeholder="Enter your Question"
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white ${errors.questions?.[qIndex]?.question ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white ${
+                      errors.questions?.[qIndex]?.question
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    }`}
                   />
                 )}
               />
@@ -396,12 +425,19 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
             {question.type !== "options" && (
               <div>
                 <input
-                  type={question.type === "date" ? "date" :
-                    question.type === "number" ? "number" :
-                      question.type === "boolean" ? "checkbox" : "text"}
+                  type={
+                    question.type === "date"
+                      ? "date"
+                      : question.type === "number"
+                      ? "number"
+                      : question.type === "boolean"
+                      ? "checkbox"
+                      : "text"
+                  }
                   placeholder={`Enter your ${question.key || "answer"}`}
-                  className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white ${question.type === "checkbox" ? "w-auto" : ""
-                    }`}
+                  className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white ${
+                    question.type === "checkbox" ? "w-auto" : ""
+                  }`}
                 />
               </div>
             )}
@@ -428,12 +464,19 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`px-6 py-2 text-white rounded-lg transition-colors ${isSubmitting
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-pink-600 hover:bg-pink-700'
-              }`}
+            className={`px-6 py-2 text-white rounded-lg transition-colors ${
+              isSubmitting
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-pink-600 hover:bg-pink-700"
+            }`}
           >
-            {isSubmitting ? (quiz ? 'Updating Quiz...' : 'Creating Quiz...') : (quiz ? 'Update Quiz' : 'Create Quiz')}
+            {isSubmitting
+              ? quiz
+                ? "Updating Quiz..."
+                : "Creating Quiz..."
+              : quiz
+              ? "Update Quiz"
+              : "Create Quiz"}
           </button>
         </div>
       </form>
