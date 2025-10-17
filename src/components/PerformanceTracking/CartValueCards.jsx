@@ -11,11 +11,22 @@ import "react-datepicker/dist/react-datepicker.css";
 import api from "../../api/apiconfig";
 
 const CartValueCards = () => {
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState(null);
   const [noOfCustomer, setNoOfCustomer] = useState(0);
   const [lastMonthTurnOver, setLastMonthTurnOver] = useState(0);
   const [avgTurnoverPerDay, setAvgTurnoverPerDay] = useState(0);
   const [avgTurnoverPerCustomer, setAvgTurnoverPerCustomer] = useState(0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const handleDateChange = (date) => {
+    if (!date) {
+      setSelectedDate(null);
+      return;
+    }
+    const validDate = date > today ? today : date;
+    setSelectedDate(validDate);
+  };
 
   // Format date to DD/MM/YYYY
   const formatDate = (date) => {
@@ -88,7 +99,8 @@ const CartValueCards = () => {
           <Calendar className="w-4 h-4 text-gray-500" />
           <DatePicker
             selected={selectedDate}
-            onChange={(date) => setSelectedDate(date)}
+            onChange={handleDateChange}
+            maxDate={today}
             className="border border-gray-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 w-full sm:w-40"
             placeholderText="Select date"
             dateFormat="dd/MM/yyyy"

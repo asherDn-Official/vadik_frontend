@@ -7,6 +7,18 @@ import api from "../../api/apiconfig";
 const CampaignTable = () => {
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const handleDateRangeChange = (update) => {
+    const [newStart, newEnd] = update;
+    const validStart = newStart && newStart > today ? today : newStart;
+    let validEnd = newEnd && newEnd > today ? today : newEnd;
+    if (validStart && validEnd && validEnd < validStart) {
+      validEnd = validStart;
+    }
+    setDateRange([validStart || null, validEnd || null]);
+  };
   
   const [quize, setQuize] = useState({
     totalSent: 120,
@@ -83,8 +95,9 @@ const CampaignTable = () => {
             selectsRange={true}
             startDate={startDate}
             endDate={endDate}
-            onChange={(update) => setDateRange(update)}
+            onChange={handleDateRangeChange}
             isClearable={true}
+            maxDate={today}
             className="border border-gray-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 w-full sm:w-64"
             placeholderText="Select date range"
             dateFormat="dd/MM/yyyy"
