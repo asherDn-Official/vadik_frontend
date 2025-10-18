@@ -216,6 +216,7 @@ const CouponManagement = () => {
   const cancelForm = () => {
     setIsAddingCoupon(false);
     setEditingCouponId(null);
+    setExpiryDate(null);
   };
 
   const handleSaveCoupon = async (data) => {
