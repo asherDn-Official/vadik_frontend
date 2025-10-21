@@ -445,7 +445,7 @@ const CustomerDetails = ({
   }, [formData, touched, isEditing]);
 
   const tabs = [
-    "Basic Data",
+    "Basic Details",
     "Advanced Details",
     "Advanced Privacy",
     "Referral",
@@ -866,7 +866,7 @@ const CustomerDetails = ({
                   </div>
                 )}
 
-                {activeTab === "Basic Data" && (
+                {activeTab === "Basic Details" && (
                   <div className="grid grid-cols-2 gap-4">
                     {transformedCustomer?.additionalData &&
                     Object.keys(transformedCustomer.additionalData).length >
