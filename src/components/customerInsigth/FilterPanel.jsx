@@ -567,7 +567,7 @@ const FilterItem = ({ name, expanded, onToggle, children, icon, isActive }) => {
   return (
     <div className={`border-b border-gray-200 last:border-b-0 p-4 pt-2 mt-0 ${isActive ? 'bg-[#f5f5ff]' : ''}`}>
       <button
-        className="w-full flex justify-between items-center py-2 text-[14px] font-[400] text-[#313166]"
+        className="w-full flex justify-between outline-none items-center py-2 text-[14px] font-[400] text-[#313166]"
         onClick={onToggle}
       >
         <div className="flex items-center capitalize">
