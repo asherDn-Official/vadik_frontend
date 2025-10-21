@@ -145,7 +145,7 @@ const DailyBillingUpdate = () => {
     if (currentView === "billing") {
       fetchBillingData();
     }
-  }, [startDate, endDate, pagination.page, currentView]);
+  }, [startDate, endDate, pagination.page, currentView,showExcelImport]);
 
   const handleViewDetails = async (billingData) => {
     setSelectedBillingData(billingData);
