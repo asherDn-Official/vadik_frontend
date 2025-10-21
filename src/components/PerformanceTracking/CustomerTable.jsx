@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Calendar } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -40,55 +40,68 @@ const CustomerTable = () => {
     return `${year}-${month}-${day}`;
   };
 
-  useEffect(() => {
-    let isCancelled = false;
+  const fetchCustomerData = useCallback(async (params = {}) => {
+    setLoading(true);
+    setError(null);
 
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      setError(null);
+    try {
+      const response = await api.get("/api/performanceTracking/clvSummary", {
+        params,
+      });
 
-      try {
-        const params = {};
+      setData(response.data);
+    } catch (err) {
+      setError("Failed to fetch data. Please try again.");
+      console.error("API Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-        if (startDate && endDate) {
-          params.startDate = formatDate(startDate);
-          params.endDate = formatDate(endDate);
-        } else if (startDate) {
-          params.singleDate = formatDate(startDate);
-        }
-
-        const response = await api.get("/api/performanceTracking/clvSummary", {
-          params,
-        });
-
-        if (!isCancelled) {
-          setData(response.data);
-        }
-      } catch (err) {
-        if (!isCancelled) {
-          setError("Failed to fetch data. Please try again.");
-          console.error("API Error:", err);
-        }
-      } finally {
-        if (!isCancelled) {
-          setLoading(false);
-        }
-      }
-    }, 1000);
-
-    return () => {
-      isCancelled = true;
-      clearTimeout(timer);
-    };
-  }, [startDate, endDate]);
+  // Handle date range change with clear detection
+  const handleDateRangeChangeWithClear = (update) => {
+    const [newStart, newEnd] = update;
+    
+    // If both dates are cleared, fetch initial data immediately
+    if (!newStart && !newEnd) {
+      setDateRange([null, null]);
+      // Fetch data without any date filters
+      fetchCustomerData();
+      return;
+    }
+    
+    handleDateRangeChange(update);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDateRange([null, null]);
-    }, 0);
+      fetchCustomerData();
+    }, 1000);
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [fetchCustomerData]);
+
+  const handleApplyFilters = () => {
+    const params = {};
+
+    if (startDate && endDate) {
+      params.startDate = formatDate(startDate);
+      params.endDate = formatDate(endDate);
+    } else if (startDate) {
+      params.singleDate = formatDate(startDate);
+    }
+
+    fetchCustomerData(params);
+  };
+
+  const handleClearFilters = () => {
+    setDateRange([null, null]);
+    fetchCustomerData();
+  };
+
+  const isFilterActive = Boolean(startDate || endDate);
 
   const tableData =
     data?.topCustomers?.map((customer) => ({
@@ -102,19 +115,39 @@ const CustomerTable = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <h3 className="text-lg font-semibold text-gray-900">Top Customer (CLV)</h3>
 
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <Calendar className="w-4 h-4 text-gray-500" />
-          <DatePicker
-            selectsRange
-            startDate={startDate}
-            endDate={endDate}
-            onChange={handleDateRangeChange}
-            isClearable
-            maxDate={today}
-            className="border border-gray-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 w-full sm:w-64"
-            placeholderText="Select date range"
-            dateFormat="dd/MM/yyyy"
-          />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 gap-2 text-sm text-gray-600">
+          <div className="flex items-center space-x-2">
+            <Calendar className="w-4 h-4 text-gray-500" />
+            <DatePicker
+              selectsRange
+              startDate={startDate}
+              endDate={endDate}
+              onChange={handleDateRangeChangeWithClear}
+              isClearable
+              maxDate={today}
+              className="border border-gray-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 w-full sm:w-64"
+              placeholderText="Select date range"
+              dateFormat="dd/MM/yyyy"
+            />
+          </div>
+          {isFilterActive && (
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={handleApplyFilters}
+                className="inline-flex items-center justify-center rounded-md bg-pink-600 px-4 py-1.5 text-white font-semibold hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
+              >
+                Apply Filter
+              </button>
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="inline-flex items-center justify-center rounded-md bg-gray-200 px-4 py-1.5 text-gray-700 font-semibold hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              >
+                Clear
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

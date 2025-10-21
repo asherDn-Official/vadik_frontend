@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Calendar } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -48,39 +48,61 @@ const CampaignTable = () => {
     return `${year}-${month}-${day}`;
   };
 
+  const isFilterActive = Boolean(startDate || endDate);
+
+  const fetchCampaignData = useCallback(async (params = {}) => {
+    try {
+      const response = await api.get("api/performanceTracking/campaingAnalytics", {
+        params,
+      });
+
+      setQuize(response.data.analytics.quiz);
+      setScratchCard(response.data.analytics.scratchCard);
+      setSpinWheel(response.data.analytics.spinWheel);
+    } catch (error) {
+      console.error("Error fetching campaign data:", error);
+    }
+  }, []);
+
+  const handleSubmitFilters = useCallback(async () => {
+    const params = {};
+
+    if (startDate && endDate) {
+      params.startDate = formatDate(startDate);
+      params.endDate = formatDate(endDate);
+    } else if (startDate) {
+      params.singleDate = formatDate(startDate);
+    }
+
+    await fetchCampaignData(params);
+  }, [endDate, startDate, fetchCampaignData]);
+
+  // Handle clear date range - fetch initial data
+  const handleClearFilters = useCallback(async () => {
+    setDateRange([null, null]);
+    await fetchCampaignData();
+  }, [fetchCampaignData]);
+
+  // Modified date range change handler to handle clear
+  const handleDateRangeChangeWithClear = (update) => {
+    const [newStart, newEnd] = update;
+    
+    // If both dates are cleared, fetch initial data immediately
+    if (!newStart && !newEnd) {
+      handleClearFilters();
+      return;
+    }
+    
+    handleDateRangeChange(update);
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      const fetchData = async () => {
-        try {
-          const params = {};
-          
-          // Add date parameters based on selection
-          if (startDate && endDate) {
-            // If both dates selected, send as date range
-            params.startDate = formatDate(startDate);
-            params.endDate = formatDate(endDate);
-          } else if (startDate) {
-            // If only one date selected, send as singleDate
-            params.singleDate = formatDate(startDate);
-          }
-          // If no dates selected, no date parameters will be sent
-
-          const response = await api.get("api/performanceTracking/campaingAnalytics", {
-            params: params
-          });
-          
-          setQuize(response.data.analytics.quiz);
-          setScratchCard(response.data.analytics.scratchCard);
-          setSpinWheel(response.data.analytics.spinWheel);
-        } catch (error) {
-          console.error("Error fetching campaign data:", error);
-        }
-      };
-      fetchData();
+      fetchCampaignData();
     }, 1000); // 1-second delay
 
     return () => clearTimeout(timer);
-  }, [startDate, endDate]); // Re-fetch when dates change
+  }, [fetchCampaignData]);
 
   console.log("fetched data of quiz", quize, spinWheel, scratchCard);
 
@@ -89,19 +111,30 @@ const CampaignTable = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <h3 className="text-lg font-semibold text-gray-900">Activities</h3>
         
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <Calendar className="w-4 h-4 text-gray-500" />
-          <DatePicker
-            selectsRange={true}
-            startDate={startDate}
-            endDate={endDate}
-            onChange={handleDateRangeChange}
-            isClearable={true}
-            maxDate={today}
-            className="border border-gray-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 w-full sm:w-64"
-            placeholderText="Select date range"
-            dateFormat="dd/MM/yyyy"
-          />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 gap-2 text-sm text-gray-600">
+          <div className="flex items-center space-x-2">
+            <Calendar className="w-4 h-4 text-gray-500" />
+            <DatePicker
+              selectsRange={true}
+              startDate={startDate}
+              endDate={endDate}
+              onChange={handleDateRangeChangeWithClear}
+              isClearable={true}
+              maxDate={today}
+              className="border border-gray-200 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 w-full sm:w-64"
+              placeholderText="Select date range"
+              dateFormat="dd/MM/yyyy"
+            />
+          </div>
+          {isFilterActive && (
+            <button
+              type="button"
+              onClick={handleSubmitFilters}
+              className="inline-flex items-center justify-center rounded-md bg-pink-600 px-4 py-1.5 text-white font-semibold hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
+            >
+              Apply Filter
+            </button>
+          )}
         </div>
       </div>
 
