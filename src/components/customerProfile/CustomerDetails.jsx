@@ -611,10 +611,12 @@ const CustomerDetails = ({
                     <img
                       src={
                         transformedCustomer?.profileImage ||
-                        transformedCustomer?.gender === "male"
+                        transformedCustomer?.gender === "male" 
                           ? defaultImage.menDefaultImgUrl
                           : transformedCustomer?.gender === "female"
                           ? defaultImage.femaleDefaultImgUrl
+                          : transformedCustomer?.gender === "others"
+                          ? defaultImage.menDefaultImgUrl 
                           : ""
                       }
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
