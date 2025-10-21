@@ -36,7 +36,7 @@ const CustomerPersonalisation = () => {
             value !== undefined &&
             name !== 'periodValue';
         })
-        .map(([name, value]) => ({ name, value }));
+        .map(([name, value]) => ({ name, value: typeof value === "string" ? value.trim() : value }));
 
       // Prepare the request payload
       const payload = {
@@ -64,7 +64,7 @@ const CustomerPersonalisation = () => {
         }
       });
 
-      console.log('API Payload:', payload);
+      // console.log('API Payload:', payload);
 
       const response = await api.post('/api/personilizationInsights', payload);
 
