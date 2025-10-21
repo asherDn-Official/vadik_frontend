@@ -105,7 +105,7 @@ const ExcelImport = ({ retailerId, onImportSuccess, onClose }) => {
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error || 
                           "Error importing Excel file";
-      showToast(errorMessage, "error");
+      showToast(errorMessage, "error",{ autoClose: false });
     } finally {
       setIsUploading(false);
     }

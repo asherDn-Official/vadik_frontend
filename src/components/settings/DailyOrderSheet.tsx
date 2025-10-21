@@ -4,9 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import showToast from "../../utils/ToastNotification";
-import ExcelImport from "./ExcelImport.jsx";
 import api from "../../api/apiconfig";
-
 
 
 const useOutsideClick = (callback) => {
@@ -30,7 +28,6 @@ const useOutsideClick = (callback) => {
 
 const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
   // Add this state for Excel import
-  const [showExcelImport, setShowExcelImport] = useState(false);
   const {
     register,
     handleSubmit,
@@ -560,14 +557,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
 
         <div className="flex gap-3">
           {/* Excel Import Button */}
-          <button
-            type="button"
-            onClick={() => setShowExcelImport(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-          >
-            <Upload size={16} />
-            Import Excel
-          </button>
+
 
           <button
             onClick={onNewOrder}
@@ -1199,14 +1189,6 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
         </div>
       </form>
 
-      {/* Excel Import Modal */}
-      {showExcelImport && (
-        <ExcelImport
-          retailerId={retailerId}
-          onImportSuccess={handleImportSuccess}
-          onClose={() => setShowExcelImport(false)}
-        />
-      )}
     </div>
   );
 };

@@ -13,6 +13,7 @@ import { format, parseISO } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../../api/apiconfig";
+import ExcelImport from "./ExcelImport";
 
 const DailyBillingUpdate = () => {
   const [retailerId, setRetailerId] = useState(() => {
@@ -35,7 +36,7 @@ const DailyBillingUpdate = () => {
     totalPages: 1,
     totalDocs: 0,
   });
-    
+  const [showExcelImport, setShowExcelImport] = useState(false);
 
   // Fetch billing data with date range
   const fetchBillingData = async () => {
@@ -242,10 +243,14 @@ const DailyBillingUpdate = () => {
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <div className="flex gap-2">
-            {/* <button className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors whitespace-nowrap">
+            <button
+              type="button"
+              onClick={() => setShowExcelImport(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+            >
               <Upload size={16} />
-              Import
-            </button> */}
+              Import Excel
+            </button>
             <button
               onClick={handleNewOrder}
               className="flex items-center gap-2 px-4 py-2 border border-pink-600 text-pink-600 rounded-md hover:bg-pink-50 transition-colors whitespace-nowrap"
@@ -401,6 +406,15 @@ const DailyBillingUpdate = () => {
           </>
         )}
       </div>
+
+      
+     {showExcelImport && (
+        <ExcelImport
+          retailerId={retailerId}
+          // onImportSuccess={handleImportSuccess}
+          onClose={() => setShowExcelImport(false)}
+        />
+      )}
     </div>
   );
 };
