@@ -29,6 +29,7 @@ const CustomerPersonalisation = () => {
 
       // Prepare filters array - exclude period-related filters
       const filtersArray = Object.entries(filters)
+      
         .filter(([name, value]) => {
           // Exclude periodValue and any other period-related fields
           return value !== "" &&

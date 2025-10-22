@@ -91,6 +91,9 @@ const FilterPanel = ({
         const response = await api.get(
           `/api/customer-preferences/${retailerId}`
         );
+
+        const getSource = await api.get('/api/retailer/getSource');
+
         const apiData = response.data;
 
         const mergedData = {
@@ -109,7 +112,7 @@ const FilterPanel = ({
           mobileNumber: { type: "number" },
           gender: ["Male", "Female", "Others"],
           firstVisit: { type: "date" },
-          source: ["walk-in","website","social-media","others"],
+          source: getSource?.data?.data,
           isActive: ['true', 'false'],
         };
 
