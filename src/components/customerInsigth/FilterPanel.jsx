@@ -250,6 +250,7 @@ const FilterPanel = ({
             dateFormat="dd/MM/yyyy"
             placeholderText="Select date"
             className=" w-full p-2 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
+            maxDate={new Date()}
             isClearable={false}
           />
 
