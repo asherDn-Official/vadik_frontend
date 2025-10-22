@@ -42,56 +42,56 @@ const RolesAndPermissions = () => {
   const AddEmployeeForm = ({ setCurrentView, fetchStaff }) => {
     const [permissions, setPermissions] = useState([
       {
-        "module": "dashboard",
+        "module": "Dashboard",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "customers",
+        "module": "Customer Profile",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "personalisation",
+        "module": "Personalisation Insight",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "customerOpportunities",
+        "module": "Customer Opportunities",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "performance",
+        "module": "Performance Tracking",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "integration",
+        "module": "Integration Management",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "kyc",
+        "module": "Quick Search",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "settings",
+        "module": "Settings",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
@@ -523,56 +523,56 @@ const RolesAndPermissions = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [permissions, setPermissions] = useState([
       {
-        "module": "dashboard",
+        "module": "Dashboard",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "customers",
+        "module": "Customer Profile",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "personalisation",
+        "module": "Personalisation Insight",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "customerOpportunities",
+        "module": "Customer Opportunities",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "performance",
+        "module": "Performance Tracking",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "integration",
+        "module": "Integration Management",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "kyc",
+        "module": "Quick Search",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "settings",
+        "module": "Settings",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
@@ -591,63 +591,63 @@ const RolesAndPermissions = () => {
 
         // Initialize permissions based on selected user
         const defaultPerms = [
-          {
-            "module": "dashboard",
-            "canCreate": false,
-            "canRead": false,
-            "canUpdate": false,
-            "canDelete": false
-          },
-          {
-            "module": "customers",
-            "canCreate": false,
-            "canRead": false,
-            "canUpdate": false,
-            "canDelete": false
-          },
-          {
-            "module": "personalisation",
-            "canCreate": false,
-            "canRead": false,
-            "canUpdate": false,
-            "canDelete": false
-          },
-          {
-            "module": "customerOpportunities",
-            "canCreate": false,
-            "canRead": false,
-            "canUpdate": false,
-            "canDelete": false
-          },
-          {
-            "module": "performance",
-            "canCreate": false,
-            "canRead": false,
-            "canUpdate": false,
-            "canDelete": false
-          },
-          {
-            "module": "integration",
-            "canCreate": false,
-            "canRead": false,
-            "canUpdate": false,
-            "canDelete": false
-          },
-          {
-            "module": "kyc",
-            "canCreate": false,
-            "canRead": false,
-            "canUpdate": false,
-            "canDelete": false
-          },
-          {
-            "module": "settings",
-            "canCreate": false,
-            "canRead": false,
-            "canUpdate": false,
-            "canDelete": false
-          }
-        ];
+      {
+        "module": "Dashboard",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "Customer Profile",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "Personalisation Insight",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "Customer Opportunities",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "Performance Tracking",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "Integration Management",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "Quick Search",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      },
+      {
+        "module": "Settings",
+        "canCreate": false,
+        "canRead": false,
+        "canUpdate": false,
+        "canDelete": false
+      }
+    ]
 
         if (selectedUser.permissions) {
           selectedUser.permissions.forEach(userPerm => {
