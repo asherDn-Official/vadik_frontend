@@ -709,7 +709,7 @@ const CustomerDetails = ({
                         isEditing={isEditing}
                       />
                       <FieldItem
-                        label="Customer ID"
+                        label="Vadik ID"
                         name="customerId"
                         defaultValue={transformedCustomer?.customerId}
                         value={formData?.basic?.customerId}
