@@ -59,6 +59,7 @@ const Login = () => {
           localStorage.setItem("retailerId", data.retailer._id);
           localStorage.setItem("email", data.retailer.email);
         } else if (loginType === "staff" && data.staff?._id) {
+          navigate("/dashboard")
           localStorage.setItem("retailerId", data.staff.retailerId);
           localStorage.setItem("email", data.staff.email);
           localStorage.setItem("place_id", data.staff.placeId);
