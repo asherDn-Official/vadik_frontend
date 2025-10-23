@@ -345,7 +345,7 @@ const MyProfile = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block text-sm text-[#31316680]">
-                  Store Name
+                  Business Name
                 </label>
                 <input
                   type="text"
