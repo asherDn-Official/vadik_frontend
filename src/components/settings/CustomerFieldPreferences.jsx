@@ -5,10 +5,10 @@ import api from "../../api/apiconfig";
 import { X } from "lucide-react";
 
 const CustomerFieldPreferences = () => {
-  const [activeTab, setActiveTab] = useState("Basic Details");
+  const [activeTab, setActiveTab] = useState("Advance Details");
   const [fields, setFields] = useState({
-    "Basic Details": [],
     "Advance Details": [],
+    "Additional Details": [],
     "Advance Privacy": [],
   });
   const [isEditingField, setIsEditingField] = useState(false);
@@ -30,8 +30,8 @@ const CustomerFieldPreferences = () => {
 
   // Map UI tab names to API field names
   const tabToApiFieldMap = {
-    "Basic Details": "additionalData",
     "Advance Details": "advancedDetails",
+    "Additional Details": "additionalData",
     "Advance Privacy": "advancedPrivacyDetails"
   };
 
@@ -79,8 +79,8 @@ const CustomerFieldPreferences = () => {
       if (response.data) {
         setPreferenceId(response.data._id);
         setFields({
-          "Basic Details": response.data.additionalData || [],
           "Advance Details": response.data.advancedDetails || [],
+          "Additional Details": response.data.additionalData || [],
           "Advance Privacy": response.data.advancedPrivacyDetails || []
         });
       }
@@ -164,8 +164,8 @@ const CustomerFieldPreferences = () => {
 
     try {
       const payload = {
-        additionalData: updatedFields["Basic Details"],
         advancedDetails: updatedFields["Advance Details"],
+        additionalData: updatedFields["Additional Details"],
         advancedPrivacyDetails: updatedFields["Advance Privacy"]
       };
 
