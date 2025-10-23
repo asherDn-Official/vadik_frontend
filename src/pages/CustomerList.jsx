@@ -214,7 +214,7 @@ const CustomerList = () => {
                             {customer.firstname}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
-                            {customer.lastname}
+                            {customer.lastname || '-'}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
                             {formatIndianMobile(customer.mobileNumber)}
