@@ -7,7 +7,6 @@ import "react-datepicker/dist/react-datepicker.css";
 import { useForm } from "react-hook-form";
 import { Search, SearchX } from "lucide-react";
 
-
 const KYCPage = () => {
   const [searchType, setSearchType] = useState("phone");
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,17 +29,24 @@ const KYCPage = () => {
     maxAmount: "",
     dateFrom: "",
     dateTo: "",
-    productName: ""
+    productName: "",
   });
 
   const searchOptions = [
     { key: "phone", label: "Phone" },
     { key: "name", label: "Name" },
     { key: "email", label: "Email" },
-    { key: "customerId", label: "Vadik Id" }
+    { key: "customerId", label: "Vadik Id" },
   ];
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue, clearErrors } = useForm({ mode: "onChange" });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+    clearErrors,
+  } = useForm({ mode: "onChange" });
 
   const getValidationRules = () => {
     switch (searchType) {
@@ -52,19 +58,28 @@ const KYCPage = () => {
       case "name":
         return {
           required: "Name is required",
-          pattern: { value: /^[A-Za-z ]+$/, message: "Only letters and spaces" },
+          pattern: {
+            value: /^[A-Za-z ]+$/,
+            message: "Only letters and spaces",
+          },
           maxLength: { value: 15, message: "Max length 15" },
         };
       case "email":
         return {
           required: "Email is required",
-          pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Invalid email" },
+          pattern: {
+            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+            message: "Invalid email",
+          },
         };
       case "customerId":
         return {
           required: "Customer ID is required",
-          pattern: { value: /^VID-[A-Z0-9]{8}$/, message: "Format VID-XXXXXXXX with uppercase letters and digits" },
-          maxLength: { value: 12, message: "Max length 12" }
+          pattern: {
+            value: /^VID-[A-Z0-9]{8}$/,
+            message: "Format VID-XXXXXXXX with uppercase letters and digits",
+          },
+          maxLength: { value: 12, message: "Max length 12" },
         };
       default:
         return {};
@@ -109,7 +124,7 @@ const KYCPage = () => {
           search: query,
           page: currentPage,
           limit: itemsPerPage,
-        }
+        },
       });
 
       const { customer, statistics, orderHistory } = response.data.data || {};
@@ -140,7 +155,7 @@ const KYCPage = () => {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
   const applyFilters = () => {
@@ -154,7 +169,7 @@ const KYCPage = () => {
       maxAmount: "",
       dateFrom: "",
       dateTo: "",
-      productName: ""
+      productName: "",
     });
     fetchCustomerData(searchQuery);
   };
@@ -215,24 +230,38 @@ const KYCPage = () => {
     }
   }, [currentPage, itemsPerPage]);
 
-  const filteredOrders = orderHistory.filter(order => {
+  const filteredOrders = orderHistory.filter((order) => {
     // Apply filters
-    if (filters.minAmount && order.orderSummary.grandTotal < parseFloat(filters.minAmount)) {
+    if (
+      filters.minAmount &&
+      order.orderSummary.grandTotal < parseFloat(filters.minAmount)
+    ) {
       return false;
     }
-    if (filters.maxAmount && order.orderSummary.grandTotal > parseFloat(filters.maxAmount)) {
+    if (
+      filters.maxAmount &&
+      order.orderSummary.grandTotal > parseFloat(filters.maxAmount)
+    ) {
       return false;
     }
-    if (filters.dateFrom && new Date(order.createdAt) < new Date(filters.dateFrom)) {
+    if (
+      filters.dateFrom &&
+      new Date(order.createdAt) < new Date(filters.dateFrom)
+    ) {
       return false;
     }
-    if (filters.dateTo && new Date(order.createdAt) > new Date(filters.dateTo)) {
+    if (
+      filters.dateTo &&
+      new Date(order.createdAt) > new Date(filters.dateTo)
+    ) {
       return false;
     }
-    if (filters.productName &&
-      !order.products.some(p =>
+    if (
+      filters.productName &&
+      !order.products.some((p) =>
         p.productName.toLowerCase().includes(filters.productName.toLowerCase())
-      )) {
+      )
+    ) {
       return false;
     }
     return true;
@@ -252,7 +281,7 @@ const KYCPage = () => {
 
       <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
         <div className="flex flex-wrap gap-2 mb-4">
-          {searchOptions.map(option => (
+          {searchOptions.map((option) => (
             <button
               key={option.key}
               onClick={() => {
@@ -261,10 +290,11 @@ const KYCPage = () => {
                 clearErrors("query");
                 setSearchQuery("");
               }}
-              className={`px-4 py-2 rounded-full capitalize ${searchType === option.key
-                ? "bg-[#313166] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+              className={`px-4 py-2 rounded-full capitalize ${
+                searchType === option.key
+                  ? "bg-[#313166] text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
               {option.label}
             </button>
@@ -276,7 +306,13 @@ const KYCPage = () => {
             <input
               type={searchType === "email" ? "email" : "text"}
               inputMode={searchType === "phone" ? "numeric" : undefined}
-              maxLength={searchType === "name" ? 15 : searchType === "customerId" ? 12 : undefined}
+              maxLength={
+                searchType === "name"
+                  ? 15
+                  : searchType === "customerId"
+                  ? 12
+                  : undefined
+              }
               placeholder={`Search by ${searchType}...`}
               {...register("query", getValidationRules())}
               onChange={(e) => {
@@ -290,10 +326,14 @@ const KYCPage = () => {
                 setValue("query", value, { shouldValidate: true });
                 setSearchQuery(value);
               }}
-              className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.query ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                errors.query ? "border-red-400" : "border-gray-300"
+              }`}
             />
             {errors.query && (
-              <p className="text-red-600 text-sm mt-1">{errors.query.message}</p>
+              <p className="text-red-600 text-sm mt-1">
+                {errors.query.message}
+              </p>
             )}
           </div>
           {/* <button
@@ -311,7 +351,9 @@ const KYCPage = () => {
       {error && (
         <div className="p-4 mb-6 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
           <SearchX className="w-5 h-5 text-red-700" />
-          <div className="text-red-700">Customer not found for this retailer</div>
+          <div className="text-red-700">
+            Customer not found for this retailer
+          </div>
         </div>
       )}
 
@@ -330,18 +372,24 @@ const KYCPage = () => {
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="border-r border-gray-200 pr-6">
-                <h2 className="text-lg font-semibold text-[#313166] mb-4">Customer Details</h2>
+                <h2 className="text-lg font-semibold text-[#313166] mb-4">
+                  Customer Details
+                </h2>
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-gray-500">Name</p>
-                    <p className="font-medium">{customerData.firstname} {customerData.lastname}</p>
+                    <p className="font-medium">
+                      {customerData.firstname} {customerData.lastname}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Mobile</p>
-                    <p className="font-medium">{formatPhone(customerData.mobileNumber)}</p>
+                    <p className="font-medium">
+                      {formatPhone(customerData.mobileNumber)}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Customer ID</p>
+                    <p className="text-sm text-gray-500">Vadik ID</p>
                     <p className="font-medium">{customerData.customerId}</p>
                   </div>
                   <div>
@@ -350,11 +398,21 @@ const KYCPage = () => {
                       {formatDate(customerData.firstVisit)}
                     </p>
                   </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Vadik ID</p>
+                    <p className="font-medium">{customerData.customerId}</p>
+                  </div>
+                   <div>
+                    <p className="text-sm text-gray-500">Loyality Point</p>
+                    <p className="font-medium">{customerData.loyaltyPoints}</p>
+                  </div>
                 </div>
               </div>
 
               <div className="border-r border-gray-200 pr-6">
-                <h2 className="text-lg font-semibold text-[#313166] mb-4">Shopping Statistics</h2>
+                <h2 className="text-lg font-semibold text-[#313166] mb-4">
+                  Shopping Statistics
+                </h2>
                 {statistics ? (
                   <div className="space-y-3">
                     <div>
@@ -363,15 +421,21 @@ const KYCPage = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Total Spend</p>
-                      <p className="font-medium">₹{statistics.totalSpend.toFixed(2)}</p>
+                      <p className="font-medium">
+                        ₹{statistics.totalSpend.toFixed(2)}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Avg. Purchase</p>
-                      <p className="font-medium">₹{statistics.averagePurchase.toFixed(2)}</p>
+                      <p className="font-medium">
+                        ₹{statistics.averagePurchase.toFixed(2)}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Highest Purchase</p>
-                      <p className="font-medium">₹{statistics.highestPurchase.toFixed(2)}</p>
+                      <p className="font-medium">
+                        ₹{statistics.highestPurchase.toFixed(2)}
+                      </p>
                     </div>
                   </div>
                 ) : (
@@ -380,10 +444,14 @@ const KYCPage = () => {
               </div>
 
               <div>
-                <h2 className="text-lg font-semibold text-[#313166] mb-4">Favorites</h2>
+                <h2 className="text-lg font-semibold text-[#313166] mb-4">
+                  Favorites
+                </h2>
                 {statistics?.mostPurchasedProduct ? (
                   <div>
-                    <p className="text-sm text-gray-500">Most Purchased Product</p>
+                    <p className="text-sm text-gray-500">
+                      Most Purchased Product
+                    </p>
                     <p className="font-medium">
                       {statistics.mostPurchasedProduct.name}
                       (x{statistics.mostPurchasedProduct.quantity})
@@ -405,7 +473,11 @@ const KYCPage = () => {
               >
                 <FiFilter className="mr-2" />
                 Filters
-                {showFilters ? <FiChevronUp className="ml-1" /> : <FiChevronDown className="ml-1" />}
+                {showFilters ? (
+                  <FiChevronUp className="ml-1" />
+                ) : (
+                  <FiChevronDown className="ml-1" />
+                )}
               </button>
 
               <div className="flex items-center gap-2">
@@ -429,7 +501,9 @@ const KYCPage = () => {
             {showFilters && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4 pt-4 border-t border-gray-200">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Min Amount</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Min Amount
+                  </label>
                   <input
                     type="number"
                     name="minAmount"
@@ -441,7 +515,9 @@ const KYCPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Max Amount</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Max Amount
+                  </label>
                   <input
                     type="number"
                     name="maxAmount"
@@ -473,15 +549,12 @@ const KYCPage = () => {
                   />
                 </div>
 
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     To Date
                   </label>
                   <DatePicker
-                    selected={
-                      filters.dateTo ? new Date(filters.dateTo) : null
-                    }
+                    selected={filters.dateTo ? new Date(filters.dateTo) : null}
                     onChange={(date) => {
                       const formatted = date
                         ? new Intl.DateTimeFormat("en-GB").format(date) // dd/MM/yyyy
@@ -496,7 +569,9 @@ const KYCPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Product Name
+                  </label>
                   <input
                     type="text"
                     name="productName"
@@ -528,7 +603,9 @@ const KYCPage = () => {
           {/* Order History Section */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="p-6">
-              <h2 className="text-lg font-semibold text-[#313166] mb-4">Order History</h2>
+              <h2 className="text-lg font-semibold text-[#313166] mb-4">
+                Order History
+              </h2>
 
               {filteredOrders.length > 0 ? (
                 <>
@@ -536,16 +613,28 @@ const KYCPage = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Order ID
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Products
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Quantity
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Amount
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredOrders.map(order => (
+                        {filteredOrders.map((order) => (
                           <tr key={order._id}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {new Date(order.createdAt).toLocaleDateString()}
@@ -566,16 +655,22 @@ const KYCPage = () => {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {order.products.reduce((sum, product) => sum + product.quantity, 0)}
+                              {order.products.reduce(
+                                (sum, product) => sum + product.quantity,
+                                0
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               ₹{order.orderSummary.grandTotal.toFixed(2)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 text-xs rounded-full ${order.orderSummary.paymentStatus === 'Paid'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                                }`}>
+                              <span
+                                className={`px-2 py-1 text-xs rounded-full ${
+                                  order.orderSummary.paymentStatus === "Paid"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-yellow-100 text-yellow-800"
+                                }`}
+                              >
                                 {order.orderSummary.paymentStatus}
                               </span>
                             </td>
@@ -590,10 +685,11 @@ const KYCPage = () => {
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className={`px-4 py-2 rounded-lg ${currentPage === 1
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                        }`}
+                      className={`px-4 py-2 rounded-lg ${
+                        currentPage === 1
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      }`}
                     >
                       Previous
                     </button>
@@ -603,31 +699,35 @@ const KYCPage = () => {
                         Page {currentPage} of {totalPages}
                       </span>
 
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
+                      {Array.from(
+                        { length: Math.min(5, totalPages) },
+                        (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
 
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => handlePageChange(pageNum)}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${currentPage === pageNum
-                              ? "bg-[#313166] text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => handlePageChange(pageNum)}
+                              className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                currentPage === pageNum
+                                  ? "bg-[#313166] text-white"
+                                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                               }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        }
+                      )}
 
                       {totalPages > 5 && (
                         <span className="px-2 text-gray-500">...</span>
@@ -637,10 +737,11 @@ const KYCPage = () => {
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className={`px-4 py-2 rounded-lg ${currentPage === totalPages
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                        }`}
+                      className={`px-4 py-2 rounded-lg ${
+                        currentPage === totalPages
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      }`}
                     >
                       Next
                     </button>
@@ -651,7 +752,9 @@ const KYCPage = () => {
                   <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                     <FiX className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No orders found
+                  </h3>
                   <p className="text-gray-500 mb-4">
                     This customer doesn't have any orders matching your filters.
                   </p>
@@ -742,6 +845,5 @@ const SkeletonLoader = () => (
     </div>
   </div>
 );
-
 
 export default KYCPage;
