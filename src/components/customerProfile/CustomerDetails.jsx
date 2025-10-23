@@ -594,17 +594,17 @@ const CustomerDetails = ({
 
   return (
     <div className="flex-1 flex flex-col bg-[#F4F5F9]">
-      <div className="pr-6 pt-6 pl-6">
+      <div className="pr-2 pt-2 pl-2">
         <h1 className="text-xl font-semibold text-gray-900">
           Customer Profile
         </h1>
       </div>
 
-      <div className="flex-1 p-6 overflow-y-auto">
+      <div className="flex-1 p-2 overflow-y-auto">
         <form onSubmit={onSubmit}>
           <div className="rounded-lg shadow-sm">
             {/* Profile Header */}
-            <div className="p-6 border-b border-gray-200 mb-5 bg-white rounded-[20px]   ">
+            <div className="p-2 border-b border-gray-200 mb-3 bg-white rounded-[20px]   ">
               <div className="flex items-start justify-between ">
                 <div className="flex items-center w-full">
                   <div className="relative">
@@ -625,7 +625,7 @@ const CustomerDetails = ({
                   </div>
                   {/* Basic Details Sections */}
                   <div className="ml-14 w-full">
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between mb-1">
                       <h2 className=" font-bold text-[18px] leading-[30px] tracking-normal text-[#313166] underline font-poppins">
                         Basic Details
                       </h2>
@@ -661,7 +661,7 @@ const CustomerDetails = ({
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10 gap-y-6 mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10  mb-1">
                       <FieldItem
                         label="First Name"
                         name="firstname"
@@ -804,9 +804,9 @@ const CustomerDetails = ({
             </div>
 
             {/* Main Content */}
-            <div className="bg-white p-8 rounded-[20px]">
+            <div className="bg-white p-2 rounded-[20px]">
               {/* Tabs */}
-              <div className="border-b border-gray-200 bg-white pb-5">
+              <div className="border-b border-gray-200 bg-white pb-2">
                 <nav className="flex space-x-8 px-6">
                   {tabs.map((tab) => (
                     <button
@@ -842,9 +842,9 @@ const CustomerDetails = ({
               </div>
 
               {/* Tab Content */}
-              <div className="p-2 bg-white pt-5">
+              <div className="p-2 bg-white pt-2">
                 {activeTab === "Advanced Details" && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-2">
                     {transformedCustomer?.advancedDetails &&
                       renderDynamicFields(
                         transformedCustomer?.advancedDetails,
@@ -854,7 +854,7 @@ const CustomerDetails = ({
                 )}
 
                 {activeTab === "Advanced Privacy" && (
-                  <div className="space-y-6">
+                  <div className="space-y-2">
                     {transformedCustomer?.advancedPrivacyDetails &&
                       renderDynamicFields(
                         transformedCustomer?.advancedPrivacyDetails,
@@ -869,7 +869,7 @@ const CustomerDetails = ({
                 )}
 
                 {activeTab === "Additional Details" && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-2">
                     {transformedCustomer?.additionalData &&
                     Object.keys(transformedCustomer.additionalData).length >
                       0 ? (
