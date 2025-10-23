@@ -22,9 +22,9 @@ function LoyaltyPoint() {
   } = useForm({
     defaultValues: {
       isActive: false,
-      minOrderAmount: 0,
-      maxDiscountPercent: 0,
-      tiers: [{ pointsRequired: 0, discountAmount: 0 }]
+      minOrderAmount: "",
+      maxDiscountPercent: "",
+      tiers: [{ pointsRequired: "", discountAmount: "" }]
     },
     mode: "onChange"
   });
@@ -176,10 +176,10 @@ function LoyaltyPoint() {
                       control={control}
                       rules={{
                         required: "Minimum order amount is required",
-                        min: {
-                          value: 500,
-                          message: "Minimum order amount must be at least ₹500"
-                        }
+                        // min: {
+                        //   value: 500,
+                        //   message: "Minimum order amount must be at least ₹500"
+                        // }
                       }}
                       render={({ field }) => (
                         <>
@@ -289,10 +289,10 @@ function LoyaltyPoint() {
                                 value: 1,
                                 message: "Points must be at least 1"
                               },
-                              max: {
-                                value: 1000000000,
-                                message: "Points cannot exceed 1 billion"
-                              }
+                              // max: {
+                              //   value: 1000000000,
+                              //   message: "Points cannot exceed 1 billion"
+                              // }
                             }}
                             render={({ field }) => (
                               <>
