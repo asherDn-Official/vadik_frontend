@@ -37,7 +37,7 @@ const KYCPage = () => {
     { key: "phone", label: "Phone" },
     { key: "name", label: "Name" },
     { key: "email", label: "Email" },
-    { key: "customerId", label: "Customer ID" }
+    { key: "customerId", label: "Vadik Id" }
   ];
 
   const { register, handleSubmit, formState: { errors }, reset, setValue, clearErrors } = useForm({ mode: "onChange" });
