@@ -69,7 +69,7 @@ const CustomerSidebar = () => {
     }, 500);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchTerm, retailerId, customerId]);
+  }, [searchTerm, retailerId]);
 
   const handleCustomerSelect = (customer) => {
     setSelectedCustomer(customer);
