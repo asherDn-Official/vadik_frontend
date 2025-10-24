@@ -9,6 +9,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import menDefaultUrl from '../../../public/assets/men.png'
+import womenDefaultUrl from '../../../public/assets/women.png'
+
 import * as yup from "yup";
 import {
   extractFieldValue,
@@ -552,9 +555,9 @@ const CustomerDetails = ({
 
   const defaultImage = {
     menDefaultImgUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg",
+      menDefaultUrl,
     femaleDefaultImgUrl:
-      "https://cdn.vectorstock.com/i/750p/96/68/female-silhouette-head-vector-32409668.avif",
+      womenDefaultUrl,
   };
 
   const isCustomerActive = transformedCustomer?.isActive === true;
@@ -610,7 +613,7 @@ const CustomerDetails = ({
                 <div className="flex items-center w-full">
                   <div className="relative">
                     <div
-                      className={`absolute top-8 right-1 flex items-center gap-2 px-3 py-1 rounded-full shadow-sm border ${statusBadgeClasses}`}
+                      className={`absolute top-2 right-1 flex items-center gap-2 px-3 py-1 rounded-full shadow-sm border ${statusBadgeClasses}`}
                     >
                       <span
                         className={`w-2.5 h-2.5 rounded-full ${statusIndicatorColor}`}
@@ -631,12 +634,12 @@ const CustomerDetails = ({
                           : ""
                       }
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
-                      className="w-[148px] h-[212px] rounded-lg  object-contain"
+                      className="w-[228px] h-[232px] rounded-lg  "
                     />
                   </div>
                   {/* Basic Details Sections */}
-                  <div className="ml-14 w-full">
-                    <div className="flex items-center justify-between mb-1">
+                  <div className="ml-14 w-full  ">
+                    <div className="flex items-center justify-between mb-1 ">
                       <h2 className="font-bold text-[18px] leading-[30px] tracking-normal text-[#313166] font-poppins border-b-[1.5px] border-[#313166] pb-[2px]">
                         Basic Details
                       </h2>
