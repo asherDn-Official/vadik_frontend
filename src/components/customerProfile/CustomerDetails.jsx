@@ -29,7 +29,6 @@ import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import api from "../../api/apiconfig";
 
-
 const FieldItem = React.memo(
   ({
     label,
@@ -67,7 +66,8 @@ const FieldItem = React.memo(
       (isGender ? ["male", "female", "others"] : fieldData.options || []);
 
     // Get the actual value to display - prioritize props over fieldData
-    const actualValue = value !== undefined ? value : fieldData.value || defaultValue;
+    const actualValue =
+      value !== undefined ? value : fieldData.value || defaultValue;
 
     const handleInputChange = useCallback(
       (e) => {
@@ -93,11 +93,11 @@ const FieldItem = React.memo(
     // Debug logging (remove in production)
     useEffect(() => {
       if (fieldType === "options" && isEditing) {
-        console.log('Dropdown debug:', {
+        console.log("Dropdown debug:", {
           label,
           value: actualValue,
           options,
-          hasMatch: options.includes(actualValue)
+          hasMatch: options.includes(actualValue),
         });
       }
     }, [fieldType, isEditing, actualValue, options, label]);
@@ -451,14 +451,13 @@ const CustomerDetails = ({
     // "Referral",
   ];
 
-
   useEffect(() => {
     async function fetchSourceOptions() {
       try {
         const response = await api.get("/api/retailer/getSource");
         setSourceOptions(response.data.data);
       } catch (error) {
-         console.log(error)
+        console.log(error);
       }
     }
 
@@ -594,7 +593,6 @@ const CustomerDetails = ({
     }
   };
 
-
   return (
     <div className="flex-1 flex flex-col bg-[#F4F5F9]">
       <div className="pr-2 pt-2 pl-2">
@@ -614,7 +612,9 @@ const CustomerDetails = ({
                     <div
                       className={`absolute top-8 right-1 flex items-center gap-2 px-3 py-1 rounded-full shadow-sm border ${statusBadgeClasses}`}
                     >
-                      <span className={`w-2.5 h-2.5 rounded-full ${statusIndicatorColor}`}></span>
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full ${statusIndicatorColor}`}
+                      ></span>
                       <span className="text-xs font-semibold uppercase tracking-wide">
                         {statusLabel}
                       </span>
@@ -622,12 +622,12 @@ const CustomerDetails = ({
                     <img
                       src={
                         transformedCustomer?.profileImage ||
-                        transformedCustomer?.gender === "male" 
+                        transformedCustomer?.gender === "male"
                           ? defaultImage.menDefaultImgUrl
                           : transformedCustomer?.gender === "female"
                           ? defaultImage.femaleDefaultImgUrl
                           : transformedCustomer?.gender === "others"
-                          ? defaultImage.menDefaultImgUrl 
+                          ? defaultImage.menDefaultImgUrl
                           : ""
                       }
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
@@ -637,7 +637,7 @@ const CustomerDetails = ({
                   {/* Basic Details Sections */}
                   <div className="ml-14 w-full">
                     <div className="flex items-center justify-between mb-1">
-                      <h2 className=" font-bold text-[18px] leading-[30px] tracking-normal text-[#313166] underline font-poppins">
+                      <h2 className="font-bold text-[18px] leading-[30px] tracking-normal text-[#313166] font-poppins border-b-[1.5px] border-[#313166] pb-[2px]">
                         Basic Details
                       </h2>
                       {!isEditing ? (
@@ -794,8 +794,6 @@ const CustomerDetails = ({
                         customer={customer}
                         isEditing={isEditing}
                       /> */}
-
-
                     </div>
                   </div>
                 </div>
@@ -878,7 +876,7 @@ const CustomerDetails = ({
                       )
                     ) : (
                       <div className="col-span-2 text-center py-8 text-gray-500">
-                        No basic  data available
+                        No basic data available
                       </div>
                     )}
                   </div>

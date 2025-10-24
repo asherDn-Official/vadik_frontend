@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/apiconfig";
-import profileIcon from '../../../public/assets/user-in-cp.png'
+import profileIcon from "../../../public/assets/user-in-cp.png";
 import { formatIndianMobile } from "./formatIndianMobile";
 
 const CustomerSidebar = () => {
@@ -28,15 +28,13 @@ const CustomerSidebar = () => {
       setLoading(true);
       setError(null);
 
-      const response = await api.get(`/api/customers`,
-        {
-          params: {
-            retailerId,
-            search,
-            page,
-          },
-        }
-      );
+      const response = await api.get(`/api/customers`, {
+        params: {
+          retailerId,
+          search,
+          page,
+        },
+      });
 
       const { data, pagination } = response.data;
 
@@ -45,7 +43,9 @@ const CustomerSidebar = () => {
 
       // Auto-select current customer from URL if it exists in the list
       if (customerId && data.length > 0) {
-        const currentCustomer = data.find(customer => customer._id === customerId);
+        const currentCustomer = data.find(
+          (customer) => customer._id === customerId
+        );
         if (currentCustomer) {
           setSelectedCustomer(currentCustomer);
         }
@@ -75,9 +75,6 @@ const CustomerSidebar = () => {
     setSelectedCustomer(customer);
     navigate(`/customers/customer-profile/${customer._id}`);
   };
-
-
-   
 
   // Format customer name
   const formatName = (customer) => {
@@ -136,22 +133,23 @@ const CustomerSidebar = () => {
                   : "hover:bg-gray-50"
               }`}
             >
-              <div className="flex items-center">
-                <div className="w-10 h-10 flex items-center justify-center mr-3">
-                  <img
-                    src={profileIcon}
-                    alt={formatName(customer)}
-                    className="rounded-full"
-                  />
-                </div>
-                <div className="flex-1">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 flex items-center justify-center">
+                    <img
+                      src={profileIcon}
+                      alt={formatName(customer)}
+                      className="rounded-full w-6 h-6 object-cover"
+                    />
+                  </div>
+
                   <h3 className="font-[400] text-[18px] text-[#313166]">
                     {formatName(customer)}
                   </h3>
-                  <p className="font-[400] text-[15px] text-[#31316680]">
-                    {formatIndianMobile(customer.mobileNumber)}
-                  </p>
                 </div>
+                <p className="  font-[400] pl-8 text-[15px] text-[#31316680]">
+                  {formatIndianMobile(customer.mobileNumber)}
+                </p>
               </div>
             </div>
           ))
