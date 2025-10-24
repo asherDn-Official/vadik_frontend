@@ -562,6 +562,13 @@ const CustomerDetails = ({
       "https://cdn.vectorstock.com/i/750p/96/68/female-silhouette-head-vector-32409668.avif",
   };
 
+  const isCustomerActive = transformedCustomer?.isActive === true;
+  const statusLabel = isCustomerActive ? "Active" : "Inactive";
+  const statusIndicatorColor = isCustomerActive ? "bg-green-500" : "bg-red-500";
+  const statusBadgeClasses = isCustomerActive
+    ? "bg-green-50 text-green-700"
+    : "bg-red-50 text-red-700";
+
   const onSubmit = async (e) => {
     e.preventDefault();
 
@@ -608,6 +615,14 @@ const CustomerDetails = ({
               <div className="flex items-start justify-between ">
                 <div className="flex items-center w-full">
                   <div className="relative">
+                    <div
+                      className={`absolute top-8 right-1 flex items-center gap-2 px-3 py-1 rounded-full shadow-sm border ${statusBadgeClasses}`}
+                    >
+                      <span className={`w-2.5 h-2.5 rounded-full ${statusIndicatorColor}`}></span>
+                      <span className="text-xs font-semibold uppercase tracking-wide">
+                        {statusLabel}
+                      </span>
+                    </div>
                     <img
                       src={
                         transformedCustomer?.profileImage ||
@@ -770,7 +785,7 @@ const CustomerDetails = ({
                         isEditing={isEditing}
                       />
 
-                      <FieldItem
+                      {/* <FieldItem
                         label="Notifications status"
                         name="optinMessageSent"
                         defaultValue={
@@ -782,21 +797,9 @@ const CustomerDetails = ({
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
-                      />
+                      /> */}
 
-                      <FieldItem
-                        label="Status"
-                        name="isActive"
-                        defaultValue={
-                          transformedCustomer?.isActive === true
-                            ? "Active"
-                            : "InActive"
-                        }
-                        value={formData?.basic?.isActive}
-                        onChange={handleInputChange}
-                        customer={customer}
-                        isEditing={isEditing}
-                      />
+
                     </div>
                   </div>
                 </div>
