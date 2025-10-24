@@ -450,11 +450,7 @@ const CustomerDetails = ({
     "Advanced Privacy",
     // "Referral",
   ];
-  const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
-  const [recipientNumber, setRecipientNumber] = useState("");
-  const [messageType, setMessageType] = useState("birthday");
-  const [showPurchaseList, setShowPurchaseList] = useState(false);
-  const [showAllPurchases, setShowAllPurchases] = useState(false);
+
 
   useEffect(() => {
     async function fetchSourceOptions() {
