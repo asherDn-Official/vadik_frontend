@@ -448,7 +448,7 @@ const CustomerDetails = ({
     "Advanced Details",
     "Additional Details",
     "Advanced Privacy",
-    "Referral",
+    // "Referral",
   ];
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
   const [recipientNumber, setRecipientNumber] = useState("");
