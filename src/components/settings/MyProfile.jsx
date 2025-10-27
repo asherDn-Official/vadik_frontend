@@ -369,7 +369,7 @@ const MyProfile = () => {
                 <label className="block text-sm text-[#31316680]">Role</label>
                 <input
                   type="text"
-                  value="Retailer"
+                  value={auth.data.role}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166] bg-gray-100"
                   disabled
                 />
