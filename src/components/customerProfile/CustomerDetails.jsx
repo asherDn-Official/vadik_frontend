@@ -611,7 +611,7 @@ const CustomerDetails = ({
             <div className="p-2 border-b border-gray-200 mb-3 bg-white rounded-[20px]   ">
               <div className="flex items-start justify-between ">
                 <div className="flex items-center w-full">
-                  <div className="relative">
+                  <div className="relative pl-3">
                     <div
                       className={`absolute top-2 right-1 flex items-center gap-2 px-3 py-1 rounded-full shadow-sm border ${statusBadgeClasses}`}
                     >
@@ -634,7 +634,7 @@ const CustomerDetails = ({
                           : ""
                       }
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
-                      className="w-[228px] h-[232px] rounded-lg  "
+                      className="w-[228px] h-[232px] rounded-lg   "
                     />
                   </div>
                   {/* Basic Details Sections */}
