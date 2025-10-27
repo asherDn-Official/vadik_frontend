@@ -186,7 +186,6 @@ function LoyaltyPoint() {
                           <input
                             {...field}
                             type="number"
-                            min="500"
                             onChange={(e) => field.onChange(Number(e.target.value))}
                             className="w-full pl-8 pr-4 py-2 outline-none border border-gray-300 rounded-lg"
                             placeholder="Enter amount"
