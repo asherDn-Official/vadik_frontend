@@ -10,5 +10,5 @@ export function getModulePath(module) {
     settings: '/settings'
   };
   
-  return modulePathMap[module] || '/';
+  return modulePathMap[module] || '/dashboard';
 }
