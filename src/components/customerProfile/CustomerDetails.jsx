@@ -608,10 +608,10 @@ const CustomerDetails = ({
         <form onSubmit={onSubmit}>
           <div className="rounded-lg shadow-sm">
             {/* Profile Header */}
-            <div className="p-2 border-b border-gray-200 mb-3 bg-white rounded-[20px]   ">
+            <div className="p-2 border-b border-gray-200  bg-white rounded-[20px]   ">
               <div className="flex items-start justify-between ">
                 <div className="flex items-center w-full">
-                  <div className="relative pl-3">
+                  <div className="relative pl-4">
                     <div
                       className={`absolute top-2 right-1 flex items-center gap-2 px-3 py-1 rounded-full shadow-sm border ${statusBadgeClasses}`}
                     >
@@ -638,7 +638,7 @@ const CustomerDetails = ({
                     />
                   </div>
                   {/* Basic Details Sections */}
-                  <div className="ml-14 w-full  ">
+                  <div className="ml-8 w-full  ">
                     <div className="flex items-center justify-between mb-1 ">
                       <h2 className="font-bold text-[18px] leading-[30px] tracking-normal text-[#313166] font-poppins border-b-[1.5px] border-[#313166] pb-[2px]">
                         Basic Details
