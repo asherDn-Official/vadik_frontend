@@ -23,10 +23,10 @@ const CustomerOpportunities = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex justify-center mt-8 space-x-8">
+        <div className="mt-8 flex flex-wrap justify-center gap-4 md:gap-6 lg:gap-8">
           <button
             onClick={() => setActiveTab("engagement")}
-            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${
+            className={`flex w-full max-w-xs sm:w-auto items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
               activeTab === "engagement"
                 ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
@@ -47,7 +47,7 @@ const CustomerOpportunities = () => {
 
           <button
             onClick={() => setActiveTab("campaign")}
-            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${
+            className={`flex w-full max-w-xs sm:w-auto items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
               activeTab === "campaign"
                 ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
@@ -68,7 +68,7 @@ const CustomerOpportunities = () => {
 
           <button
             onClick={() => setActiveTab("customer-recommendation")}
-            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${
+            className={`flex w-full max-w-xs sm:w-auto items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
               activeTab === "customer-recommendation"
                 ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
@@ -89,7 +89,7 @@ const CustomerOpportunities = () => {
 
           <button
             onClick={() => setActiveTab("store-recommendation")}
-            className={`flex space-x-2 px-4 py-2 border rounded-lg transition-colors ${
+            className={`flex w-full max-w-xs sm:w-auto items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
               activeTab === "store-recommendation"
                 ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
                 : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"

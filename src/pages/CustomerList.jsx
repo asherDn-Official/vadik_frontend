@@ -121,24 +121,24 @@ const CustomerList = () => {
   }
 
   return (
-    <div className="flex h-screen bg-[#F4F5F9]">
+    <div className="flex min-h-screen bg-[#F4F5F9]">
       <div className="flex-1 flex flex-col overflow-hidden m-2 rounded-[20px]">
-        <div className="bg-white shadow-sm p-6">
-          <div className="flex justify-between items-center">
+        <div className="bg-white shadow-sm p-4 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-xl font-semibold text-gray-900">
               Customer List{" "}
               <span className="text-gray-500 font-normal">
                 ({pagination.totalItems})
               </span>
             </h1>
-            <div className="flex gap-4">
-              <div className="relative">
+            <div className="flex flex-wrap gap-3 sm:gap-4">
+              <div className="relative w-full sm:w-auto">
                 <input
                   type="text"
                   placeholder="Search by name, mobile or source"
                   defaultValue={searchTerm}
                   onChange={handleSearchChange}
-                  className="w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full sm:w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent"
                 />
                 <svg
                   className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
@@ -154,8 +154,8 @@ const CustomerList = () => {
                   />
                 </svg>
               </div>
-              <div >
-                <select name="" id="" class=" py-2 border px-5 border-gray-300 rounded-lg  outline-none" onChange={(e)=>setSource(e.target.value)}>
+              <div>
+                <select name="" id="" className="py-2 border px-5 border-gray-300 rounded-lg outline-none w-full sm:w-auto" onChange={(e)=>setSource(e.target.value)}>
                   <option value="">select source</option>
                   <option value="walk-in">walk-in</option>
                   <option value="website">website</option>
@@ -163,7 +163,7 @@ const CustomerList = () => {
                   <option value="others">others</option>
                 </select>
               </div>
-              <button onClick={handleAddNewCustomer} className="ml-4 bg-[#313166] text-white px-4 py-2 rounded-md">
+              <button onClick={handleAddNewCustomer} className="w-full sm:w-auto sm:ml-4 bg-[#313166] text-white px-4 py-2 rounded-md">
                 Add New Customer
               </button>
             </div>
@@ -183,70 +183,72 @@ const CustomerList = () => {
                     No customers found
                   </div>
                 ) : (
-                  <table className="min-w-full">
-                    <thead className="bg-gray-100 border-b border-gray-200">
-                      <tr className="">
-                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
-                          First Name
-                        </th>
-                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
-                          Last Name
-                        </th>
-                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
-                          Mobile Number
-                        </th>
-                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
-                          Source
-                        </th>
-                        <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {customers.map((customer) => (
-                        <tr
-                          key={customer._id}
-                          className="hover:bg-gray-50 cursor-pointer  divide-gray-200"
-                          onClick={() => handleCustomerClick(customer._id)}
-                        >
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
-                            {customer.firstname}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
-                            {customer.lastname || '-'}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
-                            {formatIndianMobile(customer.mobileNumber)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
-                            {customer.source}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
-                            <button
-                              className="text-gray-500 hover:text-gray-700"
-                              onClick={(e) => handleEditClick(e, customer._id)}
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                                />
-                              </svg>
-                            </button>
-                          </td>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead className="bg-gray-100 border-b border-gray-200">
+                        <tr className="">
+                          <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                            First Name
+                          </th>
+                          <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                            Last Name
+                          </th>
+                          <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                            Mobile Number
+                          </th>
+                          <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                            Source
+                          </th>
+                          <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {customers.map((customer) => (
+                          <tr
+                            key={customer._id}
+                            className="hover:bg-gray-50 cursor-pointer  divide-gray-200"
+                            onClick={() => handleCustomerClick(customer._id)}
+                          >
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
+                              {customer.firstname}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
+                              {customer.lastname || '-'}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
+                              {formatIndianMobile(customer.mobileNumber)}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
+                              {customer.source}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
+                              <button
+                                className="text-gray-500 hover:text-gray-700"
+                                onClick={(e) => handleEditClick(e, customer._id)}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                  />
+                                </svg>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </>
             )}
@@ -254,8 +256,8 @@ const CustomerList = () => {
         </div>
 
         {!loading && customers.length > 0 && (
-          <div className="bg-white border-t border-gray-200 px-6 py-3">
-            <div className="flex items-center justify-between">
+          <div className="bg-white border-t border-gray-200 px-4 py-3 sm:px-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-[#313166]">
                 Showing{" "}
                 {Math.min(
@@ -269,7 +271,7 @@ const CustomerList = () => {
                 )}{" "}
                 of {pagination.totalItems} results
               </div>
-              <div className="flex items-center space-x-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={pagination.currentPage === 1}
@@ -285,7 +287,7 @@ const CustomerList = () => {
                     <button
                       key={page}
                       onClick={() => handlePageChange(page)}
-                      className={`px-3 py-1 text-sm border rounded-md mx-1 ${pagination.currentPage === page
+                      className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === page
                         ? "bg-[#313166] text-white border-[#313166]"
                         : "bg-[#3131661A] text-[#313166] hover:bg-gray-100"
                         }`}

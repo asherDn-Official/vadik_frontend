@@ -23,11 +23,11 @@ navigate("/notifications");
     <div className="min-h-screen bg-gray-50">
       <div className=" ">
         <div className="bg-white px-2 py-2 sm:p-4">
-          <header className="flex justify-between items-center  sm:px-6 ">
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <h1 className="text-2xl font-semibold text-gray-800">
               Welcome, Admin
             </h1>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               <button className="text-gray-600 hover:text-gray-800" onClick={()=>gotoNotification()}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -52,7 +52,7 @@ navigate("/notifications");
         </div>
 
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 sm:p-4 max-w-[1600px] mx-auto ">
+        <div className="grid grid-cols-1 gap-3 p-4 sm:p-4 max-w-[1600px] mx-auto md:grid-cols-2">
           {/* First Column */}
           <div className="space-y-4">
             <CustomerProfileCollection />
