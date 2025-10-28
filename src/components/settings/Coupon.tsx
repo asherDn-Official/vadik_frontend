@@ -94,8 +94,8 @@ const CouponManagement = () => {
           .number()
           .typeError("Discount must be a number")
           .positive("Discount must be greater than 0")
-          .min(0, "Discount must be greater than or equal to 0")
-          .max(100, "Discount cannot exceed 100"),
+          .min(0, "Discount must be greater than or equal to 0"),
+          // .max(100, "Discount cannot exceed 100"),
       expiryDate: yup
         .string()
         .required("Expiry date is required")
