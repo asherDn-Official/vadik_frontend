@@ -11,8 +11,6 @@ import {
 } from "recharts";
 import menDefaultUrl from "../../../public/assets/men.png";
 import womenDefaultUrl from "../../../public/assets/women.png";
-import allowNotificationIconUrl from "../../../public/assets/allowNotification.png";
-import loyalityIconUrl from "../../../public/assets/loyality.png";
 
 import * as yup from "yup";
 import {
@@ -474,6 +472,7 @@ const CustomerDetails = ({
     "Advanced Details",
     "Additional Details",
     "Advanced Privacy",
+    "Activity",
     // "Referral",
   ];
 
@@ -791,46 +790,6 @@ const CustomerDetails = ({
                         isEditing={isEditing}
                         isEditable={isEditing}
                       />
-
-                      {/* Add this additionaly only can see not ediable */}
-
-                      <FieldItem
-                        label="Loyalty Points"
-                        name="loyaltyPoints"
-                        defaultValue={transformedCustomer?.loyaltyPoints ?? ""}
-                        value={formData?.basic?.loyaltyPoints}
-                        onChange={handleInputChange}
-                        customer={customer}
-                        isEditing={isEditing}
-                      />
-
-                      <FieldItem
-                        label="Allow Notifications"
-                        name="isOptedIn"
-                        defaultValue={
-                          transformedCustomer?.isOptedIn === true
-                            ? "Opt-In"
-                            : "Opt-Out"
-                        }
-                        value={formData?.basic?.isOptedIn}
-                        onChange={handleInputChange}
-                        customer={customer}
-                        isEditing={isEditing}
-                      />
-
-                      {/* <FieldItem
-                        label="Notifications status"
-                        name="optinMessageSent"
-                        defaultValue={
-                          transformedCustomer?.optinMessageSent === true
-                            ? "Sent"
-                            : "Not Sent"
-                        }
-                        value={formData?.basic?.optinMessageSent}
-                        onChange={handleInputChange}
-                        customer={customer}
-                        isEditing={isEditing}
-                      /> */}
                     </div>
                   </div>
                 </div>
@@ -916,6 +875,37 @@ const CustomerDetails = ({
                         No basic data available
                       </div>
                     )}
+                  </div>
+                )}
+
+                {activeTab === "Activity" && (
+                  <div className="space-y-3">
+                    <DetailItem
+                      label="Loyalty Points"
+                      name="loyaltyPoints"
+                      defaultValue={transformedCustomer?.loyaltyPoints ?? ""}
+                      section="basic"
+                      isEditable={false}
+                      value={formData?.basic?.loyaltyPoints}
+                      onChange={handleInputChange}
+                      customer={customer}
+                      isEditing={isEditing}
+                    />
+                    <DetailItem
+                      label="Allow Notifications"
+                      name="isOptedIn"
+                      defaultValue={
+                        transformedCustomer?.isOptedIn === true
+                          ? "Opt-In"
+                          : "Opt-Out"
+                      }
+                      section="basic"
+                      isEditable={false}
+                      value={formData?.basic?.isOptedIn}
+                      onChange={handleInputChange}
+                      customer={customer}
+                      isEditing={isEditing}
+                    />
                   </div>
                 )}
 
