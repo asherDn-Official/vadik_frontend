@@ -9,8 +9,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import menDefaultUrl from '../../../public/assets/men.png'
-import womenDefaultUrl from '../../../public/assets/women.png'
+import menDefaultUrl from "../../../public/assets/men.png";
+import womenDefaultUrl from "../../../public/assets/women.png";
+import allowNotificationIconUrl from "../../../public/assets/allowNotification.png";
+import loyalityIconUrl from "../../../public/assets/loyality.png";
 
 import * as yup from "yup";
 import {
@@ -575,10 +577,8 @@ const CustomerDetails = ({
   );
 
   const defaultImage = {
-    menDefaultImgUrl:
-      menDefaultUrl,
-    femaleDefaultImgUrl:
-      womenDefaultUrl,
+    menDefaultImgUrl: menDefaultUrl,
+    femaleDefaultImgUrl: womenDefaultUrl,
   };
 
   const isCustomerActive = transformedCustomer?.isActive === true;
@@ -624,7 +624,7 @@ const CustomerDetails = ({
           Customer Profile
         </h1>
       </div>
- 
+
       <div className="flex-1 px-8 overflow-y-auto">
         <form onSubmit={onSubmit}>
           <div className="rounded-lg shadow-sm">
@@ -699,25 +699,30 @@ const CustomerDetails = ({
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10  ">
                       <div className="mb-4">
                         <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">
-                           Name
+                          Name
                         </p>
                         {isEditing ? (
                           <div>
                             <input
                               type="text"
                               value={customerName}
-                              onChange={(e) => handleCustomerNameChange(e.target.value)}
+                              onChange={(e) =>
+                                handleCustomerNameChange(e.target.value)
+                              }
                               className={`text-sm font-medium text-gray-900 border ${
-                                errors?.basic?.firstname || errors?.basic?.lastname
+                                errors?.basic?.firstname ||
+                                errors?.basic?.lastname
                                   ? "border-red-500"
                                   : "border-gray-300"
                               } rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
                               placeholder="Enter customer name"
                               autoComplete="off"
                             />
-                            {(errors?.basic?.firstname || errors?.basic?.lastname) && (
+                            {(errors?.basic?.firstname ||
+                              errors?.basic?.lastname) && (
                               <p className="text-red-500 text-xs mt-1">
-                                {errors?.basic?.firstname || errors?.basic?.lastname}
+                                {errors?.basic?.firstname ||
+                                  errors?.basic?.lastname}
                               </p>
                             )}
                           </div>
