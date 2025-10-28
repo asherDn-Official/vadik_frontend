@@ -142,7 +142,7 @@ const CustomerSidebar = () => {
       <div
         ref={listRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto"
+        className="flex-1 overflow-y-auto customer-sidebar-scroll"
       >
         {loading ? (
           <div className="p-4 space-y-4">
