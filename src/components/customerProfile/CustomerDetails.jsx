@@ -355,7 +355,6 @@ const CustomerDetails = ({
       },
     }));
 
-    // Mark field as touched
     setTouched((prev) => ({
       ...prev,
       [section]: {
@@ -364,7 +363,6 @@ const CustomerDetails = ({
       },
     }));
 
-    // Clear error for this field
     setErrors((prev) => ({
       ...prev,
       [section]: {
@@ -373,6 +371,29 @@ const CustomerDetails = ({
       },
     }));
   }, []);
+
+  const customerName = useMemo(() => {
+    const first = formData?.basic?.firstname?.trim() || "";
+    const last = formData?.basic?.lastname?.trim() || "";
+    return [first, last].filter(Boolean).join(" ");
+  }, [formData?.basic?.firstname, formData?.basic?.lastname]);
+
+  const handleCustomerNameChange = useCallback(
+    (value) => {
+      const normalized = value.replace(/\s+/g, " ").trim();
+      if (!normalized) {
+        handleInputChange("basic", "firstname", "");
+        handleInputChange("basic", "lastname", "");
+        return;
+      }
+      const parts = normalized.split(" ");
+      const first = parts.shift() || "";
+      const last = parts.join(" ");
+      handleInputChange("basic", "firstname", first);
+      handleInputChange("basic", "lastname", last);
+    },
+    [handleInputChange]
+  );
 
   // Validate form in real-time
   useEffect(() => {
@@ -676,28 +697,36 @@ const CustomerDetails = ({
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10  ">
-                      <FieldItem
-                        label="First Name"
-                        name="firstname"
-                        defaultValue={transformedCustomer?.firstname}
-                        isEditable={isEditing}
-                        value={formData?.basic?.firstname}
-                        onChange={handleInputChange}
-                        customer={customer}
-                        isEditing={isEditing}
-                        error={errors?.basic?.firstname}
-                      />
-                      <FieldItem
-                        label="Last Name"
-                        name="lastname"
-                        defaultValue={transformedCustomer?.lastname}
-                        isEditable={isEditing}
-                        value={formData?.basic?.lastname}
-                        onChange={handleInputChange}
-                        customer={customer}
-                        isEditing={isEditing}
-                        error={errors?.basic?.lastname}
-                      />
+                      <div className="mb-4">
+                        <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">
+                           Name
+                        </p>
+                        {isEditing ? (
+                          <div>
+                            <input
+                              type="text"
+                              value={customerName}
+                              onChange={(e) => handleCustomerNameChange(e.target.value)}
+                              className={`text-sm font-medium text-gray-900 border ${
+                                errors?.basic?.firstname || errors?.basic?.lastname
+                                  ? "border-red-500"
+                                  : "border-gray-300"
+                              } rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
+                              placeholder="Enter customer name"
+                              autoComplete="off"
+                            />
+                            {(errors?.basic?.firstname || errors?.basic?.lastname) && (
+                              <p className="text-red-500 text-xs mt-1">
+                                {errors?.basic?.firstname || errors?.basic?.lastname}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="font-medium text-[16px] leading-[30px] tracking-normal text-[#313166]">
+                            {customerName || "-"}
+                          </p>
+                        )}
+                      </div>
                       <FieldItem
                         label="Mobile Number"
                         name="mobileNumber"
