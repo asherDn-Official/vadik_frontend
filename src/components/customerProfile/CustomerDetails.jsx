@@ -11,6 +11,8 @@ import {
 } from "recharts";
 import menDefaultUrl from "../../../public/assets/men.png";
 import womenDefaultUrl from "../../../public/assets/women.png";
+import allowNotificationIconUrl from "../../../public/assets/allowNotification.png";
+import loyalityIconUrl from "../../../public/assets/loyality.png";
 
 import * as yup from "yup";
 import {
@@ -331,7 +333,10 @@ const CustomerDetails = ({
           firstVisit: transformedCustomer?.firstVisit
             ? new Date(transformedCustomer.firstVisit).toLocaleDateString()
             : "",
-          loyaltyPoints: transformedCustomer?.loyaltyPoints || "",
+          loyaltyPoints: transformedCustomer?.loyaltyPoints ?? "",
+          isOptedIn: transformedCustomer?.isOptedIn ?? null,
+          optinMessageSent: transformedCustomer?.optinMessageSent ?? null,
+          gender: transformedCustomer?.gender || "",
           isActive: transformedCustomer?.isActive || "",
         },
         additionalData: transformedCustomer?.additionalData || {},
@@ -339,8 +344,6 @@ const CustomerDetails = ({
         advancedPrivacyDetails:
           transformedCustomer?.advancedPrivacyDetails || {},
       };
-      // Include gender if present on transformed customer
-      newFormData.basic.gender = transformedCustomer?.gender || "";
       setFormData(newFormData);
     }
   }, [transformedCustomer]);
@@ -888,7 +891,16 @@ const CustomerDetails = ({
                       isEditable={false}
                       value={formData?.basic?.loyaltyPoints}
                       onChange={handleInputChange}
-                      customer={customer}
+                      customer={{
+                        ...customer,
+                        basic: {
+                          ...customer?.basic,
+                          loyaltyPoints: {
+                            iconUrl: allowNotificationIconUrl,
+                            value: formData?.basic?.loyaltyPoints
+                          }
+                        }
+                      }}
                       isEditing={isEditing}
                     />
                     <DetailItem
@@ -903,7 +915,16 @@ const CustomerDetails = ({
                       isEditable={false}
                       value={formData?.basic?.isOptedIn}
                       onChange={handleInputChange}
-                      customer={customer}
+                      customer={{
+                        ...customer,
+                        basic: {
+                          ...customer?.basic,
+                          isOptedIn: {
+                            iconUrl: allowNotificationIconUrl,
+                            value: formData?.basic?.isOptedIn
+                          }
+                        }
+                      }}
                       isEditing={isEditing}
                     />
                   </div>
