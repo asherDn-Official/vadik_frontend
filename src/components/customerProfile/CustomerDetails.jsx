@@ -520,7 +520,7 @@ const CustomerDetails = ({
             >
               <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
                 <img
-                  src="../assets/score-icon.png"
+                  src="../ssets/score-icon.png"
                   alt={key}
                   className="w-12 h-12"
                 />
@@ -598,20 +598,20 @@ const CustomerDetails = ({
 
   return (
     <div className="flex-1 flex flex-col bg-[#F4F5F9]">
-      <div className="pr-2 pt-2 pl-2">
+      <div className=" py-2  px-8">
         <h1 className="text-xl font-semibold text-gray-900">
           Customer Profile
         </h1>
       </div>
-
-      <div className="flex-1 p-2 overflow-y-auto">
+ 
+      <div className="flex-1 px-8 overflow-y-auto">
         <form onSubmit={onSubmit}>
           <div className="rounded-lg shadow-sm">
             {/* Profile Header */}
-            <div className="p-2 border-b border-gray-200  bg-white rounded-[20px]   ">
+            <div className=" mb-3  border-b border-gray-200  bg-white rounded-[20px]   ">
               <div className="flex items-start justify-between ">
                 <div className="flex items-center w-full">
-                  <div className="relative pl-4">
+                  <div className="relative pl-5">
                     <div
                       className={`absolute top-2 right-1 flex items-center gap-2 px-3 py-1 rounded-full shadow-sm border ${statusBadgeClasses}`}
                     >
@@ -638,8 +638,8 @@ const CustomerDetails = ({
                     />
                   </div>
                   {/* Basic Details Sections */}
-                  <div className="ml-8 w-full  ">
-                    <div className="flex items-center justify-between mb-1 ">
+                  <div className="ml-8 w-full  pr-8 pt-3">
+                    <div className="flex items-center justify-between mb-1  ">
                       <h2 className="font-bold text-[18px] leading-[30px] tracking-normal text-[#313166] font-poppins border-b-[1.5px] border-[#313166] pb-[2px]">
                         Basic Details
                       </h2>
@@ -675,7 +675,7 @@ const CustomerDetails = ({
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10  mb-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10  ">
                       <FieldItem
                         label="First Name"
                         name="firstname"
@@ -806,14 +806,14 @@ const CustomerDetails = ({
             {/* Main Content */}
             <div className="bg-white p-2 rounded-[20px]">
               {/* Tabs */}
-              <div className="border-b border-gray-200 bg-white pb-2">
-                <nav className="flex space-x-8 px-6">
+              <div className="border-b  border-gray-200  py-2 ">
+                <nav className="flex space-x-8  px-4 pb-2 ">
                   {tabs.map((tab) => (
                     <button
                       key={tab}
                       type="button"
                       onClick={() => setActiveTab(tab)}
-                      className={`py-4 px-4 border-b-2 font-medium rounded-[10px] text-sm ${
+                      className={`py-3 px-4 border-b-2 font-medium rounded-[10px] text-sm ${
                         activeTab === tab
                           ? "bg-[#EC396F1A] text-[#EC396F]"
                           : "border-transparent text-gray-500 hover:text-[#EC396F] hover:bg-[#EC396F1A]"
@@ -842,9 +842,9 @@ const CustomerDetails = ({
               </div>
 
               {/* Tab Content */}
-              <div className="p-2 bg-white pt-2">
+              <div className=" px-5 py-4  max-w-2xl   bg-white">
                 {activeTab === "Advanced Details" && (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {transformedCustomer?.advancedDetails &&
                       renderDynamicFields(
                         transformedCustomer?.advancedDetails,

@@ -121,7 +121,7 @@ const DetailItem = React.memo(({
   ));
 
   return (
-    <div className="flex items-center justify-between p-4 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
+    <div className="flex items-center justify-between px-2 py-2 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
       <div className="flex items-center gap-x-3">
         {fieldData.iconUrl && (
           <img src={fieldData.iconUrl} alt={label} className="w-12 h-12" />
