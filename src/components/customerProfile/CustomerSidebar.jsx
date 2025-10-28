@@ -113,7 +113,7 @@ const CustomerSidebar = () => {
     <div className="w-80 bg-white flex flex-col m-2 rounded-[10px]">
       <div className="p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Customer List ({pagination?.totalItems})
+          Customer List <span className=" text-[#31316699] ">({pagination?.totalItems})</span>
         </h2>
         <div className="relative">
           <input
