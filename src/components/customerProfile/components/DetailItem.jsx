@@ -127,7 +127,7 @@ const DetailItem = React.memo(({
           <img src={fieldData.iconUrl} alt={label} className="w-12 h-12" />
         )}
         <div className="flex-1">
-          <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">{label}</p>
+          <p className="font-normal text-[14px] leading-[20px] tracking-normal text-[#31316699]">{label}</p>
           {isEditing && isEditable ? (
             fieldType === 'options' ? (
               <div>
