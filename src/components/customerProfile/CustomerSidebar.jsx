@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/apiconfig";
 import profileIcon from "../../../public/assets/user-in-cp.png";
@@ -11,6 +10,7 @@ const CustomerSidebar = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
   });
@@ -21,11 +21,17 @@ const CustomerSidebar = () => {
   });
   const navigate = useNavigate();
   const { customerId } = useParams();
+  const listRef = useRef(null);
+  const skeletonItems = Array.from({ length: 6 });
 
   // Fetch customers data
-  const fetchCustomers = async (page = 1, search = "") => {
+  const fetchCustomers = async (page = 1, search = "", append = false) => {
     try {
-      setLoading(true);
+      if (append) {
+        setIsLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       const response = await api.get(`/api/customers`, {
@@ -36,29 +42,34 @@ const CustomerSidebar = () => {
         },
       });
 
-      const { data, pagination } = response.data;
+      const { data, pagination: paginationData } = response.data;
 
-      setCustomers(data);
-      setPagination(pagination);
+      setCustomers((prevCustomers) =>
+        append ? [...prevCustomers, ...data] : data
+      );
+      setPagination(paginationData);
 
-      // Auto-select current customer from URL if it exists in the list
-      if (customerId && data.length > 0) {
-        const currentCustomer = data.find(
-          (customer) => customer._id === customerId
-        );
-        if (currentCustomer) {
-          setSelectedCustomer(currentCustomer);
+      if (!append) {
+        if (customerId && data.length > 0) {
+          const currentCustomer = data.find(
+            (customer) => customer._id === customerId
+          );
+          if (currentCustomer) {
+            setSelectedCustomer(currentCustomer);
+          }
+        } else if (data.length > 0 && !selectedCustomer && !customerId) {
+          setSelectedCustomer(data[0]);
         }
-      }
-      // Only auto-select first customer if no customer is currently selected and no customerId in URL
-      else if (data.length > 0 && !selectedCustomer && !customerId) {
-        setSelectedCustomer(data[0]);
       }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch customers");
       console.error("Error fetching customers:", err);
     } finally {
-      setLoading(false);
+      if (append) {
+        setIsLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -74,6 +85,23 @@ const CustomerSidebar = () => {
   const handleCustomerSelect = (customer) => {
     setSelectedCustomer(customer);
     navigate(`/customers/customer-profile/${customer._id}`);
+  };
+
+  const loadMoreCustomers = () => {
+    if (
+      pagination.currentPage < pagination.totalPages &&
+      !loading &&
+      !isLoadingMore
+    ) {
+      fetchCustomers(pagination.currentPage + 1, searchTerm, true);
+    }
+  };
+
+  const handleScroll = (event) => {
+    const { scrollTop, scrollHeight, clientHeight } = event.target;
+    if (scrollHeight - scrollTop <= clientHeight + 50) {
+      loadMoreCustomers();
+    }
   };
 
   // Format customer name
@@ -111,10 +139,24 @@ const CustomerSidebar = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div
+        ref={listRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto"
+      >
         {loading ? (
-          <div className="flex justify-center items-center h-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+          <div className="p-4 space-y-4">
+            {skeletonItems.map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-gray-200"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-32"></div>
+                    <div className="h-3 bg-gray-100 rounded w-24"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="p-4 text-red-500 text-center">{error}</div>
@@ -123,65 +165,59 @@ const CustomerSidebar = () => {
             No customers found
           </div>
         ) : (
-          customers.map((customer) => (
-            <div
-              key={customer._id}
-              onClick={() => handleCustomerSelect(customer)}
-              className={`p-4 border-b border-gray-100 cursor-pointer transition-colors duration-200 ${
-                selectedCustomer?._id === customer._id
-                  ? "bg-[#3131660F] border-l-4  rounded-sm"
-                  : "hover:bg-gray-50"
-              }`}
-            >
-              <div className="flex flex-col">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 flex items-center justify-center">
-                    <img
-                      src={profileIcon}
-                      alt={formatName(customer)}
-                      className="rounded-full w-6 h-6 object-cover"
-                    />
-                  </div>
+          <>
+            {customers.map((customer) => (
+              <div
+                key={customer._id}
+                onClick={() => handleCustomerSelect(customer)}
+                className={`p-4 border-b border-gray-100 cursor-pointer transition-colors duration-200 ${
+                  selectedCustomer?._id === customer._id
+                    ? "bg-[#3131660F] border-l-4  rounded-sm"
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 flex items-center justify-center">
+                      <img
+                        src={profileIcon}
+                        alt={formatName(customer)}
+                        className="rounded-full w-6 h-6 object-cover"
+                      />
+                    </div>
 
-                  <h3 className="font-[400] text-[18px] text-[#313166]">
-                    {formatName(customer)}
-                  </h3>
+                    <h3 className="font-[400] text-[18px] text-[#313166]">
+                      {formatName(customer)}
+                    </h3>
+                  </div>
+                  <p className="  font-[400] pl-8 text-[15px] text-[#31316680]">
+                    {formatIndianMobile(customer.mobileNumber)}
+                  </p>
                 </div>
-                <p className="  font-[400] pl-8 text-[15px] text-[#31316680]">
-                  {formatIndianMobile(customer.mobileNumber)}
-                </p>
               </div>
-            </div>
-          ))
+            ))}
+            {isLoadingMore && (
+              <div className="p-4 space-y-4">
+                {skeletonItems.slice(0, 2).map((_, index) => (
+                  <div
+                    key={`loading-${index}`}
+                    className="animate-pulse"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full bg-gray-200"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-32"></div>
+                        <div className="h-3 bg-gray-100 rounded w-24"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Pagination controls */}
-      {pagination.totalPages > 1 && (
-        <div className="flex justify-between items-center p-4 border-t border-gray-200">
-          <button
-            onClick={() =>
-              fetchCustomers(pagination?.currentPage - 1, searchTerm)
-            }
-            disabled={pagination.currentPage === 1}
-            className="px-3 py-1 rounded-md border disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span>
-            Page {pagination.currentPage} of {pagination.totalPages}
-          </span>
-          <button
-            onClick={() =>
-              fetchCustomers(pagination.currentPage + 1, searchTerm)
-            }
-            disabled={pagination.currentPage === pagination.totalPages}
-            className="px-3 py-1 rounded-md border disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
     </div>
   );
 };
