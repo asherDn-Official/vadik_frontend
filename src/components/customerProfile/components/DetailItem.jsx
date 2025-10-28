@@ -120,6 +120,9 @@ const DetailItem = React.memo(({
     />
   ));
 
+  const displayValue = formatDisplayValue();
+  const displayContent = displayValue === null || displayValue === undefined || displayValue === '' ? '\u00A0' : displayValue;
+
   return (
     <div className="flex items-center justify-between px-2 py-2 rounded-[14px]" style={{ border: "1px solid #3131661A" }}>
       <div className="flex items-center gap-x-3">
@@ -177,7 +180,7 @@ const DetailItem = React.memo(({
             )
           ) : (
             <p className="font-medium text-[16px] leading-[30px] tracking-normal text-[#313166]">
-              {formatDisplayValue()}
+              {displayContent}
             </p>
           )}
         </div>
