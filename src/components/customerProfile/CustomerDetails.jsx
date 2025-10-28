@@ -631,10 +631,10 @@ const CustomerDetails = ({
         <form onSubmit={onSubmit}>
           <div className="rounded-lg shadow-sm">
             {/* Profile Header */}
-            <div className=" mb-3  border-b border-gray-200  bg-white rounded-[20px]   ">
+            <div className=" mb-3  border-b border-gray-200  bg-white rounded-[20px]  p-4 ">
               <div className="flex items-start justify-between ">
                 <div className="flex items-center w-full">
-                  <div className="relative pl-5">
+                  <div className="relative pl-2">
                     <div
                       className={`absolute top-2 right-1 flex items-center gap-2 px-3 py-1 rounded-full shadow-sm border ${statusBadgeClasses}`}
                     >
@@ -657,7 +657,7 @@ const CustomerDetails = ({
                           : ""
                       }
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
-                      className="w-[228px] h-[232px] rounded-lg   "
+                      className="w-[202px] h-[192px] rounded-lg   "
                     />
                   </div>
                   {/* Basic Details Sections */}
@@ -768,6 +768,16 @@ const CustomerDetails = ({
                         isEditing={isEditing}
                       />
                       <FieldItem
+                        label="Gender"
+                        name="gender"
+                        defaultValue={transformedCustomer?.gender || ""}
+                        value={formData?.basic?.gender}
+                        onChange={handleInputChange}
+                        customer={customer}
+                        isEditing={isEditing}
+                        isEditable={isEditing}
+                      />
+                      <FieldItem
                         label="First Visit"
                         name="firstVisit"
                         defaultValue={
@@ -781,17 +791,6 @@ const CustomerDetails = ({
                         onChange={handleInputChange}
                         customer={customer}
                         isEditing={isEditing}
-                      />
-
-                      <FieldItem
-                        label="Gender"
-                        name="gender"
-                        defaultValue={transformedCustomer?.gender || ""}
-                        value={formData?.basic?.gender}
-                        onChange={handleInputChange}
-                        customer={customer}
-                        isEditing={isEditing}
-                        isEditable={isEditing}
                       />
                     </div>
                   </div>
@@ -851,11 +850,13 @@ const CustomerDetails = ({
 
                 {activeTab === "Advanced Privacy" && (
                   <div className="space-y-2">
-                    {transformedCustomer?.advancedPrivacyDetails &&
-                      renderDynamicFields(
-                        transformedCustomer?.advancedPrivacyDetails,
-                        "advancedPrivacyDetails"
-                      )}
+                    <div className="grid grid-cols-2 gap-3">
+                      {transformedCustomer?.advancedPrivacyDetails &&
+                        renderDynamicFields(
+                          transformedCustomer?.advancedPrivacyDetails,
+                          "advancedPrivacyDetails"
+                        )}
+                    </div>
 
                     {/* Purchase History Section */}
                     <PurchaseHistory
@@ -882,7 +883,7 @@ const CustomerDetails = ({
                 )}
 
                 {activeTab === "Activity" && (
-                  <div className="space-y-3">
+                  <div className=" grid grid-cols-2 gap-3">
                     <DetailItem
                       label="Loyalty Points"
                       name="loyaltyPoints"
@@ -897,9 +898,9 @@ const CustomerDetails = ({
                           ...customer?.basic,
                           loyaltyPoints: {
                             iconUrl: allowNotificationIconUrl,
-                            value: formData?.basic?.loyaltyPoints
-                          }
-                        }
+                            value: formData?.basic?.loyaltyPoints,
+                          },
+                        },
                       }}
                       isEditing={isEditing}
                     />
@@ -921,9 +922,9 @@ const CustomerDetails = ({
                           ...customer?.basic,
                           isOptedIn: {
                             iconUrl: allowNotificationIconUrl,
-                            value: formData?.basic?.isOptedIn
-                          }
-                        }
+                            value: formData?.basic?.isOptedIn,
+                          },
+                        },
                       }}
                       isEditing={isEditing}
                     />
@@ -1017,19 +1018,19 @@ const CustomerDetails = ({
 
             {/* Edit Mode Buttons */}
             {isEditing && (
-              <div className="bg-white border-t border-gray-200 p-6 flex justify-end space-x-4">
+              <div className="bg-white border-t border-gray-200 p-6 flex justify-center space-x-4">
                 <button
                   type="button"
                   onClick={onCancel}
                   disabled={isLoading}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="px-6 py-2 border border-pink-600 rounded-md text-sm font-medium text-pink-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-6 py-2 bg-pink-600 text-white rounded-lg text-sm font-medium hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 disabled:opacity-50 flex items-center"
+                  className="px-6 py-2 bg-pink-600 text-white rounded-md text-sm font-medium hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 disabled:opacity-50 flex items-center"
                 >
                   {isLoading ? (
                     <>
