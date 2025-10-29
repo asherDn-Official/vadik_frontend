@@ -8,7 +8,6 @@ import "react-datepicker/dist/react-datepicker.css";
 import CouponPopup from "./CouponPopup";
 import Quiz from "./Quiz";
 
-
 const ScratchCard = ({ offer, title, CoupanName }) => {
   const canvasRef = useRef(null);
   const [isScratching, setIsScratching] = useState(false);
@@ -16,7 +15,7 @@ const ScratchCard = ({ offer, title, CoupanName }) => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
 
     // Set canvas size
     canvas.width = 256;
@@ -29,13 +28,13 @@ const ScratchCard = ({ offer, title, CoupanName }) => {
   const drawScratchSurface = (ctx) => {
     // Create gradient background
     const gradient = ctx.createLinearGradient(0, 0, 256, 256);
-    gradient.addColorStop(0, '#ec4899');
-    gradient.addColorStop(1, '#db2777');
+    gradient.addColorStop(0, "#ec4899");
+    gradient.addColorStop(1, "#db2777");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 256, 256);
 
     // Add polka dots
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
     for (let i = 0; i < 50; i++) {
       const x = (i % 8) * 32 + 16;
       const y = Math.floor(i / 8) * 32 + 16;
@@ -45,7 +44,7 @@ const ScratchCard = ({ offer, title, CoupanName }) => {
     }
 
     // Add gift icon placeholder
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
     ctx.beginPath();
     ctx.arc(128, 128, 32, 0, 2 * Math.PI);
     ctx.fill();
@@ -58,7 +57,7 @@ const ScratchCard = ({ offer, title, CoupanName }) => {
 
     return {
       x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY
+      y: (e.clientY - rect.top) * scaleY,
     };
   };
 
@@ -69,15 +68,15 @@ const ScratchCard = ({ offer, title, CoupanName }) => {
 
     return {
       x: (e.touches[0].clientX - rect.left) * scaleX,
-      y: (e.touches[0].clientY - rect.top) * scaleY
+      y: (e.touches[0].clientY - rect.top) * scaleY,
     };
   };
 
   const scratch = (x, y) => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
 
-    ctx.globalCompositeOperation = 'destination-out';
+    ctx.globalCompositeOperation = "destination-out";
     ctx.beginPath();
     ctx.arc(x, y, 20, 0, 2 * Math.PI);
     ctx.fill();
@@ -88,7 +87,7 @@ const ScratchCard = ({ offer, title, CoupanName }) => {
 
   const checkScratchedArea = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const pixels = imageData.data;
 
@@ -99,7 +98,8 @@ const ScratchCard = ({ offer, title, CoupanName }) => {
       }
     }
 
-    const scratchedPercentage = (transparentPixels / (canvas.width * canvas.height)) * 100;
+    const scratchedPercentage =
+      (transparentPixels / (canvas.width * canvas.height)) * 100;
 
     if (scratchedPercentage > 30 && !isRevealed) {
       setIsRevealed(true);
@@ -166,10 +166,8 @@ const ScratchCard = ({ offer, title, CoupanName }) => {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{ touchAction: 'none' }}
+        style={{ touchAction: "none" }}
       />
-
-
     </div>
   );
 };
@@ -214,12 +212,12 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
     return date.toISOString().split("T")[0];
   };
 
-
   // Fetch dropdown data
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
-        const res = await api.get("/api/coupons/all?fully=true");
+        const today = new Date().toISOString();
+        const res = await api.get(`/api/coupons/all?fully=true&expiryDate=${today}`);
         const list = res?.data?.data || [];
         setCoupons(list);
       } catch (e) {
@@ -235,7 +233,8 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const res = await api.get("/api/quiz?fully=true");
+        const today = new Date().toISOString();
+        const res = await api.get(`/api/quiz?fully=true&expiryDate=${today}`);
         const list = Array.isArray(res?.data)
           ? res.data
           : res?.data?.docs || [];
@@ -248,7 +247,6 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
     };
     fetchQuizzes();
   }, [isQuizePopupOpen]);
-
 
   // Prefill from campaign prop (edit mode)
   useEffect(() => {
@@ -454,7 +452,9 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
                 </label>
                 <select
                   {...register("allocatedQuizCampainId", {
-                    required: campaign?._id ? "Select a quiz to update" : "Quiz selection is required",
+                    required: campaign?._id
+                      ? "Select a quiz to update"
+                      : "Quiz selection is required",
                   })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
                   disabled={loadingQuizzes}
@@ -465,7 +465,11 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
                   {!loadingQuizzes &&
                     quizzes?.map((q) => (
                       <option key={q._id} value={q._id}>
-                        {q.campaignName || q.quizName || q.name || q.title || "Untitled"}
+                        {q.campaignName ||
+                          q.quizName ||
+                          q.name ||
+                          q.title ||
+                          "Untitled"}
                       </option>
                     ))}
                 </select>
@@ -507,39 +511,54 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`px-6 py-2 rounded-lg transition-colors text-white ${isSubmitting
-                  ? "bg-pink-400 cursor-not-allowed"
-                  : "bg-pink-600 hover:bg-pink-700"
-                  }`}
+                className={`px-6 py-2 rounded-lg transition-colors text-white ${
+                  isSubmitting
+                    ? "bg-pink-400 cursor-not-allowed"
+                    : "bg-pink-600 hover:bg-pink-700"
+                }`}
               >
                 {campaign?._id
                   ? isSubmitting
                     ? "Updating..."
                     : "Update Scratch Card"
                   : isSubmitting
-                    ? "Creating..."
-                    : "Create Scratch Card"}
+                  ? "Creating..."
+                  : "Create Scratch Card"}
               </button>
             </div>
           </div>
         </div>
       </form>
       {isCouponPopupOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50" onClick={(e) => setIsCouponPopupOpen(false)}>
-          <div className="bg-white rounded-lg  w-full max-w-2xl max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50"
+          onClick={(e) => setIsCouponPopupOpen(false)}
+        >
+          <div
+            className="bg-white rounded-lg  w-full max-w-2xl max-h-[90vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <CouponPopup onClose={() => setIsCouponPopupOpen(false)} />
           </div>
         </div>
       )}
 
       {isQuizePopupOpen && (
-        <div onClick={() => setIsQuizePopupOpen(false)} className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50">
-          <div className="bg-white rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <Quiz backButton={true} onClose={() => setIsQuizePopupOpen(false)} />
+        <div
+          onClick={() => setIsQuizePopupOpen(false)}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50"
+        >
+          <div
+            className="bg-white rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Quiz
+              backButton={true}
+              onClose={() => setIsQuizePopupOpen(false)}
+            />
           </div>
         </div>
       )}
-
     </div>
   );
 };
