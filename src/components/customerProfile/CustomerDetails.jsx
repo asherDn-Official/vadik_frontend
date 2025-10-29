@@ -897,7 +897,7 @@ const CustomerDetails = ({
                         basic: {
                           ...customer?.basic,
                           loyaltyPoints: {
-                            iconUrl: allowNotificationIconUrl,
+                            iconUrl: loyalityIconUrl,
                             value: formData?.basic?.loyaltyPoints,
                           },
                         },
