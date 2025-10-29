@@ -35,8 +35,6 @@ const KYCPage = () => {
   const searchOptions = [
     { key: "phone", label: "Phone" },
     { key: "name", label: "Name" },
-    { key: "email", label: "Email" },
-    { key: "customerId", label: "Vadik Id" },
   ];
 
   const {
@@ -63,23 +61,6 @@ const KYCPage = () => {
             message: "Only letters and spaces",
           },
           maxLength: { value: 15, message: "Max length 15" },
-        };
-      case "email":
-        return {
-          required: "Email is required",
-          pattern: {
-            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-            message: "Invalid email",
-          },
-        };
-      case "customerId":
-        return {
-          required: "Customer ID is required",
-          pattern: {
-            value: /^VID-[A-Z0-9]{8}$/,
-            message: "Format VID-XXXXXXXX with uppercase letters and digits",
-          },
-          maxLength: { value: 12, message: "Max length 12" },
         };
       default:
         return {};
@@ -304,24 +285,15 @@ const KYCPage = () => {
         <form className="flex gap-2" onSubmit={handleSubmit(onSubmit)}>
           <div className="flex-1">
             <input
-              type={searchType === "email" ? "email" : "text"}
+              type="text"
               inputMode={searchType === "phone" ? "numeric" : undefined}
-              maxLength={
-                searchType === "name"
-                  ? 15
-                  : searchType === "customerId"
-                  ? 12
-                  : undefined
-              }
+              maxLength={searchType === "name" ? 15 : undefined}
               placeholder={`Search by ${searchType}...`}
               {...register("query", getValidationRules())}
               onChange={(e) => {
                 let value = e.target.value;
                 if (searchType === "phone") {
                   value = value.replace(/\D/g, "");
-                }
-                if (searchType === "customerId") {
-                  value = value.toUpperCase().replace(/[^A-Z0-9-]/g, "");
                 }
                 setValue("query", value, { shouldValidate: true });
                 setSearchQuery(value);
@@ -362,7 +334,7 @@ const KYCPage = () => {
           <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
             <Search className="w-8 h-8 text-gray-400" />
           </div>
-          <p>Start by searching a customer using phone, name, or email.</p>
+          <p>Start by searching a customer using phone or name.</p>
         </div>
       )}
 
