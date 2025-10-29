@@ -801,7 +801,7 @@ const CustomerDetails = ({
             {/* Main Content */}
             <div className="bg-white p-2 rounded-[20px]">
               {/* Tabs */}
-              <div className="border-b  border-gray-200  py-2 ">
+              <div className="border-b  border-gray-200  py-3 ">
                 <nav className="flex space-x-8  px-4 pb-2 ">
                   {tabs.map((tab) => (
                     <button
