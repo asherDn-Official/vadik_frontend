@@ -35,6 +35,7 @@ const KYCPage = () => {
   const searchOptions = [
     { key: "phone", label: "Phone" },
     { key: "name", label: "Name" },
+    { key: "vadiId", label: "Vadik ID" },
   ];
 
   const {
@@ -62,6 +63,8 @@ const KYCPage = () => {
           },
           maxLength: { value: 15, message: "Max length 15" },
         };
+      case "vadiId":
+        return {}; // No validation for Vadik ID
       default:
         return {};
     }
@@ -266,9 +269,9 @@ const KYCPage = () => {
             <button
               key={option.key}
               onClick={() => {
+                reset({ query: "" }, { keepErrors: false });
+                clearErrors();
                 setSearchType(option.key);
-                reset({ query: "" });
-                clearErrors("query");
                 setSearchQuery("");
               }}
               className={`px-4 py-2 rounded-full capitalize ${
@@ -285,9 +288,10 @@ const KYCPage = () => {
         <form className="flex gap-2" onSubmit={handleSubmit(onSubmit)}>
           <div className="flex-1">
             <input
+              key={searchType}
               type="text"
               inputMode={searchType === "phone" ? "numeric" : undefined}
-              maxLength={searchType === "name" ? 15 : undefined}
+              maxLength={searchType === "name" ? 35 : undefined}
               placeholder={`Search by ${searchType}...`}
               {...register("query", getValidationRules())}
               onChange={(e) => {
@@ -295,7 +299,7 @@ const KYCPage = () => {
                 if (searchType === "phone") {
                   value = value.replace(/\D/g, "");
                 }
-                setValue("query", value, { shouldValidate: true });
+                setValue("query", value, { shouldValidate: false });
                 setSearchQuery(value);
               }}
               className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
