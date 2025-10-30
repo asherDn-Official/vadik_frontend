@@ -60,7 +60,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     const fetchCoupons = async () => {
       try {
         
-        const response = await api.get(`/api/coupons/all?isExpired=false`);
+        const response = await api.get(`/api/coupons/all?isExpired=false&isActive=true`);
         const list = response.data?.data || [];
         setCoupons(list);
         setLoadingCoupons(false);

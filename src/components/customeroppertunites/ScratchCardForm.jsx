@@ -216,8 +216,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
-        const today = new Date().toISOString();
-        const res = await api.get(`/api/coupons/all?fully=true&isExpired=false`);
+        const res = await api.get(`/api/coupons/all?isExpired=false&isActive=true`);
         const list = res?.data?.data || [];
         setCoupons(list);
       } catch (e) {
