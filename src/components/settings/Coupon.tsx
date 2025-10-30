@@ -356,6 +356,14 @@ const CouponManagement = () => {
     );
   }
 
+  function formatDate(dateString) {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="bg-white overflow-hidden rounded-lg shadow-sm">
@@ -860,7 +868,7 @@ const CouponManagement = () => {
                           {coupon.description}
                         </p>
                         <div className="flex flex-wrap gap-2 text-sm text-gray-500 mt-2">
-                          <span>Expires: {new Date(coupon.expiryDate).toLocaleDateString()}</span>
+                          <span>Expires: {formatDate(coupon.expiryDate)}</span>
                           {coupon.condition && (
                             <span>
                               | Condition: Order {coupon.conditionType} ₹{coupon.conditionValue}
