@@ -519,10 +519,10 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                         value: 0.01,
                         message: "Price must be greater than 0"
                       },
-                      max:{
-                        value: 100000,
-                        message: "Price must be less than 1 lakh"
-                      },
+                      // max:{
+                      //   value: 100000,
+                      //   message: "Price must be less than 1 lakh"
+                      // },
                       valueAsNumber: true
                     })}
                     min="0"
