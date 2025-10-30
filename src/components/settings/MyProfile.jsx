@@ -378,12 +378,12 @@ const MyProfile = () => {
 
             <div className="space-y-2">
               <label className="block text-sm text-[#31316680]">
-                Store Address
+                Business Address
               </label>
               <textarea
-                {...register("address", { required: "Store address is required", minLength: { value: 10, message: "Must be atleast 10 characters" }, maxLength: { value: 250, message: "Cannot exceed 250 characters" } })}
+                {...register("address", { required: "Business address is required", minLength: { value: 10, message: "Must be atleast 10 characters" }, maxLength: { value: 250, message: "Cannot exceed 250 characters" } })}
                 className="w-full h-36 p-2 border border-gray-300 rounded text-[#313166]"
-                placeholder="Enter store address"
+                placeholder="Enter Business address"
               />
               {errors.address && (
                 <p className="text-red-500 text-xs mt-1">{errors.address.message}</p>
@@ -467,19 +467,19 @@ const MyProfile = () => {
 
               <div className="space-y-2">
                 <label className="block text-sm text-[#31316680]">
-                  Store Owner Name
+                  Business Owner Name
                 </label>
                 <input
                   type="text"
                   {...register("storeOwnerName", {
-                    required: "Store owner name is required", minLength: { value: 3, message: "Must be at least 3 characters" }, maxLength: { value: 50, message: "Cannot exceed 50 characters" },
+                    required: "Business owner name is required", minLength: { value: 3, message: "Must be at least 3 characters" }, maxLength: { value: 50, message: "Cannot exceed 50 characters" },
                     pattern: {
                       value: /^[a-zA-Z\u00C0-\u017F\s'-]+$/,
                       message: "Only letters, hyphens, and apostrophes allowed",
                     },
                   })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
-                  placeholder="Enter store owner name"
+                  placeholder="Enter Business owner name"
                 />
                 {errors.storeOwnerName && (
                   <p className="text-red-500 text-xs mt-1">{errors.storeOwnerName.message}</p>
@@ -532,12 +532,12 @@ const MyProfile = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block text-sm text-[#31316680]">
-                  Store City
+                  Business City
                 </label>
                 <input
                   type="text"
                   {...register("storeCity", {
-                    required: "Store city is required",
+                    required: "Business city is required",
                     minLength: {
                       value: 3,
                       message: "Must be at least 3 characters",
@@ -552,7 +552,7 @@ const MyProfile = () => {
                     },
                   })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
-                  placeholder="Enter store city"
+                  placeholder="Enter Business city"
                 />
                 {errors.storeCity && (
                   <p className="text-red-500 text-xs mt-1">{errors.storeCity.message}</p>
@@ -566,13 +566,13 @@ const MyProfile = () => {
                 <input
                   type="number"
                   {...register("storePincode", {
-                    required: "Store pincode is required",
+                    required: "Business pincode is required",
                     min: { value: 100000, message: "Must be 6 digits" },
                     max: { value: 999999, message: "Cannot exceed 6 digits" }
                   }
                   )}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
-                  placeholder="Enter store pincode"
+                  placeholder="Enter Business pincode"
                 />
                 {errors.storePincode && (
                   <p className="text-red-500 text-xs mt-1">{errors.storePincode.message}</p>
@@ -583,14 +583,14 @@ const MyProfile = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block text-sm text-[#31316680]">
-                  Store Contact Number
+                  Business Contact Number
                 </label>
                 <input
                   type="number"
-                  {...register("storeContactNumber", { required: "Store contact number is required",minLength: { value: 10, message: "Must be 10 digits" }, maxLength: { value: 10, message: "Cannot exceed 10 digits"}}
+                  {...register("storeContactNumber", { required: "Business contact number is required",minLength: { value: 10, message: "Must be 10 digits" }, maxLength: { value: 10, message: "Cannot exceed 10 digits"}}
                   )}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
-                  placeholder="Enter store contact number"
+                  placeholder="Enter Business contact number"
                 />
                 {errors.storeContactNumber && (
                   <p className="text-red-500 text-xs mt-1">{errors.storeContactNumber.message}</p>
@@ -599,13 +599,13 @@ const MyProfile = () => {
 
               <div className="space-y-2">
                 <label className="block text-sm text-[#31316680]">
-                  Store Type
+                  Business Type
                 </label>
                 <input
                   type="text"
-                  {...register("storeType", { required: "Store type is required" })}
+                  {...register("storeType", { required: "Business type is required" })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
-                  placeholder="Enter store type"
+                  placeholder="Enter Business type"
                   disabled
                 />
                 {errors.storeType && (
