@@ -217,7 +217,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
     const fetchCoupons = async () => {
       try {
         const today = new Date().toISOString();
-        const res = await api.get(`/api/coupons/all?fully=true&expiryDate=${today}`);
+        const res = await api.get(`/api/coupons/all?fully=true&isExpired=false`);
         const list = res?.data?.data || [];
         setCoupons(list);
       } catch (e) {
@@ -234,7 +234,7 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
     const fetchQuizzes = async () => {
       try {
         const today = new Date().toISOString();
-        const res = await api.get(`/api/quiz?fully=true&expiryDate=${today}`);
+        const res = await api.get(`/api/quiz?fully=true`);
         const list = Array.isArray(res?.data)
           ? res.data
           : res?.data?.docs || [];

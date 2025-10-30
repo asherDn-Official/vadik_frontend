@@ -59,8 +59,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
-        const today = new Date().toISOString();
-        const response = await api.get(`/api/coupons/all?expiryDate=${today}`);
+        
+        const response = await api.get(`/api/coupons/all?isExpired=false`);
         const list = response.data?.data || [];
         setCoupons(list);
         setLoadingCoupons(false);
@@ -86,7 +86,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const fetchQuizzes = async () => {
     try {
       const today = new Date().toISOString();
-      const res = await api.get(`/api/quiz?fully=true&expiryDate=${today}`);
+      const res = await api.get(`/api/quiz?fully=true`);
       const list = Array.isArray(res?.data) ? res.data : (res?.data?.docs || []);
       setQuizzes(list);
     } catch (error) {
