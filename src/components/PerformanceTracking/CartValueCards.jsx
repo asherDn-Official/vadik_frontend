@@ -159,13 +159,13 @@ const CartValueCards = () => {
               >
                 Apply Filter
               </button>
-              <button
+              {/* <button
                 type="button"
                 onClick={handleClearFilters}
                 className="inline-flex items-center justify-center rounded-md bg-gray-200 px-4 py-1.5 text-gray-700 font-semibold hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
               >
                 Clear
-              </button>
+              </button> */}
             </div>
           )}
         </div>
