@@ -135,7 +135,7 @@ const CustomerTable = () => {
               <button
                 type="button"
                 onClick={handleApplyFilters}
-                className="inline-flex items-center justify-center rounded-md bg-pink-600 px-4 py-1.5 text-white font-semibold hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
+                className="inline-flex items-center justify-center rounded-md bg-pink-600 px-4 py-1.5 text-white font-semibold whitespace-nowrap hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
               >
                 Apply Filter
               </button>
