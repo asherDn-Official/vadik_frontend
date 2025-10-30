@@ -350,14 +350,14 @@ const MyProfile = () => {
                 <input
                   type="text"
                   {...register("storeName", {
-                    required: "Store name is required", minLength: { value: 3, message: "Must be at least 3 characters" }, maxLength: { value: 50, message: "Cannot exceed 50 characters" },
+                    required: "Business name is required", minLength: { value: 3, message: "Must be at least 3 characters" }, maxLength: { value: 50, message: "Cannot exceed 50 characters" },
                     pattern: {
                       value: /^[a-zA-Z\u00C0-\u017F\s'-]+$/,
                       message: "Only letters, hyphens, and apostrophes allowed",
                     },
                   })}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166]"
-                  placeholder="Enter store name"
+                  placeholder="Enter Business name"
                 />
 
                 {errors.storeName && (
