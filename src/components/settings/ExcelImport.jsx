@@ -197,8 +197,8 @@ const ExcelImport = ({ retailerId, onImportSuccess, onClose }) => {
           <div className="mb-6 p-4 bg-blue-50 rounded-lg">
             <h4 className="font-medium text-blue-800 mb-2">Expected Excel Format:</h4>
             <div className="text-sm text-blue-700 space-y-1">
-              <p><strong>Columns:</strong> Order ID, Customer Name, Mobile Number, Gender, Product Name, Quantity, Unit Price, Discount, Payment Status, Order Date</p>
-              <p><strong>Sheet Name:</strong> Orders (or first sheet will be used)</p>
+              <p><strong>Columns:</strong> Customer Name , Mobile Number , Product Name ,Total Price</p>
+              {/* <p><strong>Sheet Name:</strong> Orders (or first sheet will be used)</p> */}
             </div>
           </div>
 
