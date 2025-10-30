@@ -396,6 +396,7 @@ const CouponManagement = () => {
                     {...register("name")}
                     className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.name ? "border-red-500" : "border-gray-300"}`}
                     placeholder="e.g., Summer Sale Discount"
+                    disabled={editingCouponId}
                   />
                   {errors.name && (
                     <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
@@ -420,6 +421,7 @@ const CouponManagement = () => {
                     className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.code ? "border-red-500" : "border-gray-300"
                       }`}
                     placeholder="e.g., FLAT50"
+                    disabled={editingCouponId}
                   />
                   {errors.code && (
                     <p className="mt-1 text-sm text-red-600">{errors.code.message}</p>
