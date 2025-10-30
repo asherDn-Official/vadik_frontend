@@ -142,7 +142,7 @@ function LoyaltyPoint() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Active Toggle */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              {/* <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>
                   <h3 className="font-semibold text-gray-900">Enable Loyalty Program</h3>
                   <p className="text-sm text-gray-600">Turn the loyalty program on or off</p>
@@ -162,7 +162,7 @@ function LoyaltyPoint() {
                     </label>
                   )}
                 />
-              </div>
+              </div> */}
 
               {/* Minimum Order Amount */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
