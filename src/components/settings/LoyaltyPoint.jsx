@@ -328,10 +328,10 @@ function LoyaltyPoint() {
                                   value: 0,
                                   message: "Discount amount cannot be negative"
                                 },
-                                max: {
-                                  value: 100,
-                                  message: "Discount amount cannot exceed ₹100"
-                                }
+                                // max: {
+                                //   value: 100,
+                                //   message: "Discount amount cannot exceed ₹100"
+                                // }
                               }}
                               render={({ field }) => (
                                 <>
@@ -339,7 +339,6 @@ function LoyaltyPoint() {
                                     {...field}
                                     type="number"
                                     min="0"
-                                    max="100"
                                     onChange={(e) => field.onChange(Number(e.target.value))}
                                     className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg outline-none"
                                     placeholder="Discount amount"
