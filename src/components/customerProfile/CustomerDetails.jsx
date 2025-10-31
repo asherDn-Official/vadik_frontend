@@ -621,7 +621,7 @@ const CustomerDetails = ({
 
   return (
     <div className="flex-1 flex flex-col bg-[#F4F5F9]">
-      <div className=" py-5  px-8">
+      <div className=" py-6  px-8">
         <h1 className="font-medium text-[20px] leading-[114%] tracking-normal text-[#1A1A1A]">
           Customer Profile
         </h1>
