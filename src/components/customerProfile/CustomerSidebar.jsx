@@ -110,8 +110,8 @@ const CustomerSidebar = () => {
   };
 
   return (
-    <div className="w-80 bg-white flex flex-col m-2 rounded-[10px]">
-      <div className="p-4 border-b border-gray-200">
+    <div className="w-80 bg-white flex flex-col  rounded-[10px]">
+      <div className=" border-b p-4 border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Customer List <span className=" text-[#31316699] ">({pagination?.totalItems})</span>
         </h2>
