@@ -800,7 +800,7 @@ const CustomerDetails = ({
             </div>
 
             {/* Main Content */}
-            <div className="bg-white p-2 rounded-[20px]">
+            <div className="bg-white px-2 pt-5 rounded-[20px]">
               {/* Tabs */}
               <div className="border-b  border-gray-200  py-3 ">
                 <nav className="flex space-x-8  px-4 pb-2 ">
