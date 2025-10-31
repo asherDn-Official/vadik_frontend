@@ -634,7 +634,7 @@ const CustomerDetails = ({
             <div className=" mb-3  border-b border-gray-200  bg-white rounded-[20px]  p-4 ">
               <div className="flex items-start justify-between ">
                 <div className="flex items-center w-full">
-                  <div className="relative pl-2">
+                  <div className="relative pl-4">
                     <div
                       className={`absolute top-2 right-1 flex items-center gap-2 px-3 py-1 rounded-full shadow-sm border ${statusBadgeClasses}`}
                     >
