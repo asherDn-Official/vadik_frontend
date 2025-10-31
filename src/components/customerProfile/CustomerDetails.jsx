@@ -654,7 +654,7 @@ const CustomerDetails = ({
                           ? defaultImage.femaleDefaultImgUrl
                           : transformedCustomer?.gender === "others"
                           ? defaultImage.menDefaultImgUrl
-                          : ""
+                          : defaultImage.menDefaultImgUrl
                       }
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
                       className="w-[202px] h-[192px] rounded-lg   "
