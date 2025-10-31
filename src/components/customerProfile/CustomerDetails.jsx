@@ -808,7 +808,7 @@ const CustomerDetails = ({
                       key={tab}
                       type="button"
                       onClick={() => setActiveTab(tab)}
-                      className={`py-3 px-4 border-b-2 font-medium rounded-[10px] text-sm ${
+                      className={`py-3 px-4 border-b-2 font-normal text-[16px] leading-[100%] rounded-[10px] ${
                         activeTab === tab
                           ? "bg-[#EC396F1A] text-[#EC396F]"
                           : "border-transparent text-gray-500 hover:text-[#EC396F] hover:bg-[#EC396F1A]"
@@ -837,7 +837,7 @@ const CustomerDetails = ({
               </div>
 
               {/* Tab Content */}
-              <div className=" px-5 py-5  max-w-[95%]" >
+              <div className=" px-5 py-5  max-w-[95%]">
                 {activeTab === "Advanced Details" && (
                   <div className="grid grid-cols-2 gap-3">
                     {transformedCustomer?.advancedDetails &&
