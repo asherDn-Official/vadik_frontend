@@ -671,7 +671,7 @@ const CustomerDetails = ({
                         <button
                           type="button"
                           onClick={onEdit}
-                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center"
+                          className="px-4 py-2 text-[#313166] border border-1 border-[#31316680] rounded-lg text-sm font-medium   flex items-center"
                         >
                           <img
                             src={EditIcon}
@@ -823,7 +823,7 @@ const CustomerDetails = ({
                       <button
                         type="button"
                         onClick={onEdit}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center"
+                        className="px-4 py-2 text-[#313166] border border-1 border-[#31316680] rounded-lg text-sm font-medium   flex items-center"
                       >
                         <img
                           src={EditIcon}
