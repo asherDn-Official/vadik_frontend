@@ -837,7 +837,7 @@ const CustomerDetails = ({
               </div>
 
               {/* Tab Content */}
-              <div className=" px-5 py-5  max-w-[60rem]" >
+              <div className=" px-5 py-5  max-w-[95%]" >
                 {activeTab === "Advanced Details" && (
                   <div className="grid grid-cols-2 gap-3">
                     {transformedCustomer?.advancedDetails &&
