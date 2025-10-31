@@ -622,7 +622,7 @@ const CustomerDetails = ({
   return (
     <div className="flex-1 flex flex-col bg-[#F4F5F9]">
       <div className=" py-2  px-8">
-        <h1 className="text-xl font-semibold text-gray-900">
+        <h1 className="font-medium text-[20px] leading-[114%] tracking-normal text-[#1A1A1A]">
           Customer Profile
         </h1>
       </div>
@@ -634,7 +634,7 @@ const CustomerDetails = ({
             <div className=" mb-3  border-b border-gray-200  bg-white rounded-[20px]  p-4 ">
               <div className="flex items-start justify-between ">
                 <div className="flex items-center w-full">
-                  <div className="relative pl-2">
+                  <div className="relative pl-4">
                     <div
                       className={`absolute top-2 right-1 flex items-center gap-2 px-3 py-1 rounded-full shadow-sm border ${statusBadgeClasses}`}
                     >
@@ -654,23 +654,24 @@ const CustomerDetails = ({
                           ? defaultImage.femaleDefaultImgUrl
                           : transformedCustomer?.gender === "others"
                           ? defaultImage.menDefaultImgUrl
-                          : ""
+                          : defaultImage.menDefaultImgUrl
                       }
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
                       className="w-[202px] h-[192px] rounded-lg   "
                     />
                   </div>
                   {/* Basic Details Sections */}
-                  <div className="ml-8 w-full  pr-8 pt-3">
+                  <div className="ml-16 w-full  pr-8 pt-3">
                     <div className="flex items-center justify-between mb-1  ">
-                      <h2 className="font-bold text-[18px] leading-[30px] tracking-normal text-[#313166] font-poppins border-b-[1.5px] border-[#313166] pb-[2px]">
+                      <h2 className="font-semibold text-[18px] leading-[30px] tracking-normal text-[#313166] font-poppins border-b-[1.5px] border-[#313166] pb-[2px]">
                         Basic Details
                       </h2>
+
                       {!isEditing ? (
                         <button
                           type="button"
                           onClick={onEdit}
-                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center"
+                          className="px-4 py-2 text-[#313166] border border-1 border-[#31316680] rounded-lg text-sm font-medium   flex items-center"
                         >
                           <img
                             src={EditIcon}
@@ -808,10 +809,10 @@ const CustomerDetails = ({
                       key={tab}
                       type="button"
                       onClick={() => setActiveTab(tab)}
-                      className={`py-3 px-4 border-b-2 font-medium rounded-[10px] text-sm ${
+                      className={`py-3 px-4 border-b-2 font-normal text-[16px] leading-[100%] rounded-[10px] ${
                         activeTab === tab
                           ? "bg-[#EC396F1A] text-[#EC396F]"
-                          : "border-transparent text-gray-500 hover:text-[#EC396F] hover:bg-[#EC396F1A]"
+                          : "border-transparent text-[#31316680] hover:text-[#EC396F] hover:bg-[#EC396F1A]"
                       }`}
                     >
                       {tab}
@@ -822,7 +823,7 @@ const CustomerDetails = ({
                       <button
                         type="button"
                         onClick={onEdit}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center"
+                        className="px-4 py-2 text-[#313166] border border-1 border-[#31316680] rounded-lg text-sm font-medium   flex items-center"
                       >
                         <img
                           src={EditIcon}
@@ -837,7 +838,7 @@ const CustomerDetails = ({
               </div>
 
               {/* Tab Content */}
-              <div className=" px-5 py-5  max-w-[95%]" >
+              <div className=" px-5 py-5  max-w-[95%]">
                 {activeTab === "Advanced Details" && (
                   <div className="grid grid-cols-2 gap-3">
                     {transformedCustomer?.advancedDetails &&
