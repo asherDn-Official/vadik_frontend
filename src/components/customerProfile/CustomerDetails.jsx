@@ -663,9 +663,10 @@ const CustomerDetails = ({
                   {/* Basic Details Sections */}
                   <div className="ml-16 w-full  pr-8 pt-3">
                     <div className="flex items-center justify-between mb-1  ">
-                      <h2 className="font-bold text-[18px] leading-[30px] tracking-normal text-[#313166] font-poppins border-b-[1.5px] border-[#313166] pb-[2px]">
+                      <h2 className="font-semibold text-[18px] leading-[30px] tracking-normal text-[#313166] font-poppins border-b-[1.5px] border-[#313166] pb-[2px]">
                         Basic Details
                       </h2>
+
                       {!isEditing ? (
                         <button
                           type="button"
