@@ -561,7 +561,7 @@ const MyProfile = () => {
 
               <div className="space-y-2">
                 <label className="block text-sm text-[#31316680]">
-                  Store Pincode
+                  Business Pincode
                 </label>
                 <input
                   type="number"
