@@ -114,7 +114,7 @@ body {
   }
 
   .customer-sidebar-scroll {
-    scrollbar-width: thin;
+    scrollbar-width:8px;
     scrollbar-color: #313166 #31316629;
   }
 
