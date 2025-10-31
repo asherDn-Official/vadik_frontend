@@ -622,7 +622,7 @@ const CustomerDetails = ({
   return (
     <div className="flex-1 flex flex-col bg-[#F4F5F9]">
       <div className=" py-2  px-8">
-        <h1 className="text-xl font-semibold text-gray-900">
+        <h1 className="font-medium text-[20px] leading-[114%] tracking-normal text-[#1A1A1A]">
           Customer Profile
         </h1>
       </div>
@@ -661,7 +661,7 @@ const CustomerDetails = ({
                     />
                   </div>
                   {/* Basic Details Sections */}
-                  <div className="ml-8 w-full  pr-8 pt-3">
+                  <div className="ml-16 w-full  pr-8 pt-3">
                     <div className="flex items-center justify-between mb-1  ">
                       <h2 className="font-bold text-[18px] leading-[30px] tracking-normal text-[#313166] font-poppins border-b-[1.5px] border-[#313166] pb-[2px]">
                         Basic Details
