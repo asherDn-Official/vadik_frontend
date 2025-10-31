@@ -110,10 +110,11 @@ const CustomerSidebar = () => {
   };
 
   return (
-    <div className="w-80 bg-white flex flex-col m-2 rounded-[10px]">
-      <div className="p-4 border-b border-gray-200">
+    <div className="w-80 bg-white flex flex-col pl-6  pr-4 pt-5  rounded-[10px]">
+      <div className="border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Customer List <span className=" text-[#31316699] ">({pagination?.totalItems})</span>
+          Customer List{" "}
+          <span className=" text-[#31316699] ">({pagination?.totalItems})</span>
         </h2>
         <div className="relative">
           <input
@@ -166,43 +167,45 @@ const CustomerSidebar = () => {
           </div>
         ) : (
           <>
-            {customers.map((customer) => (
-              <div
-                key={customer._id}
-                onClick={() => handleCustomerSelect(customer)}
-                className={`p-4 border-b border-gray-100 cursor-pointer transition-colors duration-200 ${
-                  selectedCustomer?._id === customer._id
-                    ? "bg-[#3131660F] border-l-4  rounded-sm"
-                    : "hover:bg-gray-50"
-                }`}
-              >
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 flex items-center justify-center">
-                      <img
-                        src={profileIcon}
-                        alt={formatName(customer)}
-                        className="rounded-full w-6 h-6 object-cover"
-                      />
-                    </div>
+            <div className=" mt-4  ">
+              {customers.map((customer) => (
+                <div
+                  key={customer._id}
+                  onClick={() => handleCustomerSelect(customer)}
+                  className={`cursor-pointer transition-colors duration-200 
+                `}
+                >
+                  <div
+                    className={`flex flex-col px-2 py-3  rounded-md ${
+                      selectedCustomer?._id === customer._id
+                        ? "bg-[#3131660F]   "
+                        : "hover:bg-gray-50"
+                    } `}
+                  >
+                    <div className="flex items-center gap-3 ">
+                      <div className="w-6 h-6 flex items-center justify-center">
+                        <img
+                          src={profileIcon}
+                          alt={formatName(customer)}
+                          className="rounded-full w-6 h-6 object-cover"
+                        />
+                      </div>
 
-                    <h3 className="font-[400] text-[18px] text-[#313166]">
-                      {formatName(customer)}
-                    </h3>
+                      <h3 className="font-[400] text-[18px] text-[#313166]">
+                        {formatName(customer)}
+                      </h3>
+                    </div>
+                    <p className="  font-[400] pl-8 text-[15px] text-[#31316680]">
+                      {formatIndianMobile(customer.mobileNumber)}
+                    </p>
                   </div>
-                  <p className="  font-[400] pl-8 text-[15px] text-[#31316680]">
-                    {formatIndianMobile(customer.mobileNumber)}
-                  </p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
             {isLoadingMore && (
               <div className="p-4 space-y-4">
                 {skeletonItems.slice(0, 2).map((_, index) => (
-                  <div
-                    key={`loading-${index}`}
-                    className="animate-pulse"
-                  >
+                  <div key={`loading-${index}`} className="animate-pulse">
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 rounded-full bg-gray-200"></div>
                       <div className="flex-1 space-y-2">
@@ -217,7 +220,6 @@ const CustomerSidebar = () => {
           </>
         )}
       </div>
-
     </div>
   );
 };
