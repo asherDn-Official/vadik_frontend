@@ -811,7 +811,7 @@ const CustomerDetails = ({
                       className={`py-3 px-4 border-b-2 font-normal text-[16px] leading-[100%] rounded-[10px] ${
                         activeTab === tab
                           ? "bg-[#EC396F1A] text-[#EC396F]"
-                          : "border-transparent text-gray-500 hover:text-[#EC396F] hover:bg-[#EC396F1A]"
+                          : "border-transparent text-[#31316680] hover:text-[#EC396F] hover:bg-[#EC396F1A]"
                       }`}
                     >
                       {tab}
