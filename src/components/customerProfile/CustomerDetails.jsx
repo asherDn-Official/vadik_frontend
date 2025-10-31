@@ -631,7 +631,7 @@ const CustomerDetails = ({
         <form onSubmit={onSubmit}>
           <div className="rounded-lg ">
             {/* Profile Header */}
-            <div className=" mb-3  border-b border-gray-200  bg-white rounded-[20px]  px-4 py-5 ">
+            <div className=" mb-3  border-b border-gray-200  bg-white rounded-[20px]  px-4 py-6 ">
               <div className="flex items-start justify-between ">
                 <div className="flex items-center w-full">
                   <div className="relative pl-4">
