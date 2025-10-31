@@ -621,7 +621,7 @@ const CustomerDetails = ({
 
   return (
     <div className="flex-1 flex flex-col bg-[#F4F5F9]">
-      <div className=" py-2  px-8">
+      <div className=" py-5  px-8">
         <h1 className="font-medium text-[20px] leading-[114%] tracking-normal text-[#1A1A1A]">
           Customer Profile
         </h1>
@@ -629,9 +629,9 @@ const CustomerDetails = ({
 
       <div className="flex-1 px-8 overflow-y-auto">
         <form onSubmit={onSubmit}>
-          <div className="rounded-lg shadow-sm">
+          <div className="rounded-lg ">
             {/* Profile Header */}
-            <div className=" mb-3  border-b border-gray-200  bg-white rounded-[20px]  p-4 ">
+            <div className=" mb-3  border-b border-gray-200  bg-white rounded-[20px]  px-4 py-5 ">
               <div className="flex items-start justify-between ">
                 <div className="flex items-center w-full">
                   <div className="relative pl-4">
@@ -657,7 +657,7 @@ const CustomerDetails = ({
                           : defaultImage.menDefaultImgUrl
                       }
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
-                      className="w-[202px] h-[192px] rounded-lg   "
+                      className="w-[202px] h-[192px] rounded-2xl   "
                     />
                   </div>
                   {/* Basic Details Sections */}
