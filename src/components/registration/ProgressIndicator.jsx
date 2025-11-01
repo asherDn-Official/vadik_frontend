@@ -9,13 +9,13 @@ const ProgressIndicator = ({ currentStep }) => {
     },
     {
       number: 2,
-      title: "Store Basic Info",
-      subtitle: "Share your Store's core details.",
+      title: "Business  Basic Info",
+      subtitle: "Share your Business's core details.",
     },
     {
       number: 3,
       title: "Additional Details",
-      subtitle: "Complete your Store profile.",
+      subtitle: "Complete your Business  profile.",
     },
     { number: 4, title: "You're All Set!", subtitle: "" },
   ];

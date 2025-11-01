@@ -104,11 +104,11 @@ const Register = ({ formData, updateFormData }) => {
             Quick Setup to Get Started
           </h1>
           <p className="mb-4 text-[18px]">
-            An all-in-one platform to manage your Store, connect with customers,
+            An all-in-one platform to manage your Business , connect with customers,
             and grow your business digitally.
           </p>
           <p className="mb-6 text-[18px]">
-            Create your account and set up your Store in just 3 simple steps. It
+            Create your account and set up your Business  in just 3 simple steps. It
             only takes a minute to complete and start using the platform:
           </p>
 

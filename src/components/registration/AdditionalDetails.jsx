@@ -278,7 +278,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
     <div className="step-container">
       <h2 className="step-header">Additional Details</h2>
       <p className="step-description">
-        Complete your Store profile to finish setup.
+        Complete your Business profile to finish setup.
       </p>
 
       {submitError && (
@@ -294,7 +294,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
         {/* File upload section */}
         <div className="md:col-span-2">
           <label className="form-label mb-7">
-            Upload Store Logo or Photo (optional)
+            Upload Business Logo or Photo (optional)
           </label>
           <div
             className={`border-2 border-dashed rounded-md p-6 text-center transition-colors ${
@@ -357,7 +357,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             Number of Staff
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Enter how many staff work in your Store.
+            Enter how many staff work in your Business.
           </p>
           <select
             id="staffCount"
@@ -388,7 +388,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             Number of Customers
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Enter how many customers for your Store.
+            Enter how many customers for your Business .
           </p>
           <select
             id="customerCount"
@@ -416,10 +416,10 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
         {/* Contact number */}
         <div>
           <label htmlFor="contactNumber" className="form-label">
-            Store Contact Number
+            Business  Contact Number
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Provide the main contact number used for Store/business.
+            Provide the main contact number used for Business/business.
           </p>
           <input
             type="tel"
@@ -431,7 +431,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             className={`form-input ${
               errors.contactNumber ? "border-red-500" : ""
             }`}
-            placeholder="Store Contact Number"
+            placeholder="Business  Contact Number"
             maxLength={10}
             autocomplete="off"
           />
@@ -470,7 +470,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep }) => {
             GST Number
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Add your GST number if your Store is registered (15 digits).
+            Add your GST number if your Business is registered (15 digits).
           </p>
           <input
             type="text"

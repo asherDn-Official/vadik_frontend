@@ -32,7 +32,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
   // Individual validation functions
   const validateStoreName = () => {
     if (!formData.storeName) {
-      setErrors(prev => ({ ...prev, storeName: "Store name is required" }));
+      setErrors(prev => ({ ...prev, storeName: "Business name is required" }));
     } else if (formData.storeName.length < 3) {
       setErrors(prev => ({ ...prev, storeName: "Minimum 3 characters required" }));
     } else if (formData.storeName.length > 60) {
@@ -44,7 +44,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
 
   const validateStoreType = () => {
     if (!formData.storeType) {
-      setErrors(prev => ({ ...prev, storeType: "Store type is required" }));
+      setErrors(prev => ({ ...prev, storeType: "Business  type is required" }));
     } else {
       setErrors(prev => ({ ...prev, storeType: "" }));
     }
@@ -52,7 +52,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
 
   const validateStoreAddress = () => {
     if (!formData.storeAddress) {
-      setErrors(prev => ({ ...prev, storeAddress: "Store address is required" }));
+      setErrors(prev => ({ ...prev, storeAddress: "Business  address is required" }));
     } else if (formData.storeAddress.length < 10) {
       setErrors(prev => ({ ...prev, storeAddress: "Minimum 10 characters required" }));
     } else if (formData.storeAddress.length > 40) {
@@ -120,9 +120,9 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
 
   return (
     <div className="step-container">
-      <h2 className="step-header">Store Basic Info</h2>
+      <h2 className="step-header">Business  Basic Info</h2>
       <p className="step-description">
-        Tell us about your Store and where it's located.
+        Tell us about your Business and where it's located.
       </p>
 
       <form
@@ -132,10 +132,10 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
         {/* Store Name */}
         <div>
           <label htmlFor="storeName" className="form-label">
-            Store Name
+            Business  Name
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Enter your official Store name (3-18 characters).
+            Enter your official Business  name (3-18 characters).
           </p>
           <input
             type="text"
@@ -157,7 +157,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
         {/* Store Type */}
         <div>
           <label htmlFor="storeType" className="form-label">
-            Store Type
+            Business  Type
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
             Choose your business type.
@@ -171,7 +171,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             className={`form-input ${errors.storeType ? "border-red-500" : ""}`}
             autocomplete="off"
           >
-            <option value="">Select Store Type</option>
+            <option value="">Select Business  Type</option>
             {storeTypes.map(({ label, value }) => (
               <option key={value} value={value}>
                 {label}
@@ -186,10 +186,10 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
         {/* Store Address */}
         <div className="md:col-span-2">
           <label htmlFor="storeAddress" className="form-label">
-            Store Address
+            Business Address
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Mention the complete address where your Store is located (10-40 characters).
+            Mention the complete address where your Business  is located (10-40 characters).
           </p>
           <input
             type="text"
@@ -201,7 +201,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             className={`form-input ${
               errors.storeAddress ? "border-red-500" : ""
             }`}
-            placeholder="Store Address"
+            placeholder="Business Address"
             maxLength={40}
             autocomplete="off"
           />
@@ -216,7 +216,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             City / Town
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Enter your Store's city or town (max 18 characters).
+            Enter your Business  city or town (max 18 characters).
           </p>
           <input
             type="text"
@@ -241,7 +241,7 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
             Pincode
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            6-digit postal code of your Store location.
+            6-digit postal code of your Business  location.
           </p>
           <input
             type="text"
