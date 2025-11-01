@@ -30,7 +30,7 @@ const CustomerAdd = () => {
 
         } catch (error) {
             console.error(error.response.data.error);
-            showToast(error.response.data.message, 'error');
+            showToast(error.response.data.error, 'error');
 
             // alert('Failed to add customer. Please try again.');
         }
