@@ -12,27 +12,29 @@ const CustomerAdd = () => {
         return localStorage.getItem("retailerId") || "";
     });
     const [resetForm, setResetForm] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (customerData) => {
-        // Format data for API
         const apiData = {
             ...customerData,
             retailerId: retailerId,
         };
+
+        setIsSubmitting(true);
 
         try {
             const response = await api.post('/api/customers', apiData);
             const newCustomer = response.data;
             showToast('Customer added successfully!', 'success');
 
-            // Navigate to the newly created customer's profile
             navigate(`/customers/customer-profile/${newCustomer._id}`);
 
         } catch (error) {
             console.error(error.response.data.error);
             showToast(error.response.data.error, 'error');
 
-            // alert('Failed to add customer. Please try again.');
+        } finally {
+            setIsSubmitting(false);
         }
 
     };
@@ -53,7 +55,7 @@ const CustomerAdd = () => {
                     {/* <h2>Create New Customer</h2> */}
                     <div className=" max-w-2xl  flex justify-center items-center mt-3">
 
-                        <CustomerForm onSubmit={handleSubmit} resetForm={resetForm} />
+                        <CustomerForm onSubmit={handleSubmit} resetForm={resetForm} isSubmitting={isSubmitting} />
                     </div>
                 </div>
             </div>

@@ -10,7 +10,7 @@ import { format, isValid } from "date-fns";
 import api from "../../api/apiconfig";
 import ManageSourcesPopup from "./components/ManageSourcesPopup.jsx";
 
-const CustomerForm = ({ onSubmit, resetForm }) => {
+const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
   const [sources, setSources] = React.useState([]);
   const [showSourcePopup, setShowSourcePopup] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
@@ -365,9 +365,9 @@ const CustomerForm = ({ onSubmit, resetForm }) => {
           <button
             type="submit"
             className="px-6 py-2 bg-primary text-white bg-gradient-to-r from-[#CB376D] to-[#A72962] rounded hover:bg-pink-700 transition"
-            disabled={loading}
+            disabled={loading || isSubmitting}
           >
-            {loading ? "Processing..." : "Create Customer"}
+            {loading || isSubmitting ? "Processing..." : "Create Customer"}
           </button>
         </div>
       </form>
