@@ -923,7 +923,7 @@ const CustomerDetails = ({
                           ...customer?.basic,
                           isOptedIn: {
                             iconUrl: allowNotificationIconUrl,
-                            value: formData?.basic?.isOptedIn,
+                            value: formData?.basic?.isOptedIn  === true ? "Opt-In" : "Opt-Out",
                           },
                         },
                       }}
