@@ -6,7 +6,7 @@ import api from "../../api/apiconfig";
 const COLORS = ["#E91E63", "#F3F4F6"];
 
 const ConversionChart = () => {
-  const [conversionRate, setConversionRate] = useState(64); // default mock value
+  const [conversionRate, setConversionRate] = useState(0); // default mock value
 
 
   const data = [
