@@ -90,7 +90,7 @@ const IntegrationDashboard = () => {
       icon: "./assets/whatsapp-icon.png",
       description:
         "Export customer context, quiz responses, and analytics directly to Google Sheets for comprehensive reporting and analysis.",
-      status: "connected",
+      status: "working",
       component: GooglePlaceReview,
     },
   ];
@@ -101,7 +101,7 @@ const IntegrationDashboard = () => {
       icon: "./assets/whatsapp-icon.png",
       description:
         "Export customer context, quiz responses, and analytics directly to Google Sheets for comprehensive reporting and analysis.",
-      status: "integrated",
+      status: "Comming soon",
       component: GSheetsIntegration,
       button: false,
     },
@@ -110,7 +110,7 @@ const IntegrationDashboard = () => {
       icon: "./assets/whatsapp-icon.png",
       description:
         "Enable automated customer communications and campaign notifications through WhatsApp Business API integration.",
-      status: "connected",
+      status: "Comming soon",
       component: WhatsAppIntegration,
       button: false,
     },
@@ -119,7 +119,7 @@ const IntegrationDashboard = () => {
       icon: "./assets/whatsapp-icon.png",
       description:
         "Streamline customer engagement with automated responses and personalized messaging activities.",
-      status: "integrated",
+      status: "Comming soon",
       component: null, // No component defined for this
       button: false,
     },
@@ -128,7 +128,7 @@ const IntegrationDashboard = () => {
       icon: "./assets/whatsapp-icon.png",
       description:
         "Connect with Facebook and Instagram audiences through targeted ads and automated social media activities.",
-      status: "connected",
+      status: "Comming soon",
       component: FacebookIntegration,
       button: false,
     },
@@ -137,7 +137,7 @@ const IntegrationDashboard = () => {
       icon: "./assets/whatsapp-icon.png",
       description:
         "Create interactive quizzes to gather customer insights and generate qualified leads through engaging assessments.",
-      status: "integrated",
+       status: "Comming soon",
       component: null, // No component defined for this
       button: false,
     },
@@ -146,7 +146,7 @@ const IntegrationDashboard = () => {
       icon: "./assets/whatsapp-icon.png",
       description:
         "Generate and distribute digital vouchers to boost sales and track redemption rates in real-time.",
-      status: "connected",
+      status: "Comming soon",
       component: null, // No component defined for this
       button: false,
     },
@@ -155,7 +155,7 @@ const IntegrationDashboard = () => {
       icon: "./assets/whatsapp-icon.png",
       description:
         "Implement gamified loyalty programs with points, rewards, and tiered benefits to increase customer retention.",
-      status: "integrated",
+      status: "Comming soon",
       component: null, // No component defined for this
       button: false,
     },
@@ -164,13 +164,20 @@ const IntegrationDashboard = () => {
       icon: "./assets/whatsapp-icon.png",
       description:
         "Deploy virtual scratch cards for instant rewards and promotional activities with guaranteed engagement.",
-      status: "connected",
+       status: "Comming soon",
       component: null, // No component defined for this
       button: false,
     },
   ];
 
-  const IntegrationCard = ({ title, icon, description, status, onClick, button }) => {
+  const IntegrationCard = ({
+    title,
+    icon,
+    description,
+    status,
+    onClick,
+    button,
+  }) => {
     return (
       <div
         className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
@@ -179,14 +186,20 @@ const IntegrationDashboard = () => {
         <div className="flex items-center gap-3 mb-3">
           <img src={icon} alt={title} className="w-8 h-8 object-contain" />
           <h3 className="font-medium  text-[#313166] flex-grow">{title}</h3>
-          {/* <div className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${status === "integrated" ? "text-green-700 bg-green-100" : "text-blue-700 bg-blue-100"}`}>
+          <div
+            className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${
+              status === "integrated"
+                ? "text-green-700 bg-green-100"
+                : "text-blue-700 bg-blue-100"
+            }`}
+          >
             {status === "integrated" ? (
               <CheckCircle size={12} className="mr-1" />
             ) : (
               <LinkIcon size={12} className="mr-1" />
             )}
             {status}
-          </div> */}
+          </div>
         </div>
         <p className="text-sm text-[#313166] mb-4 leading-relaxed">
           {description}
@@ -217,7 +230,9 @@ const IntegrationDashboard = () => {
                 icon={integration.icon}
                 description={integration.description}
                 status={integration.status}
-                button={integration.button !== undefined ? integration.button : true}
+                button={
+                  integration.button !== undefined ? integration.button : true
+                }
                 onClick={() => onIntegrationClick(integration)}
               />
             ))}
