@@ -292,7 +292,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                   <img
                     src={preview}
                     alt={`Preview ${index}`}
-                    className="w-full h-full object-cover rounded-md"
+                    className="w-full h-full  object-contain  rounded-md"
                   />
                   <button
                     type="button"
