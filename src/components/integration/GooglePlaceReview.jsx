@@ -38,7 +38,7 @@ const GooglePlaceReview = () => {
         setError('');
 
         try {
-            const response = await api.get(`/api/integrationManagement/search?search="${query}"`);
+            const response = await api.get(`/api/integrationManagement/search?search=${query}`);
             if (response.data.status) {
                 setSearchResults(response.data.data);
             } else {
