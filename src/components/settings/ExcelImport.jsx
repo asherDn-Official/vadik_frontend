@@ -23,7 +23,7 @@ const ExcelImport = ({ retailerId, onImportSuccess, onClose }) => {
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       handleFileSelect(files[0]);
@@ -32,14 +32,14 @@ const ExcelImport = ({ retailerId, onImportSuccess, onClose }) => {
 
   const handleFileSelect = (file) => {
     const validTypes = [
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.template'
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.template",
     ];
-    
-    const fileExtension = file.name.split('.').pop().toLowerCase();
-    const isValidType = validTypes.includes(file.type) || 
-                       ['xls', 'xlsx'].includes(fileExtension);
+
+    const fileExtension = file.name.split(".").pop().toLowerCase();
+    const isValidType =
+      validTypes.includes(file.type) || ["xls", "xlsx"].includes(fileExtension);
 
     if (!isValidType) {
       showToast("Please select a valid Excel file (.xls, .xlsx)", "error");
@@ -61,7 +61,7 @@ const ExcelImport = ({ retailerId, onImportSuccess, onClose }) => {
     setImportPreview({
       fileName: file.name,
       fileSize: (file.size / 1024 / 1024).toFixed(2),
-      recordCount: "Will be processed after upload"
+      recordCount: "Will be processed after upload",
     });
   };
 
@@ -102,10 +102,11 @@ const ExcelImport = ({ retailerId, onImportSuccess, onClose }) => {
       }
     } catch (error) {
       console.error("Error uploading Excel file:", error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          "Error importing Excel file";
-      showToast(errorMessage, "error",{ autoClose: false });
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Error importing Excel file";
+      showToast(errorMessage, "error", { autoClose: false });
     } finally {
       setIsUploading(false);
     }
@@ -119,51 +120,106 @@ const ExcelImport = ({ retailerId, onImportSuccess, onClose }) => {
   const downloadTemplate = () => {
     // Create template data based on your Excel structure
     const templateData = [
-      ['Order ID', 'Customer Name', 'Mobile Number', 'Gender', 'Product Name', 'Quantity', 'Unit Price', 'Discount', 'Payment Status', 'Order Date'],
-      ['ORD-001', 'John Doe', '911234567890', 'Male', 'T-Shirt', '2', '500', '50', 'Paid', '2024-01-15'],
-      ['ORD-002', 'Jane Smith', '911234567891', 'Female', 'Jeans', '1', '1200', '100', 'Unpaid', '2024-01-15'],
-      ['', '', '', '', '', '', '', '', '', ''],
-      ['Notes:', '', '', '', '', '', '', '', '', ''],
-      ['- Order ID: Leave empty for auto-generation', '', '', '', '', '', '', '', '', ''],
-      ['- Mobile Number: Format 91XXXXXXXXXX', '', '', '', '', '', '', '', '', ''],
-      ['- Gender: Male/Female/Other', '', '', '', '', '', '', '', '', ''],
-      ['- Payment Status: Paid/Unpaid', '', '', '', '', '', '', '', '', ''],
-      ['- Order Date: YYYY-MM-DD format', '', '', '', '', '', '', '', '', '']
+      [
+        "Order ID",
+        "Customer Name",
+        "Mobile Number",
+        "Gender",
+        "Product Name",
+        "Quantity",
+        "Unit Price",
+        "Discount",
+        "Payment Status",
+        "Order Date",
+      ],
+      [
+        "ORD-001",
+        "John Doe",
+        "911234567890",
+        "Male",
+        "T-Shirt",
+        "2",
+        "500",
+        "50",
+        "Paid",
+        "2024-01-15",
+      ],
+      [
+        "ORD-002",
+        "Jane Smith",
+        "911234567891",
+        "Female",
+        "Jeans",
+        "1",
+        "1200",
+        "100",
+        "Unpaid",
+        "2024-01-15",
+      ],
+      ["", "", "", "", "", "", "", "", "", ""],
+      ["Notes:", "", "", "", "", "", "", "", "", ""],
+      [
+        "- Order ID: Leave empty for auto-generation",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+      ],
+      [
+        "- Mobile Number: Format 91XXXXXXXXXX",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+      ],
+      ["- Gender: Male/Female/Other", "", "", "", "", "", "", "", "", ""],
+      ["- Payment Status: Paid/Unpaid", "", "", "", "", "", "", "", "", ""],
+      ["- Order Date: YYYY-MM-DD format", "", "", "", "", "", "", "", "", ""],
     ];
 
-    let csvContent = templateData.map(row => 
-      row.map(field => `"${field}"`).join(',')
-    ).join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    let csvContent = templateData
+      .map((row) => row.map((field) => `"${field}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = 'order_import_template.csv';
+    link.download = "order_import_template.csv";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    
+
     showToast("Template downloaded successfully", "success");
   };
 
   const downloadExcelTemplate = async () => {
     try {
       // If you have an actual Excel template file, you can serve it from your backend
-      const response = await api.get('/api/orderHistory/excel/template', {
-        responseType: 'blob'
+      const response = await api.get("/api/orderHistory/excel/template", {
+        responseType: "blob",
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.download = 'order_import_template.xlsx';
+      link.download = "order_import_template.xlsx";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       showToast("Excel template downloaded successfully", "success");
     } catch (error) {
       console.error("Error downloading Excel template:", error);
@@ -195,9 +251,18 @@ const ExcelImport = ({ retailerId, onImportSuccess, onClose }) => {
         <div className="p-6">
           {/* Required Format Info */}
           <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-medium text-blue-800 mb-2">Expected Excel Format:</h4>
+            <h4 className="font-medium text-blue-800 mb-2">
+              Expected Excel Format:
+            </h4>
             <div className="text-sm text-blue-700 space-y-1">
-              <p><strong>Columns:</strong> Customer Name , Mobile Number , Product Name ,Total Price</p>
+              <p>
+                <strong>Columns:</strong> Customer Name, Mobile Number (Ex:
+                91XXXXXXXXXX), Product Name, Total Price
+              </p>
+              <p className="text-xs text-blue-600 italic">
+                <strong>Note:</strong> <span className="  font-bold ">Mobile number</span> should include the country
+                code followed by the phone number (e.g., +91XXXXXXXXXX)
+              </p>
               {/* <p><strong>Sheet Name:</strong> Orders (or first sheet will be used)</p> */}
             </div>
           </div>
@@ -258,17 +323,21 @@ const ExcelImport = ({ retailerId, onImportSuccess, onClose }) => {
                   <X size={16} />
                 </button>
               </div>
-              
+
               {importPreview && (
                 <div className="mt-3 pt-3 border-t border-gray-200">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Records:</span>
-                      <span className="ml-2 text-gray-800">{importPreview.recordCount}</span>
+                      <span className="ml-2 text-gray-800">
+                        {importPreview.recordCount}
+                      </span>
                     </div>
                     <div>
                       <span className="text-gray-600">Format:</span>
-                      <span className="ml-2 text-green-600 font-medium">✓ Valid</span>
+                      <span className="ml-2 text-green-600 font-medium">
+                        ✓ Valid
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -286,7 +355,7 @@ const ExcelImport = ({ retailerId, onImportSuccess, onClose }) => {
               <Download size={16} />
               Download Excel Template
             </button>
-{/*             
+            {/*             
             <div className="text-center">
               <button
                 type="button"
