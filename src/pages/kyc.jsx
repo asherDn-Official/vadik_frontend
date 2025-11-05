@@ -58,10 +58,9 @@ const KYCPage = () => {
         return {
           required: "Name is required",
           pattern: {
-            value: /^[A-Za-z ]+$/,
-            message: "Only letters and spaces",
+            value: /^[A-Za-z]+$/,
+            message: "Only letters allowed",
           },
-          maxLength: { value: 15, message: "Max length 15" },
         };
       case "vadiId":
         return {}; // No validation for Vadik ID
@@ -298,6 +297,8 @@ const KYCPage = () => {
                 let value = e.target.value;
                 if (searchType === "phone") {
                   value = value.replace(/\D/g, "");
+                } else if (searchType === "name") {
+                  value = value.replace(/[^A-Za-z]/g, "");
                 }
                 setValue("query", value, { shouldValidate: false });
                 setSearchQuery(value);
