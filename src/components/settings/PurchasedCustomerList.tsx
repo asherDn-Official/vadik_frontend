@@ -28,6 +28,28 @@ const PurchasedCustomerList = ({ billingData, onBack, onCustomerClick, onPageCha
     }
   };
 
+  function formatMobile(mobile) {
+
+  const digits = mobile.replace(/\D/g, ""); // remove all non-digits
+
+  // If number starts with 91 (like 919876543210)
+  if (digits.length === 12 && digits.startsWith("91")) {
+    const num = digits.slice(2);
+    return `+91 ${num.slice(0, 5)} ${num.slice(5)}`;
+  }
+
+  // If number is 10 digits (like 9876543212)
+  if (digits.length === 10) {
+    return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
+  }
+
+  // Already formatted or invalid number
+  return customer.mobile;
+}
+
+
+
+
   if (error) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -124,7 +146,7 @@ const PurchasedCustomerList = ({ billingData, onBack, onCustomerClick, onPageCha
                       {customer.name || "N/A"}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
-                      {customer.mobile || "N/A"}
+                      {formatMobile(customer.mobile) || "N/A"}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {customer.orderId || "N/A"}
