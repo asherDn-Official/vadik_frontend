@@ -102,7 +102,7 @@ const CustomerList = ({
       case 'name':
         return `${customer.firstname || ''} ${customer.lastname || ''}`.trim();
       case 'mobileNumber':
-        return customer.mobileNumber || '';
+        return `+${customer.mobileNumber.slice(0, 2)} ${customer.mobileNumber.slice(2)}` || '';
       case 'gender':
         return customer.gender || '';
       case 'firstVisit':
