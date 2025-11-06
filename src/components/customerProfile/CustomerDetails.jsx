@@ -327,7 +327,14 @@ const CustomerDetails = ({
         basic: {
           firstname: transformedCustomer?.firstname || "",
           lastname: transformedCustomer?.lastname || "",
-          mobileNumber: "+" + transformedCustomer?.mobileNumber || "",
+          mobileNumber:
+            transformedCustomer?.mobileNumber &&
+            transformedCustomer.mobileNumber.startsWith("91")
+              ? `+${transformedCustomer.mobileNumber.slice(
+                  0,
+                  2
+                )} ${transformedCustomer.mobileNumber.slice(2)}`
+              : transformedCustomer?.mobileNumber || "",
           source: transformedCustomer?.source || "",
           customerId: transformedCustomer?.customerId || "",
           firstVisit: transformedCustomer?.firstVisit
@@ -923,7 +930,10 @@ const CustomerDetails = ({
                           ...customer?.basic,
                           isOptedIn: {
                             iconUrl: allowNotificationIconUrl,
-                            value: formData?.basic?.isOptedIn  === true ? "Opt-In" : "Opt-Out",
+                            value:
+                              formData?.basic?.isOptedIn === true
+                                ? "Opt-In"
+                                : "Opt-Out",
                           },
                         },
                       }}
