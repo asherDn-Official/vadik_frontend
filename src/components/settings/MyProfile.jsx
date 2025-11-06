@@ -280,8 +280,8 @@ const MyProfile = () => {
                   {...register("lastName", {
                     required: "Last Name is required",
                     minLength: {
-                      value: 2,
-                      message: "Must be at least 2 characters",
+                      value: 1,
+                      message: "Must be at least 1 characters",
                     },
                     maxLength: {
                       value: 20,
