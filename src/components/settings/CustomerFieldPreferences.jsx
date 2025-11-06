@@ -1,8 +1,19 @@
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { FiPlus, FiTrash2, FiSave, FiX, FiType, FiList, FiMove, FiEdit } from "react-icons/fi";
+import {
+  FiPlus,
+  FiTrash2,
+  FiSave,
+  FiX,
+  FiType,
+  FiList,
+  FiMove,
+  FiEdit,
+} from "react-icons/fi";
 import api from "../../api/apiconfig";
 import { X } from "lucide-react";
+import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
+import showToast from "../../utils/ToastNotification";
 
 const CustomerFieldPreferences = () => {
   const [activeTab, setActiveTab] = useState("Advance Details");
@@ -32,7 +43,7 @@ const CustomerFieldPreferences = () => {
   const tabToApiFieldMap = {
     "Advance Details": "advancedDetails",
     "Additional Details": "additionalData",
-    "Advance Privacy": "advancedPrivacyDetails"
+    "Advance Privacy": "advancedPrivacyDetails",
   };
 
   const fieldTypes = ["string", "number", "options", "date"];
@@ -81,7 +92,7 @@ const CustomerFieldPreferences = () => {
         setFields({
           "Advance Details": response.data.advancedDetails || [],
           "Additional Details": response.data.additionalData || [],
-          "Advance Privacy": response.data.advancedPrivacyDetails || []
+          "Advance Privacy": response.data.advancedPrivacyDetails || [],
         });
       }
     } catch (err) {
@@ -108,7 +119,8 @@ const CustomerFieldPreferences = () => {
     const sourceTab = result.source.droppableId;
     const destTab = result.destination.droppableId;
     const sourceFields = [...fields[sourceTab]];
-    const destFields = sourceTab === destTab ? sourceFields : [...fields[destTab]];
+    const destFields =
+      sourceTab === destTab ? sourceFields : [...fields[destTab]];
 
     const [removed] = sourceFields.splice(result.source.index, 1);
     destFields.splice(result.destination.index, 0, removed);
@@ -166,7 +178,7 @@ const CustomerFieldPreferences = () => {
       const payload = {
         advancedDetails: updatedFields["Advance Details"],
         additionalData: updatedFields["Additional Details"],
-        advancedPrivacyDetails: updatedFields["Advance Privacy"]
+        advancedPrivacyDetails: updatedFields["Advance Privacy"],
       };
 
       await api.put(`/api/customer-preferences/${retailerId}`, payload);
@@ -185,8 +197,9 @@ const CustomerFieldPreferences = () => {
 
     // Check for duplicate field names in the current tab (excluding the field being edited)
     const duplicateExists = fields[activeTab].some(
-      field => field.key.toLowerCase() === newFieldName.trim().toLowerCase() && 
-              (!isEditingField || field.key !== editingFieldKey)
+      (field) =>
+        field.key.toLowerCase() === newFieldName.trim().toLowerCase() &&
+        (!isEditingField || field.key !== editingFieldKey)
     );
 
     if (duplicateExists) {
@@ -206,24 +219,24 @@ const CustomerFieldPreferences = () => {
       type: newFieldType,
       iconUrl: newFieldIcon,
       iconName: newFieldIconName,
-      options: newFieldType === "options" ? newFieldOptions : undefined
+      options: newFieldType === "options" ? newFieldOptions : undefined,
     };
 
     let updatedFields;
-    
+
     if (isEditingField) {
       // Update existing field
       updatedFields = {
         ...fields,
-        [activeTab]: fields[activeTab].map(field => 
+        [activeTab]: fields[activeTab].map((field) =>
           field.key === editingFieldKey ? updatedField : field
-        )
+        ),
       };
     } else {
       // Add new field
       updatedFields = {
         ...fields,
-        [activeTab]: [...fields[activeTab], updatedField]
+        [activeTab]: [...fields[activeTab], updatedField],
       };
     }
 
@@ -235,7 +248,7 @@ const CustomerFieldPreferences = () => {
   const handleRemoveField = async (tabName, fieldKey) => {
     const updatedFields = {
       ...fields,
-      [tabName]: fields[tabName].filter(field => field.key !== fieldKey)
+      [tabName]: fields[tabName].filter((field) => field.key !== fieldKey),
     };
 
     setFields(updatedFields);
@@ -262,11 +275,13 @@ const CustomerFieldPreferences = () => {
   };
 
   const removeOption = (optionToRemove) => {
-    setNewFieldOptions(newFieldOptions.filter(option => option !== optionToRemove));
+    setNewFieldOptions(
+      newFieldOptions.filter((option) => option !== optionToRemove)
+    );
   };
 
   const handleOptionKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       addOption();
     }
@@ -295,6 +310,13 @@ const CustomerFieldPreferences = () => {
     );
   }
 
+  const handleCancelBtn = (activeTab, key) => {
+    const onConfirm = ()=> {
+      handleRemoveField(activeTab, key);
+      showToast("Deleted successfully", 'success')
+    };
+    deleteConfirmTostNotification("", onConfirm);
+  };
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="bg-white overflow-hidden">
@@ -303,10 +325,11 @@ const CustomerFieldPreferences = () => {
             {Object.keys(fields).map((tab) => (
               <button
                 key={tab}
-                className={`px-6 py-4 text-sm font-semibold transition-all duration-200 ${activeTab === tab
+                className={`px-6 py-4 text-sm font-semibold transition-all duration-200 ${
+                  activeTab === tab
                     ? "text-primary bg-white border-b-2 border-gray-900 relative"
                     : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  }`}
+                }`}
                 onClick={() => {
                   setActiveTab(tab);
                   cancelEditing();
@@ -347,7 +370,7 @@ const CustomerFieldPreferences = () => {
               <h3 className="text-lg font-semibold">
                 {isEditingField ? "Edit Field" : "Add New Field"}
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -382,7 +405,7 @@ const CustomerFieldPreferences = () => {
                       }}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
                     >
-                      {fieldTypes.map(type => (
+                      {fieldTypes.map((type) => (
                         <option key={type} value={type}>
                           {type.charAt(0).toUpperCase() + type.slice(1)}
                         </option>
@@ -410,12 +433,16 @@ const CustomerFieldPreferences = () => {
                           alt="Selected icon"
                           className="w-5 h-5 object-contain"
                         />
-                        <span className="text-sm text-gray-600">{newFieldIconName}</span>
+                        <span className="text-sm text-gray-600">
+                          {newFieldIconName}
+                        </span>
                       </>
                     ) : (
                       <>
                         <FiPlus className="w-5 h-5" />
-                        <span className="text-sm text-gray-600">Select Icon</span>
+                        <span className="text-sm text-gray-600">
+                          Select Icon
+                        </span>
                       </>
                     )}
                   </button>
@@ -436,14 +463,19 @@ const CustomerFieldPreferences = () => {
 
               {showIconSelector && (
                 <div className="border rounded-lg p-4 bg-white shadow-sm">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Select an Icon</h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">
+                    Select an Icon
+                  </h4>
                   <div className="grid grid-cols-8 gap-2 max-h-48 overflow-y-auto">
-                    {icons.map(icon => (
+                    {icons.map((icon) => (
                       <button
                         key={icon.name}
                         onClick={() => selectIcon(icon.dataUrl, icon.name)}
-                        className={`p-2 border rounded-lg hover:border-primary transition-colors ${newFieldIcon === icon.dataUrl ? "border-2 border-primary bg-primary/10" : "border-gray-200"
-                          }`}
+                        className={`p-2 border rounded-lg hover:border-primary transition-colors ${
+                          newFieldIcon === icon.dataUrl
+                            ? "border-2 border-primary bg-primary/10"
+                            : "border-gray-200"
+                        }`}
                         title={icon.name}
                       >
                         <img
@@ -494,7 +526,10 @@ const CustomerFieldPreferences = () => {
                         </div>
                         <div className="space-y-2">
                           {newFieldOptions.map((option, index) => (
-                            <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded border">
+                            <div
+                              key={index}
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded border"
+                            >
                               <span className="text-sm">{option}</span>
                               <button
                                 onClick={() => removeOption(option)}
@@ -525,7 +560,8 @@ const CustomerFieldPreferences = () => {
                   onClick={handleSaveField}
                   className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                 >
-                  <FiSave className="mr-2" /> {isEditingField ? "Update Field" : "Add Field"}
+                  <FiSave className="mr-2" />{" "}
+                  {isEditingField ? "Update Field" : "Add Field"}
                 </button>
               </div>
             </div>
@@ -560,7 +596,10 @@ const CustomerFieldPreferences = () => {
                           >
                             <div className="flex items-center justify-between p-4">
                               <div className="flex items-center gap-4">
-                                <div {...provided.dragHandleProps} className="cursor-move">
+                                <div
+                                  {...provided.dragHandleProps}
+                                  className="cursor-move"
+                                >
                                   <FiMove className="w-5 h-5 text-gray-400" />
                                 </div>
 
@@ -576,39 +615,51 @@ const CustomerFieldPreferences = () => {
 
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
-                                    <h4 className="font-semibold text-gray-900">{field.key}</h4>
-                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${field.type === 'string' ? 'bg-blue-100 text-blue-800' :
-                                        field.type === 'number' ? 'bg-green-100 text-green-800' :
-                                          field.type === 'options' ? 'bg-purple-100 text-purple-800' :
-                                            field.type === 'date' ? 'bg-orange-100 text-orange-800' :
-                                              'bg-gray-100 text-gray-800'
-                                      }`}>
+                                    <h4 className="font-semibold text-gray-900">
+                                      {field.key}
+                                    </h4>
+                                    <span
+                                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                        field.type === "string"
+                                          ? "bg-blue-100 text-blue-800"
+                                          : field.type === "number"
+                                          ? "bg-green-100 text-green-800"
+                                          : field.type === "options"
+                                          ? "bg-purple-100 text-purple-800"
+                                          : field.type === "date"
+                                          ? "bg-orange-100 text-orange-800"
+                                          : "bg-gray-100 text-gray-800"
+                                      }`}
+                                    >
                                       {field.type}
                                     </span>
                                   </div>
 
-                                  {field.options && field.options.length > 0 && (
-                                    <div className="mt-2">
-                                      <div className="text-xs text-gray-500 mb-1">
-                                        Options ({field.options.length}):
+                                  {field.options &&
+                                    field.options.length > 0 && (
+                                      <div className="mt-2">
+                                        <div className="text-xs text-gray-500 mb-1">
+                                          Options ({field.options.length}):
+                                        </div>
+                                        <div className="flex flex-wrap gap-1">
+                                          {field.options
+                                            .slice(0, 3)
+                                            .map((option, idx) => (
+                                              <span
+                                                key={idx}
+                                                className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded border"
+                                              >
+                                                {option}
+                                              </span>
+                                            ))}
+                                          {field.options.length > 3 && (
+                                            <span className="px-2 py-1 text-xs text-gray-500">
+                                              +{field.options.length - 3} more
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
-                                      <div className="flex flex-wrap gap-1">
-                                        {field.options.slice(0, 3).map((option, idx) => (
-                                          <span
-                                            key={idx}
-                                            className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded border"
-                                          >
-                                            {option}
-                                          </span>
-                                        ))}
-                                        {field.options.length > 3 && (
-                                          <span className="px-2 py-1 text-xs text-gray-500">
-                                            +{field.options.length - 3} more
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
+                                    )}
                                 </div>
                               </div>
 
@@ -621,7 +672,9 @@ const CustomerFieldPreferences = () => {
                                   <FiEdit size={18} />
                                 </button>
                                 <button
-                                  onClick={() => handleRemoveField(activeTab, field.key)}
+                                  onClick={() =>
+                                    handleCancelBtn(activeTab, field.key)
+                                  }
                                   className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                   title="Remove field"
                                 >
@@ -638,9 +691,12 @@ const CustomerFieldPreferences = () => {
                       <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                         <FiType className="w-8 h-8 text-gray-400" />
                       </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No fields added yet</h3>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        No fields added yet
+                      </h3>
                       <p className="text-gray-500 mb-4">
-                        Start by adding custom fields for {activeTab.toLowerCase()}
+                        Start by adding custom fields for{" "}
+                        {activeTab.toLowerCase()}
                       </p>
                     </div>
                   )}
