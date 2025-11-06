@@ -34,7 +34,7 @@ const KYCPage = () => {
 
   const searchOptions = [
     { key: "phone", label: "Phone" },
-    { key: "name", label: "Name" },
+    // { key: "name", label: "Name" },
     { key: "vadiId", label: "Vadik ID" },
   ];
 
