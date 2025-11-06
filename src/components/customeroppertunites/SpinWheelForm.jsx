@@ -16,8 +16,6 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [isQuizePopupOpen, setIsQuizePopupOpen] = useState(false);
 
-
-
   const {
     register,
     handleSubmit,
@@ -28,7 +26,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     formState: { errors },
     setError,
     clearErrors,
-    trigger
+    trigger,
   } = useForm({
     defaultValues: {
       name: "",
@@ -59,8 +57,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
-        
-        const response = await api.get(`/api/coupons/all?isExpired=false&isActive=true`);
+        const response = await api.get(
+          `/api/coupons/all?isExpired=false&isActive=true`
+        );
         const list = response.data?.data || [];
         setCoupons(list);
         setLoadingCoupons(false);
@@ -82,16 +81,18 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     fetchCoupons();
   }, [getValues, setValue, clearErrors]);
 
-
   const fetchQuizzes = async () => {
     try {
       const today = new Date().toISOString();
       const res = await api.get(`/api/quiz?fully=true`);
-      const list = Array.isArray(res?.data) ? res.data : (res?.data?.docs || []);
+      const list = Array.isArray(res?.data) ? res.data : res?.data?.docs || [];
       setQuizzes(list);
     } catch (error) {
       console.error("Error fetching quizzes:", error);
-      showToast(error?.response?.data?.message || "Failed to load quizzes", "error");
+      showToast(
+        error?.response?.data?.message || "Failed to load quizzes",
+        "error"
+      );
     } finally {
       setLoadingQuizzes(false);
     }
@@ -99,7 +100,6 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   useEffect(() => {
     fetchQuizzes();
   }, [isQuizePopupOpen]);
-
 
   // Ensure selected quiz (by allocatedQuizCampainId) is present in dropdown by fetching its details
   useEffect(() => {
@@ -112,7 +112,10 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         const res = await api.get(`/quiz/${selectedId}`);
         const data = res?.data;
         if (data && data._id) {
-          setQuizzes((prev) => [{ ...data }, ...(Array.isArray(prev) ? prev : [])]);
+          setQuizzes((prev) => [
+            { ...data },
+            ...(Array.isArray(prev) ? prev : []),
+          ]);
         }
       } catch (error) {
         console.error("Error fetching selected quiz:", error);
@@ -133,14 +136,20 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         expiryDate,
         allocatedQuizCampainId,
         segments,
-        _id
+        _id,
       } = campaign;
 
       setValue("name", name ?? "");
       setValue("noOfSpins", noOfSpins ?? 0);
-      setValue("couponOptions", Array.isArray(couponOptions) ? couponOptions : []);
-      setValue("targetedCoupons", Array.isArray(targetedCoupons) ? targetedCoupons : []);
-      setValue("isActive", typeof isActive === 'boolean' ? isActive : true);
+      setValue(
+        "couponOptions",
+        Array.isArray(couponOptions) ? couponOptions : []
+      );
+      setValue(
+        "targetedCoupons",
+        Array.isArray(targetedCoupons) ? targetedCoupons : []
+      );
+      setValue("isActive", typeof isActive === "boolean" ? isActive : true);
       // Convert incoming ISO/string to Date object for DatePicker
       setValue("expiryDate", expiryDate ? new Date(expiryDate) : null);
       setValue("allocatedQuizCampainId", allocatedQuizCampainId ?? "");
@@ -151,9 +160,15 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
 
   // Ensure targetedCoupons is valid when segments change
   useEffect(() => {
-    const segmentCouponIds = formData.segments?.map(s => s.couponId).filter(id => id && String(id).trim().length > 0) || [];
+    const segmentCouponIds =
+      formData.segments
+        ?.map((s) => s.couponId)
+        .filter((id) => id && String(id).trim().length > 0) || [];
     const currentTargeted = getValues("targetedCoupons") || [];
-    if (currentTargeted.length > 0 && !segmentCouponIds.includes(currentTargeted[0])) {
+    if (
+      currentTargeted.length > 0 &&
+      !segmentCouponIds.includes(currentTargeted[0])
+    ) {
       // Reset if not valid
       setValue("targetedCoupons", []);
       clearErrors("targetedCoupons");
@@ -193,7 +208,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
 
   const removeSegment = (segmentId) => {
     if (formData.segments?.length > 1) {
-      const updatedSegments = formData.segments.filter((s) => s.id !== segmentId);
+      const updatedSegments = formData.segments.filter(
+        (s) => s.id !== segmentId
+      );
       setValue("segments", updatedSegments);
       setValue("noOfSpins", updatedSegments.length);
     }
@@ -202,8 +219,16 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const handleCouponSelect = async (segmentId, couponId) => {
     if (!couponId) {
       // If cleared selection, re-validate
-      const updatedSegments = formData.segments.map(s =>
-        s.id === segmentId ? { ...s, couponId: "", productName: "", offer: "0.00", couponType: undefined } : s
+      const updatedSegments = formData.segments.map((s) =>
+        s.id === segmentId
+          ? {
+              ...s,
+              couponId: "",
+              productName: "",
+              offer: "0.00",
+              couponType: undefined,
+            }
+          : s
       );
       setValue("segments", updatedSegments);
       return;
@@ -211,17 +236,21 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
 
     try {
       // Fetch coupon details using provided API to auto-fill row
-      const res = await api.post("/api/coupons/couponforCampains", { coupons: couponId });
+      const res = await api.post("/api/coupons/couponforCampains", {
+        coupons: couponId,
+      });
       const data = res?.data?.data || {};
 
-      const updatedSegments = formData.segments.map(s =>
-        s.id === segmentId ? {
-          ...s,
-          couponId,
-          productName: data.name || "",
-          offer: String(data.discount ?? "0"),
-          couponType: data.couponType,
-        } : s
+      const updatedSegments = formData.segments.map((s) =>
+        s.id === segmentId
+          ? {
+              ...s,
+              couponId,
+              productName: data.name || "",
+              offer: String(data.discount ?? "0"),
+              couponType: data.couponType,
+            }
+          : s
       );
 
       setValue("segments", updatedSegments);
@@ -236,7 +265,10 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       }
     } catch (error) {
       console.error("Failed to fetch coupon details", error);
-      showToast(error?.response?.data?.message || "Failed to fetch coupon details", "error");
+      showToast(
+        error?.response?.data?.message || "Failed to fetch coupon details",
+        "error"
+      );
     }
   };
 
@@ -255,13 +287,15 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     if (validCouponIds.length < 3) {
       setError("segments", {
         type: "manual",
-        message: "Minimum 3 coupons in the table"
+        message: "Minimum 3 coupons in the table",
       });
       return;
     }
 
     // Convert Date to ISO midnight in UTC
-    const expiryIso = data.expiryDate ? `${format(data.expiryDate, "yyyy-MM-dd")}T00:00:00.000Z` : "";
+    const expiryIso = data.expiryDate
+      ? `${format(data.expiryDate, "yyyy-MM-dd")}T00:00:00.000Z`
+      : "";
 
     const payload = {
       name: data.name.trim(),
@@ -319,16 +353,22 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                   required: "Name is required",
                   minLength: {
                     value: 2,
-                    message: "Name must be at least 2 characters"
+                    message: "Name must be at least 2 characters",
                   },
                   maxLength: {
                     value: 50,
-                    message: "Name must be less than or equal to 50 characters"
-                  }
+                    message: "Name must be less than or equal to 50 characters",
+                  },
                 })}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
+                  errors.name ? "border-red-500" : "border-gray-300"
+                }`}
               />
-              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -341,13 +381,19 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                   required: "No Of Spins is required",
                   min: {
                     value: 1,
-                    message: "No Of Spins must be at least 1"
+                    message: "No Of Spins must be at least 1",
                   },
-                  valueAsNumber: true
+                  valueAsNumber: true,
                 })}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.noOfSpins ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
+                  errors.noOfSpins ? "border-red-500" : "border-gray-300"
+                }`}
               />
-              {errors.noOfSpins && <p className="mt-1 text-sm text-red-600">{errors.noOfSpins.message}</p>}
+              {errors.noOfSpins && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.noOfSpins.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -364,14 +410,20 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                     onChange={(date) => field.onChange(date)}
                     dateFormat="dd/MM/yyyy"
                     placeholderText="DD/MM/YYYY"
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
+                      errors.expiryDate ? "border-red-500" : "border-gray-300"
+                    }`}
                     minDate={new Date()}
                     wrapperClassName="w-full"
                     isClearable
                   />
                 )}
               />
-              {errors.expiryDate && <p className="mt-1 text-sm text-red-600">{errors.expiryDate.message}</p>}
+              {errors.expiryDate && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.expiryDate.message}
+                </p>
+              )}
             </div>
 
             {/* Select (Quiz Campaign) */}
@@ -382,29 +434,47 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
               <Controller
                 name="allocatedQuizCampainId"
                 control={control}
+                rules={{ required: "Quiz is required" }}
                 render={({ field }) => (
                   <select
                     {...field}
-                    className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none border-gray-300"
+                    className={`w-full px-4 py-3 border rounded-lg  outline-none border-gray-300 ${
+                      errors.allocatedQuizCampainId
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    }`}
                     disabled={loadingQuizzes}
                   >
-                    <option value="">{loadingQuizzes ? "Loading..." : "Select Quiz"}</option>
-                    {!loadingQuizzes && quizzes?.map((q) => (
-                      <option key={q._id} value={q._id}>
-                        {q.campaignName}
-                      </option>
-                    ))}
+                    <option value="">
+                      {loadingQuizzes ? "Loading..." : "Select Quiz"}
+                    </option>
+                    {!loadingQuizzes &&
+                      quizzes?.map((q) => (
+                        <option key={q._id} value={q._id}>
+                          {q.campaignName}
+                        </option>
+                      ))}
                   </select>
                 )}
               />
-              <div className="text-sm text-blue-900 cursor-pointer text-end  underline" onClick={() => setIsQuizePopupOpen(true)}
-              >
-                Create Quize
+              <div className="flex justify-between items-center">
+                {errors.allocatedQuizCampainId ? (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.allocatedQuizCampainId.message}
+                  </p>
+                ) : (
+                  <div />
+                )}
+                <div
+                  className="text-sm text-blue-900 cursor-pointer underline"
+                  onClick={() => setIsQuizePopupOpen(true)}
+                >
+                  Create Quize
+                </div>
               </div>
-
             </div>
 
-            {formData.targetedCoupons?.length > 0 && (
+            {/* {formData.targetedCoupons?.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Targeted Coupons
@@ -425,7 +495,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         </div>
 
@@ -433,7 +503,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         {formData.segments?.length > 0 ? (
           <div className="overflow-x-auto mt-8">
             {errors.segments && (
-              <p className="mb-2 text-sm text-red-600">{errors.segments.message}</p>
+              <p className="mb-2 text-sm text-red-600">
+                {errors.segments.message}
+              </p>
             )}
             <table className="w-full border-collapse border border-gray-200 rounded-lg overflow-hidden">
               <thead className="bg-gray-50">
@@ -463,11 +535,15 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                     </td>
                     <td className="border border-gray-200 px-4 py-3">
                       {loadingCoupons ? (
-                        <div className="text-sm text-gray-500">Loading coupons...</div>
+                        <div className="text-sm text-gray-500">
+                          Loading coupons...
+                        </div>
                       ) : (
                         <select
                           value={segment.couponId}
-                          onChange={(e) => handleCouponSelect(segment.id, e.target.value)}
+                          onChange={(e) =>
+                            handleCouponSelect(segment.id, e.target.value)
+                          }
                           className="w-full cursor-pointer px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
                         >
                           <option value="">Select Coupon</option>
@@ -530,7 +606,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         ) : (
           <div className="mt-8 border border-dashed border-gray-300 rounded-lg p-8 text-center">
             {errors.segments && (
-              <p className="mb-2 text-sm text-red-600">{errors.segments.message}</p>
+              <p className="mb-2 text-sm text-red-600">
+                {errors.segments.message}
+              </p>
             )}
             <p className="text-gray-500 mb-3">No spins added yet.</p>
             <button
@@ -554,29 +632,52 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         </div>
 
         {(() => {
-          const segmentCouponIds = formData.segments?.map(s => s.couponId).filter(id => id && String(id).trim().length > 0) || [];
-          const availableTargetedCoupons = coupons.filter(coupon => segmentCouponIds.includes(coupon._id));
+          const segmentCouponIds =
+            formData.segments
+              ?.map((s) => s.couponId)
+              .filter((id) => id && String(id).trim().length > 0) || [];
+          const availableTargetedCoupons = coupons.filter((coupon) =>
+            segmentCouponIds.includes(coupon._id)
+          );
           const hasAvailableCoupons = availableTargetedCoupons.length > 0;
           return (
-            <div className={`mt-6 ${!hasAvailableCoupons ? 'opacity-50' : ''}`}>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">Targeted Coupons</h3>
+            <div className={`mt-6 ${!hasAvailableCoupons ? "opacity-50" : ""}`}>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">
+                Targeted Coupons
+              </h3>
               <p className="text-sm text-gray-500 mb-2">
-                Select coupons that will be targeted for this spin wheel campaign. Only coupons selected in the spin wheel segments are available.
+                Select coupons that will be targeted for this spin wheel
+                campaign. Only coupons selected in the spin wheel segments are
+                available.
               </p>
               {errors.targetedCoupons && (
-                <p className="mb-2 text-sm text-red-600">{errors.targetedCoupons.message}</p>
+                <p className="mb-2 text-sm text-red-600">
+                  {errors.targetedCoupons.message}
+                </p>
               )}
               {!hasAvailableCoupons && (
                 <p className="text-sm text-orange-600 mb-2">
-                  No coupons available. Please add coupons to the spin wheel segments first.
+                  No coupons available. Please add coupons to the spin wheel
+                  segments first.
                 </p>
               )}
               {loadingCoupons ? (
                 <div>Loading coupons...</div>
               ) : (
-                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${!hasAvailableCoupons ? 'pointer-events-none' : ''}`}>
-                  {availableTargetedCoupons.map(coupon => (
-                    <label key={coupon._id} className={`flex items-center p-3 border border-gray-200 rounded-lg ${!hasAvailableCoupons ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                <div
+                  className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${
+                    !hasAvailableCoupons ? "pointer-events-none" : ""
+                  }`}
+                >
+                  {availableTargetedCoupons.map((coupon) => (
+                    <label
+                      key={coupon._id}
+                      className={`flex items-center p-3 border border-gray-200 rounded-lg ${
+                        !hasAvailableCoupons
+                          ? "cursor-not-allowed"
+                          : "cursor-pointer"
+                      }`}
+                    >
                       <input
                         type="radio"
                         name="targetedCoupons"
@@ -586,9 +687,12 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                         className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
                       />
                       <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-700">{coupon.name}</div>
+                        <div className="text-sm font-medium text-gray-700">
+                          {coupon.name}
+                        </div>
                         <div className="text-xs text-gray-500">
-                          {coupon.code} - {coupon.discount}{coupon.couponType === 'percentage' ? '%' : '₹'} off
+                          {coupon.code} - {coupon.discount}
+                          {coupon.couponType === "percentage" ? "%" : "₹"} off
                         </div>
                       </div>
                     </label>
@@ -611,16 +715,24 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
             type="submit"
             className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
           >
-            {campaign ? 'Save Spin Wheel' : 'Create Spin Wheel'}
+            {campaign ? "Save Spin Wheel" : "Create Spin Wheel"}
           </button>
         </div>
       </form>
 
-
       {isQuizePopupOpen && (
-        <div onClick={() => setIsQuizePopupOpen(false)} className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50">
-          <div className="bg-white rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <Quiz backButton={true} onClose={() => setIsQuizePopupOpen(false)} />
+        <div
+          onClick={() => setIsQuizePopupOpen(false)}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center  justify-center z-50"
+        >
+          <div
+            className="bg-white rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Quiz
+              backButton={true}
+              onClose={() => setIsQuizePopupOpen(false)}
+            />
           </div>
         </div>
       )}
