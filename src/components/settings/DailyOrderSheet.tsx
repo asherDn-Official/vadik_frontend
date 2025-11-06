@@ -525,7 +525,7 @@ const DailyOrderSheet = ({ customer, onBack, onNewOrder }) => {
       setNewColor("");
       setLoyaltyPoints(null);
     } catch (error) {
-      showToast(error?.response?.data?.message, "error");
+      showToast(error?.response?.data?.error, "error");
     }
   };
 
