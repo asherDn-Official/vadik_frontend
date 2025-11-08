@@ -271,7 +271,7 @@ const CustomerDetails = ({
           source: transformedCustomer?.source || "",
           customerId: transformedCustomer?.customerId || "",
           firstVisit: transformedCustomer?.firstVisit
-            ? new Date(transformedCustomer.firstVisit).toLocaleDateString()
+            ? new Date(transformedCustomer.firstVisit).toLocaleDateString('en-GB')
             : "",
           loyaltyPoints: transformedCustomer?.loyaltyPoints ?? "",
           isOptedIn: transformedCustomer?.isOptedIn ?? null,
@@ -339,7 +339,7 @@ const CustomerDetails = ({
           source: transformedCustomer?.source || "",
           customerId: transformedCustomer?.customerId || "",
           firstVisit: transformedCustomer?.firstVisit
-            ? new Date(transformedCustomer.firstVisit).toLocaleDateString()
+            ? new Date(transformedCustomer.firstVisit).toLocaleDateString('en-GB')
             : "",
           loyaltyPoints: transformedCustomer?.loyaltyPoints ?? "",
           isOptedIn: transformedCustomer?.isOptedIn ?? null,
