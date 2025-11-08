@@ -194,13 +194,13 @@ const basicSchema = yup.object().shape({
   firstname: yup
     .string()
     .required("First name is required")
-    .matches(/^[A-Za-z\s]+$/, "Only letters are allowed")
+    .matches(/^[A-Za-z]+$/, "Only letters are allowed")
     .min(3, "Must be at least 3 characters")
     .max(15, "Must be 15 characters or less"),
   lastname: yup
     .string()
     .required("Last name is required")
-    .matches(/^[A-Za-z\s]+$/, "Only letters are allowed")
+    .matches(/^[A-Za-z]+$/, "Only letters are allowed")
     .min(1, "Must be at least 1 character")
     .max(15, "Must be 15 characters or less"),
   source: yup.string().optional(),
@@ -305,6 +305,7 @@ const CustomerDetails = ({
     };
   });
   const [sourceOptions, setSourceOptions] = useState([]);
+  const [customerNameInput, setCustomerNameInput] = useState("");
   // State for validation errors
   const [errors, setErrors] = useState({
     basic: {},
@@ -352,6 +353,11 @@ const CustomerDetails = ({
           transformedCustomer?.advancedPrivacyDetails || {},
       };
       setFormData(newFormData);
+      setCustomerNameInput(
+        [newFormData.basic.firstname, newFormData.basic.lastname]
+          .filter(Boolean)
+          .join(" ")
+      );
     }
   }, [transformedCustomer]);
 
@@ -383,10 +389,17 @@ const CustomerDetails = ({
   }, []);
 
   const customerName = useMemo(() => {
-    const first = formData?.basic?.firstname?.trim() || "";
-    const last = formData?.basic?.lastname?.trim() || "";
+    const first = formData?.basic?.firstname || "";
+    const last = formData?.basic?.lastname || "";
     return [first, last].filter(Boolean).join(" ");
   }, [formData?.basic?.firstname, formData?.basic?.lastname]);
+
+  // Set customerNameInput when editing starts
+  useEffect(() => {
+    if (isEditing) {
+      setCustomerNameInput(customerName);
+    }
+  }, [isEditing, customerName]);
 
   const handleCustomerNameChange = useCallback(
     (value) => {
@@ -715,10 +728,11 @@ const CustomerDetails = ({
                           <div>
                             <input
                               type="text"
-                              value={customerName}
-                              onChange={(e) =>
-                                handleCustomerNameChange(e.target.value)
-                              }
+                              value={customerNameInput}
+                              onChange={(e) => {
+                                setCustomerNameInput(e.target.value);
+                                handleCustomerNameChange(e.target.value);
+                              }}
                               className={`text-sm font-medium text-gray-900 border ${
                                 errors?.basic?.firstname ||
                                 errors?.basic?.lastname
