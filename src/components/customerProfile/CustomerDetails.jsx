@@ -806,7 +806,7 @@ const CustomerDetails = ({
                           transformedCustomer?.firstVisit
                             ? new Date(
                                 transformedCustomer.firstVisit
-                              ).toLocaleDateString()
+                              ).toLocaleDateString('en-GB')
                             : ""
                         }
                         value={formData?.basic?.firstVisit}
