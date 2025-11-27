@@ -52,7 +52,7 @@ function CustomerProfileCollection() {
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchCustomerData();
-    }, 10000); // Delay actual data load by 3 sec
+    }, 3000); // Delay actual data load by 3 sec
 
     return () => clearTimeout(timer);
   }, [startDate, endDate]);
