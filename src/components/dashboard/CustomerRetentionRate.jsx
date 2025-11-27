@@ -11,57 +11,61 @@ function CustomerRetentionRate() {
   const [gradient, setGradient] = useState(null);
 
   // Fetch retention data
-useEffect(() => {
-  const timer = setTimeout(() => {
-    const fetchRetention = async () => {
-      try {
-        const res = await api.get("api/dashboard/customerRetensionRate");
-        const percentage = res.data.retentionPercentage;
-        setRetention(percentage ?? 0);
-      } catch (error) {
-        console.error("Error fetching retention data:", error);
-        setRetention(0);
-      }
-    };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const fetchRetention = async () => {
+        try {
+          const res = await api.get("api/dashboard/customerRetensionRate");
+          const percentage = res.data.retentionPercentage;
+          setRetention(percentage ?? 0);
+        } catch (error) {
+          console.error("Error fetching retention data:", error);
+          setRetention(0);
+        }
+      };
 
-    fetchRetention();
-  }, 500); // ⏱ 1 second delay
+      fetchRetention();
+    }, 500);
 
-  return () => clearTimeout(timer);
-}, []);
+    return () => clearTimeout(timer);
+  }, []);
 
-
-  // Create gradient after data is loaded
+  // Create gradient after data available
   useLayoutEffect(() => {
     if (chartRef.current?.canvas) {
       const ctx = chartRef.current.canvas.getContext("2d");
-      const grad = ctx.createLinearGradient(0, 0, 160, 160);
-      grad.addColorStop(0, "#db2777");
+
+      // Radial gradient to match your UI
+      const grad = ctx.createRadialGradient(80, 80, 20, 80, 80, 120);
+      grad.addColorStop(0, "#ff4ba3");
       grad.addColorStop(1, "#1e1b4b");
+
       setGradient(grad);
     }
   }, [retention]);
 
+  // Chart Data
   const data = {
     labels: ["Retention", "Churn"],
     datasets: [
       {
-        data: [retention ?? 0, 100 - (retention ?? 0)],
+        data: [retention, 100 - retention],
         backgroundColor: gradient
-          ? [gradient, "#f1f5f9"]
-          : ["#db2777", "#f1f5f9"],
+          ? [gradient, "#D9D9D942"] // soft white-grey ring
+          : ["#db2777", "#D9D9D942"],
         borderWidth: 0,
-        borderRadius: 30,
-        cutout: "80%",
+        borderRadius: 50, // round ends
         circumference: 360,
         rotation: -90,
       },
     ],
   };
 
+  // Chart Options
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    cutout: "75%", // thick donut ring like reference UI
     plugins: {
       tooltip: {
         enabled: true,
@@ -76,26 +80,26 @@ useEffect(() => {
           },
         },
       },
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
     },
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow-md  h-[100%] flex flex-col justify-between">
-      {/* h-[287px] */}
-      <h2 className="text-center text-lg font-semibold text-[#1e1b4b]">
+    <div className="bg-white p-4 rounded-xl shadow-md h-[100%] flex flex-col justify-between">
+      <h2 className="text-center py-2 font-poppins font-medium text-[20px] leading-[114%] text-[#1e1b4b]">
         Customer Retention Rate
       </h2>
 
-      <div className="relative w-[160px] h-[160px] mx-auto mt-2 mb-2">
+      {/* Chart container */}
+      <div className="relative w-[180px] h-[180px] mx-auto mb-2 drop-shadow-lg">
         {retention !== null ? (
           <>
             <Doughnut ref={chartRef} data={data} options={options} />
+
+            {/* Center Text */}
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-3xl font-extrabold text-[#1e1b4b]">
-                {retention}%
+                {retention} %
               </span>
             </div>
           </>

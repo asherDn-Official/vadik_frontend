@@ -61,9 +61,10 @@ useEffect(() => {
     <div className="bg-white p-4 rounded-xl shadow-md h-[100%] flex flex-col justify-between">
       {/* h-[287px] */}
       {/* Title */}
-      <h2 className="text-center text-lg font-semibold text-[#313166]">
-        Customer Profile Overview
-      </h2>
+      <h2 className="text-center font-poppins font-medium text-[20px] py-2 leading-[100%] text-[#313166]">
+  Customer Profile Overview
+</h2>
+
 
       {/* Chart */}
       <div className="relative w-[160px] h-[160px] mx-auto">

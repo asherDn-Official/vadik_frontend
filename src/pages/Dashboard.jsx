@@ -15,20 +15,23 @@ function Dashboard() {
   const handleDateChange = (date) => {
     setSelectedDate(date);
   };
-const navigate=useNavigate();
-function gotoNotification(){
-navigate("/notifications");
-}
+  const navigate = useNavigate();
+  function gotoNotification() {
+    navigate("/notifications");
+  }
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F3F4F8]">
       <div className=" ">
         <div className="bg-white px-2 py-2 sm:p-4">
           <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <h1 className="text-2xl font-semibold text-gray-800">
+            <h1 className="font-[Poppins] font-medium text-[24px] leading-[114%] tracking-[0] text-[#313166]">
               Welcome, Admin
             </h1>
             <div className="flex items-center gap-3 sm:gap-4">
-              <button className="text-gray-600 hover:text-gray-800" onClick={()=>gotoNotification()}>
+              <button
+                className="text-gray-600 hover:text-gray-800  bg-[#F4F5F9] py-2 px-2 rounded-full"
+                onClick={() => gotoNotification()}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-6 w-6"
@@ -51,24 +54,23 @@ navigate("/notifications");
           </header>
         </div>
 
-
-        <div className="grid grid-cols-1 gap-3 p-4 sm:p-4 max-w-[1600px] mx-auto md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 p-[2%] md:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
           {/* First Column */}
-          <div className="space-y-4">
+          <div className="w-full space-y-5">
             <CustomerProfileCollection />
             <ChurnRate />
           </div>
 
           {/* Second Column */}
-          <div className=" space-y-4 ">
-            <div className="grid grid-cols-1 md:grid-cols-2 sm:gap-4  ">
+          <div className="w-full space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 sm:gap-5">
               <CustomerProfileOverview />
               <CustomerRetentionRate />
             </div>
 
             <CustomerEngagementScore />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 sm:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 sm:gap-5">
               <OptInOptOut />
               <CustomerSatisfactionScore />
             </div>

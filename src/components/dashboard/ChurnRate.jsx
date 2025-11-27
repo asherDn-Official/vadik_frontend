@@ -11,27 +11,26 @@ function ChurnRate() {
   const [churn, setChurn] = useState(88);
   const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-  const fetchChurn = async () => {
-    try {
-      const res = await api.get("api/dashboard/churnRate");
-      const churnValue = parseFloat(res.data.churnRate.replace("%", ""));
-      setChurn(churnValue);
-    } catch (err) {
-      console.error("Error fetching churn rate:", err);
-      setChurn(0);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchChurn = async () => {
+      try {
+        const res = await api.get("api/dashboard/churnRate");
+        const churnValue = parseFloat(res.data.churnRate.replace("%", ""));
+        setChurn(churnValue);
+      } catch (err) {
+        console.error("Error fetching churn rate:", err);
+        setChurn(0);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const timer = setTimeout(() => {
-    fetchChurn();
-  }, 1000); // Delay API call by 3 seconds
+    const timer = setTimeout(() => {
+      fetchChurn();
+    }, 1000); // Delay API call by 3 seconds
 
-  return () => clearTimeout(timer); // cleanup if component unmounts
-}, []);
-
+    return () => clearTimeout(timer); // cleanup if component unmounts
+  }, []);
 
   useEffect(() => {
     if (chartRef.current && chartRef.current.canvas) {
@@ -93,11 +92,13 @@ useEffect(() => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md w-full mx-auto h-[244px]">
-      <h2 className="text-lg font-semibold text-[#1e1b4b] mb-4">Churn Rate</h2>
+    <div className="bg-white p-6 rounded-xl shadow-md w-full mx-auto h-[332px]">
+      <h2 className="text-[20px] font-medium leading-[100%] tracking-[0px] font-poppins text-[#1e1b4b] mb-4">
+        Churn Rate
+      </h2>
 
-      <div className="relative w-full h-40">
-        { (
+      <div className="relative w-full h-5/6">
+        {
           <>
             <Doughnut ref={chartRef} data={data} options={options} />
 
@@ -120,9 +121,7 @@ useEffect(() => {
               </span>
             </div>
           </>
-        )}
-
-
+        }
       </div>
     </div>
   );
