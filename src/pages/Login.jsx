@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiEye, FiEyeOff } from "react-icons/fi"; // Added eye icons
 import api from "../api/apiconfig";
@@ -17,6 +17,21 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false); // Added password visibility state
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
+
+  useEffect(() => {
+    if (!localStorage.getItem("token")) {
+      window.history.pushState(null, "", window.location.href);
+    }
+
+    const enforceLogin = () => {
+      if (!localStorage.getItem("token")) {
+        navigate("/", { replace: true });
+      }
+    };
+
+    window.addEventListener("popstate", enforceLogin);
+    return () => window.removeEventListener("popstate", enforceLogin);
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

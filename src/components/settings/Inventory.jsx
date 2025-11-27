@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { FiEdit2, FiTrash2, FiSearch, FiPlus } from "react-icons/fi";
 import AddProduct from "./AddProduct";
 import api from "../../api/apiconfig";
+import VideoPopupWithShare from "../common/VideoPopupWithShare";
 // import {
 //   getProducts,
 //   deleteProduct as deleteProductApi,
@@ -227,12 +228,18 @@ const Inventory = () => {
         <h2 className="text-xl text-[#313166] font-medium">
           Product Inventory
         </h2>
-        <button
-          onClick={() => setShowAddProduct(true)}
-          className="flex items-center px-4 py-2 bg-[#EC396F] text-white rounded-md hover:bg-pink-700 transition"
-        >
-          <FiPlus className="mr-2" /> Add Product
-        </button>
+        <div className=" flex items-center gap-2">
+          <VideoPopupWithShare
+                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                buttonCss="flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
+              />
+          <button
+            onClick={() => setShowAddProduct(true)}
+            className="flex items-center px-4 py-2 bg-[#EC396F] text-white rounded-md hover:bg-pink-700 transition"
+          >
+            <FiPlus className="mr-2" /> Add Product
+          </button>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-md shadow-sm mb-6">
@@ -247,7 +254,10 @@ const Inventory = () => {
                   const inputValue = e.target.value;
 
                   // Allow only letters, numbers, and spaces
-                  const filteredValue = inputValue.replace(/[^a-zA-Z0-9\s]/g, '');
+                  const filteredValue = inputValue.replace(
+                    /[^a-zA-Z0-9\s]/g,
+                    ""
+                  );
 
                   setSearchTerm(filteredValue);
                 }}
@@ -339,7 +349,11 @@ const Inventory = () => {
                             className="w-10 h-10 mr-3 object-cover rounded-md"
                           />
                         )}
-                        <span>{product.productname.length > 32 ? `${product.productname.slice(0, 32)}...` : product.productname}</span>
+                        <span>
+                          {product.productname.length > 32
+                            ? `${product.productname.slice(0, 32)}...`
+                            : product.productname}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-3">{product.category}</td>
@@ -413,10 +427,11 @@ const Inventory = () => {
                 return (
                   <button
                     key={pageNum}
-                    className={`px-3 py-1 border rounded-md ${pagination.page === pageNum
-                      ? "bg-sidebar "
-                      : "border-gray-300 hover:bg-gray-100"
-                      }`}
+                    className={`px-3 py-1 border rounded-md ${
+                      pagination.page === pageNum
+                        ? "bg-sidebar "
+                        : "border-gray-300 hover:bg-gray-100"
+                    }`}
                     onClick={() => handlePageChange(pageNum)}
                   >
                     {pageNum}

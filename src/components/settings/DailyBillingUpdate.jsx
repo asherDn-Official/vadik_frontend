@@ -14,6 +14,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../../api/apiconfig";
 import ExcelImport from "./ExcelImport";
+import VideoPopupWithShare from "../common/VideoPopupWithShare";
 
 const DailyBillingUpdate = () => {
   const [retailerId, setRetailerId] = useState(() => {
@@ -145,7 +146,7 @@ const DailyBillingUpdate = () => {
     if (currentView === "billing") {
       fetchBillingData();
     }
-  }, [startDate, endDate, pagination.page, currentView,showExcelImport]);
+  }, [startDate, endDate, pagination.page, currentView, showExcelImport]);
 
   const handleViewDetails = async (billingData) => {
     setSelectedBillingData(billingData);
@@ -243,6 +244,11 @@ const DailyBillingUpdate = () => {
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <div className="flex gap-2">
+            <VideoPopupWithShare
+              video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+              buttonCss="flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
+            />
+
             <button
               type="button"
               onClick={() => setShowExcelImport(true)}
@@ -407,8 +413,7 @@ const DailyBillingUpdate = () => {
         )}
       </div>
 
-      
-     {showExcelImport && (
+      {showExcelImport && (
         <ExcelImport
           retailerId={retailerId}
           // onImportSuccess={handleImportSuccess}

@@ -12,7 +12,7 @@ import {
   FiFilter,
   FiSearch,
   FiChevronDown,
-  FiChevronUp
+  FiChevronUp,
 } from "react-icons/fi";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
@@ -22,6 +22,7 @@ import * as yup from "yup";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
+import VideoPopupWithShare from "../common/VideoPopupWithShare";
 
 const CouponManagement = () => {
   const [coupons, setCoupons] = useState([]);
@@ -48,15 +49,13 @@ const CouponManagement = () => {
     expiryDate: "",
     productId: "",
     discount: "",
-    conditionType: ""
+    conditionType: "",
   });
-
 
   const handleDateChange = (date) => {
     setExpiryDate(date);
     setValue("expiryDate", date, { shouldValidate: true });
   };
-
 
   const initialCouponData = {
     name: "",
@@ -69,18 +68,26 @@ const CouponManagement = () => {
     condition: false,
     conditionType: "greater",
     conditionValue: 0,
-    productId: ""
+    productId: "",
   };
 
   // react-hook-form schema and setup
   const couponSchema = yup
     .object({
-      name: yup.string().trim().required("Name is required").min(3, "Name should have at least 3 characters").max(50, "Name can't exceed 50 characters"),
+      name: yup
+        .string()
+        .trim()
+        .required("Name is required")
+        .min(3, "Name should have at least 3 characters")
+        .max(50, "Name can't exceed 50 characters"),
       code: yup
         .string()
         .trim()
         .required("Code is required")
-        .matches(/^[A-Za-z0-9!@#$%^&*()_\-+=<>?{}[\]~`.,;:'"\\|/ ]+$/, "Invalid characters") // allow specials
+        .matches(
+          /^[A-Za-z0-9!@#$%^&*()_\-+=<>?{}[\]~`.,;:'"\\|/ ]+$/,
+          "Invalid characters"
+        ) // allow specials
         .test(
           "min-letters",
           "Code must contain at least 4 letters",
@@ -90,41 +97,47 @@ const CouponManagement = () => {
           "min-numbers",
           "Code must contain at least 2 numbers",
           (value) => (value.match(/[0-9]/g) || []).length >= 2
-        ), discount: yup
-          .number()
-          .typeError("Discount must be a number")
-          .positive("Discount must be greater than 0")
-          .min(0, "Discount must be greater than or equal to 0"),
-          // .max(100, "Discount cannot exceed 100"),
+        ),
+      discount: yup
+        .number()
+        .typeError("Discount must be a number")
+        .positive("Discount must be greater than 0")
+        .min(0, "Discount must be greater than or equal to 0"),
+      // .max(100, "Discount cannot exceed 100"),
       expiryDate: yup
         .string()
         .required("Expiry date is required")
-        .test(
-          "future",
-          "Expiry date must be today or later",
-          (value) => {
-            if (!value) return false;
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const d = new Date(value);
-            d.setHours(0, 0, 0, 0);
-            return d >= today;
-          }
-        ),
-      couponType: yup.mixed().oneOf(["amount", "percentage", "product"]).required(),
+        .test("future", "Expiry date must be today or later", (value) => {
+          if (!value) return false;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const d = new Date(value);
+          d.setHours(0, 0, 0, 0);
+          return d >= today;
+        }),
+      couponType: yup
+        .mixed()
+        .oneOf(["amount", "percentage", "product"])
+        .required(),
       description: yup
         .string()
         .nullable()
         .max(100, "Description must be at most 100 characters"),
       isActive: yup.boolean().default(true),
       condition: yup.boolean().default(false),
-      conditionType: yup.mixed().oneOf(["greater", "lesser", "equal"]).default("greater"),
+      conditionType: yup
+        .mixed()
+        .oneOf(["greater", "lesser", "equal"])
+        .default("greater"),
       conditionValue: yup
         .number()
         .typeError("Condition value must be a number")
         .when("condition", {
           is: true,
-          then: (s) => s.positive("Condition value must be greater than 0").required("Condition value is required"),
+          then: (s) =>
+            s
+              .positive("Condition value must be greater than 0")
+              .required("Condition value is required"),
           otherwise: (s) => s.transform(() => 0).default(0),
         }),
       productId: yup.string().when("couponType", {
@@ -161,11 +174,11 @@ const CouponManagement = () => {
         sortField,
         sortOrder,
         search: searchQuery,
-        ...filters
+        ...filters,
       };
 
       // Remove empty filters
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         if (params[key] === "" || params[key] === undefined) {
           delete params[key];
         }
@@ -201,14 +214,14 @@ const CouponManagement = () => {
       name: coupon.name,
       code: coupon.code,
       discount: coupon.discount,
-      expiryDate: new Date(coupon.expiryDate).toISOString().split('T')[0],
+      expiryDate: new Date(coupon.expiryDate).toISOString().split("T")[0],
       couponType: coupon.couponType,
       description: coupon.description,
       isActive: coupon.isActive,
       condition: coupon.condition || false,
       conditionType: coupon.conditionType || "greater",
       conditionValue: coupon.conditionValue || 0,
-      productId: coupon.productId || ""
+      productId: coupon.productId || "",
     };
     reset(editData);
   };
@@ -229,16 +242,14 @@ const CouponManagement = () => {
         // Ensure conditionValue is 0 if condition is false
         conditionValue: data.condition ? data.conditionValue : 0,
         // Ensure productId is empty string if not a product coupon
-        productId: data.couponType === "product" ? data.productId : ""
+        productId: data.couponType === "product" ? data.productId : "",
       };
-
 
       if (editingCouponId) {
         // Update existing coupon
         await api.put(`/api/coupons/coupon/${editingCouponId}`, payload);
         showToast("Coupon updated successfully", "success");
       } else {
-
         console.log(payload);
         // Create new coupon
         await api.post("/api/coupons/", payload);
@@ -249,7 +260,9 @@ const CouponManagement = () => {
       cancelForm();
     } catch (err) {
       console.error("Error saving coupon:", err);
-      const errorMsg = err.response?.data?.message || "Failed to save coupon. Please try again.";
+      const errorMsg =
+        err.response?.data?.message ||
+        "Failed to save coupon. Please try again.";
       showToast(errorMsg, "error");
     } finally {
       setIsSaving(false);
@@ -257,7 +270,6 @@ const CouponManagement = () => {
   };
 
   const handleRemoveCoupon = async (couponId) => {
-
     const onConfirm = async () => {
       setIsDeleting(couponId);
       try {
@@ -270,9 +282,9 @@ const CouponManagement = () => {
       } finally {
         setIsDeleting(false);
       }
-    }
+    };
 
-    deleteConfirmTostNotification("",onConfirm)
+    deleteConfirmTostNotification("", onConfirm);
   };
 
   const handlePageChange = (newPage) => {
@@ -292,9 +304,9 @@ const CouponManagement = () => {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     setCurrentPage(1); // Reset to first page when filters change
   };
@@ -306,7 +318,7 @@ const CouponManagement = () => {
       expiryDate: "",
       productId: "",
       discount: "",
-      conditionType: ""
+      conditionType: "",
     });
     setSearchQuery("");
     setCurrentPage(1);
@@ -357,12 +369,12 @@ const CouponManagement = () => {
   }
 
   function formatDate(dateString) {
-  const date = new Date(dateString);
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}-${month}-${year}`;
-}
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -378,17 +390,29 @@ const CouponManagement = () => {
               </p>
             </div>
             {!isAddingCoupon && (
-              <button
-                onClick={startAddingCoupon}
-                className="flex items-center px-6 py-3 bg-[#313166] text-white rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <FiPlus className="mr-2" /> Add Coupon
-              </button>
+              <div className=" flex items-center gap-2">
+
+                <VideoPopupWithShare
+                  video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                  buttonCss="flex items-center gap-2 px-4 py-3 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
+                />
+                <button
+                  onClick={startAddingCoupon}
+                  className="flex items-center px-6 py-3 bg-[#313166] text-white rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md"
+                >
+                  <FiPlus className="mr-2" /> Add Coupon
+                </button>
+
+                
+              </div>
             )}
           </div>
 
           {isAddingCoupon && (
-            <form onSubmit={handleSubmit(handleSaveCoupon)} className="mb-6 rounded-lg border bg-gray-50 p-6">
+            <form
+              onSubmit={handleSubmit(handleSaveCoupon)}
+              className="mb-6 rounded-lg border bg-gray-50 p-6"
+            >
               <h3 className="text-lg font-semibold mb-4">
                 {editingCouponId ? "Edit Coupon" : "Add New Coupon"}
               </h3>
@@ -402,12 +426,16 @@ const CouponManagement = () => {
                   <input
                     type="text"
                     {...register("name")}
-                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.name ? "border-red-500" : "border-gray-300"}`}
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                      errors.name ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="e.g., Summer Sale Discount"
                     disabled={editingCouponId}
                   />
                   {errors.name && (
-                    <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.name.message}
+                    </p>
                   )}
                 </div>
 
@@ -426,13 +454,16 @@ const CouponManagement = () => {
                       // update react-hook-form state
                       setValue("code", uppercased, { shouldValidate: true });
                     }}
-                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.code ? "border-red-500" : "border-gray-300"
-                      }`}
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                      errors.code ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="e.g., FLAT50"
                     disabled={editingCouponId}
                   />
                   {errors.code && (
-                    <p className="mt-1 text-sm text-red-600">{errors.code.message}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.code.message}
+                    </p>
                   )}
                 </div>
 
@@ -444,13 +475,17 @@ const CouponManagement = () => {
                   <input
                     type="number"
                     {...register("discount", { valueAsNumber: true })}
-                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.discount ? "border-red-500" : "border-gray-300"}`}
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                      errors.discount ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="e.g., 50 or 10"
                     min={0}
                     step={watchCouponType === "percentage" ? 0.1 : 1}
                   />
                   {errors.discount && (
-                    <p className="mt-1 text-sm text-red-600">{errors.discount.message}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.discount.message}
+                    </p>
                   )}
                 </div>
 
@@ -464,8 +499,9 @@ const CouponManagement = () => {
                     onChange={handleDateChange}
                     minDate={new Date()}
                     dateFormat="dd/MM/yyyy"
-                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.expiryDate ? "border-red-500" : "border-gray-300"
-                      }`}
+                    className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                      errors.expiryDate ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholderText="Select expiry date"
                   />
 
@@ -474,12 +510,16 @@ const CouponManagement = () => {
                     type="hidden"
                     {...register("expiryDate", {
                       required: "Expiry date is required",
-                      validate: value => value && value >= new Date() || "Expiry date must be today or later"
+                      validate: (value) =>
+                        (value && value >= new Date()) ||
+                        "Expiry date must be today or later",
                     })}
                   />
 
                   {errors.expiryDate && (
-                    <p className="mt-1 text-sm text-red-600">{errors.expiryDate.message}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.expiryDate.message}
+                    </p>
                   )}
                 </div>
 
@@ -493,7 +533,9 @@ const CouponManagement = () => {
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
                   >
                     <option value="amount">Amount (e.g., ₹50 off)</option>
-                    <option value="percentage">Percentage (e.g., 10% off)</option>
+                    <option value="percentage">
+                      Percentage (e.g., 10% off)
+                    </option>
                     {/* <option value="product">Product (e.g., Free Gift)</option> */}
                   </select>
                 </div>
@@ -507,11 +549,15 @@ const CouponManagement = () => {
                     <input
                       type="text"
                       {...register("productId")}
-                      className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.productId ? "border-red-500" : "border-gray-300"}`}
+                      className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                        errors.productId ? "border-red-500" : "border-gray-300"
+                      }`}
                       placeholder="Enter product ID"
                     />
                     {errors.productId && (
-                      <p className="mt-1 text-sm text-red-600">{errors.productId.message}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.productId.message}
+                      </p>
                     )}
                   </div>
                 )}
@@ -560,7 +606,9 @@ const CouponManagement = () => {
                     placeholder="Brief description of the coupon"
                   />
                   {errors.description && (
-                    <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.description.message}
+                    </p>
                   )}
                 </div>
               </div>
@@ -587,12 +635,18 @@ const CouponManagement = () => {
                     <input
                       type="number"
                       {...register("conditionValue", { valueAsNumber: true })}
-                      className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.conditionValue ? "border-red-500" : "border-gray-300"}`}
+                      className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                        errors.conditionValue
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      }`}
                       placeholder="e.g., 299"
                       min="0"
                     />
                     {errors.conditionValue && (
-                      <p className="mt-1 text-sm text-red-600">{errors.conditionValue.message}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.conditionValue.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -613,9 +667,25 @@ const CouponManagement = () => {
                 >
                   {isSaving ? (
                     <span className="flex items-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                       {editingCouponId ? "Updating..." : "Creating..."}
                     </span>
@@ -630,7 +700,6 @@ const CouponManagement = () => {
             </form>
           )}
 
-
           {/* Search and Filter Section */}
           <div className="mb-6 bg-gray-50 rounded-lg p-4">
             <div className="flex flex-wrap gap-4 items-center">
@@ -643,7 +712,10 @@ const CouponManagement = () => {
                   onChange={(e) => {
                     const inputValue = e.target.value;
                     // Allow only letters, numbers, and spaces
-                    const filteredValue = inputValue.replace(/[^a-zA-Z0-9\s]/g, '');
+                    const filteredValue = inputValue.replace(
+                      /[^a-zA-Z0-9\s]/g,
+                      ""
+                    );
 
                     setSearchQuery(filteredValue);
                     setCurrentPage(1);
@@ -658,7 +730,11 @@ const CouponManagement = () => {
               >
                 <FiFilter className="mr-2" />
                 Filters
-                {showFilters ? <FiChevronUp className="ml-1" /> : <FiChevronDown className="ml-1" />}
+                {showFilters ? (
+                  <FiChevronUp className="ml-1" />
+                ) : (
+                  <FiChevronDown className="ml-1" />
+                )}
               </button>
 
               <button
@@ -778,38 +854,38 @@ const CouponManagement = () => {
 
             <button
               onClick={() => handleSort("createdAt")}
-              className={`px-3 py-1 rounded-full text-sm ${sortField === "createdAt"
-                ? "bg-[#313166] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+              className={`px-3 py-1 rounded-full text-sm ${
+                sortField === "createdAt"
+                  ? "bg-[#313166] text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
-              Created Date {sortField === "createdAt" && (
-                sortOrder === "asc" ? "↑" : "↓"
-              )}
+              Created Date{" "}
+              {sortField === "createdAt" && (sortOrder === "asc" ? "↑" : "↓")}
             </button>
 
             <button
               onClick={() => handleSort("expiryDate")}
-              className={`px-3 py-1 rounded-full text-sm ${sortField === "expiryDate"
-                ? "bg-[#313166] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+              className={`px-3 py-1 rounded-full text-sm ${
+                sortField === "expiryDate"
+                  ? "bg-[#313166] text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
-              Expiry Date {sortField === "expiryDate" && (
-                sortOrder === "asc" ? "↑" : "↓"
-              )}
+              Expiry Date{" "}
+              {sortField === "expiryDate" && (sortOrder === "asc" ? "↑" : "↓")}
             </button>
 
             <button
               onClick={() => handleSort("discount")}
-              className={`px-3 py-1 rounded-full text-sm ${sortField === "discount"
-                ? "bg-[#313166] text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+              className={`px-3 py-1 rounded-full text-sm ${
+                sortField === "discount"
+                  ? "bg-[#313166] text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
-              Discount Amount {sortField === "discount" && (
-                sortOrder === "asc" ? "↑" : "↓"
-              )}
+              Discount Amount{" "}
+              {sortField === "discount" && (sortOrder === "asc" ? "↑" : "↓")}
             </button>
           </div>
 
@@ -841,15 +917,23 @@ const CouponManagement = () => {
                   <div className="flex items-center justify-between p-4">
                     <div className="flex items-center gap-4">
                       <div
-                        className={`flex-shrink-0 p-3 rounded-full ${getCouponTypeClasses(coupon.couponType)}`}
+                        className={`flex-shrink-0 p-3 rounded-full ${getCouponTypeClasses(
+                          coupon.couponType
+                        )}`}
                       >
                         {getCouponIcon(coupon.couponType)}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-gray-900">{coupon.name}</h4>
+                          <h4 className="font-semibold text-gray-900">
+                            {coupon.name}
+                          </h4>
                           <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${coupon.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                            className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              coupon.isActive
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
                           >
                             {coupon.isActive ? "Active" : "Inactive"}
                           </span>
@@ -859,7 +943,9 @@ const CouponManagement = () => {
                             {coupon.code}
                           </span>
                           <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${getCouponTypeClasses(coupon.couponType)}`}
+                            className={`px-2 py-1 text-xs font-medium rounded-full ${getCouponTypeClasses(
+                              coupon.couponType
+                            )}`}
                           >
                             {coupon.couponType}
                           </span>
@@ -871,12 +957,14 @@ const CouponManagement = () => {
                           <span>Expires: {formatDate(coupon.expiryDate)}</span>
                           {coupon.condition && (
                             <span>
-                              | Condition: Order {coupon.conditionType} ₹{coupon.conditionValue}
+                              | Condition: Order {coupon.conditionType} ₹
+                              {coupon.conditionValue}
                             </span>
                           )}
-                          {coupon.couponType === "product" && coupon.productId && (
-                            <span>| Product: {coupon.productId}</span>
-                          )}
+                          {coupon.couponType === "product" &&
+                            coupon.productId && (
+                              <span>| Product: {coupon.productId}</span>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -895,9 +983,25 @@ const CouponManagement = () => {
                         title="Remove coupon"
                       >
                         {isDeleting === coupon._id ? (
-                          <svg className="animate-spin h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          <svg
+                            className="animate-spin h-4 w-4 text-red-500"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
                           </svg>
                         ) : (
                           <FiTrash2 size={18} />
@@ -912,7 +1016,9 @@ const CouponManagement = () => {
                 <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                   <FiTag className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No coupons added yet</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No coupons added yet
+                </h3>
                 <p className="text-gray-500 mb-4">
                   Start by adding your first coupon to offer discounts.
                 </p>
@@ -931,10 +1037,11 @@ const CouponManagement = () => {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`px-4 py-2 rounded-lg ${currentPage === 1
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  }`}
+                className={`px-4 py-2 rounded-lg ${
+                  currentPage === 1
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
               >
                 Previous
               </button>
@@ -956,10 +1063,11 @@ const CouponManagement = () => {
                     <button
                       key={pageNum}
                       onClick={() => handlePageChange(pageNum)}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${currentPage === pageNum
-                        ? "bg-[#313166] text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        currentPage === pageNum
+                          ? "bg-[#313166] text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
                     >
                       {pageNum}
                     </button>
@@ -974,10 +1082,11 @@ const CouponManagement = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`px-4 py-2 rounded-lg ${currentPage === totalPages
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  }`}
+                className={`px-4 py-2 rounded-lg ${
+                  currentPage === totalPages
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
               >
                 Next
               </button>
@@ -1021,7 +1130,10 @@ const SkeletonLoader = () => (
         {/* Coupon List Skeleton */}
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-lg border border-gray-200 p-4">
+            <div
+              key={i}
+              className="bg-white rounded-lg border border-gray-200 p-4"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-gray-200 rounded-full"></div>

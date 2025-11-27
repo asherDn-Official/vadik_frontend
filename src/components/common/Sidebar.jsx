@@ -1,6 +1,6 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { LogOut } from "lucide-react";
+import { LogOut} from "lucide-react";
 import ToggleBadge from "./ToggleBadge";
 import dashboardIcon from "../../../public/assets/mage_dashboard-icon.png";
 import customersIcon from "../../../public/assets/bi_person-fill-icon.png";
@@ -13,7 +13,7 @@ import settingsIcon from "../../../public/assets/settings-icon.png";
 
 function Sidebar() {
   const location = useLocation();
-  const { auth } = useAuth();
+  const { auth, setAuth } = useAuth();
   const userRole = auth?.data?.role;
   const navigate = useNavigate();
 
@@ -95,7 +95,8 @@ function Sidebar() {
   const handleLogout = () => {
     localStorage.removeItem("retailerId");
     localStorage.removeItem("token");
-    navigate("/");
+    setAuth(null);
+    navigate("/", { replace: true });
   };
 
   return (
@@ -129,6 +130,7 @@ function Sidebar() {
             </NavLink>
           );
         })}
+       
         <button
           onClick={handleLogout}
           className="flex w-full items-center px-4 md:px-6 py-3 md:py-4 text-white no-underline transition-colors hover:bg-[#3d3b83] mt-auto"

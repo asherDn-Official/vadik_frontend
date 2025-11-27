@@ -3,6 +3,7 @@ import FilterPanel from "../../src/components/customerInsigth/FilterPanel";
 import CustomerList from "../../src/components/customerInsigth/CustomerList";
 import * as XLSX from "xlsx";
 import api from "../api/apiconfig";
+import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 
 const CustomerPersonalisation = () => {
   const [filters, setFilters] = useState({});
@@ -180,6 +181,12 @@ const CustomerPersonalisation = () => {
               </h1>
             </div>
             <div className="flex items-center gap-4 relative" ref={dropdownRef}>
+
+              <VideoPopupWithShare
+                              video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                              buttonCss="flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
+                            />
+
               {/* Per page selector */}
               <div className="flex items-center gap-2">
                 <label className="text-sm text-gray-600">Per page:</label>

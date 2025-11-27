@@ -14,6 +14,7 @@ import api from "../../api/apiconfig";
 import { X } from "lucide-react";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 import showToast from "../../utils/ToastNotification";
+import VideoPopupWithShare from "../common/VideoPopupWithShare";
 
 const CustomerFieldPreferences = () => {
   const [activeTab, setActiveTab] = useState("Advance Details");
@@ -320,8 +321,8 @@ const CustomerFieldPreferences = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="bg-white overflow-hidden">
-        <div className="border-b">
-          <div className="flex">
+        <div className="border-b   flex  justify-between items-center ">
+          <div className="flex ">
             {Object.keys(fields).map((tab) => (
               <button
                 key={tab}
@@ -341,6 +342,12 @@ const CustomerFieldPreferences = () => {
                 )}
               </button>
             ))}
+          </div>
+          <div>
+            <VideoPopupWithShare
+                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                buttonCss="flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
+              />
           </div>
         </div>
 

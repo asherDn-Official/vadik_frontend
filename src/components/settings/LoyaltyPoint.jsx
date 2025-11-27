@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
-import api from '../../api/apiconfig';
-import showToast from '../../utils/ToastNotification';
-import deleteConfirmTostNotification from '../../utils/deleteConfirmTostNotification';
+import React, { useState, useEffect } from "react";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import api from "../../api/apiconfig";
+import showToast from "../../utils/ToastNotification";
+import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
+import VideoPopupWithShare from "../common/VideoPopupWithShare";
 
 function LoyaltyPoint() {
   const [rules, setRules] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   // React Hook Form initialization
   const {
@@ -18,21 +19,21 @@ function LoyaltyPoint() {
     formState: { errors },
     reset,
     watch,
-    setValue
+    setValue,
   } = useForm({
     defaultValues: {
       isActive: false,
       minOrderAmount: "",
       maxDiscountPercent: "",
-      tiers: [{ pointsRequired: "", discountAmount: "" }]
+      tiers: [{ pointsRequired: "", discountAmount: "" }],
     },
-    mode: "onChange"
+    mode: "onChange",
   });
 
   // For managing tier array fields
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "tiers"
+    name: "tiers",
   });
 
   const watchIsActive = watch("isActive");
@@ -44,7 +45,7 @@ function LoyaltyPoint() {
   const fetchRules = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/loyalty/rule');
+      const response = await api.get("/api/loyalty/rule");
       if (response.data) {
         setRules(response.data);
         // Reset form with fetched data
@@ -52,12 +53,12 @@ function LoyaltyPoint() {
           isActive: response.data.isActive,
           minOrderAmount: response.data.minOrderAmount,
           maxDiscountPercent: response.data.maxDiscountPercent,
-          tiers: response.data.tiers
+          tiers: response.data.tiers,
         });
       }
     } catch (err) {
-      setError('Failed to fetch loyalty rules');
-      console.error('Error fetching rules:', err);
+      setError("Failed to fetch loyalty rules");
+      console.error("Error fetching rules:", err);
     } finally {
       setLoading(false);
     }
@@ -65,41 +66,42 @@ function LoyaltyPoint() {
 
   const onSubmit = async (data) => {
     setSaving(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
-      await api.post('/api/loyalty/rule', data);
-      showToast('Loyalty rules saved successfully!', 'success');
+      await api.post("/api/loyalty/rule", data);
+      showToast("Loyalty rules saved successfully!", "success");
       await fetchRules(); // Refresh the data
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Failed to save loyalty rules';
-      showToast(errorMessage, 'error');
-      console.error('Error saving rules:', err);
+      const errorMessage =
+        err.response?.data?.message || "Failed to save loyalty rules";
+      showToast(errorMessage, "error");
+      console.error("Error saving rules:", err);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-
     const onConfirm = async () => {
       try {
-        await api.delete('/api/loyalty/rule');
-        showToast('Loyalty rules deleted successfully!', 'success');
+        await api.delete("/api/loyalty/rule");
+        showToast("Loyalty rules deleted successfully!", "success");
         setRules(null);
         reset({
           isActive: false,
           minOrderAmount: 0,
           maxDiscountPercent: 0,
-          tiers: [{ pointsRequired: 0, discountAmount: 0 }]
+          tiers: [{ pointsRequired: 0, discountAmount: 0 }],
         });
       } catch (err) {
-        const errorMessage = err.response?.data?.message || 'Failed to delete loyalty rules';
-        showToast(errorMessage, 'error');
-        console.error('Error deleting rules:', err);
+        const errorMessage =
+          err.response?.data?.message || "Failed to delete loyalty rules";
+        showToast(errorMessage, "error");
+        console.error("Error deleting rules:", err);
       }
-    }
+    };
 
     deleteConfirmTostNotification("", onConfirm);
   };
@@ -121,9 +123,16 @@ function LoyaltyPoint() {
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="shadow-xl overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r px-6 py-4">
-            <h1 className="text-2xl font-bold">Loyalty Point Rules</h1>
-            <p className="mt-1">Configure your loyalty program settings</p>
+          <div className=" flex items-center justify-between">
+            <div className="bg-gradient-to-r px-6 py-4">
+              <h1 className="text-2xl font-bold">Loyalty Point Rules</h1>
+              <p className="mt-1">Configure your loyalty program settings</p>
+            </div>
+
+            <VideoPopupWithShare
+              video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+              buttonCss="flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
+            />
           </div>
 
           {/* Content */}
@@ -186,16 +195,22 @@ function LoyaltyPoint() {
                           <input
                             {...field}
                             type="number"
-                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value))
+                            }
                             className="w-full pl-8 pr-4 py-2 outline-none border border-gray-300 rounded-lg"
                             placeholder="Enter amount"
                           />
-                          <span className="absolute left-3 top-2.5 text-gray-500">₹</span>
+                          <span className="absolute left-3 top-2.5 text-gray-500">
+                            ₹
+                          </span>
                         </>
                       )}
                     />
                     {errors.minOrderAmount && (
-                      <p className="mt-1 text-sm text-red-600">{errors.minOrderAmount.message}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.minOrderAmount.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -213,12 +228,12 @@ function LoyaltyPoint() {
                         required: "Maximum discount percentage is required",
                         min: {
                           value: 0,
-                          message: "Discount percentage cannot be negative"
+                          message: "Discount percentage cannot be negative",
                         },
                         max: {
                           value: 100,
-                          message: "Discount percentage cannot exceed 100%"
-                        }
+                          message: "Discount percentage cannot exceed 100%",
+                        },
                       }}
                       render={({ field }) => (
                         <>
@@ -227,16 +242,22 @@ function LoyaltyPoint() {
                             type="number"
                             min="0"
                             max="100"
-                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value))
+                            }
                             className="w-full pr-12 pl-4 py-2 border border-gray-300 rounded-lg outline-none"
                             placeholder="Enter percentage"
                           />
-                          <span className="absolute right-3 top-2.5 text-gray-500">%</span>
+                          <span className="absolute right-3 top-2.5 text-gray-500">
+                            %
+                          </span>
                         </>
                       )}
                     />
                     {errors.maxDiscountPercent && (
-                      <p className="mt-1 text-sm text-red-600">{errors.maxDiscountPercent.message}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.maxDiscountPercent.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -245,14 +266,26 @@ function LoyaltyPoint() {
               {/* Tiers Section */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Reward Tiers</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Reward Tiers
+                  </h3>
                   <button
                     type="button"
                     onClick={addTier}
                     className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
                     </svg>
                     Add Tier
                   </button>
@@ -262,7 +295,9 @@ function LoyaltyPoint() {
                   {fields.map((field, index) => (
                     <div key={field.id} className="bg-gray-50 p-4 rounded-lg">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-medium text-gray-700">Tier {index + 1}</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          Tier {index + 1}
+                        </span>
                         {fields.length > 1 && (
                           <button
                             type="button"
@@ -286,7 +321,7 @@ function LoyaltyPoint() {
                               required: "Points required is mandatory",
                               min: {
                                 value: 1,
-                                message: "Points must be at least 1"
+                                message: "Points must be at least 1",
                               },
                               // max: {
                               //   value: 1000000000,
@@ -300,7 +335,9 @@ function LoyaltyPoint() {
                                   type="number"
                                   min="1"
                                   max="1000000000"
-                                  onChange={(e) => field.onChange(Number(e.target.value))}
+                                  onChange={(e) =>
+                                    field.onChange(Number(e.target.value))
+                                  }
                                   className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
                                   placeholder="Points required"
                                 />
@@ -326,7 +363,7 @@ function LoyaltyPoint() {
                                 required: "Discount amount is required",
                                 min: {
                                   value: 0,
-                                  message: "Discount amount cannot be negative"
+                                  message: "Discount amount cannot be negative",
                                 },
                                 // max: {
                                 //   value: 100,
@@ -339,14 +376,21 @@ function LoyaltyPoint() {
                                     {...field}
                                     type="number"
                                     min="0"
-                                    onChange={(e) => field.onChange(Number(e.target.value))}
+                                    onChange={(e) =>
+                                      field.onChange(Number(e.target.value))
+                                    }
                                     className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg outline-none"
                                     placeholder="Discount amount"
                                   />
-                                  <span className="absolute left-3 top-2.5 text-gray-500">₹</span>
+                                  <span className="absolute left-3 top-2.5 text-gray-500">
+                                    ₹
+                                  </span>
                                   {errors.tiers?.[index]?.discountAmount && (
                                     <p className="mt-1 text-sm text-red-600">
-                                      {errors.tiers[index].discountAmount.message}
+                                      {
+                                        errors.tiers[index].discountAmount
+                                          .message
+                                      }
                                     </p>
                                   )}
                                 </>
@@ -369,14 +413,29 @@ function LoyaltyPoint() {
                 >
                   {saving ? (
                     <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                       Saving...
                     </span>
                   ) : (
-                    'Save Rules'
+                    "Save Rules"
                   )}
                 </button>
 
@@ -395,17 +454,27 @@ function LoyaltyPoint() {
             {/* Current Rules Display */}
             {rules && (
               <div className="mt-8 p-6 bg-gray-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Rules</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Current Rules
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium">Status:</span>
-                    <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${rules.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {rules.isActive ? 'Active' : 'Inactive'}
+                    <span
+                      className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                        rules.isActive
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {rules.isActive ? "Active" : "Inactive"}
                     </span>
                   </div>
                   <div>
                     <span className="font-medium">Min Order:</span>
-                    <span className="ml-2">₹{rules.minOrderAmount?.toLocaleString()}</span>
+                    <span className="ml-2">
+                      ₹{rules.minOrderAmount?.toLocaleString()}
+                    </span>
                   </div>
                   <div>
                     <span className="font-medium">Max Discount:</span>

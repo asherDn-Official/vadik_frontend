@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import debounce from "lodash.debounce";
 import api from "../api/apiconfig";
+import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 
 const CustomerList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -32,12 +33,10 @@ const CustomerList = () => {
         page: pagination.currentPage,
         limit: itemsPerPage,
         ...(searchTerm && { search: searchTerm }),
-        ...(source && {source:source})
+        ...(source && { source: source }),
       });
 
-      const response = await api.get(
-        `/api/customers?${queryParams}`
-      );
+      const response = await api.get(`/api/customers?${queryParams}`);
 
       const data = await response.data;
 
@@ -52,7 +51,7 @@ const CustomerList = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.currentPage, searchTerm,source]);
+  }, [pagination.currentPage, searchTerm, source]);
 
   useEffect(() => {
     fetchCustomers();
@@ -87,7 +86,7 @@ const CustomerList = () => {
 
   const handleAddNewCustomer = () => {
     navigate("/customers/add");
-  }
+  };
 
   // Format Indian mobile numbers like "+91 98876 54323"
   const formatIndianMobile = (value) => {
@@ -131,7 +130,11 @@ const CustomerList = () => {
                 ({pagination.totalItems})
               </span>
             </h1>
-            <div className="flex flex-wrap gap-3 sm:gap-4">
+            <div className="flex flex-wrap gap-3 sm:gap-4 items-center">
+              <VideoPopupWithShare
+                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                buttonCss="flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
+              />
               <div className="relative w-full sm:w-auto">
                 <input
                   type="text"
@@ -155,7 +158,12 @@ const CustomerList = () => {
                 </svg>
               </div>
               <div>
-                <select name="" id="" className="py-2 border px-5 border-gray-300 rounded-lg outline-none w-full sm:w-auto" onChange={(e)=>setSource(e.target.value)}>
+                <select
+                  name=""
+                  id=""
+                  className="py-2 border px-5 border-gray-300 rounded-lg outline-none w-full sm:w-auto"
+                  onChange={(e) => setSource(e.target.value)}
+                >
                   <option value="">select source</option>
                   <option value="walk-in">walk-in</option>
                   <option value="website">website</option>
@@ -163,7 +171,10 @@ const CustomerList = () => {
                   <option value="others">others</option>
                 </select>
               </div>
-              <button onClick={handleAddNewCustomer} className="w-full sm:w-auto sm:ml-4 bg-[#313166] text-white px-4 py-2 rounded-md">
+              <button
+                onClick={handleAddNewCustomer}
+                className="w-full sm:w-auto sm:ml-4 bg-[#313166] text-white px-4 py-2 rounded-md"
+              >
                 Add New Customer
               </button>
             </div>
@@ -215,7 +226,7 @@ const CustomerList = () => {
                               {customer.firstname}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
-                              {customer.lastname || '-'}
+                              {customer.lastname || "-"}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
                               {formatIndianMobile(customer.mobileNumber)}
@@ -226,7 +237,9 @@ const CustomerList = () => {
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
                               <button
                                 className="text-gray-500 hover:text-gray-700"
-                                onClick={(e) => handleEditClick(e, customer._id)}
+                                onClick={(e) =>
+                                  handleEditClick(e, customer._id)
+                                }
                               >
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
@@ -275,34 +288,38 @@ const CustomerList = () => {
                 <button
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={pagination.currentPage === 1}
-                  className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === 1
-                    ? "bg-[#3131661A] cursor-not-allowed opacity-50"
-                    : "bg-[#3131661A] hover:bg-gray-100"
-                    }`}
+                  className={`px-3 py-1 text-sm border rounded-md ${
+                    pagination.currentPage === 1
+                      ? "bg-[#3131661A] cursor-not-allowed opacity-50"
+                      : "bg-[#3131661A] hover:bg-gray-100"
+                  }`}
                 >
                   Previous
                 </button>
-                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === page
+                {Array.from(
+                  { length: pagination.totalPages },
+                  (_, i) => i + 1
+                ).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`px-3 py-1 text-sm border rounded-md ${
+                      pagination.currentPage === page
                         ? "bg-[#313166] text-white border-[#313166]"
                         : "bg-[#3131661A] text-[#313166] hover:bg-gray-100"
-                        }`}
-                    >
-                      {page}
-                    </button>
-                  )
-                )}
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
                 <button
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={pagination.currentPage === pagination.totalPages}
-                  className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === pagination.totalPages
-                    ? "bg-[#3131661A] cursor-not-allowed opacity-50"
-                    : "bg-[#3131661A] hover:bg-gray-100"
-                    }`}
+                  className={`px-3 py-1 text-sm border rounded-md ${
+                    pagination.currentPage === pagination.totalPages
+                      ? "bg-[#3131661A] cursor-not-allowed opacity-50"
+                      : "bg-[#3131661A] hover:bg-gray-100"
+                  }`}
                 >
                   Next
                 </button>
