@@ -4,6 +4,7 @@ import CustomerRecommendation from "../components/customeroppertunites/CustomerR
 import StoreRecommendation from "../components/customeroppertunites/StoreRecommendation";
 import EngagementActivities from "../components/customeroppertunites/EngagementActivities";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
+import ComingSoon from "../components/common/ComingSoon";
 
 const CustomerOpportunities = () => {
   const [activeTab, setActiveTab] = useState("engagement");
@@ -34,7 +35,7 @@ const CustomerOpportunities = () => {
                   : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
               }`}
             >
-              <div className="w-8 h-8 rounded-lg flex justify-center items-center">
+              <div className="w-10 h-10 rounded-lg flex justify-center items-center">
                 <img src="../assets/cus-1.png" alt="" />
               </div>
 
@@ -42,17 +43,19 @@ const CustomerOpportunities = () => {
                 <div className="font-semibold text-slate-800 text-start">
                   Personalization engagement
                 </div>
-                <div className="text-xs text-gray-500 text-start">
-                  Birthday and anniversary-based personalized offers.
+                <div className=" flex items-center justify-between">
+                  <span className="text-xs text-gray-500 text-start  ">
+                    Birthday and anniversary-based personalized offers.
+                    <span className=" float-right">
+                      <VideoPopupWithShare
+                        video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                        buttonCss=" flex text-pink-500 text-sm items-center gap-2 whitespace-nowrap "
+                      />
+                    </span>
+                  </span>
                 </div>
               </div>
             </button>
-            <div className="mt-2">
-              <VideoPopupWithShare
-                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                buttonCss="flex items-center gap-2 px-3 py-2 bg-[#313166] hover:bg-[#515191] text-white rounded-lg transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg w-full justify-center"
-              />
-            </div>
           </div>
 
           <div>
@@ -71,17 +74,19 @@ const CustomerOpportunities = () => {
                 <div className="font-semibold text-slate-800 text-start">
                   Personalization Activities
                 </div>
-                <div className="text-xs text-gray-500 text-start">
-                  Festival and region-specific campaign suggestions.
+                <div className=" flex items-center justify-between">
+                  <span className="text-xs text-gray-500 text-start">
+                    Festival and region-specific campaign suggestions.
+                    <span className=" float-right">
+                      <VideoPopupWithShare
+                        video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                        buttonCss=" flex text-pink-500 text-sm items-center gap-2 whitespace-nowrap "
+                      />
+                    </span>
+                  </span>
                 </div>
               </div>
             </button>
-            <div className="mt-2">
-              <VideoPopupWithShare
-                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                buttonCss="flex items-center gap-2 px-3 py-2 bg-[#313166] hover:bg-[#515191] text-white rounded-lg transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg w-full justify-center"
-              />
-            </div>
           </div>
 
           <div>
@@ -105,12 +110,6 @@ const CustomerOpportunities = () => {
                 </div>
               </div>
             </button>
-            <div className="mt-2">
-              <VideoPopupWithShare
-                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                buttonCss="flex items-center gap-2 px-3 py-2 bg-[#313166] hover:bg-[#515191] text-white rounded-lg transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg w-full justify-center"
-              />
-            </div>
           </div>
 
           <div>
@@ -134,12 +133,6 @@ const CustomerOpportunities = () => {
                 </div>
               </div>
             </button>
-            <div className="mt-3">
-              <VideoPopupWithShare
-                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                buttonCss="flex items-center gap-2 px-3 py-2 bg-[#313166] hover:bg-[#515191] text-white rounded-lg transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg w-full justify-center"
-              />
-            </div>
           </div>
         </div>
       </div>
@@ -148,8 +141,10 @@ const CustomerOpportunities = () => {
       <div className="p-6">
         {activeTab === "engagement" && <EngagementActivities />}
         {activeTab === "campaign" && <PersonalizationCampaign />}
-        {activeTab === "customer-recommendation" && <CustomerRecommendation />}
-        {activeTab === "store-recommendation" && <StoreRecommendation />}
+        {/* {activeTab === "customer-recommendation" && <CustomerRecommendation />}
+        {activeTab === "store-recommendation" && <StoreRecommendation />} */}
+        {activeTab === "customer-recommendation" && <ComingSoon />}
+        {activeTab === "store-recommendation" && <ComingSoon />} 
       </div>
     </div>
   );
