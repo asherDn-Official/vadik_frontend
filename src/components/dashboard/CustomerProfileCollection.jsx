@@ -40,6 +40,21 @@ function CustomerProfileCollection() {
       newCustomers: 70,
       retentionCustomers: 89,
     },
+    {
+      date: new Date(
+        new Date().setDate(new Date().getDate() - 5)
+      ).toISOString(), // changed
+      newCustomers: 70,
+      retentionCustomers: 89,
+    },
+    {
+      date: new Date(
+        new Date().setDate(new Date().getDate() - 6)
+      ).toISOString(), // changed
+      newCustomers: 20,
+      retentionCustomers: 29,
+    }
+    
   ]);
 
   const [startDate, setStartDate] = useState(
