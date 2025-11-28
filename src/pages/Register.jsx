@@ -22,7 +22,8 @@ const Register = ({ formData, updateFormData }) => {
   const navigate = useNavigate();
   const params = useParams();
   const wildcardPath = params["*"];
-  const id = wildcardPath?.split("/")?.[1];
+  const urlId = wildcardPath?.split("/")?.[1];
+  const id = urlId || localStorage.getItem("retailerId");
 
   const getOnBoradingInitialData = async () => {
     try {
@@ -31,37 +32,61 @@ const Register = ({ formData, updateFormData }) => {
       const data = response.data.data;
       setInitialOnboardingData(data);
       
-      // Update form data directly from API response
+      // Get saved form data from localStorage
+      const savedFormData = localStorage.getItem("formData");
+      const parsedSavedData = savedFormData ? JSON.parse(savedFormData) : {};
+      
+      // Update form data directly from API response, but preserve any recent user changes
       const nameParts = data.fullName.split(" ");
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
       
       updateFormData({
-        firstName: firstName,
-        lastName: lastName,
+        firstName: parsedSavedData.firstName || firstName,
+        lastName: parsedSavedData.lastName || lastName,
         email: data.email,
         mobile: data.phone,
-        storeName: data.storeName,
+        storeName: parsedSavedData.storeName || data.storeName,
         phoneCode: data.phoneCode,
       });
     } catch (err) {
       console.error("Error fetching onboarding context:", err);
-      // You might want to add error state handling here
+      // Restore from localStorage if API fails
+      const savedFormData = localStorage.getItem("formData");
+      if (savedFormData) {
+        updateFormData(JSON.parse(savedFormData));
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (id) {
+    if (urlId) {
       getOnBoradingInitialData();
-        localStorage.setItem("retailerId", id);
+      localStorage.setItem("retailerId", urlId);
     }
-  }, [id]);
+  }, [urlId]);
 
   useEffect(() => {
     setIsCurrentStepValid(isStepValid(currentStep));
   }, [formData, currentStep]);
+
+  useEffect(() => {
+    localStorage.setItem("formData", JSON.stringify(formData));
+  }, [formData]);
+
+  useEffect(() => {
+    const savedFormData = localStorage.getItem("formData");
+    if (savedFormData) {
+      try {
+        const parsedData = JSON.parse(savedFormData);
+        updateFormData(parsedData);
+      } catch (err) {
+        console.error("Error parsing saved form data:", err);
+      }
+    }
+  }, []);
 
   const validateBasicInfo = () => {
     return (
