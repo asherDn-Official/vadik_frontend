@@ -17,12 +17,12 @@ const Register = ({ formData, updateFormData }) => {
   const [initialOnboardingData, setInitialOnboardingData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
+  const [completedSteps, setCompletedSteps] = useState([]);
+  const [isCurrentStepValid, setIsCurrentStepValid] = useState(false);
   const navigate = useNavigate();
   const params = useParams();
   const wildcardPath = params["*"];
   const id = wildcardPath?.split("/")?.[1];
-
-
 
   const getOnBoradingInitialData = async () => {
     try {
@@ -59,8 +59,65 @@ const Register = ({ formData, updateFormData }) => {
     }
   }, [id]);
 
+  useEffect(() => {
+    setIsCurrentStepValid(isStepValid(currentStep));
+  }, [formData, currentStep]);
+
+  const validateBasicInfo = () => {
+    return (
+      formData.firstName &&
+      formData.lastName &&
+      formData.mobile &&
+      formData.email
+    );
+  };
+
+  const validateStoreInfo = () => {
+    return (
+      formData.storeName &&
+      formData.storeType &&
+      formData.storeAddress &&
+      formData.city &&
+      formData.pincode
+    );
+  };
+
+  const validateAdditionalInfo = () => {
+    return (
+      formData.staffCount &&
+      formData.customerCount &&
+      formData.contactNumber &&
+      formData.ownerName &&
+      formData.logo
+    );
+  };
+
+  const isStepValid = (step) => {
+    switch (step) {
+      case 1:
+        return validateBasicInfo();
+      case 2:
+        return validateStoreInfo();
+      case 3:
+        return validateAdditionalInfo();
+      default:
+        return true;
+    }
+  };
+
   const goToStep = (step) => {
     setCurrentStep(step);
+    
+    if (isStepValid(step)) {
+      setCompletedSteps((prev) => {
+        if (!prev.includes(step)) {
+          return [...prev, step];
+        }
+        return prev;
+      });
+    }
+    
+    setIsCurrentStepValid(false);
 
     switch (step) {
       case 1:
@@ -78,6 +135,13 @@ const Register = ({ formData, updateFormData }) => {
       default:
         navigate("/register/basic");
     }
+  };
+
+  const handleStepChange = (step) => {
+    if (step > currentStep && !isStepValid(currentStep)) {
+      return;
+    }
+    goToStep(step);
   };
 
   // if (isLoading) {
@@ -112,7 +176,12 @@ const Register = ({ formData, updateFormData }) => {
             only takes a minute to complete and start using the platform:
           </p>
 
-          <ProgressIndicator currentStep={currentStep} />
+          <ProgressIndicator 
+            currentStep={currentStep} 
+            completedSteps={completedSteps}
+            onStepChange={handleStepChange}
+            isCurrentStepValid={isStepValid(currentStep)}
+          />
         </div>
       </div>
 
@@ -139,6 +208,7 @@ const Register = ({ formData, updateFormData }) => {
                 formData={formData}
                 updateFormData={updateFormData}
                 goToNextStep={() => goToStep(3)}
+                goToPreviousStep={() => goToStep(1)}
               />
             }
           />
@@ -149,6 +219,7 @@ const Register = ({ formData, updateFormData }) => {
                 formData={formData}
                 updateFormData={updateFormData}
                 goToNextStep={() => goToStep(4)}
+                goToPreviousStep={() => goToStep(2)}
               />
             }
           />

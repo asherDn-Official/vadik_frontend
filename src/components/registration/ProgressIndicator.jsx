@@ -1,6 +1,6 @@
 import React from "react";
 
-const ProgressIndicator = ({ currentStep }) => {
+const ProgressIndicator = ({ currentStep, completedSteps = [], onStepChange = null, isCurrentStepValid = false }) => {
   const steps = [
     {
       number: 1,
@@ -20,7 +20,6 @@ const ProgressIndicator = ({ currentStep }) => {
     { number: 4, title: "You're All Set!", subtitle: "" },
   ];
 
-  // Determine progress percentage
   const getProgressClass = (step) => {
     if (step < currentStep) return "progress-connector-100";
     if (step === currentStep - 1) {
@@ -31,26 +30,93 @@ const ProgressIndicator = ({ currentStep }) => {
     return "progress-connector-0";
   };
 
+  const handleStepClick = (stepNumber) => {
+    if (!onStepChange) return;
+    
+    if (stepNumber > currentStep && !isCurrentStepValid) {
+      return;
+    }
+    
+    if (stepNumber < currentStep || completedSteps.includes(stepNumber)) {
+      onStepChange(stepNumber);
+    } else if (stepNumber === currentStep) {
+      onStepChange(stepNumber);
+    }
+  };
+
+  const isStepClickable = (stepNumber) => {
+    if (stepNumber === currentStep) return true;
+    if (stepNumber < currentStep) return true;
+    if (completedSteps.includes(stepNumber)) return true;
+    return false;
+  };
+
+  const getIndicatorStyle = (stepNumber) => {
+    const isCompleted = completedSteps.includes(stepNumber);
+    const isActive = stepNumber === currentStep;
+    const isClickable = isStepClickable(stepNumber);
+
+    if (isCompleted) {
+      return `bg-gradient-to-r from-[#FADA07] to-[#FFD700] text-[#EC396F] shadow-lg shadow-[#FADA07]/50 cursor-pointer`;
+    }
+
+    if (isActive) {
+      return `bg-gradient-to-r from-[#FADA07] to-[#FFD700] text-[#EC396F] shadow-lg shadow-[#FADA07]/50 ${
+        isCurrentStepValid ? "shadow-lg shadow-[#4ADE80]/50" : ""
+      } cursor-pointer`;
+    }
+
+    if (isClickable) {
+      return `bg-[#FADA07] text-[#EC396F] cursor-pointer hover:shadow-md hover:shadow-[#FADA07]/30`;
+    }
+
+    return `bg-gray-400 text-gray-600 cursor-not-allowed opacity-60`;
+  };
+
+  const getTextStyle = (stepNumber) => {
+    const isCompleted = completedSteps.includes(stepNumber);
+    const isActive = stepNumber === currentStep;
+    const isClickable = isStepClickable(stepNumber);
+
+    if (isActive || isCompleted) {
+      return `text-white font-semibold`;
+    }
+
+    if (isClickable) {
+      return `text-gray-100`;
+    }
+
+    return `text-gray-300 opacity-60`;
+  };
+
   return (
     <div className="flex items-center justify-between">
       {steps.map((step, index) => (
         <React.Fragment key={step.number}>
           <div className="flex flex-col items-center">
-            <div
-              className={`rounded-full h-10 w-10 flex items-center justify-center font-bold text-sm mb-2
-                ${
-                  currentStep >= step.number
-                    ? "bg-[#FADA07] text-[#EC396F]"
-                    : "bg-[#FADA07] text-[#EC396F]"
-                }`}
+            <button
+              onClick={() => handleStepClick(step.number)}
+              disabled={!isStepClickable(step.number)}
+              className={`rounded-full h-10 w-10 flex items-center justify-center font-bold text-sm mb-2 transition-all duration-300 ${getIndicatorStyle(
+                step.number
+              )}`}
+              title={
+                step.number > currentStep && !isCurrentStepValid
+                  ? "Complete current step first"
+                  : step.title
+              }
             >
-              {step.number}
-            </div>
+              {completedSteps.includes(step.number) ? (
+                <span className="text-lg">✓</span>
+              ) : (
+                step.number
+              )}
+            </button>
             <div className="text-center">
               <h4
-                className={`text-sm font-medium ${
-                  currentStep >= step.number ? "text-white" : "text-gray-100"
-                }`}
+                className={`text-sm font-medium transition-colors duration-300 ${getTextStyle(
+                  step.number
+                )}`}
               >
                 {step.title}
               </h4>

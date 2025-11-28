@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
+const StoreInformation = ({ formData, updateFormData, goToNextStep, goToPreviousStep }) => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({
     storeName: false,
@@ -261,7 +261,14 @@ const StoreInformation = ({ formData, updateFormData, goToNextStep }) => {
         </div>
 
         {/* Submit */}
-        <div className="md:col-span-2 flex justify-center mt-6">
+        <div className="md:col-span-2 flex justify-center gap-4 mt-6">
+          <button
+            type="button"
+            onClick={goToPreviousStep}
+            className="min-w-[150px] text-[#CB376D] py-2 px-4 rounded-[10px] bg-white border-2 border-[#CB376D] hover:bg-gray-50 transition-colors"
+          >
+            Back
+          </button>
           <button
             type="submit"
             className="min-w-[150px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962]"
