@@ -204,7 +204,7 @@ const Login = () => {
         <div className="mt-6 text-center text-sm">
           <p>
             Don't have an account?{" "}
-            <Link to="/register" className="font-medium hover:underline">
+            <Link to="https://vadik.ai/#cta" className="font-medium hover:underline">
               Register here
             </Link>
           </p>
