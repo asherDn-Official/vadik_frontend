@@ -15,7 +15,7 @@ const CustomerOpportunities = () => {
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-slate-800 mb-2">
-            Customer Opportunities
+            Customer Activity  
           </h1>
           <p className="text-gray-600 ">
             This smart chatbot suggests the right offers to the right customers
@@ -41,7 +41,7 @@ const CustomerOpportunities = () => {
 
               <div>
                 <div className="font-semibold text-slate-800 text-start">
-                  Personalization engagement
+                  Create Activity
                 </div>
                 <div className=" flex items-center justify-between">
                   <span className="text-xs text-gray-500 text-start  ">
@@ -72,7 +72,7 @@ const CustomerOpportunities = () => {
               </div>
               <div>
                 <div className="font-semibold text-slate-800 text-start">
-                  Personalization Activities
+                  Send Activity
                 </div>
                 <div className=" flex items-center justify-between">
                   <span className="text-xs text-gray-500 text-start">
@@ -126,7 +126,7 @@ const CustomerOpportunities = () => {
               </div>
               <div>
                 <div className="font-semibold text-slate-800 text-start">
-                  Store recommendation
+                  Business Recommendation
                 </div>
                 <div className="text-xs text-gray-500 text-start">
                   Retailer Stock Management Suggestion

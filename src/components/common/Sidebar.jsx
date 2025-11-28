@@ -66,7 +66,7 @@ function Sidebar() {
       path: "/customeropportunities",
       module: "Customer Opportunities",
       icon: customerOpportunitiesIcon,
-      label: "Customer Opportunities",
+      label: "Customer Activity",
     },
     {
       path: "/performance",
