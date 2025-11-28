@@ -5,9 +5,10 @@ import {
   FiPackage,
   FiFileText,
   FiUsers,
-  FiSettings,
-
+  FiSettings, 
 } from "react-icons/fi";
+import { LayoutTemplate } from 'lucide-react';
+
 
 import { FaCoins } from "react-icons/fa";
 
@@ -20,6 +21,7 @@ import RolesAndPermissions from "../components/settings/RolesAndPermissions";
 import AddProduct from "../components/settings/AddProduct";
 import Coupon from "../components/settings/Coupon";
 import LoyaltyPoint from "../components/settings/LoyaltyPoint";
+import Template from "../components/settings/Template";
 
 const SettingsPage = () => {
   const { tab } = useParams();
@@ -51,18 +53,18 @@ const SettingsPage = () => {
             isActive={activeTab === "my-profile"}
             onClick={() => handleTabChange("my-profile")}
           />
-          <SettingsTab
+          {/* <SettingsTab
             icon={<FiPackage />}
             text="Inventory"
             isActive={activeTab === "inventory"}
             onClick={() => handleTabChange("inventory")}
-          />
-          <SettingsTab
+          /> */}
+          {/* <SettingsTab
             icon={<FiFileText />}
             text="Daily Billing Update"
             isActive={activeTab === "daily-billing"}
             onClick={() => handleTabChange("daily-billing")}
-          />
+          /> */}
           <SettingsTab
             icon={<FiUsers />}
             text="Customer Field Preferences"
@@ -87,6 +89,12 @@ const SettingsPage = () => {
             isActive={activeTab === "loyalty"}
             onClick={() => handleTabChange("loyalty")}
           />
+          <SettingsTab
+            icon={<LayoutTemplate />}
+            text="template"
+            isActive={activeTab === "template"}
+            onClick={() => handleTabChange("template")}
+          />
         </div>
       </div>
 
@@ -104,6 +112,7 @@ const SettingsPage = () => {
         {activeTab === "roles-permissions" && <RolesAndPermissions />}
         {activeTab === "coupon" && <Coupon />}
         {activeTab === "loyalty" && <LoyaltyPoint />}
+        {activeTab === "template" && <Template />}
       </div>
     </div>
   );
