@@ -12,7 +12,7 @@ function ComingSoon() {
 
       <p className="text-sm text-gray-500 mt-1 max-w-xs">
         This feature is currently under development. 
-        {/* Stay tuned! */}
+        Stay tuned!
       </p>
     </div>
   );

@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { LogOut} from "lucide-react";
+import { LogOut } from "lucide-react";
 import ToggleBadge from "./ToggleBadge";
+import LogoutConfirmModal from "./LogoutConfirmModal";
 import dashboardIcon from "../../../public/assets/mage_dashboard-icon.png";
 import customersIcon from "../../../public/assets/bi_person-fill-icon.png";
 import personalisationIcon from "../../../public/assets/fluent-insights.png";
@@ -12,6 +14,7 @@ import kycIcon from "../../../public/assets/kyc-icon.png";
 import settingsIcon from "../../../public/assets/settings-icon.png";
 
 function Sidebar() {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const location = useLocation();
   const { auth, setAuth } = useAuth();
   const userRole = auth?.data?.role;
@@ -91,16 +94,31 @@ function Sidebar() {
     },
   ];
 
-  // Handle logout functionality
   const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
     localStorage.removeItem("retailerId");
     localStorage.removeItem("token");
+    localStorage.removeItem("formData");
     setAuth(null);
     navigate("/", { replace: true });
   };
 
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
+  };
+
   return (
-    <aside className="sticky left-0 top-0 h-screen w-full md:w-60  bg-[#313166] text-white flex flex-col overflow-y-auto">
+    <>
+      <LogoutConfirmModal
+        isOpen={showLogoutConfirm}
+        onConfirm={confirmLogout}
+        onCancel={cancelLogout}
+      />
+      
+      <aside className="sticky left-0 top-0 h-screen w-full md:w-60  bg-[#313166] text-white flex flex-col overflow-y-auto">
       <div className="pt-4 font-medium text-base md:text-lg lg:text-xl text-center truncate">
         Vadik AI
       </div>
@@ -143,6 +161,7 @@ function Sidebar() {
         </button>
       </nav>
     </aside>
+    </>
   );
 }
 
