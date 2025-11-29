@@ -40,13 +40,7 @@ export default function SubscriptionCard({
 
   return (
     <div className={`rounded-2xl p-6 shadow-lg flex flex-col ${cardStyles}`}>
-      {recommended && (
-        <div className="text-center mb-4">
-          {/* <span className={`text-sm ${variant === 'primary' ? 'text-white' : 'text-gray-600'}`}>
-            Most Recommended
-          </span> */}
-        </div>
-      )}
+     
 
       <h3 className={`text-xl font-semibold text-center mb-4 capitalize ${textColor}`}>
         {title}
