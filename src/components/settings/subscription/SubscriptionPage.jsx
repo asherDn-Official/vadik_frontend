@@ -10,18 +10,6 @@ export default function SubscriptionPage() {
   const [subscription, setSubscription] = useState([]);
   const [addons, setAddons] = useState([]);
 
-  const usageData = [
-    { feature: "User", given: 1, used: 1, balance: "-" },
-    { feature: "Profile", given: 250, used: 200, balance: 50, isWarning: true },
-    {
-      feature: "Media Storage",
-      given: "200 MB",
-      used: "180 MB",
-      balance: "20 MB",
-      isWarning: true,
-    },
-    { feature: "Activities", given: 10, used: 2, balance: 8 },
-  ];
 
   const getCurrentPlanDetails = async () => {
     try {
