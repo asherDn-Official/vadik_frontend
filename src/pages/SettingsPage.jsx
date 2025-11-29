@@ -8,6 +8,8 @@ import {
   FiSettings, 
 } from "react-icons/fi";
 import { LayoutTemplate } from 'lucide-react';
+import { BadgeIndianRupee } from 'lucide-react';
+
 
 
 import { FaCoins } from "react-icons/fa";
@@ -22,6 +24,7 @@ import AddProduct from "../components/settings/AddProduct";
 import Coupon from "../components/settings/Coupon";
 import LoyaltyPoint from "../components/settings/LoyaltyPoint";
 import Template from "../components/settings/Template";
+import SubscriptionPage from "../components/settings/subscription/SubscriptionPage";
 
 const SettingsPage = () => {
   const { tab } = useParams();
@@ -95,6 +98,12 @@ const SettingsPage = () => {
             isActive={activeTab === "template"}
             onClick={() => handleTabChange("template")}
           />
+          <SettingsTab
+            icon={<BadgeIndianRupee  />}
+            text="subscription"
+            isActive={activeTab === "subscription"}
+            onClick={() => handleTabChange("subscription")}
+          />
         </div>
       </div>
 
@@ -113,6 +122,7 @@ const SettingsPage = () => {
         {activeTab === "coupon" && <Coupon />}
         {activeTab === "loyalty" && <LoyaltyPoint />}
         {activeTab === "template" && <Template />}
+        {activeTab === "subscription" && <SubscriptionPage />}
       </div>
     </div>
   );
