@@ -77,6 +77,46 @@ export default function SubscriptionPage() {
     return total;
   };
 
+  const verifyRazorpayPayment = async (response, subscriptionId) => {
+    try {
+      const verificationPayload = {
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
+        subscriptionId: subscriptionId
+      };
+
+      const verificationResponse = await api.post("/api/subscriptions/verify-payment", verificationPayload);
+      console.log("🔍 Step 5 - Verify Payment Response:", verificationResponse);
+      
+      // Validate verification response
+      const isSuccess = verificationResponse.data?.status || verificationResponse.status;
+      
+      if (!isSuccess) {
+        throw new Error("❌ Payment verification returned false status");
+      }
+      
+      // Log important verification data
+      console.log("✅ Payment Verified:", {
+        subscriptionId: verificationResponse.data?.subscription?._id,
+        plan: verificationResponse.data?.subscription?.plan?.name,
+        autoPay: verificationResponse.data?.subscription?.autoPay,
+        status: verificationResponse.data?.status
+      });
+      
+      alert("✅ Payment successful! Your subscription is now active.");
+      setShowConfirmation(false);
+      setSelectedPlan(null);
+      setSelectedAddons([]);
+      getCurrentPlanDetails();
+    } catch (error) {
+      console.error("Payment verification failed:", error);
+      alert("Payment verification failed. Please contact support.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleProceedToPayment = async () => {
     setLoading(true);
     try {
@@ -89,7 +129,22 @@ export default function SubscriptionPage() {
       };
 
       const subscriptionResponse = await api.post("/api/subscriptions", subscriptionPayload);
-      const subscriptionData = subscriptionResponse.data;
+      console.log("🔍 Step 1 - Create Subscription Response:", subscriptionResponse);
+      
+      // Handle different response structures
+      const subscriptionData = subscriptionResponse.data.subscriptionData || subscriptionResponse.data.data || subscriptionResponse.data;
+      
+      console.log("📊 Extracted subscriptionData:", subscriptionData);
+      
+      if (!subscriptionData.totalCustomersAllowed) {
+        console.warn("⚠️ Missing totalCustomersAllowed in subscription response");
+      }
+      if (!subscriptionData.totalActivitiesAllowed) {
+        console.warn("⚠️ Missing totalActivitiesAllowed in subscription response");
+      }
+      if (!subscriptionData.totalWhatsappActivitiesAllowed) {
+        console.warn("⚠️ Missing totalWhatsappActivitiesAllowed in subscription response");
+      }
 
       // Step 2: Create Razorpay Order
       const startDate = new Date();
@@ -117,36 +172,39 @@ export default function SubscriptionPage() {
       };
 
       const orderResponse = await api.post("/api/subscriptions/create-order", orderPayload);
-      const { orderId, subscriptionId } = orderResponse.data;
+      console.log("🔍 Step 2 - Create Order Response:", orderResponse);
+      
+      // Validate response structure
+      if (!orderResponse.data.order) {
+        throw new Error("❌ Missing 'order' in create-order response");
+      }
+      if (!orderResponse.data.subscriptionId) {
+        throw new Error("❌ Missing 'subscriptionId' in create-order response");
+      }
+      
+      const { order, subscriptionId } = orderResponse.data;
+      console.log("💳 Order Details:", { orderId: order.id, amount: order.amount, currency: order.currency });
+      
+      if (!order.id) {
+        throw new Error("❌ Missing order.id in response");
+      }
+      if (!order.amount) {
+        throw new Error("❌ Missing order.amount in response");
+      }
+      
+      const orderId = order.id;
 
       // Step 3: Initialize Razorpay Payment
       const options = {
+        // key: process.env.REACT_APP_RAZORPAY_KEY_ID || "rzp_test_RiIfKOp1omFGAu",
         key: "rzp_test_RiIfKOp1omFGAu",
-        amount: orderResponse.data.amount,
-        currency: "INR",
+        amount: order.amount,
+        currency: order.currency || "INR",
         name: "Vadik AI Subscription",
-        description: `${selectedPlan.name} Plan with Addons`,
+        description: `${selectedPlan.name} Plan${selectedAddons.length > 0 ? ' with Addons' : ''}`,
         order_id: orderId,
         handler: async function (response) {
-           // Step 4: Verify Payment
-          try {
-            const verificationPayload = {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              subscriptionId: subscriptionId
-            };
-
-            await api.post("/api/subscriptions/verify-payment", verificationPayload);
-            
-            // Payment successful
-            alert("Payment successful! Your subscription is now active.");
-            setShowConfirmation(false);
-            getCurrentPlanDetails(); // Refresh current plan details
-          } catch (error) {
-            console.error("Payment verification failed:", error);
-            alert("Payment verification failed. Please contact support.");
-          }
+          await verifyRazorpayPayment(response, subscriptionId);
         },
         prefill: {
           name: "Customer Name", // You can get this from user profile
@@ -159,11 +217,22 @@ export default function SubscriptionPage() {
       };
 
       const razorpay = new window.Razorpay(options);
+      razorpay.on('payment.failed', function (response) {
+        console.error("Razorpay payment failed:", response.error);
+        alert(`Payment failed: ${response.error.description}`);
+        setLoading(false);
+      });
       razorpay.open();
 
     } catch (error) {
-      console.error("Payment process failed:", error);
-      alert("Failed to process payment. Please try again.");
+      console.error("❌ Payment process failed:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      const errorMessage = error.response?.data?.message || error.message || "Failed to process payment. Please try again.";
+      alert(`❌ Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -179,12 +248,28 @@ export default function SubscriptionPage() {
         enableAutoPay: false
       };
 
-      await api.post("/api/subscriptions", trialPayload);
-      alert("Trial subscription activated successfully!");
-      getCurrentPlanDetails(); // Refresh current plan details
+      const trialResponse = await api.post("/api/subscriptions", trialPayload);
+      console.log("🔍 Trial Subscription Response:", trialResponse);
+      
+      if (!trialResponse.data) {
+        throw new Error("❌ No response data from trial subscription");
+      }
+      
+      console.log("✅ Trial Activated:", {
+        subscriptionId: trialResponse.data.subscriptionData?._id || trialResponse.data._id,
+        plan: plan.name,
+        isTrial: true
+      });
+      
+      alert("✅ Trial subscription activated successfully!");
+      getCurrentPlanDetails();
     } catch (error) {
-      console.error("Trial subscription failed:", error);
-      alert("Failed to activate trial. Please try again.");
+      console.error("❌ Trial subscription failed:", {
+        message: error.message,
+        response: error.response?.data
+      });
+      const errorMessage = error.response?.data?.message || "Failed to activate trial. Please try again.";
+      alert(`❌ Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

@@ -42,10 +42,17 @@ export default function SubscriptionCard({
     return isAddon ? 'Add Now' : 'Upgrade Plan';
   };
 
-  const handleCardClick = () => {
+  const handleCardClick = (e) => {
     if (!isAddon && (isCurrentPlan || (hasActiveSubscription && !isCurrentPlan))) {
-      return; // Don't allow selection if it's the current plan or user has active subscription
+      return;
     }
+    e?.preventDefault?.();
+    onSelect(plan);
+  };
+
+  const handleCheckboxChange = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
     onSelect(plan);
   };
 
@@ -62,7 +69,12 @@ export default function SubscriptionCard({
         className={`rounded-2xl shadow-lg flex flex-col border-2 cursor-pointer transition-all ${
           isSelected ? 'border-pink-700 border-2' : 'border-gray-200'
         } ${cardStyles}`}
-        onClick={handleCardClick}
+        onClick={(e) => {
+          if (e.target.type === 'radio' || e.target.type === 'checkbox') {
+            return;
+          }
+          handleCardClick(e);
+        }}
       >
         <div className="bg-gradient-to-r from-pink-700 to-purple-800 text-white px-6 py-4 rounded-t-2xl">
           <div className="flex items-center justify-between">
@@ -75,7 +87,8 @@ export default function SubscriptionCard({
                 name="subscription-plan"
                 checked={isSelected}
                 onChange={handleCardClick}
-                className="w-5 h-5 text-pink-700 bg-white border-gray-300 focus:ring-pink-700 focus:ring-2"
+                onClick={(e) => e.stopPropagation()}
+                className="w-5 h-5 text-pink-700 bg-white border-gray-300 focus:ring-pink-700 focus:ring-2 cursor-pointer"
               />
             )}
           </div>
@@ -127,7 +140,12 @@ export default function SubscriptionCard({
       className={`rounded-2xl p-6 shadow-lg flex flex-col cursor-pointer transition-all ${
         isSelected ? 'ring-2 ring-white ring-opacity-50' : ''
       } ${cardStyles}`}
-      onClick={handleCardClick}
+      onClick={(e) => {
+        if (e.target.type === 'checkbox' || e.target.type === 'radio') {
+          return;
+        }
+        handleCardClick(e);
+      }}
     >
       {recommended && variant === 'primary' && (
         <div className="text-center mb-4">
@@ -145,8 +163,9 @@ export default function SubscriptionCard({
           <input
             type="checkbox"
             checked={isSelected}
-            onChange={handleCardClick}
-            className="w-5 h-5 text-pink-700 bg-white border-gray-300 rounded focus:ring-pink-700 focus:ring-2"
+            onChange={handleCheckboxChange}
+            onClick={(e) => e.stopPropagation()}
+            className="w-5 h-5 text-pink-700 bg-white border-gray-300 rounded focus:ring-pink-700 focus:ring-2 cursor-pointer"
           />
         ) : (
           <input
@@ -154,7 +173,8 @@ export default function SubscriptionCard({
             name="subscription-plan"
             checked={isSelected}
             onChange={handleCardClick}
-            className="w-5 h-5 text-pink-700 bg-white border-gray-300 focus:ring-pink-700 focus:ring-2"
+            onClick={(e) => e.stopPropagation()}
+            className="w-5 h-5 text-pink-700 bg-white border-gray-300 focus:ring-pink-700 focus:ring-2 cursor-pointer"
           />
         )}
       </div>
