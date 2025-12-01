@@ -584,7 +584,7 @@ export default function SubscriptionPage() {
         )}
 
         {/* Proceed Button */}
-        {(selectedPlan || (currentPlans?.subscription && selectedAddons.length > 0)) && (
+        {((selectedPlan && !selectedPlan.isFreeTrial) || (selectedAddons.length > 0 && (currentPlans?.subscription || selectedPlan))) && (
           <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2">
             <button
               onClick={() => setShowConfirmation(true)}
