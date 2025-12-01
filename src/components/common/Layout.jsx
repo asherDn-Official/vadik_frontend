@@ -89,9 +89,9 @@ function Layout() {
           />
         )}
         
-        {!isDemo && currentPlans === null && showSubscriptionPopup && (
+        {/* {!isDemo && currentPlans === null && showSubscriptionPopup && (
            <SubscriptionPopup onClose={() => setShowSubscriptionPopup(false)}/>
-        )}
+        )} */}
 
         <Sidebar onOpenTour={setActiveTour} />
         <main className="flex-1 bg-[#F4F5F9]">
