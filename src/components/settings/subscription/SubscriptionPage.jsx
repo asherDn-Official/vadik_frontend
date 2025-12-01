@@ -4,7 +4,6 @@ import UsageTable from "./components/UsageTable";
 import ConfirmationModal from "./components/ConfirmationModal";
 import api from "../../../api/apiconfig";
 
-
 export default function SubscriptionPage() {
   const [activeTab, setActiveTab] = useState("subscription");
   const [currentPlans, setCurrentPlans] = useState(null);
@@ -15,6 +14,8 @@ export default function SubscriptionPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
   const retailerid = localStorage.getItem("retailerId");
+
+  // console.log("env", import.meta.env.VITE_RAZORPAY_KEY_ID);
 
   const getCurrentPlanDetails = async () => {
     try {
@@ -59,10 +60,10 @@ export default function SubscriptionPage() {
   };
 
   const handleAddonToggle = (addon) => {
-    setSelectedAddons(prev => {
-      const isSelected = prev.find(a => a._id === addon._id);
+    setSelectedAddons((prev) => {
+      const isSelected = prev.find((a) => a._id === addon._id);
       if (isSelected) {
-        return prev.filter(a => a._id !== addon._id);
+        return prev.filter((a) => a._id !== addon._id);
       } else {
         return [...prev, addon];
       }
@@ -71,7 +72,7 @@ export default function SubscriptionPage() {
 
   const calculateTotalPrice = () => {
     let total = selectedPlan ? selectedPlan.price : 0;
-    selectedAddons.forEach(addon => {
+    selectedAddons.forEach((addon) => {
       total += addon.price;
     });
     return total;
@@ -83,28 +84,31 @@ export default function SubscriptionPage() {
         razorpay_order_id: response.razorpay_order_id,
         razorpay_payment_id: response.razorpay_payment_id,
         razorpay_signature: response.razorpay_signature,
-        subscriptionId: subscriptionId
+        subscriptionId: subscriptionId,
       };
 
-      const verificationResponse = await api.post("/api/subscriptions/verify-payment", verificationPayload);
+      const verificationResponse = await api.post(
+        "/api/subscriptions/verify-payment",
+        verificationPayload
+      );
       console.log("🔍 Step 5 - Verify Payment Response:", verificationResponse);
-      
+
       // Validate verification response
-      const isSuccess = verificationResponse.data?.status || verificationResponse.status;
-      
+      const isSuccess =
+        verificationResponse.data?.status || verificationResponse.status;
+
       if (!isSuccess) {
         throw new Error("❌ Payment verification returned false status");
       }
-      
+
       // Log important verification data
       console.log("✅ Payment Verified:", {
         subscriptionId: verificationResponse.data?.subscription?._id,
         plan: verificationResponse.data?.subscription?.plan?.name,
         autoPay: verificationResponse.data?.subscription?.autoPay,
-        status: verificationResponse.data?.status
+        status: verificationResponse.data?.status,
       });
-      
-      alert("✅ Payment successful! Your subscription is now active.");
+
       setShowConfirmation(false);
       setSelectedPlan(null);
       setSelectedAddons([]);
@@ -118,32 +122,56 @@ export default function SubscriptionPage() {
   };
 
   const handleProceedToPayment = async () => {
+    if (!selectedPlan && selectedAddons.length === 0) {
+      alert("Please select a plan or addons before proceeding to payment.");
+      return;
+    }
+
     setLoading(true);
     try {
-      // Step 1: Create Subscription
-      const subscriptionPayload = {
-        planId: selectedPlan._id,
-        addOnIds: selectedAddons.map(addon => addon._id),
-        isTrial: false,
-        enableAutoPay: true
-      };
+      let subscriptionData = null;
 
-      const subscriptionResponse = await api.post("/api/subscriptions", subscriptionPayload);
-      console.log("🔍 Step 1 - Create Subscription Response:", subscriptionResponse);
-      
-      // Handle different response structures
-      const subscriptionData = subscriptionResponse.data.subscriptionData || subscriptionResponse.data.data || subscriptionResponse.data;
-      
-      console.log("📊 Extracted subscriptionData:", subscriptionData);
-      
-      if (!subscriptionData.totalCustomersAllowed) {
-        console.warn("⚠️ Missing totalCustomersAllowed in subscription response");
-      }
-      if (!subscriptionData.totalActivitiesAllowed) {
-        console.warn("⚠️ Missing totalActivitiesAllowed in subscription response");
-      }
-      if (!subscriptionData.totalWhatsappActivitiesAllowed) {
-        console.warn("⚠️ Missing totalWhatsappActivitiesAllowed in subscription response");
+      // Step 1: Create Subscription (only if plan is selected)
+      if (selectedPlan) {
+        const subscriptionPayload = {
+          planId: selectedPlan._id,
+          addOnIds: selectedAddons.map((addon) => addon._id),
+          isTrial: false,
+          enableAutoPay: true,
+        };
+
+        const subscriptionResponse = await api.post(
+          "/api/subscriptions",
+          subscriptionPayload
+        );
+        console.log(
+          "🔍 Step 1 - Create Subscription Response:",
+          subscriptionResponse
+        );
+
+        // Handle different response structures
+        subscriptionData =
+          subscriptionResponse.data.subscriptionData ||
+          subscriptionResponse.data.data ||
+          subscriptionResponse.data;
+
+        console.log("📊 Extracted subscriptionData:", subscriptionData);
+
+        if (!subscriptionData.totalCustomersAllowed) {
+          console.warn(
+            "⚠️ Missing totalCustomersAllowed in subscription response"
+          );
+        }
+        if (!subscriptionData.totalActivitiesAllowed) {
+          console.warn(
+            "⚠️ Missing totalActivitiesAllowed in subscription response"
+          );
+        }
+        if (!subscriptionData.totalWhatsappActivitiesAllowed) {
+          console.warn(
+            "⚠️ Missing totalWhatsappActivitiesAllowed in subscription response"
+          );
+        }
       }
 
       // Step 2: Create Razorpay Order
@@ -154,8 +182,8 @@ export default function SubscriptionPage() {
       const orderPayload = {
         subscriptionData: {
           user: retailerid,
-          plan: selectedPlan._id,
-          addOns: selectedAddons.map(addon => addon._id),
+          plan: selectedPlan?._id || null,
+          addOns: selectedAddons.map((addon) => addon._id),
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           isActive: false,
@@ -163,17 +191,21 @@ export default function SubscriptionPage() {
           autoPay: {
             enabled: true,
             razorpayCustomerId: null,
-            razorpayTokenId: null
+            razorpayTokenId: null,
           },
-          totalCustomersAllowed: subscriptionData.totalCustomersAllowed,
-          totalActivitiesAllowed: subscriptionData.totalActivitiesAllowed,
-          totalWhatsappActivitiesAllowed: subscriptionData.totalWhatsappActivitiesAllowed
-        }
+          totalCustomersAllowed: subscriptionData?.totalCustomersAllowed || 0,
+          totalActivitiesAllowed: subscriptionData?.totalActivitiesAllowed || 0,
+          totalWhatsappActivitiesAllowed:
+            subscriptionData?.totalWhatsappActivitiesAllowed || 0,
+        },
       };
 
-      const orderResponse = await api.post("/api/subscriptions/create-order", orderPayload);
+      const orderResponse = await api.post(
+        "/api/subscriptions/create-order",
+        orderPayload
+      );
       console.log("🔍 Step 2 - Create Order Response:", orderResponse);
-      
+
       // Validate response structure
       if (!orderResponse.data.order) {
         throw new Error("❌ Missing 'order' in create-order response");
@@ -181,27 +213,32 @@ export default function SubscriptionPage() {
       if (!orderResponse.data.subscriptionId) {
         throw new Error("❌ Missing 'subscriptionId' in create-order response");
       }
-      
+
       const { order, subscriptionId } = orderResponse.data;
-      console.log("💳 Order Details:", { orderId: order.id, amount: order.amount, currency: order.currency });
-      
+      console.log("💳 Order Details:", {
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+      });
+
       if (!order.id) {
         throw new Error("❌ Missing order.id in response");
       }
       if (!order.amount) {
         throw new Error("❌ Missing order.amount in response");
       }
-      
+
       const orderId = order.id;
 
       // Step 3: Initialize Razorpay Payment
       const options = {
-        // key: process.env.REACT_APP_RAZORPAY_KEY_ID || "rzp_test_RiIfKOp1omFGAu",
-        key: "rzp_test_RiIfKOp1omFGAu",
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency || "INR",
         name: "Vadik AI Subscription",
-        description: `${selectedPlan.name} Plan${selectedAddons.length > 0 ? ' with Addons' : ''}`,
+        description: `${selectedPlan ? selectedPlan.name + " Plan" : "Addon"}${
+          selectedAddons.length > 0 ? " with Addons" : ""
+        }`,
         order_id: orderId,
         handler: async function (response) {
           await verifyRazorpayPayment(response, subscriptionId);
@@ -209,29 +246,31 @@ export default function SubscriptionPage() {
         prefill: {
           name: "Customer Name", // You can get this from user profile
           email: "customer@email.com", // You can get this from user profile
-          contact: "9999999999" // You can get this from user profile
+          contact: "9999999999", // You can get this from user profile
         },
         theme: {
-          color: "#D3285B"
-        }
+          color: "#D3285B",
+        },
       };
 
       const razorpay = new window.Razorpay(options);
-      razorpay.on('payment.failed', function (response) {
+      razorpay.on("payment.failed", function (response) {
         console.error("Razorpay payment failed:", response.error);
         alert(`Payment failed: ${response.error.description}`);
         setLoading(false);
       });
       razorpay.open();
-
     } catch (error) {
       console.error("❌ Payment process failed:", {
         message: error.message,
         response: error.response?.data,
-        status: error.response?.status
+        status: error.response?.status,
       });
-      
-      const errorMessage = error.response?.data?.message || error.message || "Failed to process payment. Please try again.";
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to process payment. Please try again.";
       alert(`❌ Error: ${errorMessage}`);
     } finally {
       setLoading(false);
@@ -245,30 +284,33 @@ export default function SubscriptionPage() {
         planId: plan._id,
         addOnIds: [],
         isTrial: true,
-        enableAutoPay: false
+        enableAutoPay: false,
       };
 
       const trialResponse = await api.post("/api/subscriptions", trialPayload);
       console.log("🔍 Trial Subscription Response:", trialResponse);
-      
+
       if (!trialResponse.data) {
         throw new Error("❌ No response data from trial subscription");
       }
-      
+
       console.log("✅ Trial Activated:", {
-        subscriptionId: trialResponse.data.subscriptionData?._id || trialResponse.data._id,
+        subscriptionId:
+          trialResponse.data.subscriptionData?._id || trialResponse.data._id,
         plan: plan.name,
-        isTrial: true
+        isTrial: true,
       });
-      
+
       alert("✅ Trial subscription activated successfully!");
       getCurrentPlanDetails();
     } catch (error) {
       console.error("❌ Trial subscription failed:", {
         message: error.message,
-        response: error.response?.data
+        response: error.response?.data,
       });
-      const errorMessage = error.response?.data?.message || "Failed to activate trial. Please try again.";
+      const errorMessage =
+        error.response?.data?.message ||
+        "Failed to activate trial. Please try again.";
       alert(`❌ Error: ${errorMessage}`);
     } finally {
       setLoading(false);
@@ -354,9 +396,11 @@ export default function SubscriptionPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {subscription.map((plan) => {
               const currentPlanName = currentPlans?.subscription?.plan;
-              const isCurrentPlan = currentPlanName && currentPlanName.toLowerCase() === plan.name.toLowerCase();
+              const isCurrentPlan =
+                currentPlanName &&
+                currentPlanName.toLowerCase() === plan.name.toLowerCase();
               const hasActiveSubscription = currentPlanName ? true : false;
-              
+
               const transformedPlan = {
                 title: plan.name,
                 price: plan.price,
@@ -367,7 +411,10 @@ export default function SubscriptionPage() {
                   `${plan.whatsappActivityLimit} WhatsApp Activities`,
                   plan.isFreeTrial ? "Free Trial Available" : "Full Access",
                 ],
-                variant: plan.name.toLowerCase() === "enterprise" ? "primary" : "secondary",
+                variant:
+                  plan.name.toLowerCase() === "enterprise"
+                    ? "primary"
+                    : "secondary",
                 recommended: plan.name.toLowerCase() === "starter",
                 isFreeTrial: plan.isFreeTrial,
               };
@@ -420,7 +467,7 @@ export default function SubscriptionPage() {
                   features={transformedPlan.features}
                   variant={transformedPlan.variant}
                   isAddon={true}
-                  isSelected={selectedAddons.some(a => a._id === addon._id)}
+                  isSelected={selectedAddons.some((a) => a._id === addon._id)}
                   onSelect={handleAddonToggle}
                   loading={loading}
                 />

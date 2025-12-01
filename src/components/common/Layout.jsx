@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import { sampleTours } from "../../data/data.js";
 import TourModal from "./TourModal";
 import api from "../../api/apiconfig.js";
+import { Subscript } from "lucide-react";
+import SubscriptionPopup from "../settings/subscription/SubscriptionPopup.jsx";
 
 function Layout() {
   const [activeTour, setActiveTour] = useState(null);
@@ -12,6 +14,10 @@ function Layout() {
   const [isDemo, setDemo] = useState(null);
   const [email] = useState(() => localStorage.getItem("email"));
   const [isTourComplete, setIsTourComplete] = useState(null);
+  const [currentPlans, setCurrentPlans] = useState("");
+  const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(true);
+
+  console.log(currentPlans);
 
   useEffect(() => {
     // Tour opens by default on mount with quick-start
@@ -45,9 +51,21 @@ function Layout() {
     }
   }
 
+  const isCurrentPlansAvailable = async () => {
+    try {
+      const response = await api.get("/api/subscriptions/credit/usage");
+      setCurrentPlans(response.data);
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setCurrentPlans(null);
+      }
+    }
+  };
+
   useEffect(() => {
     getDemoStatus();
     getTourStatus();
+    isCurrentPlansAvailable();
   }, []);
 
   const handleTourClose = () => {
@@ -69,6 +87,10 @@ function Layout() {
             onClose={handleTourClose}
             onConfirmation={handleConfirmation}
           />
+        )}
+        
+        {!isDemo && currentPlans === null && showSubscriptionPopup && (
+           <SubscriptionPopup onClose={() => setShowSubscriptionPopup(false)}/>
         )}
 
         <Sidebar onOpenTour={setActiveTour} />
