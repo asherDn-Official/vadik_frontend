@@ -49,6 +49,15 @@ export default {
         navbg: '#312e81',
         navactive: '#be185d',
       },
+      keyframes: {
+        zoom: {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.08)" },
+        },
+      },
+      animation: {
+        zoom: "zoom 1s infinite ease-in-out",
+      },
     },
   },
   plugins: [],

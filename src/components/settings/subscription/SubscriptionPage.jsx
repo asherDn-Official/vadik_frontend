@@ -179,11 +179,11 @@ export default function SubscriptionPage() {
     }
 
     setLoading(true);
-    
+
     // Determine which flow to use
     const isAddonsOnly = !selectedPlan && selectedAddons.length > 0;
     const hasActiveSubscription = activeSubscriptionId !== null;
-    
+
     if (isAddonsOnly && hasActiveSubscription) {
       // Use add-credits flow
       await handleAddCreditsFlow();
@@ -225,7 +225,9 @@ export default function SubscriptionPage() {
           plan: selectedPlan?._id || null,
           addOns: selectedAddons.map((addon) => addon._id),
           startDate: new Date().toISOString(),
-          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          endDate: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
           isActive: false,
           isTrial: selectedPlan?.isFreeTrial || false,
           autoPay: {
@@ -330,10 +332,14 @@ export default function SubscriptionPage() {
       console.log("🔍 Step 2 - Create Add Credits Order:", orderResponse);
 
       if (!orderResponse.data.order) {
-        throw new Error("❌ Missing 'order' in add-credits create-order response");
+        throw new Error(
+          "❌ Missing 'order' in add-credits create-order response"
+        );
       }
       if (!orderResponse.data.subscriptionId) {
-        throw new Error("❌ Missing 'subscriptionId' in add-credits create-order response");
+        throw new Error(
+          "❌ Missing 'subscriptionId' in add-credits create-order response"
+        );
       }
 
       const { order, subscriptionId } = orderResponse.data;
@@ -564,7 +570,8 @@ export default function SubscriptionPage() {
                 variant: "primary",
               };
 
-              const isCurrentPlanFreeTrial = currentPlans?.subscription?.isTrial;
+              const isCurrentPlanFreeTrial =
+                currentPlans?.subscription?.isTrial;
 
               return (
                 <SubscriptionCard
@@ -587,11 +594,13 @@ export default function SubscriptionPage() {
         )}
 
         {/* Proceed Button */}
-        {((selectedPlan && !selectedPlan.isFreeTrial) || (selectedAddons.length > 0 && (currentPlans?.subscription || selectedPlan))) && (
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
+        {((selectedPlan && !selectedPlan.isFreeTrial) ||
+          (selectedAddons.length > 0 &&
+            (currentPlans?.subscription || selectedPlan))) && (
+          <div className="fixed bottom-6 left-2/3 transform -translate-x-1/2">
             <button
               onClick={() => setShowConfirmation(true)}
-              className="bg-pink-700 text-white px-8 py-3 rounded-lg font-medium shadow-lg hover:bg-pink-800 transition-colors"
+              className="bg-pink-700 text-white px-8 py-3 rounded-lg font-medium shadow-lg hover:bg-pink-800 transition-colors animate-zoom"
             >
               Proceed to Payment
             </button>
