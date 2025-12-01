@@ -227,7 +227,7 @@ export default function SubscriptionPage() {
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           isActive: false,
-          isTrial: false,
+          isTrial: selectedPlan?.isFreeTrial || false,
           autoPay: {
             enabled: true,
             razorpayCustomerId: null,

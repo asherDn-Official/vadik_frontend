@@ -122,13 +122,15 @@ export default function SubscriptionCard({
               </button>
             )}
             
-            <button 
-              disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading}
-              onClick={handleCardClick}
-              className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
-            >
-              {loading ? 'Processing...' : getButtonText()}
-            </button>
+            {!(plan?.isFreeTrial && !hasActiveSubscription) && (
+              <button 
+                disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading}
+                onClick={handleCardClick}
+                className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
+              >
+                {loading ? 'Processing...' : getButtonText()}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -210,13 +212,15 @@ export default function SubscriptionCard({
           </button>
         )}
         
-        <button 
-          disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading}
-          onClick={handleCardClick}
-          className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
-        >
-          {loading ? 'Processing...' : getButtonText()}
-        </button>
+        {!(plan?.isFreeTrial && !hasActiveSubscription) && (
+          <button 
+            disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading}
+            onClick={handleCardClick}
+            className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
+          >
+            {loading ? 'Processing...' : getButtonText()}
+          </button>
+        )}
       </div>
     </div>
   );
