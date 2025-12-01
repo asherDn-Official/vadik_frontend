@@ -564,6 +564,8 @@ export default function SubscriptionPage() {
                 variant: "primary",
               };
 
+              const isCurrentPlanFreeTrial = currentPlans?.subscription?.isTrial;
+
               return (
                 <SubscriptionCard
                   key={addon._id}
@@ -577,6 +579,7 @@ export default function SubscriptionPage() {
                   isSelected={selectedAddons.some((a) => a._id === addon._id)}
                   onSelect={handleAddonToggle}
                   loading={loading}
+                  isCurrentPlanFreeTrial={isCurrentPlanFreeTrial}
                 />
               );
             })}

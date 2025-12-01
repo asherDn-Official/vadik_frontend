@@ -12,7 +12,8 @@ export default function SubscriptionCard({
   onSelect,
   onTrial,
   plan,
-  loading = false
+  loading = false,
+  isCurrentPlanFreeTrial = false
 }) {
   const cardStyles = variant === 'primary'
     ? 'bg-gradient-to-b from-pink-700 to-purple-800'
@@ -27,6 +28,14 @@ export default function SubscriptionCard({
     if (hasActiveSubscription && !isAddon && !isCurrentPlan) {
       return 'bg-gray-400 text-white cursor-not-allowed opacity-60';
     }
+    if (isAddon && isCurrentPlanFreeTrial) {
+      return 'bg-gray-400 text-white cursor-not-allowed opacity-60';
+    }
+    if (isAddon && hasActiveSubscription && !isCurrentPlanFreeTrial) {
+      return variant === 'primary'
+        ? 'bg-white text-pink-700 hover:bg-gray-100'
+        : 'bg-green-600 text-white hover:bg-green-700';
+    }
     return variant === 'primary'
       ? 'bg-white text-pink-700 hover:bg-gray-100'
       : 'bg-pink-700 text-white hover:bg-pink-800';
@@ -39,6 +48,12 @@ export default function SubscriptionCard({
     if (hasActiveSubscription && !isAddon && !isCurrentPlan) {
       return 'Change Plan';
     }
+    if (isAddon && hasActiveSubscription) {
+      if (isCurrentPlanFreeTrial) {
+        return 'Upgrade to a tier plan';
+      }
+      return 'Add Credits';
+    }
     return isAddon ? 'Add Now' : 'Upgrade Plan';
   };
 
@@ -46,11 +61,19 @@ export default function SubscriptionCard({
     if (!isAddon && (isCurrentPlan || (hasActiveSubscription && !isCurrentPlan))) {
       return;
     }
+    if (isAddon && isCurrentPlanFreeTrial) {
+      return;
+    }
     e?.preventDefault?.();
     onSelect(plan);
   };
 
   const handleCheckboxChange = (e) => {
+    if (isCurrentPlanFreeTrial) {
+      e.stopPropagation();
+      e.preventDefault();
+      return;
+    }
     e.stopPropagation();
     e.preventDefault();
     onSelect(plan);
@@ -124,7 +147,7 @@ export default function SubscriptionCard({
             
             {!(plan?.isFreeTrial && !hasActiveSubscription) && (
               <button 
-                disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading}
+                disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
                 onClick={handleCardClick}
                 className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
               >
@@ -167,7 +190,8 @@ export default function SubscriptionCard({
             checked={isSelected}
             onChange={handleCheckboxChange}
             onClick={(e) => e.stopPropagation()}
-            className="w-5 h-5 text-pink-700 bg-white border-gray-300 rounded focus:ring-pink-700 focus:ring-2 cursor-pointer"
+            disabled={isCurrentPlanFreeTrial}
+            className={`w-5 h-5 text-pink-700 bg-white border-gray-300 rounded focus:ring-pink-700 focus:ring-2 ${isCurrentPlanFreeTrial ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
           />
         ) : (
           <input
@@ -214,7 +238,7 @@ export default function SubscriptionCard({
         
         {!(plan?.isFreeTrial && !hasActiveSubscription) && (
           <button 
-            disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading}
+            disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
             onClick={handleCardClick}
             className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
           >
