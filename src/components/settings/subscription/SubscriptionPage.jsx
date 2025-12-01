@@ -431,7 +431,7 @@ export default function SubscriptionPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 relative">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-2xl font-semibold text-gray-800 mb-8">
           My Subscription
@@ -588,7 +588,7 @@ export default function SubscriptionPage() {
 
         {/* Proceed Button */}
         {((selectedPlan && !selectedPlan.isFreeTrial) || (selectedAddons.length > 0 && (currentPlans?.subscription || selectedPlan))) && (
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2">
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
             <button
               onClick={() => setShowConfirmation(true)}
               className="bg-pink-700 text-white px-8 py-3 rounded-lg font-medium shadow-lg hover:bg-pink-800 transition-colors"
