@@ -371,12 +371,12 @@ const SubscriptionPopup = ({ onClose }) => {
               )}
             </div>
             <div className="flex gap-4">
-              <button
+              {/* <button
                 onClick={handleClose}
                 className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
               >
                 Cancel
-              </button>
+              </button> */}
               {!selectedPlan?.isFreeTrial && ((selectedPlan && !selectedPlan.isFreeTrial) ||
                 (selectedAddons.length > 0 &&
                   (currentPlans?.subscription || selectedPlan))) && (
