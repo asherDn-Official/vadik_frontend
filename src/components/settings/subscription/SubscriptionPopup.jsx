@@ -238,7 +238,7 @@ const SubscriptionPopup = ({ onClose }) => {
             </div>
             <div className="flex items-center gap-2 pb-3">
               <label htmlFor="autoplay" className="text-gray-700 font-medium">
-                Autoplay
+                Autopay
               </label>
               <input
                 id="autoplay"
