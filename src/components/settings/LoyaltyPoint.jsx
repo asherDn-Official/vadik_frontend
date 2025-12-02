@@ -121,7 +121,7 @@ function LoyaltyPoint() {
   return (
     <div className="min-h-screen py-8">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="shadow-xl overflow-hidden">
+        <div className=" overflow-hidden">
           {/* Header */}
           <div className=" flex items-center justify-between">
             <div className="bg-gradient-to-r px-6 py-4">
@@ -131,7 +131,7 @@ function LoyaltyPoint() {
 
             <VideoPopupWithShare
               video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-              buttonCss="flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
+              buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
             />
           </div>
 

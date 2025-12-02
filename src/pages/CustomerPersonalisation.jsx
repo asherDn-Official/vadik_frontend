@@ -14,12 +14,12 @@ const CustomerPersonalisation = () => {
   const [appliedFiltersCount, setAppliedFiltersCount] = useState(0);
   const [filteredData, setFilteredData] = useState([]);
   const dropdownRef = useRef(null);
-  
+
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
-    totalPages: 1
+    totalPages: 1,
   });
   const [loading, setLoading] = useState(false);
 
@@ -30,15 +30,20 @@ const CustomerPersonalisation = () => {
 
       // Prepare filters array - exclude period-related filters
       const filtersArray = Object.entries(filters)
-      
+
         .filter(([name, value]) => {
           // Exclude periodValue and any other period-related fields
-          return value !== "" &&
+          return (
+            value !== "" &&
             value !== null &&
             value !== undefined &&
-            name !== 'periodValue';
+            name !== "periodValue"
+          );
         })
-        .map(([name, value]) => ({ name, value: typeof value === "string" ? value.trim() : value }));
+        .map(([name, value]) => ({
+          name,
+          value: typeof value === "string" ? value.trim() : value,
+        }));
 
       // Prepare the request payload
       const payload = {
@@ -46,21 +51,24 @@ const CustomerPersonalisation = () => {
         limit: pagination.limit,
         filters: filtersArray.length > 0 ? filtersArray : undefined,
         // Period filters (handled separately)
-        ...(selectedPeriod === "Yearly" && filters.periodValue && {
-          year: parseInt(filters.periodValue)
-        }),
-        ...(selectedPeriod === "Monthly" && filters.periodValue && {
-          year: new Date().getFullYear(),
-          month: parseInt(filters.periodValue)
-        }),
-        ...(selectedPeriod === "Quarterly" && filters.periodValue && {
-          year: new Date().getFullYear(),
-          quarter: filters.periodValue
-        })
+        ...(selectedPeriod === "Yearly" &&
+          filters.periodValue && {
+            year: parseInt(filters.periodValue),
+          }),
+        ...(selectedPeriod === "Monthly" &&
+          filters.periodValue && {
+            year: new Date().getFullYear(),
+            month: parseInt(filters.periodValue),
+          }),
+        ...(selectedPeriod === "Quarterly" &&
+          filters.periodValue && {
+            year: new Date().getFullYear(),
+            quarter: filters.periodValue,
+          }),
       };
 
       // Remove undefined parameters
-      Object.keys(payload).forEach(key => {
+      Object.keys(payload).forEach((key) => {
         if (payload[key] === undefined) {
           delete payload[key];
         }
@@ -68,7 +76,7 @@ const CustomerPersonalisation = () => {
 
       // console.log('API Payload:', payload);
 
-      const response = await api.post('/api/personilizationInsights', payload);
+      const response = await api.post("/api/personilizationInsights", payload);
 
       setFilteredData(response.data.data);
       setPagination(response.data.pagination);
@@ -83,7 +91,6 @@ const CustomerPersonalisation = () => {
     fetchCustomers();
   }, [currentPage, filters, pagination.limit]);
 
-  
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -91,19 +98,19 @@ const CustomerPersonalisation = () => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => {
+    setFilters((prev) => {
       const newFilters = { ...prev, [key]: value };
       // Calculate applied filters count (exclude periodValue)
-      const count = Object.entries(newFilters)
-        .filter(([k, v]) => k !== 'periodValue' && v !== undefined && v !== '')
-        .length;
+      const count = Object.entries(newFilters).filter(
+        ([k, v]) => k !== "periodValue" && v !== undefined && v !== ""
+      ).length;
       setAppliedFiltersCount(count);
       return newFilters;
     });
@@ -118,9 +125,12 @@ const CustomerPersonalisation = () => {
 
   const handleExport = () => {
     // If customers are selected, export only those, otherwise export all filtered customers
-    const dataToExport = selectedCustomers.length > 0
-      ? filteredData.filter(customer => selectedCustomers.includes(customer._id))
-      : filteredData;
+    const dataToExport =
+      selectedCustomers.length > 0
+        ? filteredData.filter((customer) =>
+            selectedCustomers.includes(customer._id)
+          )
+        : filteredData;
 
     // Create a worksheet
     const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -138,18 +148,22 @@ const CustomerPersonalisation = () => {
 
   // Toggle customer selection
   const toggleCustomerSelection = (customerId) => {
-    setSelectedCustomers(prevSelected =>
+    setSelectedCustomers((prevSelected) =>
       prevSelected.includes(customerId)
-        ? prevSelected.filter(id => id !== customerId)
+        ? prevSelected.filter((id) => id !== customerId)
         : [...prevSelected, customerId]
     );
   };
 
   // Toggle all customers on current page
   const toggleAllCustomers = () => {
-    const allCurrentPageCustomerIds = filteredData.map(customer => customer._id);
-    if (selectedCustomers.length === filteredData.length &&
-      selectedCustomers.every(id => allCurrentPageCustomerIds.includes(id))) {
+    const allCurrentPageCustomerIds = filteredData.map(
+      (customer) => customer._id
+    );
+    if (
+      selectedCustomers.length === filteredData.length &&
+      selectedCustomers.every((id) => allCurrentPageCustomerIds.includes(id))
+    ) {
       setSelectedCustomers([]);
     } else {
       setSelectedCustomers(allCurrentPageCustomerIds);
@@ -181,11 +195,10 @@ const CustomerPersonalisation = () => {
               </h1>
             </div>
             <div className="flex items-center gap-4 relative" ref={dropdownRef}>
-
               <VideoPopupWithShare
-                              video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                              buttonCss="flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
-                            />
+                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
+              />
 
               {/* Per page selector */}
               <div className="flex items-center gap-2">
@@ -195,12 +208,18 @@ const CustomerPersonalisation = () => {
                   value={pagination.limit}
                   onChange={(e) => {
                     const newLimit = parseInt(e.target.value, 10);
-                    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+                    setPagination((prev) => ({
+                      ...prev,
+                      limit: newLimit,
+                      page: 1,
+                    }));
                     setCurrentPage(1);
                   }}
                 >
-                  {[10, 20, 30,pagination.total].map((size) => (
-                    <option key={size} value={size}>{size}</option>
+                  {[10, 20, 30, pagination.total].map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
                   ))}
                 </select>
               </div>
