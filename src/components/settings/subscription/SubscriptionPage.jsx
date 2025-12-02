@@ -162,7 +162,7 @@ export default function SubscriptionPage() {
       setShowConfirmation(false);
       setSelectedAddons([]);
       getCurrentPlanDetails();
-      alert("✅ Credits added successfully!");
+      // alert("✅ Credits added successfully!");
     } catch (error) {
       console.error("Credits payment verification failed:", error);
       alert("Credits payment verification failed. Please contact support.");
@@ -412,7 +412,7 @@ export default function SubscriptionPage() {
         isTrial: true,
       });
 
-      alert("✅ Trial subscription activated successfully!");
+      // alert("✅ Trial subscription activated successfully!");
       getCurrentPlanDetails();
       getActiveSubscription();
     } catch (error) {
