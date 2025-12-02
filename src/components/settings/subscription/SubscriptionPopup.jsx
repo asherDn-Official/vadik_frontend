@@ -287,43 +287,52 @@ const SubscriptionPopup = ({ onClose }) => {
               })}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {addons.map((addon) => {
-                const transformedPlan = {
-                  title: addon.name,
-                  price: addon.price,
-                  period: `${addon.durationInDays} days`,
-                  features: [
-                    `+${addon.extraCustomers} Additional Customers`,
-                    `+${addon.extraActivities} Additional Activities`,
-                    `+${addon.extraWhatsappActivities} Additional WhatsApp Activities`,
-                    addon.description,
-                    `${addon.durationInDays} Days Validity`,
-                  ],
-                  variant: "primary",
-                };
+            <div>
+              {selectedPlan?.isFreeTrial && (
+                <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-yellow-800 font-medium">
+                    ⚠️ Add-ons are not available during Free Trial. Please upgrade to a paid plan to add credits.
+                  </p>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {addons.map((addon) => {
+                  const transformedPlan = {
+                    title: addon.name,
+                    price: addon.price,
+                    period: `${addon.durationInDays} days`,
+                    features: [
+                      `+${addon.extraCustomers} Additional Customers`,
+                      `+${addon.extraActivities} Additional Activities`,
+                      `+${addon.extraWhatsappActivities} Additional WhatsApp Activities`,
+                      addon.description,
+                      `${addon.durationInDays} Days Validity`,
+                    ],
+                    variant: "primary",
+                  };
 
-                const isCurrentPlanFreeTrial =
-                  currentPlans?.subscription?.isTrial;
+                  const isCurrentPlanFreeTrial =
+                    currentPlans?.subscription?.isTrial || selectedPlan?.isFreeTrial;
 
-                return (
-                  <SubscriptionCard
-                    key={addon._id}
-                    plan={addon}
-                    title={transformedPlan.title}
-                    price={transformedPlan.price}
-                    period={transformedPlan.period}
-                    features={transformedPlan.features}
-                    variant={transformedPlan.variant}
-                    isAddon={true}
-                    isSelected={selectedAddons.some((a) => a._id === addon._id)}
-                    onSelect={handleAddonToggle}
-                    loading={loading}
-                    isCurrentPlanFreeTrial={isCurrentPlanFreeTrial}
-                    compact={true} // Pass compact prop for popup view
-                  />
-                );
-              })}
+                  return (
+                    <SubscriptionCard
+                      key={addon._id}
+                      plan={addon}
+                      title={transformedPlan.title}
+                      price={transformedPlan.price}
+                      period={transformedPlan.period}
+                      features={transformedPlan.features}
+                      variant={transformedPlan.variant}
+                      isAddon={true}
+                      isSelected={selectedAddons.some((a) => a._id === addon._id)}
+                      onSelect={handleAddonToggle}
+                      loading={loading}
+                      isCurrentPlanFreeTrial={isCurrentPlanFreeTrial}
+                      compact={true} // Pass compact prop for popup view
+                    />
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -332,7 +341,7 @@ const SubscriptionPopup = ({ onClose }) => {
         <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 rounded-b-xl">
           <div className="flex justify-between items-center">
             <div>
-              {selectedPlan || selectedAddons.length > 0 ? (
+              {!selectedPlan?.isFreeTrial && (selectedPlan || selectedAddons.length > 0) ? (
                 <div className="text-gray-700">
                   <span className="font-medium">Total:</span>{" "}
                   <span className="text-xl font-bold text-pink-700">
@@ -341,7 +350,7 @@ const SubscriptionPopup = ({ onClose }) => {
                 </div>
               ) : (
                 <div className="text-gray-500">
-                  Select a plan or addon to proceed
+                  {selectedPlan?.isFreeTrial ? "" : "Select a plan or addon to proceed"}
                 </div>
               )}
             </div>
@@ -352,7 +361,7 @@ const SubscriptionPopup = ({ onClose }) => {
               >
                 Cancel
               </button>
-              {((selectedPlan && !selectedPlan.isFreeTrial) ||
+              {!selectedPlan?.isFreeTrial && ((selectedPlan && !selectedPlan.isFreeTrial) ||
                 (selectedAddons.length > 0 &&
                   (currentPlans?.subscription || selectedPlan))) && (
                 <button
