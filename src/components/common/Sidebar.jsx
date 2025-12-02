@@ -58,13 +58,13 @@ function Sidebar() {
     },
     {
       path: "/personalisation",
-      module: "Personalisation Insight",
+      module: "Customer Insight",
       icon: personalisationIcon,
-      label: "Personalisation Insight",
+      label: "Customer Insight",
     },
     {
       path: "/customeropportunities",
-      module: "Customer Opportunities",
+      module: "Customer Activity",
       icon: customerOpportunitiesIcon,
       label: "Customer Activity",
     },

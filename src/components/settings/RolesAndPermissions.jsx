@@ -56,14 +56,14 @@ const RolesAndPermissions = () => {
         "canDelete": false
       },
       {
-        "module": "Personalisation Insight",
+        "module": "Customer Insight",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "Customer Opportunities",
+        "module": "Customer Activity",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
@@ -537,14 +537,14 @@ const RolesAndPermissions = () => {
         "canDelete": false
       },
       {
-        "module": "Personalisation Insight",
+        "module": "Customer Insight",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "Customer Opportunities",
+        "module": "Customer Activity",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
@@ -606,14 +606,14 @@ const RolesAndPermissions = () => {
         "canDelete": false
       },
       {
-        "module": "Personalisation Insight",
+        "module": "Customer Insight",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
         "canDelete": false
       },
       {
-        "module": "Customer Opportunities",
+        "module": "Customer Activity",
         "canCreate": false,
         "canRead": false,
         "canUpdate": false,
