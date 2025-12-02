@@ -17,7 +17,7 @@ function Layout() {
   const [currentPlans, setCurrentPlans] = useState("");
   const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(true);
 
-  console.log(currentPlans);
+  console.log("rezor pay key id",import.meta.env.VITE_RAZORPAY_KEY_ID);
 
   useEffect(() => {
     // Tour opens by default on mount with quick-start
@@ -89,9 +89,9 @@ function Layout() {
           />
         )}
         
-        {!isDemo && currentPlans === null && showSubscriptionPopup && (
+        {/* {!isDemo && currentPlans === null && showSubscriptionPopup && (
            <SubscriptionPopup onClose={() => setShowSubscriptionPopup(false)}/>
-        )}
+        )} */}
 
         <Sidebar onOpenTour={setActiveTour} />
         <main className="flex-1 bg-[#F4F5F9]">
