@@ -19,8 +19,8 @@ jobs:
 
       - name: Create .env file for Vite
         run: |
-          echo "VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}" >> .env
-          echo "VITE_RAZORPAY_KEY_ID=${{ vars.VITE_RAZORPAY_KEY_ID }}" >> .env
+          echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" >> .env
+          echo "VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }}" >> .env
 
       - name: Build React App
         run: npm run build
