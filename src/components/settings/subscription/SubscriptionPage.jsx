@@ -14,6 +14,7 @@ export default function SubscriptionPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
+  const [autoplay, setAutoplay] = useState(true);
   const retailerid = localStorage.getItem("retailerId");
 
   const getCurrentPlanDetails = async () => {
@@ -205,6 +206,7 @@ export default function SubscriptionPage() {
           addOnIds: selectedAddons.map((addon) => addon._id),
           isTrial: false,
           enableAutoPay: true,
+          autoplay: autoplay,
         };
 
         const subscriptionResponse = await api.post(
@@ -230,6 +232,7 @@ export default function SubscriptionPage() {
           ).toISOString(),
           isActive: false,
           isTrial: selectedPlan?.isFreeTrial || false,
+          autoplay: autoplay,
           autoPay: {
             enabled: true,
             razorpayCustomerId: null,
@@ -310,6 +313,7 @@ export default function SubscriptionPage() {
       const preparePayload = {
         subscriptionId: activeSubscriptionId,
         addOnIds: selectedAddons.map((addon) => addon._id),
+        autoplay: autoplay,
       };
 
       const prepareResponse = await api.post(
@@ -397,6 +401,7 @@ export default function SubscriptionPage() {
         addOnIds: [],
         isTrial: true,
         enableAutoPay: false,
+        autoplay: autoplay,
       };
 
       const trialResponse = await api.post("/api/subscriptions", trialPayload);
@@ -477,32 +482,48 @@ export default function SubscriptionPage() {
             </div>
           )}
         </div>
-
+       
+       {/* taps */}
         <div className="mb-6">
-          <div className="flex gap-6 border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab("subscription")}
-              className={`pb-3 px-1 font-medium transition-colors relative ${
-                activeTab === "subscription" ? "text-gray-800" : "text-gray-500"
-              }`}
-            >
-              Subscription Plan
-              {activeTab === "subscription" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("addon")}
-              className={`pb-3 px-1 font-medium transition-colors relative ${
-                activeTab === "addon" ? "text-gray-800" : "text-gray-500"
-              }`}
-            >
-              Add ons
-              {activeTab === "addon" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
-              )}
-            </button>
+          <div className="flex items-center justify-between border-b border-gray-200">
+            <div className="flex gap-6">
+              <button
+                onClick={() => setActiveTab("subscription")}
+                className={`pb-3 px-1 font-medium transition-colors relative ${
+                  activeTab === "subscription" ? "text-gray-800" : "text-gray-500"
+                }`}
+              >
+                Subscription Plan
+                {activeTab === "subscription" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab("addon")}
+                className={`pb-3 px-1 font-medium transition-colors relative ${
+                  activeTab === "addon" ? "text-gray-800" : "text-gray-500"
+                }`}
+              >
+                Add ons
+                {activeTab === "addon" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
+                )}
+              </button>
+            </div>
+            <div className="flex items-center gap-2 pb-3">
+              <label htmlFor="autoplay" className="text-gray-700 font-medium">
+                Autoplay
+              </label>
+              <input
+                id="autoplay"
+                type="checkbox"
+                checked={autoplay}
+                onChange={(e) => setAutoplay(e.target.checked)}
+                className="w-4 h-4 cursor-pointer"
+              />
+            </div>
           </div>
+
         </div>
 
         {activeTab === "subscription" ? (

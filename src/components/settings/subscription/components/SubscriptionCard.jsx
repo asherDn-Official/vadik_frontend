@@ -71,11 +71,9 @@ export default function SubscriptionCard({
   const handleCheckboxChange = (e) => {
     if (isCurrentPlanFreeTrial) {
       e.stopPropagation();
-      e.preventDefault();
       return;
     }
     e.stopPropagation();
-    e.preventDefault();
     onSelect(plan);
   };
 
