@@ -17,7 +17,7 @@ function Layout() {
   const [currentPlans, setCurrentPlans] = useState("");
   const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(true);
 
-  console.log("api base url",import.meta.env.import.meta.env.VITE_API_BASE_URL);
+  console.log("api base url",import.meta.env.VITE_API_BASE_URL);
   console.log("rezor pay key id",import.meta.env.VITE_RAZORPAY_KEY_ID); //VITE_RAZORPAY_KEY_ID
 
   useEffect(() => {
