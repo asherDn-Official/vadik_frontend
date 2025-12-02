@@ -14,6 +14,7 @@ const SubscriptionPopup = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState("subscription");
   const [currentPlans, setCurrentPlans] = useState(null);
   const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
+  const [autoplay, setAutoplay] = useState(true);
   const retailerid = localStorage.getItem("retailerId");
 
   const getCurrentPlanDetails = async () => {
@@ -100,6 +101,7 @@ const SubscriptionPopup = ({ onClose }) => {
         addOnIds: [],
         isTrial: true,
         enableAutoPay: false,
+        autoplay: autoplay,
       };
 
       const trialResponse = await api.post("/api/subscriptions", trialPayload);
@@ -209,29 +211,43 @@ const SubscriptionPopup = ({ onClose }) => {
 
         {/* Tab Navigation */}
         <div className="px-6 pt-6">
-          <div className="flex gap-6 border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab("subscription")}
-              className={`pb-3 px-1 font-medium transition-colors relative ${
-                activeTab === "subscription" ? "text-gray-800" : "text-gray-500"
-              }`}
-            >
-              Subscription Plan
-              {activeTab === "subscription" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("addon")}
-              className={`pb-3 px-1 font-medium transition-colors relative ${
-                activeTab === "addon" ? "text-gray-800" : "text-gray-500"
-              }`}
-            >
-              Add ons
-              {activeTab === "addon" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
-              )}
-            </button>
+          <div className="flex items-center justify-between border-b border-gray-200">
+            <div className="flex gap-6">
+              <button
+                onClick={() => setActiveTab("subscription")}
+                className={`pb-3 px-1 font-medium transition-colors relative ${
+                  activeTab === "subscription" ? "text-gray-800" : "text-gray-500"
+                }`}
+              >
+                Subscription Plan
+                {activeTab === "subscription" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab("addon")}
+                className={`pb-3 px-1 font-medium transition-colors relative ${
+                  activeTab === "addon" ? "text-gray-800" : "text-gray-500"
+                }`}
+              >
+                Add ons
+                {activeTab === "addon" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
+                )}
+              </button>
+            </div>
+            <div className="flex items-center gap-2 pb-3">
+              <label htmlFor="autoplay" className="text-gray-700 font-medium">
+                Autoplay
+              </label>
+              <input
+                id="autoplay"
+                type="checkbox"
+                checked={autoplay}
+                onChange={(e) => setAutoplay(e.target.checked)}
+                className="w-4 h-4 cursor-pointer"
+              />
+            </div>
           </div>
         </div>
 
@@ -385,10 +401,131 @@ const SubscriptionPopup = ({ onClose }) => {
         selectedAddons={selectedAddons}
         totalPrice={calculateTotalPrice()}
         onConfirm={async () => {
-          // Here you would call the actual payment logic from SubscriptionPage
-          // For now, we'll just close the confirmation modal
-          setShowConfirmation(false);
-          alert("Payment flow would start here...");
+          setLoading(true);
+          try {
+            let subscriptionData = null;
+
+            if (selectedPlan) {
+              const subscriptionPayload = {
+                planId: selectedPlan._id,
+                addOnIds: selectedAddons.map((addon) => addon._id),
+                isTrial: false,
+                enableAutoPay: true,
+                autoplay: autoplay,
+              };
+
+              const subscriptionResponse = await api.post(
+                "/api/subscriptions",
+                subscriptionPayload
+              );
+
+              subscriptionData =
+                subscriptionResponse.data.subscriptionData ||
+                subscriptionResponse.data.data ||
+                subscriptionResponse.data;
+            }
+
+            const orderPayload = {
+              subscriptionData: {
+                user: retailerid,
+                plan: selectedPlan?._id || null,
+                addOns: selectedAddons.map((addon) => addon._id),
+                startDate: new Date().toISOString(),
+                endDate: new Date(
+                  Date.now() + 30 * 24 * 60 * 60 * 1000
+                ).toISOString(),
+                isActive: false,
+                isTrial: selectedPlan?.isFreeTrial || false,
+                autoplay: autoplay,
+                autoPay: {
+                  enabled: true,
+                  razorpayCustomerId: null,
+                  razorpayTokenId: null,
+                },
+                totalCustomersAllowed: subscriptionData?.totalCustomersAllowed || 0,
+                totalActivitiesAllowed: subscriptionData?.totalActivitiesAllowed || 0,
+                totalWhatsappActivitiesAllowed:
+                  subscriptionData?.totalWhatsappActivitiesAllowed || 0,
+              },
+            };
+
+            const orderResponse = await api.post(
+              "/api/subscriptions/create-order",
+              orderPayload
+            );
+
+            if (!orderResponse.data.order) {
+              throw new Error("Missing 'order' in create-order response");
+            }
+            if (!orderResponse.data.subscriptionId) {
+              throw new Error("Missing 'subscriptionId' in create-order response");
+            }
+
+            const { order, subscriptionId } = orderResponse.data;
+
+            const options = {
+              key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+              amount: order.amount,
+              currency: order.currency || "INR",
+              name: "Vadik AI Subscription",
+              description: `${selectedPlan ? selectedPlan.name + " Plan" : "Addon"}${
+                selectedAddons.length > 0 ? " with Addons" : ""
+              }`,
+              order_id: order.id,
+              handler: async function (response) {
+                try {
+                  const verificationPayload = {
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                    subscriptionId: subscriptionId,
+                  };
+
+                  const verificationResponse = await api.post(
+                    "/api/subscriptions/verify-payment",
+                    verificationPayload
+                  );
+
+                  if (!verificationResponse.data?.status) {
+                    throw new Error("Payment verification returned false status");
+                  }
+
+                  alert("✅ Payment successful!");
+                  setShowConfirmation(false);
+                  setSelectedPlan(null);
+                  setSelectedAddons([]);
+                  getCurrentPlanDetails();
+                  getActiveSubscription();
+                  handleClose();
+                } catch (error) {
+                  console.error("Payment verification failed:", error);
+                  alert("Payment verification failed. Please contact support.");
+                } finally {
+                  setLoading(false);
+                }
+              },
+              prefill: {
+                name: "Customer Name",
+                email: "customer@email.com",
+                contact: "9999999999",
+              },
+              theme: {
+                color: "#D3285B",
+              },
+            };
+
+            const razorpay = new window.Razorpay(options);
+            razorpay.on("payment.failed", function (response) {
+              console.error("Razorpay payment failed:", response.error);
+              alert(`Payment failed: ${response.error.description}`);
+              setLoading(false);
+            });
+            razorpay.open();
+          } catch (error) {
+            console.error("Payment process failed:", error);
+            alert("Error: " + (error.response?.data?.message || error.message));
+            setLoading(false);
+          }
         }}
         loading={loading}
       />
