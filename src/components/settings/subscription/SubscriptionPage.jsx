@@ -255,7 +255,7 @@ export default function SubscriptionPage() {
       }
 
       const { order, subscriptionId } = orderResponse.data;
-
+      console.log("razorpay key ID 1 :",import.meta.env.VITE_RAZORPAY_KEY_ID)
       // Step 3: Initialize Razorpay Payment
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -343,7 +343,7 @@ export default function SubscriptionPage() {
       }
 
       const { order, subscriptionId } = orderResponse.data;
-
+      console.log("razorpay key ID 2 :",import.meta.env.VITE_RAZORPAY_KEY_ID)
       // Step 3: Initialize Razorpay Payment
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
