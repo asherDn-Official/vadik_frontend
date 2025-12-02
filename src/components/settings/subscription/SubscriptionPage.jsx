@@ -585,8 +585,9 @@ export default function SubscriptionPage() {
                   `+${addon.extraCustomers} Additional Customers`,
                   `+${addon.extraActivities} Additional Activities`,
                   `+${addon.extraWhatsappActivities} Additional WhatsApp Activities`,
-                  addon.description,
-                  `${addon.durationInDays} Days Validity`,
+                  // addon.description,
+                  // `${addon.durationInDays} Days Validity`,
+                  `Validity Based On The Active Plan`
                 ],
                 variant: "primary",
               };

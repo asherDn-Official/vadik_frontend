@@ -117,7 +117,7 @@ const SubscriptionPopup = ({ onClose }) => {
         isTrial: true,
       });
 
-      alert("✅ Trial subscription activated successfully!");
+      // alert("✅ Trial subscription activated successfully!");
       getCurrentPlanDetails();
       getActiveSubscription();
       handleClose(); // Close popup after trial activation
@@ -321,8 +321,8 @@ const SubscriptionPopup = ({ onClose }) => {
                       `+${addon.extraCustomers} Additional Customers`,
                       `+${addon.extraActivities} Additional Activities`,
                       `+${addon.extraWhatsappActivities} Additional WhatsApp Activities`,
-                      addon.description,
-                      `${addon.durationInDays} Days Validity`,
+                      // addon.description,
+                      `Validity Based On The Active Plan`,
                     ],
                     variant: "primary",
                   };
@@ -490,7 +490,7 @@ const SubscriptionPopup = ({ onClose }) => {
                     throw new Error("Payment verification returned false status");
                   }
 
-                  alert("✅ Payment successful!");
+                  // alert("✅ Payment successful!");
                   setShowConfirmation(false);
                   setSelectedPlan(null);
                   setSelectedAddons([]);
