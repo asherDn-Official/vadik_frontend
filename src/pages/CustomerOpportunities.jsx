@@ -5,6 +5,7 @@ import StoreRecommendation from "../components/customeroppertunites/StoreRecomme
 import EngagementActivities from "../components/customeroppertunites/EngagementActivities";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 import ComingSoon from "../components/common/ComingSoon";
+import Campaign from "../components/customeroppertunites/Campaign";
 
 const CustomerOpportunities = () => {
   const [activeTab, setActiveTab] = useState("engagement");
@@ -13,15 +14,27 @@ const CustomerOpportunities = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-slate-800 mb-2">
-            Customer Activity  
-          </h1>
-          <p className="text-gray-600 ">
-            This smart chatbot suggests the right offers to the right customers
-            <br />
-            at the right time using intelligent triggers.
-          </p>
+        <div className=" flex justify-center items-center flex-wrap">
+          <div className="text-center flex-1">
+            <h1 className="text-2xl font-bold text-slate-800 mb-2">
+              Customer Activity
+            </h1>
+            <p className="text-gray-600 ">
+              This smart chatbot suggests the right offers to the right
+              customers
+              <br />
+              at the right time using intelligent triggers.
+            </p>
+          </div>
+          <div className=" text-center ">
+            <Campaign
+              currentCount={300}
+              totalCount={1000}
+              // onUpdatePlan={handleUpdatePlan}
+              // onClose={closeToast}
+              autoClose={false} // or true if you want it to hide automatically
+            />
+          </div>
         </div>
 
         {/* Tabs */}
@@ -144,7 +157,7 @@ const CustomerOpportunities = () => {
         {/* {activeTab === "customer-recommendation" && <CustomerRecommendation />}
         {activeTab === "store-recommendation" && <StoreRecommendation />} */}
         {activeTab === "customer-recommendation" && <ComingSoon />}
-        {activeTab === "store-recommendation" && <ComingSoon />} 
+        {activeTab === "store-recommendation" && <ComingSoon />}
       </div>
     </div>
   );
