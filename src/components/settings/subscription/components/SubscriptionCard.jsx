@@ -71,11 +71,9 @@ export default function SubscriptionCard({
   const handleCheckboxChange = (e) => {
     if (isCurrentPlanFreeTrial) {
       e.stopPropagation();
-      e.preventDefault();
       return;
     }
     e.stopPropagation();
-    e.preventDefault();
     onSelect(plan);
   };
 
@@ -139,7 +137,7 @@ export default function SubscriptionCard({
               <button 
                 onClick={handleTrialClick}
                 disabled={loading}
-                className="w-full py-2 border border-pink-700 text-pink-700 rounded-lg font-medium hover:bg-pink-50 transition-colors"
+                className="w-full py-2 border border-pink-700 text-pink-700 rounded-lg font-medium hover:bg-pink-50 transition-colors animate-zoom"
               >
                 {loading ? 'Processing...' : 'Start Free Trial'}
               </button>
@@ -226,7 +224,7 @@ export default function SubscriptionCard({
           <button 
             onClick={handleTrialClick}
             disabled={loading}
-            className={`w-full py-2 border rounded-lg font-medium transition-colors ${
+            className={`w-full py-2 border rounded-lg font-medium transition-colors animate-zoom ${
               variant === 'primary' 
                 ? 'border-white text-white hover:bg-white/10' 
                 : 'border-pink-700 text-pink-700 hover:bg-pink-50'

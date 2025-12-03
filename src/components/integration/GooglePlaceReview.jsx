@@ -127,13 +127,13 @@ const GooglePlaceReview = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-      <div className=" flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+      <div className=" flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-semibold text-gray-800 ">
           Business Location Setup
         </h2>
         <VideoPopupWithShare
           video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-          buttonCss="flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
+          buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
         />
       </div>
 

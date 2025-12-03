@@ -14,6 +14,7 @@ export default function SubscriptionPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
+  const [autoplay, setAutoplay] = useState(true);
   const retailerid = localStorage.getItem("retailerId");
 
   const getCurrentPlanDetails = async () => {
@@ -162,7 +163,7 @@ export default function SubscriptionPage() {
       setShowConfirmation(false);
       setSelectedAddons([]);
       getCurrentPlanDetails();
-      alert("✅ Credits added successfully!");
+      // alert("✅ Credits added successfully!");
     } catch (error) {
       console.error("Credits payment verification failed:", error);
       alert("Credits payment verification failed. Please contact support.");
@@ -205,6 +206,7 @@ export default function SubscriptionPage() {
           addOnIds: selectedAddons.map((addon) => addon._id),
           isTrial: false,
           enableAutoPay: true,
+          autoplay: autoplay,
         };
 
         const subscriptionResponse = await api.post(
@@ -230,6 +232,7 @@ export default function SubscriptionPage() {
           ).toISOString(),
           isActive: false,
           isTrial: selectedPlan?.isFreeTrial || false,
+          autoplay: autoplay,
           autoPay: {
             enabled: true,
             razorpayCustomerId: null,
@@ -255,7 +258,7 @@ export default function SubscriptionPage() {
       }
 
       const { order, subscriptionId } = orderResponse.data;
-
+      console.log("razorpay key ID 1 :",import.meta.env.VITE_RAZORPAY_KEY_ID)
       // Step 3: Initialize Razorpay Payment
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -310,6 +313,7 @@ export default function SubscriptionPage() {
       const preparePayload = {
         subscriptionId: activeSubscriptionId,
         addOnIds: selectedAddons.map((addon) => addon._id),
+        autoplay: autoplay,
       };
 
       const prepareResponse = await api.post(
@@ -343,7 +347,7 @@ export default function SubscriptionPage() {
       }
 
       const { order, subscriptionId } = orderResponse.data;
-
+      console.log("razorpay key ID 2 :",import.meta.env.VITE_RAZORPAY_KEY_ID)
       // Step 3: Initialize Razorpay Payment
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -397,6 +401,7 @@ export default function SubscriptionPage() {
         addOnIds: [],
         isTrial: true,
         enableAutoPay: false,
+        autoplay: autoplay,
       };
 
       const trialResponse = await api.post("/api/subscriptions", trialPayload);
@@ -412,7 +417,7 @@ export default function SubscriptionPage() {
         isTrial: true,
       });
 
-      alert("✅ Trial subscription activated successfully!");
+      // alert("✅ Trial subscription activated successfully!");
       getCurrentPlanDetails();
       getActiveSubscription();
     } catch (error) {
@@ -477,32 +482,48 @@ export default function SubscriptionPage() {
             </div>
           )}
         </div>
-
+       
+       {/* taps */}
         <div className="mb-6">
-          <div className="flex gap-6 border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab("subscription")}
-              className={`pb-3 px-1 font-medium transition-colors relative ${
-                activeTab === "subscription" ? "text-gray-800" : "text-gray-500"
-              }`}
-            >
-              Subscription Plan
-              {activeTab === "subscription" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("addon")}
-              className={`pb-3 px-1 font-medium transition-colors relative ${
-                activeTab === "addon" ? "text-gray-800" : "text-gray-500"
-              }`}
-            >
-              Add ons
-              {activeTab === "addon" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
-              )}
-            </button>
+          <div className="flex items-center justify-between border-b border-gray-200">
+            <div className="flex gap-6">
+              <button
+                onClick={() => setActiveTab("subscription")}
+                className={`pb-3 px-1 font-medium transition-colors relative ${
+                  activeTab === "subscription" ? "text-gray-800" : "text-gray-500"
+                }`}
+              >
+                Subscription Plan
+                {activeTab === "subscription" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab("addon")}
+                className={`pb-3 px-1 font-medium transition-colors relative ${
+                  activeTab === "addon" ? "text-gray-800" : "text-gray-500"
+                }`}
+              >
+                Add ons
+                {activeTab === "addon" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
+                )}
+              </button>
+            </div>
+            <div className="flex items-center gap-2 pb-3">
+              <label htmlFor="autoplay" className="text-gray-700 font-medium">
+                Autopay
+              </label>
+              <input
+                id="autoplay"
+                type="checkbox"
+                checked={autoplay}
+                onChange={(e) => setAutoplay(e.target.checked)}
+                className="w-4 h-4 cursor-pointer"
+              />
+            </div>
           </div>
+
         </div>
 
         {activeTab === "subscription" ? (
@@ -564,8 +585,9 @@ export default function SubscriptionPage() {
                   `+${addon.extraCustomers} Additional Customers`,
                   `+${addon.extraActivities} Additional Activities`,
                   `+${addon.extraWhatsappActivities} Additional WhatsApp Activities`,
-                  addon.description,
-                  `${addon.durationInDays} Days Validity`,
+                  // addon.description,
+                  // `${addon.durationInDays} Days Validity`,
+                  `Validity Based On The Active Plan`
                 ],
                 variant: "primary",
               };

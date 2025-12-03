@@ -394,7 +394,7 @@ const CouponManagement = () => {
 
                 <VideoPopupWithShare
                   video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                  buttonCss="flex items-center gap-2 px-4 py-3 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
+                  buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
                 />
                 <button
                   onClick={startAddingCoupon}

@@ -49,7 +49,7 @@ const CustomerOpportunities = () => {
                     <span className=" float-right">
                       <VideoPopupWithShare
                         video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                        buttonCss=" flex text-pink-500 text-sm items-center gap-2 whitespace-nowrap "
+                        buttonCss=" flex text-pink-500 items-center gap-2 whitespace-nowrap "
                       />
                     </span>
                   </span>
@@ -80,7 +80,7 @@ const CustomerOpportunities = () => {
                     <span className=" float-right">
                       <VideoPopupWithShare
                         video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                        buttonCss=" flex text-pink-500 text-sm items-center gap-2 whitespace-nowrap "
+                        buttonCss=" flex text-pink-500  items-center gap-2 whitespace-nowrap "
                       />
                     </span>
                   </span>
