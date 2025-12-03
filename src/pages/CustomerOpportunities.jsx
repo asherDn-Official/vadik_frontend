@@ -6,9 +6,16 @@ import EngagementActivities from "../components/customeroppertunites/EngagementA
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 import ComingSoon from "../components/common/ComingSoon";
 import Campaign from "../components/customeroppertunites/Campaign";
+import SubscriptionPopup from "../components/settings/subscription/SubscriptionPopup";
 
 const CustomerOpportunities = () => {
   const [activeTab, setActiveTab] = useState("engagement");
+  const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
+
+
+  const handleUpdatePlan = () => {
+    setShowSubscriptionPopup((prev)=> !prev);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -27,13 +34,15 @@ const CustomerOpportunities = () => {
             </p>
           </div>
           <div className=" text-center ">
-            <Campaign
-              currentCount={300}
-              totalCount={1000}
-              // onUpdatePlan={handleUpdatePlan}
-              // onClose={closeToast}
-              autoClose={false} // or true if you want it to hide automatically
-            />
+            <Campaign onUpdatePlan={handleUpdatePlan} />
+
+            {showSubscriptionPopup && (
+              <SubscriptionPopup
+                onClose={() => setShowSubscriptionPopup(false)}
+                activeTabName={"addon"}
+                showCloseButton={true}
+              />
+            )}
           </div>
         </div>
 

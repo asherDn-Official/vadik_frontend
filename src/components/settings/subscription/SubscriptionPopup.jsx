@@ -3,7 +3,11 @@ import SubscriptionCard from "./components/SubscriptionCard";
 import ConfirmationModal from "./components/ConfirmationModal";
 import api from "../../../api/apiconfig";
 
-const SubscriptionPopup = ({ onClose }) => {
+const SubscriptionPopup = ({
+  onClose,
+  activeTabName = "subscription",
+  showCloseButton = false,
+}) => {
   const [open, setOpen] = useState(true);
   const [subscription, setSubscription] = useState([]);
   const [addons, setAddons] = useState([]);
@@ -11,7 +15,7 @@ const SubscriptionPopup = ({ onClose }) => {
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("subscription");
+  const [activeTab, setActiveTab] = useState(activeTabName);
   const [currentPlans, setCurrentPlans] = useState(null);
   const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
   const [autoplay, setAutoplay] = useState(true);
@@ -216,7 +220,9 @@ const SubscriptionPopup = ({ onClose }) => {
               <button
                 onClick={() => setActiveTab("subscription")}
                 className={`pb-3 px-1 font-medium transition-colors relative ${
-                  activeTab === "subscription" ? "text-gray-800" : "text-gray-500"
+                  activeTab === "subscription"
+                    ? "text-gray-800"
+                    : "text-gray-500"
                 }`}
               >
                 Subscription Plan
@@ -304,10 +310,11 @@ const SubscriptionPopup = ({ onClose }) => {
             </div>
           ) : (
             <div>
-              {selectedPlan?.isFreeTrial && (
+              {(selectedPlan?.isFreeTrial || currentPlans?.subscription?.isTrial) && (
                 <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <p className="text-yellow-800 font-medium">
-                    ⚠️ Add-ons are not available during Free Trial. Please upgrade to a paid plan to add credits.
+                    ⚠️ Add-ons are not available during Free Trial. Please
+                    upgrade to a paid plan to add credits.
                   </p>
                 </div>
               )}
@@ -328,7 +335,8 @@ const SubscriptionPopup = ({ onClose }) => {
                   };
 
                   const isCurrentPlanFreeTrial =
-                    currentPlans?.subscription?.isTrial || selectedPlan?.isFreeTrial;
+                    currentPlans?.subscription?.isTrial ||
+                    selectedPlan?.isFreeTrial;
 
                   return (
                     <SubscriptionCard
@@ -340,7 +348,9 @@ const SubscriptionPopup = ({ onClose }) => {
                       features={transformedPlan.features}
                       variant={transformedPlan.variant}
                       isAddon={true}
-                      isSelected={selectedAddons.some((a) => a._id === addon._id)}
+                      isSelected={selectedAddons.some(
+                        (a) => a._id === addon._id
+                      )}
                       onSelect={handleAddonToggle}
                       loading={loading}
                       isCurrentPlanFreeTrial={isCurrentPlanFreeTrial}
@@ -357,7 +367,8 @@ const SubscriptionPopup = ({ onClose }) => {
         <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 rounded-b-xl">
           <div className="flex justify-between items-center">
             <div>
-              {!selectedPlan?.isFreeTrial && (selectedPlan || selectedAddons.length > 0) ? (
+              {!selectedPlan?.isFreeTrial &&
+              (selectedPlan || selectedAddons.length > 0) ? (
                 <div className="text-gray-700">
                   <span className="font-medium">Total:</span>{" "}
                   <span className="text-xl font-bold text-pink-700">
@@ -366,28 +377,34 @@ const SubscriptionPopup = ({ onClose }) => {
                 </div>
               ) : (
                 <div className="text-gray-500">
-                  {selectedPlan?.isFreeTrial ? "" : "Select a plan or addon to proceed"}
+                  {selectedPlan?.isFreeTrial
+                    ? ""
+                    : "Select a plan or addon to proceed"}
                 </div>
               )}
             </div>
             <div className="flex gap-4">
-              {/* <button
-                onClick={handleClose}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button> */}
-              {!selectedPlan?.isFreeTrial && ((selectedPlan && !selectedPlan.isFreeTrial) ||
-                (selectedAddons.length > 0 &&
-                  (currentPlans?.subscription || selectedPlan))) && (
+              {showCloseButton && (
                 <button
-                  onClick={handleProceedToPayment}
-                  className="bg-pink-700 text-white px-8 py-3 rounded-lg font-medium shadow-lg hover:bg-pink-800 transition-colors"
-                  disabled={loading}
+                  onClick={handleClose}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                 >
-                  {loading ? "Processing..." : "Proceed to Payment"}
+                  Cancel
                 </button>
               )}
+
+              {!selectedPlan?.isFreeTrial &&
+                ((selectedPlan && !selectedPlan.isFreeTrial) ||
+                  (selectedAddons.length > 0 &&
+                    (currentPlans?.subscription || selectedPlan))) && (
+                  <button
+                    onClick={handleProceedToPayment}
+                    className="bg-pink-700 text-white px-8 py-3 rounded-lg font-medium shadow-lg hover:bg-pink-800 transition-colors"
+                    disabled={loading}
+                  >
+                    {loading ? "Processing..." : "Proceed to Payment"}
+                  </button>
+                )}
             </div>
           </div>
         </div>
@@ -442,8 +459,10 @@ const SubscriptionPopup = ({ onClose }) => {
                   razorpayCustomerId: null,
                   razorpayTokenId: null,
                 },
-                totalCustomersAllowed: subscriptionData?.totalCustomersAllowed || 0,
-                totalActivitiesAllowed: subscriptionData?.totalActivitiesAllowed || 0,
+                totalCustomersAllowed:
+                  subscriptionData?.totalCustomersAllowed || 0,
+                totalActivitiesAllowed:
+                  subscriptionData?.totalActivitiesAllowed || 0,
                 totalWhatsappActivitiesAllowed:
                   subscriptionData?.totalWhatsappActivitiesAllowed || 0,
               },
@@ -458,7 +477,9 @@ const SubscriptionPopup = ({ onClose }) => {
               throw new Error("Missing 'order' in create-order response");
             }
             if (!orderResponse.data.subscriptionId) {
-              throw new Error("Missing 'subscriptionId' in create-order response");
+              throw new Error(
+                "Missing 'subscriptionId' in create-order response"
+              );
             }
 
             const { order, subscriptionId } = orderResponse.data;
@@ -468,9 +489,9 @@ const SubscriptionPopup = ({ onClose }) => {
               amount: order.amount,
               currency: order.currency || "INR",
               name: "Vadik AI Subscription",
-              description: `${selectedPlan ? selectedPlan.name + " Plan" : "Addon"}${
-                selectedAddons.length > 0 ? " with Addons" : ""
-              }`,
+              description: `${
+                selectedPlan ? selectedPlan.name + " Plan" : "Addon"
+              }${selectedAddons.length > 0 ? " with Addons" : ""}`,
               order_id: order.id,
               handler: async function (response) {
                 try {
@@ -487,7 +508,9 @@ const SubscriptionPopup = ({ onClose }) => {
                   );
 
                   if (!verificationResponse.data?.status) {
-                    throw new Error("Payment verification returned false status");
+                    throw new Error(
+                      "Payment verification returned false status"
+                    );
                   }
 
                   // alert("✅ Payment successful!");

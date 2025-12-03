@@ -7,6 +7,7 @@ import TourModal from "./TourModal";
 import api from "../../api/apiconfig.js";
 import { Subscript } from "lucide-react";
 import SubscriptionPopup from "../settings/subscription/SubscriptionPopup.jsx";
+import { usePlan } from "../../context/PlanContext.jsx";
 
 function Layout() {
   const [activeTour, setActiveTour] = useState(null);
@@ -14,8 +15,11 @@ function Layout() {
   const [isDemo, setDemo] = useState(null);
   const [email] = useState(() => localStorage.getItem("email"));
   const [isTourComplete, setIsTourComplete] = useState(null);
-  const [currentPlans, setCurrentPlans] = useState("");
   const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(true);
+
+
+    const { currentPlans,refreshPlans } = usePlan();
+  
 
   // console.log("api base url",import.meta.env.VITE_API_BASE_URL);
   // console.log("rezor pay key id",import.meta.env.VITE_RAZORPAY_KEY_ID); //VITE_RAZORPAY_KEY_ID
@@ -52,21 +56,21 @@ function Layout() {
     }
   }
 
-  const isCurrentPlansAvailable = async () => {
-    try {
-      const response = await api.get("/api/subscriptions/credit/usage");
-      setCurrentPlans(response.data);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setCurrentPlans(null);
-      }
-    }
-  };
+  // const isCurrentPlansAvailable = async () => {
+  //   try {
+  //     const response = await api.get("/api/subscriptions/credit/usage");
+  //     setCurrentPlans(response.data);
+  //   } catch (error) {
+  //     if (error.response?.status === 404) {
+  //       setCurrentPlans(null);
+  //     }
+  //   }
+  // };
 
   useEffect(() => {
     getDemoStatus();
     getTourStatus();
-    isCurrentPlansAvailable();
+    refreshPlans();
   }, []);
 
   const handleTourClose = () => {
@@ -93,6 +97,8 @@ function Layout() {
         {!isDemo && currentPlans === null && showSubscriptionPopup && (
            <SubscriptionPopup onClose={() => setShowSubscriptionPopup(false)}/>
         )}
+
+        
 
         <Sidebar onOpenTour={setActiveTour} />
         <main className="flex-1 bg-[#F4F5F9]">

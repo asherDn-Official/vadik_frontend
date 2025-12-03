@@ -2,14 +2,15 @@ import { X } from "lucide-react";
 import { usePlan } from "../../context/PlanContext";
 
 function Campaign({ onUpdatePlan, onClose }) {
-  const { currentPlans } = usePlan();
-  
+  const { currentPlans, refreshPlans } = usePlan();
+
   // Check if data exists before accessing
   if (!currentPlans?.data?.whatsappActivities) {
-    return null; // or show a loading/error state
+    refreshPlans();
+    return null;
   }
 
-  const { used, allowed, remaining } = currentPlans.data.whatsappActivities;
+  const { used, allowed } = currentPlans.data.whatsappActivities;
   const currentCount = used;
   const totalCount = allowed;
 
@@ -17,8 +18,8 @@ function Campaign({ onUpdatePlan, onClose }) {
     <div className="fixed top-6 right-6 bg-white rounded-xl border border-[#E8E8E8] shadow-[0_4px_20px_rgba(0,0,0,0.05)] p-4 w-[250px]">
       {/* Top: Campaign Count + Close Button */}
       <div className="flex justify-between items-start mb-2">
-        <div className="leading-tight">
-          <p className="text-[11px] text-gray-500 font-medium">
+        <div className="leading-tight pb-1">
+          <p className="text-[16px] leading-none tracking-normal font-normal text-gray-500">
             Campaign :<span className="text-[#EC396F]"> {currentCount}</span>
             <span className="text-gray-400"> / {totalCount}</span>
           </p>
