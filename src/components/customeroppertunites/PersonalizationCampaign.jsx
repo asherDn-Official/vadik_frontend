@@ -5,6 +5,7 @@ import CustomerList from "../customerInsigth/CustomerList";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import * as XLSX from "xlsx";
+import { usePlan } from "../../context/PlanContext";
 
 const PersonalizationCampaign = () => {
   // Campaign selection state
@@ -15,6 +16,7 @@ const PersonalizationCampaign = () => {
   const [quizActivities, setQuizActivities] = useState([]);
   const [spinWheelActivities, setSpinWheelActivities] = useState([]);
   const [scratchCardActivities, setScratchCardActivities] = useState([]);
+  const { refreshPlans } = usePlan();
 
   // Sending options
   const [sendByWhatsapp, setSendByWhatsapp] = useState(false);
@@ -27,7 +29,12 @@ const PersonalizationCampaign = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [appliedFiltersCount, setAppliedFiltersCount] = useState(0);
   const [filteredData, setFilteredData] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  });
   const [loading, setLoading] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [pageSize, setPageSize] = useState(15); // customers per page selector
@@ -58,11 +65,15 @@ const PersonalizationCampaign = () => {
         setQuizActivities(quizResponse.data.docs);
 
         // Fetch spin wheel activities
-        const spinWheelResponse = await api.get("/api/spinWheels/spinWheel/all?fully=true");
+        const spinWheelResponse = await api.get(
+          "/api/spinWheels/spinWheel/all?fully=true"
+        );
         setSpinWheelActivities(spinWheelResponse.data.data);
 
         // Fetch scratch card activities
-        const scratchCardResponse = await api.get("/api/scratchCards/scratchCard/all?fully=true");
+        const scratchCardResponse = await api.get(
+          "/api/scratchCards/scratchCard/all?fully=true"
+        );
         setScratchCardActivities(scratchCardResponse.data.data);
       } catch (error) {
         console.error("Error fetching activities:", error);
@@ -94,17 +105,20 @@ const PersonalizationCampaign = () => {
         page: currentPage,
         limit: pageSize,
         filters: filtersArray.length > 0 ? filtersArray : undefined,
-        ...(selectedPeriod === "Yearly" && filters.periodValue && {
-          year: parseInt(filters.periodValue),
-        }),
-        ...(selectedPeriod === "Monthly" && filters.periodValue && {
-          year: new Date().getFullYear(),
-          month: parseInt(filters.periodValue),
-        }),
-        ...(selectedPeriod === "Quarterly" && filters.periodValue && {
-          year: new Date().getFullYear(),
-          quarter: filters.periodValue,
-        }),
+        ...(selectedPeriod === "Yearly" &&
+          filters.periodValue && {
+            year: parseInt(filters.periodValue),
+          }),
+        ...(selectedPeriod === "Monthly" &&
+          filters.periodValue && {
+            year: new Date().getFullYear(),
+            month: parseInt(filters.periodValue),
+          }),
+        ...(selectedPeriod === "Quarterly" &&
+          filters.periodValue && {
+            year: new Date().getFullYear(),
+            quarter: filters.periodValue,
+          }),
       };
 
       // Remove undefined parameters
@@ -155,7 +169,7 @@ const PersonalizationCampaign = () => {
         ? prevSelected.filter((id) => id !== customerId)
         : [...prevSelected, customerId];
       // Clear error if there is at least one selection across tables
-      if ((next.length + selectedImported.length) > 0) {
+      if (next.length + selectedImported.length > 0) {
         setFormErrors((prev) => ({ ...prev, selectedCustomers: undefined }));
       }
       return next;
@@ -165,7 +179,9 @@ const PersonalizationCampaign = () => {
   // Toggle all customers on current page (preserve selections across pages)
   const toggleAllCustomers = () => {
     const pageIds = filteredData.map((customer) => customer._id);
-    const allOnPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedCustomers.includes(id));
+    const allOnPageSelected =
+      pageIds.length > 0 &&
+      pageIds.every((id) => selectedCustomers.includes(id));
     setSelectedCustomers((prev) => {
       let next;
       if (allOnPageSelected) {
@@ -175,8 +191,11 @@ const PersonalizationCampaign = () => {
         // Select union of previous + current page IDs
         next = Array.from(new Set([...prev, ...pageIds]));
       }
-      if ((next.length + selectedImported.length) > 0) {
-        setFormErrors((prevErr) => ({ ...prevErr, selectedCustomers: undefined }));
+      if (next.length + selectedImported.length > 0) {
+        setFormErrors((prevErr) => ({
+          ...prevErr,
+          selectedCustomers: undefined,
+        }));
       }
       return next;
     });
@@ -189,7 +208,7 @@ const PersonalizationCampaign = () => {
         ? prev.filter((id) => id !== resolvedId)
         : [...prev, resolvedId];
       // Clear error if there is at least one selection across tables
-      if ((selectedCustomers.length + next.length) > 0) {
+      if (selectedCustomers.length + next.length > 0) {
         setFormErrors((prev) => ({ ...prev, selectedCustomers: undefined }));
       }
       return next;
@@ -198,11 +217,12 @@ const PersonalizationCampaign = () => {
 
   const toggleAllImported = () => {
     const allUnique = resolvableImportedIds;
-    const allSelected = selectedImported.length === allUnique.length &&
+    const allSelected =
+      selectedImported.length === allUnique.length &&
       allUnique.every((id) => selectedImported.includes(id));
     const next = allSelected ? [] : allUnique;
     setSelectedImported(next);
-    if ((selectedCustomers.length + next.length) > 0) {
+    if (selectedCustomers.length + next.length > 0) {
       setFormErrors((prev) => ({ ...prev, selectedCustomers: undefined }));
     }
   };
@@ -231,7 +251,21 @@ const PersonalizationCampaign = () => {
 
   // ===== Import Customers from Excel =====
   const acceptedColumns = [
-    "_id", "firstname", "lastname", "mobileNumber", "gender", "source", "customerId", "firstVisit", "loyaltyPoints", "additionalData", "advancedDetails", "advancedPrivacyDetails", "createdAt", "updatedAt", "__v"
+    "_id",
+    "firstname",
+    "lastname",
+    "mobileNumber",
+    "gender",
+    "source",
+    "customerId",
+    "firstVisit",
+    "loyaltyPoints",
+    "additionalData",
+    "advancedDetails",
+    "advancedPrivacyDetails",
+    "createdAt",
+    "updatedAt",
+    "__v",
   ];
 
   const handleImportClick = () => {
@@ -267,8 +301,10 @@ const PersonalizationCampaign = () => {
         });
         // Normalize potential header variants for ID/Phone/CustomerId
         if (!obj._id && (r.id || r.ID)) obj._id = r.id || r.ID;
-        if (!obj.mobileNumber && (r.phone || r.phoneNumber || r.mobile)) obj.mobileNumber = r.phone || r.phoneNumber || r.mobile;
-        if (!obj.customerId && (r.customerID || r.CustomerId)) obj.customerId = r.customerID || r.CustomerId;
+        if (!obj.mobileNumber && (r.phone || r.phoneNumber || r.mobile))
+          obj.mobileNumber = r.phone || r.phoneNumber || r.mobile;
+        if (!obj.customerId && (r.customerID || r.CustomerId))
+          obj.customerId = r.customerID || r.CustomerId;
         return obj;
       });
       setImportedHeaders(headers.filter((h) => acceptedColumns.includes(h)));
@@ -286,7 +322,9 @@ const PersonalizationCampaign = () => {
         // Try quick search by mobileNumber if present
         if (row.mobileNumber) {
           try {
-            const res = await api.get("/api/customerQuickSearch", { params: { search: String(row.mobileNumber).trim() } });
+            const res = await api.get("/api/customerQuickSearch", {
+              params: { search: String(row.mobileNumber).trim() },
+            });
             const found = res.data?.data?.customer?._id;
             if (found) {
               resolvedIds.push(found);
@@ -299,13 +337,15 @@ const PersonalizationCampaign = () => {
         // Try by customerId if present (backend must support it in quick search)
         if (row.customerId) {
           try {
-            const res = await api.get("/api/customerQuickSearch", { params: { search: String(row.customerId).trim() } });
+            const res = await api.get("/api/customerQuickSearch", {
+              params: { search: String(row.customerId).trim() },
+            });
             const found = res.data?.data?.customer?._id;
             if (found) {
               resolvedIds.push(found);
               continue;
             }
-          } catch (e) { }
+          } catch (e) {}
         }
         unresolved.push(row);
       }
@@ -314,7 +354,10 @@ const PersonalizationCampaign = () => {
       setSelectedImported(uniqueResolved);
       setUnresolvedImports(unresolved);
       if (unresolved.length) {
-        showToast(`${unresolved.length} row(s) could not be matched to existing customers`, "warning");
+        showToast(
+          `${unresolved.length} row(s) could not be matched to existing customers`,
+          "warning"
+        );
       } else {
         showToast(`Imported ${resolvedIds.length} customers`, "success");
       }
@@ -333,21 +376,24 @@ const PersonalizationCampaign = () => {
 
   // Build merged selected customer IDs from list and import
   const buildMergedSelectedIds = () => {
-    return [...new Set([
-      ...selectedCustomers,
-      ...selectedImported,
-    ].filter(Boolean))];
+    return [
+      ...new Set([...selectedCustomers, ...selectedImported].filter(Boolean)),
+    ];
   };
 
   // Pre-check before sending: call /api/customerOpportunities/check and show modal
   const handlePreCheckAndOpenModal = async () => {
     const errs = {};
-    if (!selectedCampaignType) errs.selectedCampaignType = "Please select Activities Type";
-    if (!selectedCampaign) errs.selectedCampaign = "Please select an activity from 'Select Activities'";
+    if (!selectedCampaignType)
+      errs.selectedCampaignType = "Please select Activities Type";
+    if (!selectedCampaign)
+      errs.selectedCampaign =
+        "Please select an activity from 'Select Activities'";
 
     const merged = buildMergedSelectedIds();
     if (!merged || merged.length === 0) {
-      errs.selectedCustomers = "Please select at least one customer (from list or import).";
+      errs.selectedCustomers =
+        "Please select at least one customer (from list or import).";
     }
 
     if (Object.keys(errs).length > 0) {
@@ -359,33 +405,47 @@ const PersonalizationCampaign = () => {
       setChecking(true);
       setCheckFilter("false");
       // Build opportunities payload
-      const opportunities = merged.map((id) => ({ customerId: id, campaignId: selectedCampaign }));
-      const resp = await api.post("/api/customerOpportunities/check", { opportunities });
+      const opportunities = merged.map((id) => ({
+        customerId: id,
+        campaignId: selectedCampaign,
+      }));
+      const resp = await api.post("/api/customerOpportunities/check", {
+        opportunities,
+      });
       const rows = resp?.data?.data || [];
       setCheckResults(rows);
 
       // Fetch customer names for display in modal
       try {
-        const uniqueIds = [...new Set(rows.map((r) => r.customerId).filter(Boolean))];
+        const uniqueIds = [
+          ...new Set(rows.map((r) => r.customerId).filter(Boolean)),
+        ];
         const nameEntries = await Promise.all(
           uniqueIds.map(async (id) => {
             try {
               const r = await api.get(`/api/customers/${id}`);
-              const firstname = r?.data?.firstname || r?.data?.data?.firstname || "";
+              const firstname =
+                r?.data?.firstname || r?.data?.data?.firstname || "";
               return [id, firstname];
             } catch (_) {
               return [id, ""];
             }
           })
         );
-        setCustomerNames((prev) => ({ ...prev, ...Object.fromEntries(nameEntries) }));
+        setCustomerNames((prev) => ({
+          ...prev,
+          ...Object.fromEntries(nameEntries),
+        }));
       } catch (_) {
         // ignore name fetch failures
       }
 
       setShowCheckModal(true);
     } catch (e) {
-      showToast(e?.response?.data?.message || "Failed to check already shared status", "error");
+      showToast(
+        e?.response?.data?.message || "Failed to check already shared status",
+        "error"
+      );
     } finally {
       setChecking(false);
     }
@@ -394,8 +454,11 @@ const PersonalizationCampaign = () => {
   const handleSendCampaign = async () => {
     // Frontend validations -> show inline errors
     const newErrors = {};
-    if (!selectedCampaignType) newErrors.selectedCampaignType = "Please select Activities Type";
-    if (!selectedCampaign) newErrors.selectedCampaign = "Please select an activity from 'Select Activities'";
+    if (!selectedCampaignType)
+      newErrors.selectedCampaignType = "Please select Activities Type";
+    if (!selectedCampaign)
+      newErrors.selectedCampaign =
+        "Please select an activity from 'Select Activities'";
 
     if (Object.keys(newErrors).length > 0) {
       setFormErrors(newErrors);
@@ -405,16 +468,18 @@ const PersonalizationCampaign = () => {
     setFormErrors({});
 
     // Recipients: merge only explicitly selected checkboxes (no fallback)
-    const merged = [...new Set([
-      ...selectedCustomers,
-      ...selectedImported
-    ].filter(Boolean))];
+    const merged = [
+      ...new Set([...selectedCustomers, ...selectedImported].filter(Boolean)),
+    ];
 
     const customerIds = merged;
 
     // Guard: must select at least one checkbox
     if (!customerIds || customerIds.length === 0) {
-      setFormErrors({ selectedCustomers: "Please select at least one customer (from list or import)." });
+      setFormErrors({
+        selectedCustomers:
+          "Please select at least one customer (from list or import).",
+      });
       return;
     }
 
@@ -444,10 +509,12 @@ const PersonalizationCampaign = () => {
         alert("Unsupported Activities Type selected");
         return;
       }
-      showToast('Activities sent successfully!', 'success');
+
+      showToast("Activities sent successfully!", "success");
+      refreshPlans();
       setShowCheckModal(false);
     } catch (error) {
-      showToast(error?.response?.data?.message || 'Failed to send', 'error');
+      showToast(error?.response?.data?.message || "Failed to send", "error");
     } finally {
       setLoading(false);
     }
@@ -459,16 +526,27 @@ const PersonalizationCampaign = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Activities Type */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-2">Activities Type</h3>
-          <p className="text-gray-600 mb-4">What Kind of Activities Would You Like to Run?</p>
+          <h3 className="text-lg font-semibold text-slate-800 mb-2">
+            Activities Type
+          </h3>
+          <p className="text-gray-600 mb-4">
+            What Kind of Activities Would You Like to Run?
+          </p>
           <select
             value={selectedCampaignType}
             onChange={(e) => {
               setSelectedCampaignType(e.target.value);
               setSelectedCampaign("");
-              setFormErrors((prev) => ({ ...prev, selectedCampaignType: undefined }));
+              setFormErrors((prev) => ({
+                ...prev,
+                selectedCampaignType: undefined,
+              }));
             }}
-            className={`w-full px-4 py-3 bg-white border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${formErrors.selectedCampaignType ? 'border-red-500' : 'border-gray-300'}`}
+            className={`w-full px-4 py-3 bg-white border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
+              formErrors.selectedCampaignType
+                ? "border-red-500"
+                : "border-gray-300"
+            }`}
           >
             <option value="">Select Activities Type</option>
             <option value="quiz">Quiz</option>
@@ -476,21 +554,32 @@ const PersonalizationCampaign = () => {
             <option value="scratchcard">Scratch Card</option>
           </select>
           {formErrors.selectedCampaignType && (
-            <p className="text-red-600 text-sm mt-1">{formErrors.selectedCampaignType}</p>
+            <p className="text-red-600 text-sm mt-1">
+              {formErrors.selectedCampaignType}
+            </p>
           )}
         </div>
 
         {/* Select Activities */}
         <div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-2">Select Activities</h3>
-          <p className="text-gray-600 mb-4">Select a Activities You've Already Created</p>
+          <h3 className="text-lg font-semibold text-slate-800 mb-2">
+            Select Activities
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Select a Activities You've Already Created
+          </p>
           <select
             value={selectedCampaign}
             onChange={(e) => {
               setSelectedCampaign(e.target.value);
-              setFormErrors((prev) => ({ ...prev, selectedCampaign: undefined }));
+              setFormErrors((prev) => ({
+                ...prev,
+                selectedCampaign: undefined,
+              }));
             }}
-            className={`w-full px-4 py-3 bg-white border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${formErrors.selectedCampaign ? 'border-red-500' : 'border-gray-300'}`}
+            className={`w-full px-4 py-3 bg-white border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
+              formErrors.selectedCampaign ? "border-red-500" : "border-gray-300"
+            }`}
             disabled={!selectedCampaignType}
           >
             <option value="">Select the campaign you created</option>
@@ -501,10 +590,14 @@ const PersonalizationCampaign = () => {
             ))}
           </select>
           {formErrors.selectedCampaign && (
-            <p className="text-red-600 text-sm mt-1">{formErrors.selectedCampaign}</p>
+            <p className="text-red-600 text-sm mt-1">
+              {formErrors.selectedCampaign}
+            </p>
           )}
           {formErrors.selectedCustomers && (
-            <p className="text-red-600 text-sm mt-1">{formErrors.selectedCustomers}</p>
+            <p className="text-red-600 text-sm mt-1">
+              {formErrors.selectedCustomers}
+            </p>
           )}
         </div>
       </div>
@@ -521,7 +614,10 @@ const PersonalizationCampaign = () => {
               >
                 Select Customer
               </button>
-              <button className="px-4 py-2 border  text-blue-950 rounded-sm border-blue-950 flex items-center gap-2" onClick={handleImportClick}>
+              <button
+                className="px-4 py-2 border  text-blue-950 rounded-sm border-blue-950 flex items-center gap-2"
+                onClick={handleImportClick}
+              >
                 <Upload size={16} /> Import Customers
               </button>
               <input
@@ -533,7 +629,9 @@ const PersonalizationCampaign = () => {
               />
             </div>
             <div className="flex items-center gap-3">
-              <label className="text-sm text-gray-600">Customers per page:</label>
+              <label className="text-sm text-gray-600">
+                Customers per page:
+              </label>
               <select
                 value={pageSize}
                 onChange={(e) => {
@@ -549,7 +647,9 @@ const PersonalizationCampaign = () => {
                   <option value={pagination.total}>{pagination.total}</option>
                 )}
               </select>
-              <h1 className="text-xl font-semibold">Customer List ({pagination.total})</h1>
+              <h1 className="text-xl font-semibold">
+                Customer List ({pagination.total})
+              </h1>
             </div>
           </div>
 
@@ -562,16 +662,29 @@ const PersonalizationCampaign = () => {
                     <input
                       type="checkbox"
                       onChange={toggleAllImported}
-                      checked={resolvableImportedIds.length > 0 && selectedImported.length === resolvableImportedIds.length}
+                      checked={
+                        resolvableImportedIds.length > 0 &&
+                        selectedImported.length === resolvableImportedIds.length
+                      }
                     />
                     <span>Toggle All</span>
                   </label>
                   <span>
-                    Matched: {selectedImported.length} / {resolvableImportedIds.length} (imported rows: {importedRows.length})
+                    Matched: {selectedImported.length} /{" "}
+                    {resolvableImportedIds.length} (imported rows:{" "}
+                    {importedRows.length})
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => { setImportedRows([]); setSelectedImported([]); setUnresolvedImports([]); setResolvableImportedIds([]); }} className="text-xs px-3 py-1 border rounded text-red-700">
+                  <button
+                    onClick={() => {
+                      setImportedRows([]);
+                      setSelectedImported([]);
+                      setUnresolvedImports([]);
+                      setResolvableImportedIds([]);
+                    }}
+                    className="text-xs px-3 py-1 border rounded text-red-700"
+                  >
                     Clear Import
                   </button>
                 </div>
@@ -582,14 +695,20 @@ const PersonalizationCampaign = () => {
                     <tr>
                       <th className="px-3 py-2 text-left">Select</th>
                       {importedHeaders.slice(0, 6).map((h) => (
-                        <th key={h} className="px-3 py-2 text-left text-xs uppercase text-gray-600">{h}</th>
+                        <th
+                          key={h}
+                          className="px-3 py-2 text-left text-xs uppercase text-gray-600"
+                        >
+                          {h}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {importedRows.slice(0, 50).map((row, idx) => {
                       const resolvedId = row._id; // after parse we keep _id if present
-                      const isSelected = resolvedId && selectedImported.includes(resolvedId);
+                      const isSelected =
+                        resolvedId && selectedImported.includes(resolvedId);
                       return (
                         <tr key={idx} className="hover:bg-gray-50">
                           <td className="px-3 py-2">
@@ -597,11 +716,19 @@ const PersonalizationCampaign = () => {
                               type="checkbox"
                               disabled={!resolvedId}
                               checked={!!resolvedId && isSelected}
-                              onChange={() => resolvedId && toggleImportedSelection(resolvedId)}
+                              onChange={() =>
+                                resolvedId &&
+                                toggleImportedSelection(resolvedId)
+                              }
                             />
                           </td>
                           {importedHeaders.slice(0, 6).map((h) => (
-                            <td key={`${idx}-${h}`} className="px-3 py-2 text-sm">{String(row[h] ?? "")}</td>
+                            <td
+                              key={`${idx}-${h}`}
+                              className="px-3 py-2 text-sm"
+                            >
+                              {String(row[h] ?? "")}
+                            </td>
                           ))}
                         </tr>
                       );
@@ -611,7 +738,8 @@ const PersonalizationCampaign = () => {
               </div>
               {unresolvedImports.length > 0 && (
                 <div className="px-4 py-2 text-sm text-amber-700 bg-amber-50 border-t">
-                  {unresolvedImports.length} row(s) could not be resolved to existing customers. We can only send to existing customer IDs.
+                  {unresolvedImports.length} row(s) could not be resolved to
+                  existing customers. We can only send to existing customer IDs.
                 </div>
               )}
             </div>
@@ -635,7 +763,9 @@ const PersonalizationCampaign = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-xl mx-4 min-h-[400px] max-h-[85vh] overflow-auto p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold text-slate-800">Filter Customers</h3>
+              <h3 className="text-lg font-semibold text-slate-800">
+                Filter Customers
+              </h3>
               <button
                 onClick={() => setShowFilterModal(false)}
                 className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
@@ -663,7 +793,9 @@ const PersonalizationCampaign = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 max-h-[85vh] overflow-auto">
             <div className="flex items-center justify-between px-4 py-3 border-b">
-              <h3 className="text-lg font-semibold text-slate-800">Already Shared Check</h3>
+              <h3 className="text-lg font-semibold text-slate-800">
+                Already Shared Check
+              </h3>
               <button
                 onClick={() => setShowCheckModal(false)}
                 className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
@@ -693,29 +825,45 @@ const PersonalizationCampaign = () => {
                   <option value="true">Quiz Already Shared: true</option>
                   <option value="false">Quiz Already Shared: false</option>
                 </select> */}
-                <span className="text-sm text-gray-600">Total: {checkResults.length}</span>
+                <span className="text-sm text-gray-600">
+                  Total: {checkResults.length}
+                </span>
               </div>
               <div className="overflow-x-auto border rounded-lg">
                 <table className="min-w-full">
                   <thead className="bg-gray-100">
                     <tr>
-                      <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Customer</th>
+                      <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">
+                        Customer
+                      </th>
                       {/* <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Campaign ID</th> */}
-                      <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">Already Shared</th>
+                      <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">
+                        Already Shared
+                      </th>
                       {/* <th className="px-3 py-2 text-left text-xs uppercase text-gray-600">is quiz Shared</th> */}
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {(() => {
                       const filtered = checkResults.filter((r) => {
-                        const matchAlready = checkFilter === 'all' ? true : r.alreadyShared === (checkFilter === 'true');
-                        const matchQuiz = quizCheckFilter === 'all' ? true : r.quizAlreadyShared === (quizCheckFilter === 'true');
+                        const matchAlready =
+                          checkFilter === "all"
+                            ? true
+                            : r.alreadyShared === (checkFilter === "true");
+                        const matchQuiz =
+                          quizCheckFilter === "all"
+                            ? true
+                            : r.quizAlreadyShared ===
+                              (quizCheckFilter === "true");
                         return matchAlready && matchQuiz;
                       });
                       if (filtered.length === 0) {
                         return (
                           <tr>
-                            <td colSpan={3} className="px-3 py-6 text-center text-sm text-gray-500">
+                            <td
+                              colSpan={3}
+                              className="px-3 py-6 text-center text-sm text-gray-500"
+                            >
                               No data matching filters
                             </td>
                           </tr>
@@ -725,7 +873,9 @@ const PersonalizationCampaign = () => {
                         <tr key={idx} className="hover:bg-gray-50">
                           <td className="px-3 py-2 text-xs">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium">{customerNames[row.customerId] || ""}</span>
+                              <span className="font-medium">
+                                {customerNames[row.customerId] || ""}
+                              </span>
                             </div>
                           </td>
                           <td className="px-3 py-2">
@@ -772,7 +922,7 @@ const PersonalizationCampaign = () => {
                   onClick={handleSendCampaign}
                   className="px-6 py-2 bg-pink-600 text-white rounded hover:bg-pink-700 disabled:opacity-60"
                 >
-                  {loading ? 'Sending...' : 'Send Now'}
+                  {loading ? "Sending..." : "Send Now"}
                 </button>
               </div>
             </div>
@@ -787,7 +937,7 @@ const PersonalizationCampaign = () => {
           className="px-8 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors disabled:opacity-60"
           disabled={checking}
         >
-          {checking ? 'Checking...' : 'Check & Send'}
+          {checking ? "Checking..." : "Check & Send"}
         </button>
       </div>
     </div>
