@@ -30,12 +30,12 @@ function Campaign({ onUpdatePlan, onClose }) {
   return (
     <div className="absolute top-6 right-6 bg-white rounded-xl border border-[#E8E8E8] shadow-[0_4px_20px_rgba(0,0,0,0.05)] p-4 w-[260px] flex flex-col items-center text-center">
       {/* Close button */}
-      <button 
+      {/* <button 
         onClick={onClose}
         className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
       >
         <X size={18} />
-      </button>
+      </button> */}
       
       {/* Heading */}
       <div className="leading-tight pb-2">
