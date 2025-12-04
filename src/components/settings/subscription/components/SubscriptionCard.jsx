@@ -54,7 +54,7 @@ export default function SubscriptionCard({
       }
       return 'Add Credits';
     }
-    return isAddon ? 'Add Now' : 'Upgrade Plan';
+    return isAddon ? 'Add Now' : 'Select Plan';
   };
 
   const handleCardClick = (e) => {
