@@ -426,6 +426,12 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Expiry Date *
               </label>
+              <input
+                type="hidden"
+                {...register("expiryDate", {
+                  required: "Expiry date is required",
+                })}
+              />
               <DatePicker
                 selected={formData.expiryDate}
                 onChange={handleDateChange}
