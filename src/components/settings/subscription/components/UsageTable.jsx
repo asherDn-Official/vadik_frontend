@@ -23,7 +23,7 @@ export default function UsageTable({ data }) {
         <tbody className="bg-white">
           <tr className="border-t border-gray-200">
             <td className="py-3 px-4 text-gray-700">
-              Customers 
+              Customers Profile
             </td>
             <td className="py-3 px-4 text-center text-gray-700">
               {isDataLoading ? '-' : safeData.customers.allowed}
@@ -52,7 +52,7 @@ export default function UsageTable({ data }) {
           </tr>
           <tr className="border-t border-gray-200">
             <td className="py-3 px-4 text-gray-700">
-              WhatsApp Activities 
+              WhatsApp Credits 
             </td>
             <td className="py-3 px-4 text-center text-gray-700">
               {isDataLoading ? '-' : safeData.whatsappActivities.allowed}

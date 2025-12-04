@@ -205,7 +205,7 @@ export default function SubscriptionCard({
 
       <div className="text-center mb-6">
         <span className={`text-4xl font-bold ${textColor}`}>Rs. {price.toLocaleString()}</span>
-        <span className={`text-sm ${variant === 'primary' ? 'text-white/80' : 'text-gray-500'}`}>/{period}</span>
+        {period && <span className={`text-sm ${variant === 'primary' ? 'text-white/80' : 'text-gray-500'}`}>/{period}</span>}
       </div>
 
       <div className="flex-grow space-y-3 mb-6">

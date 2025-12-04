@@ -12,9 +12,8 @@ const CustomerOpportunities = () => {
   const [activeTab, setActiveTab] = useState("engagement");
   const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
 
-
   const handleUpdatePlan = () => {
-    setShowSubscriptionPopup((prev)=> !prev);
+    setShowSubscriptionPopup((prev) => !prev);
   };
 
   return (
@@ -41,6 +40,10 @@ const CustomerOpportunities = () => {
                 onClose={() => setShowSubscriptionPopup(false)}
                 activeTabName={"addon"}
                 showCloseButton={true}
+                showAutopay={false}
+                showSubscription={false}
+                showAddon={true}
+                title= {"Add Ons Plan "}
               />
             )}
           </div>
