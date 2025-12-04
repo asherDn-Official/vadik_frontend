@@ -50,7 +50,7 @@ const CustomerOpportunities = () => {
         </div>
 
         {/* Tabs */}
-        <div className="mt-8 flex flex-wrap justify-center items-center gap-4 md:gap-6 lg:gap-8">
+        <div className="mt-8 sm:mt-10 flex flex-wrap justify-center items-center gap-4 md:gap-6 lg:gap-8">
           <div>
             <button
               onClick={() => setActiveTab("engagement")}
