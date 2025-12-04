@@ -7,6 +7,10 @@ const SubscriptionPopup = ({
   onClose,
   activeTabName = "subscription",
   showCloseButton = false,
+  showAutopay = false,
+  showSubscription = true, // Default to true for backward compatibility
+  showAddon = true, // Default to true for backward compatibility
+  title = "Subscription Plan", // Custom title prop
 }) => {
   const [open, setOpen] = useState(true);
   const [subscription, setSubscription] = useState([]);
@@ -15,7 +19,28 @@ const SubscriptionPopup = ({
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState(activeTabName);
+  
+  // Check if we should show tabs (only show if both are enabled)
+  const shouldShowTabs = showSubscription && showAddon;
+  
+  // Set active tab based on props and availability
+  const [activeTab, setActiveTab] = useState(() => {
+    // If tabs are hidden, determine which single content to show
+    if (!shouldShowTabs) {
+      if (showSubscription) return "subscription";
+      if (showAddon) return "addon";
+    }
+    
+    // If tabs are shown, use normal logic
+    if (activeTabName === "subscription" && !showSubscription) {
+      return showAddon ? "addon" : "subscription";
+    }
+    if (activeTabName === "addon" && !showAddon) {
+      return showSubscription ? "subscription" : "addon";
+    }
+    return activeTabName;
+  });
+  
   const [currentPlans, setCurrentPlans] = useState(null);
   const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
   const [autoplay, setAutoplay] = useState(true);
@@ -121,7 +146,6 @@ const SubscriptionPopup = ({
         isTrial: true,
       });
 
-      // alert("✅ Trial subscription activated successfully!");
       getCurrentPlanDetails();
       getActiveSubscription();
       handleClose(); // Close popup after trial activation
@@ -148,8 +172,12 @@ const SubscriptionPopup = ({
 
   useEffect(() => {
     getCurrentPlanDetails();
-    getSubscriptionPlans();
-    getAddons();
+    if (showSubscription) {
+      getSubscriptionPlans();
+    }
+    if (showAddon) {
+      getAddons();
+    }
     getActiveSubscription();
   }, []);
 
@@ -161,7 +189,7 @@ const SubscriptionPopup = ({
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-xl flex justify-between items-center">
           <h1 className="text-2xl font-semibold text-gray-800">
-            Subscription Plan
+            {title}
           </h1>
           {/* <button
             onClick={handleClose}
@@ -172,94 +200,75 @@ const SubscriptionPopup = ({
           </button> */}
         </div>
 
-        {/* Current Plan Status */}
-        {/* <div className="p-6 border-b border-gray-100">
-          {currentPlans ? (
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-gray-700 font-medium">
-                    Current Plan:{" "}
-                    <span className="font-semibold capitalize">
-                      {currentPlans.subscription?.plan} Plan
-                    </span>
-                  </span>
-                  <span
-                    className={`ml-4 px-3 py-1 rounded-full text-sm font-medium ${
-                      currentPlans?.status
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {currentPlans?.status ? "Active" : "Inactive"}
-                  </span>
-                </div>
-                <div className="text-gray-600 text-sm">
-                  Expiry:{" "}
-                  {currentPlans.subscription?.endDate
-                    ? new Date(
-                        currentPlans.subscription.endDate
-                      ).toLocaleDateString()
-                    : "-"}
-                </div>
+        {/* Tab Navigation - Only show if both tabs are enabled */}
+        {shouldShowTabs ? (
+          <div className="px-6 pt-6">
+            <div className="flex items-center justify-between border-b border-gray-200">
+              <div className="flex gap-6">
+                <button
+                  onClick={() => setActiveTab("subscription")}
+                  className={`pb-3 px-1 font-medium transition-colors relative ${
+                    activeTab === "subscription"
+                      ? "text-gray-800"
+                      : "text-gray-500"
+                  }`}
+                >
+                  Subscription Plan
+                  {activeTab === "subscription" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab("addon")}
+                  className={`pb-3 px-1 font-medium transition-colors relative ${
+                    activeTab === "addon" ? "text-gray-800" : "text-gray-500"
+                  }`}
+                >
+                  Add ons
+                  {activeTab === "addon" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
+                  )}
+                </button>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <span className="text-gray-600">
-                No active subscription. Choose a plan to get started!
-              </span>
-            </div>
-          )}
-        </div> */}
-
-        {/* Tab Navigation */}
-        <div className="px-6 pt-6">
-          <div className="flex items-center justify-between border-b border-gray-200">
-            <div className="flex gap-6">
-              <button
-                onClick={() => setActiveTab("subscription")}
-                className={`pb-3 px-1 font-medium transition-colors relative ${
-                  activeTab === "subscription"
-                    ? "text-gray-800"
-                    : "text-gray-500"
-                }`}
-              >
-                Subscription Plan
-                {activeTab === "subscription" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab("addon")}
-                className={`pb-3 px-1 font-medium transition-colors relative ${
-                  activeTab === "addon" ? "text-gray-800" : "text-gray-500"
-                }`}
-              >
-                Add ons
-                {activeTab === "addon" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
-                )}
-              </button>
-            </div>
-            <div className="flex items-center gap-2 pb-3">
-              <label htmlFor="autoplay" className="text-gray-700 font-medium">
-                Autopay
-              </label>
-              <input
-                id="autoplay"
-                type="checkbox"
-                checked={autoplay}
-                onChange={(e) => setAutoplay(e.target.checked)}
-                className="w-4 h-4 cursor-pointer"
-              />
+              {showAutopay && (
+                <div className="flex items-center gap-2 pb-3">
+                  <label htmlFor="autoplay" className="text-gray-700 font-medium">
+                    Autopay
+                  </label>
+                  <input
+                    id="autoplay"
+                    type="checkbox"
+                    checked={autoplay}
+                    onChange={(e) => setAutoplay(e.target.checked)}
+                    className="w-4 h-4 cursor-pointer"
+                  />
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        ) : showAutopay ? (
+          // Show Autopay standalone when tabs are hidden but autopay is enabled
+          <div className="px-6 pt-6">
+            <div className="flex justify-end border-b border-gray-200 pb-3">
+              <div className="flex items-center gap-2">
+                <label htmlFor="autoplay" className="text-gray-700 font-medium">
+                  Autopay
+                </label>
+                <input
+                  id="autoplay"
+                  type="checkbox"
+                  checked={autoplay}
+                  onChange={(e) => setAutoplay(e.target.checked)}
+                  className="w-4 h-4 cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Content Area */}
         <div className="p-6">
-          {activeTab === "subscription" ? (
+          {activeTab === "subscription" && showSubscription ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {subscription.map((plan) => {
                 const currentPlanName = currentPlans?.subscription?.plan;
@@ -303,12 +312,12 @@ const SubscriptionPopup = ({
                     onSelect={handlePlanSelect}
                     onTrial={handleTrialSubscription}
                     loading={loading}
-                    compact={true} // Pass compact prop for popup view
+                    compact={true}
                   />
                 );
               })}
             </div>
-          ) : (
+          ) : activeTab === "addon" && showAddon ? (
             <div>
               {(selectedPlan?.isFreeTrial || currentPlans?.subscription?.isTrial) && (
                 <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -323,12 +332,10 @@ const SubscriptionPopup = ({
                   const transformedPlan = {
                     title: addon.name,
                     price: addon.price,
-                    period: `${addon.durationInDays} days`,
                     features: [
                       `+${addon.extraCustomers} Additional Customers`,
                       `+${addon.extraActivities} Additional Activities`,
                       `+${addon.extraWhatsappActivities} Additional WhatsApp Activities`,
-                      // addon.description,
                       `Validity Based On The Active Plan`,
                     ],
                     variant: "primary",
@@ -344,7 +351,7 @@ const SubscriptionPopup = ({
                       plan={addon}
                       title={transformedPlan.title}
                       price={transformedPlan.price}
-                      period={transformedPlan.period}
+                      period={""}
                       features={transformedPlan.features}
                       variant={transformedPlan.variant}
                       isAddon={true}
@@ -354,13 +361,13 @@ const SubscriptionPopup = ({
                       onSelect={handleAddonToggle}
                       loading={loading}
                       isCurrentPlanFreeTrial={isCurrentPlanFreeTrial}
-                      compact={true} // Pass compact prop for popup view
+                      compact={true}
                     />
                   );
                 })}
               </div>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Footer with Action Buttons */}
@@ -513,7 +520,6 @@ const SubscriptionPopup = ({
                     );
                   }
 
-                  // alert("✅ Payment successful!");
                   setShowConfirmation(false);
                   setSelectedPlan(null);
                   setSelectedAddons([]);

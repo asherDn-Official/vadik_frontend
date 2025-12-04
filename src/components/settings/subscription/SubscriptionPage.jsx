@@ -601,7 +601,7 @@ export default function SubscriptionPage() {
                   plan={addon}
                   title={transformedPlan.title}
                   price={transformedPlan.price}
-                  period={transformedPlan.period}
+                  period={""}
                   features={transformedPlan.features}
                   variant={transformedPlan.variant}
                   isAddon={true}

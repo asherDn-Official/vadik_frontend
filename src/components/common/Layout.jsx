@@ -17,9 +17,7 @@ function Layout() {
   const [isTourComplete, setIsTourComplete] = useState(null);
   const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(true);
 
-
-    const { currentPlans,refreshPlans } = usePlan();
-  
+  const { currentPlans, refreshPlans } = usePlan();
 
   // console.log("api base url",import.meta.env.VITE_API_BASE_URL);
   // console.log("rezor pay key id",import.meta.env.VITE_RAZORPAY_KEY_ID); //VITE_RAZORPAY_KEY_ID
@@ -85,7 +83,7 @@ function Layout() {
   return (
     <SecurityPopupProvider>
       <div className="flex min-h-screen">
-        {currentTour && isDemo && !isTourComplete &&  (
+        {currentTour && isDemo && !isTourComplete && (
           <TourModal
             tour={currentTour}
             isOpen={!!activeTour}
@@ -93,12 +91,15 @@ function Layout() {
             onConfirmation={handleConfirmation}
           />
         )}
-        
-        {!isDemo && currentPlans === null && showSubscriptionPopup && (
-           <SubscriptionPopup onClose={() => setShowSubscriptionPopup(false)}/>
-        )}
 
-        
+        {!isDemo && currentPlans === null && showSubscriptionPopup && (
+          <SubscriptionPopup
+            onClose={() => setShowSubscriptionPopup(false)}
+            showAutopay={true}
+            showSubscription={true}
+            showAddon={true}
+          />
+        )}
 
         <Sidebar onOpenTour={setActiveTour} />
         <main className="flex-1 bg-[#F4F5F9]">
