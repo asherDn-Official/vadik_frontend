@@ -542,7 +542,7 @@ export default function SubscriptionPage() {
                 features: [
                   `${plan.customerLimit} Customers`,
                   `${plan.activityLimit} Activities`,
-                  `${plan.whatsappActivityLimit} WhatsApp Activities`,
+                  `${plan.whatsappActivityLimit} WhatsApp Credits`,
                   plan.isFreeTrial ? "Free Trial Available" : "Full Access",
                 ],
                 variant:
@@ -584,7 +584,7 @@ export default function SubscriptionPage() {
                 features: [
                   `+${addon.extraCustomers} Additional Customers`,
                   `+${addon.extraActivities} Additional Activities`,
-                  `+${addon.extraWhatsappActivities} Additional WhatsApp Activities`,
+                  `+${addon.extraWhatsappActivities} Additional WhatsApp Credits`,
                   // addon.description,
                   // `${addon.durationInDays} Days Validity`,
                   `Validity Based On The Active Plan`

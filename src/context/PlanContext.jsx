@@ -4,7 +4,7 @@ import api from "../api/apiconfig";
 const PlanContext = createContext();
 
 const PlanProvider = ({ children }) => {
-    const [currentPlans, setCurrentPlans] = useState(null);
+    const [currentPlans, setCurrentPlans] = useState(undefined);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 

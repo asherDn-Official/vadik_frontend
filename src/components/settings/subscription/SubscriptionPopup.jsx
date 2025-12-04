@@ -284,7 +284,7 @@ const SubscriptionPopup = ({
                   features: [
                     `${plan.customerLimit} Customers`,
                     `${plan.activityLimit} Activities`,
-                    `${plan.whatsappActivityLimit} WhatsApp Activities`,
+                    `${plan.whatsappActivityLimit} WhatsApp Credits`,
                     plan.isFreeTrial ? "Free Trial Available" : "Full Access",
                   ],
                   variant:
@@ -335,7 +335,7 @@ const SubscriptionPopup = ({
                     features: [
                       `+${addon.extraCustomers} Additional Customers`,
                       `+${addon.extraActivities} Additional Activities`,
-                      `+${addon.extraWhatsappActivities} Additional WhatsApp Activities`,
+                      `+${addon.extraWhatsappActivities} Additional WhatsApp Credits`,
                       `Validity Based On The Active Plan`,
                     ],
                     variant: "primary",
