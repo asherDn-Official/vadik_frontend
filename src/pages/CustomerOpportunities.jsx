@@ -128,7 +128,7 @@ const CustomerOpportunities = () => {
               </div>
               <div>
                 <div className="font-semibold text-slate-800 text-start">
-                  Customer Recommendation
+                  Chats
                 </div>
                 <div className="text-xs text-gray-500 text-start">
                   Product suggestions based on behavior and stock.
@@ -151,7 +151,7 @@ const CustomerOpportunities = () => {
               </div>
               <div>
                 <div className="font-semibold text-slate-800 text-start">
-                  Business Recommendation
+                  Vadik Assistance
                 </div>
                 <div className="text-xs text-gray-500 text-start">
                   Retailer Stock Management Suggestion
