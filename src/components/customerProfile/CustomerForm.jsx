@@ -15,7 +15,10 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
   const [showSourcePopup, setShowSourcePopup] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
-  const sanitizeSourceName = React.useCallback((value = "") => value.trim().toLowerCase(), []);
+  const sanitizeSourceName = React.useCallback(
+    (value = "") => value.trim().toLowerCase(),
+    []
+  );
 
   const {
     register,
@@ -61,9 +64,10 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
         // Set default value to first source if available
         if (fetchedSources.length > 0) {
           const currentSource = getValues("source");
-          const nextSource = currentSource && fetchedSources.includes(currentSource)
-            ? currentSource
-            : fetchedSources[0];
+          const nextSource =
+            currentSource && fetchedSources.includes(currentSource)
+              ? currentSource
+              : fetchedSources[0];
           setValue("source", nextSource);
         }
       }
@@ -101,11 +105,12 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
   // Handle sources update from popup
   const handleSourcesUpdate = (updatedSources) => {
     setSources(updatedSources);
-    
+
     const currentSource = getValues("source");
-    const nextSelection = currentSource && updatedSources.includes(currentSource)
-      ? currentSource
-      : updatedSources[0] ?? "";
+    const nextSelection =
+      currentSource && updatedSources.includes(currentSource)
+        ? currentSource
+        : updatedSources[0] ?? "";
 
     setValue("source", nextSelection);
   };
@@ -130,7 +135,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
     }
 
     // Additional format validation if needed
-    const formattedDate = format(value, 'dd/MM/yyyy');
+    const formattedDate = format(value, "dd/MM/yyyy");
     const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
 
     if (!dateRegex.test(formattedDate)) {
@@ -149,7 +154,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
     }
 
     // Extract just the national number (last 10 digits)
-    const nationalNumber = value.replace(/\D/g, '').slice(-10);
+    const nationalNumber = value.replace(/\D/g, "").slice(-10);
 
     // Must be exactly 10 digits
     if (nationalNumber.length !== 10) {
@@ -171,7 +176,12 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
     // Ensure firstVisit is sent as YYYY-MM-DD string
     const firstVisitDate = data.firstVisit ? new Date(data.firstVisit) : null;
     const formattedFirstVisit = firstVisitDate
-      ? `${firstVisitDate.getFullYear()}-${String(firstVisitDate.getMonth() + 1).padStart(2, "0")}-${String(firstVisitDate.getDate()).padStart(2, "0")}`
+      ? `${firstVisitDate.getFullYear()}-${String(
+          firstVisitDate.getMonth() + 1
+        ).padStart(2, "0")}-${String(firstVisitDate.getDate()).padStart(
+          2,
+          "0"
+        )}`
       : null;
 
     onSubmit({
@@ -198,10 +208,15 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
         sanitizeSourceName={sanitizeSourceName}
       />
 
-      <form onSubmit={handleSubmit(onFormSubmit)} className="grid grid-cols-1 gap-6">
+      <form
+        onSubmit={handleSubmit(onFormSubmit)}
+        className="grid grid-cols-1 gap-6"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="block text-sm text-[#31316680]">First Name *</label>
+            <label className="block text-sm text-[#31316680]">
+              First Name *
+            </label>
             <input
               type="text"
               placeholder="First Name"
@@ -220,8 +235,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                   message: "Only letters, hyphens, and apostrophes allowed",
                 },
               })}
-              className={`w-full p-2 border ${errors.firstname ? "border-red-500" : "border-gray-300"
-                } rounded text-[#313166]`}
+              className={`w-full p-2 border ${
+                errors.firstname ? "border-red-500" : "border-gray-300"
+              } rounded text-[#313166]`}
             />
             {errors.firstname && (
               <p className="text-red-500 text-xs">{errors.firstname.message}</p>
@@ -229,7 +245,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm text-[#31316680]">Last Name *</label>
+            <label className="block text-sm text-[#31316680]">
+              Last Name *
+            </label>
             <input
               type="text"
               placeholder="Last Name"
@@ -240,12 +258,13 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                   message: "Cannot exceed 20 characters",
                 },
                 pattern: {
-                  value: /^[a-zA-Z\u00C0-\u017F\s'-]+$/,
-                  message: "Only letters, hyphens, and apostrophes allowed",
+                  value: /^[A-Za-z]+$/,
+                  message: "Only letters are allowed in the last name",
                 },
               })}
-              className={`w-full p-2 border ${errors.lastname ? "border-red-500" : "border-gray-300"
-                } rounded text-[#313166]`}
+              className={`w-full p-2 border ${
+                errors.lastname ? "border-red-500" : "border-gray-300"
+              } rounded text-[#313166]`}
             />
             {errors.lastname && (
               <p className="text-red-500 text-xs">{errors.lastname.message}</p>
@@ -255,7 +274,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg">
           <div className="space-y-2">
-            <label className="block text-sm text-[#31316680]">Mobile Number *</label>
+            <label className="block text-sm text-[#31316680]">
+              Mobile Number *
+            </label>
             <Controller
               name="mobileNumber"
               control={control}
@@ -269,8 +290,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                   defaultCountry="IN"
                   value={value}
                   onChange={onChange}
-                  className={`w-full p-2 border ${errors.mobileNumber ? "border-red-500" : "border-gray-300"
-                    } rounded text-[#313166] `}
+                  className={`w-full p-2 border ${
+                    errors.mobileNumber ? "border-red-500" : "border-gray-300"
+                  } rounded text-[#313166] `}
                   inputStyle={{ width: "100%", padding: "0.5rem" }}
                   dropdownClass="text-gray-700"
                   countryCallingCodeEditable={false}
@@ -279,17 +301,22 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
               )}
             />
             {errors.mobileNumber && (
-              <p className="text-red-500 text-xs">{errors.mobileNumber.message}</p>
+              <p className="text-red-500 text-xs">
+                {errors.mobileNumber.message}
+              </p>
             )}
-            <p className="text-xs text-gray-500">Enter 10-digit mobile number</p>
+            <p className="text-xs text-gray-500">
+              Enter 10-digit mobile number
+            </p>
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm text-[#31316680]">Gender *</label>
             <select
               {...register("gender", { required: "Gender is required" })}
-              className={`w-full p-2 border ${errors.gender ? "border-red-500" : "border-gray-300"
-                } rounded text-[#313166] bg-white`}
+              className={`w-full p-2 border ${
+                errors.gender ? "border-red-500" : "border-gray-300"
+              } rounded text-[#313166] bg-white`}
             >
               <option value="">Select Gender</option>
               <option value="male">Male</option>
@@ -304,7 +331,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="block text-sm text-[#31316680]">Source *</label>
-              <div 
+              <div
                 className="text-sm text-blue-400 underline cursor-pointer hover:text-blue-600 transition-colors"
                 onClick={() => setShowSourcePopup(true)}
               >
@@ -313,8 +340,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
             </div>
             <select
               {...register("source", { required: "Source is required" })}
-              className={`w-full p-2 border ${errors.source ? "border-red-500" : "border-gray-300"
-                } rounded text-[#313166] bg-white`}
+              className={`w-full p-2 border ${
+                errors.source ? "border-red-500" : "border-gray-300"
+              } rounded text-[#313166] bg-white`}
               disabled={loading || sources.length === 0}
             >
               {loading ? (
@@ -335,19 +363,25 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm text-[#31316680]">First Visit Date *</label>
+            <label className="block text-sm text-[#31316680]">
+              First Visit Date *
+            </label>
             <Controller
               name="firstVisit"
               control={control}
-              rules={{ required: "First Visit Date is required", validate: validateDateFormat }}
+              rules={{
+                required: "First Visit Date is required",
+                validate: validateDateFormat,
+              }}
               render={({ field }) => (
                 <DatePicker
                   selected={field.value}
                   onChange={(date) => field.onChange(date)}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="DD/MM/YYYY"
-                  className={`w-full p-2 border ${errors.firstVisit ? "border-red-500" : "border-gray-300"
-                    } rounded text-[#313166]`}
+                  className={`w-full p-2 border ${
+                    errors.firstVisit ? "border-red-500" : "border-gray-300"
+                  } rounded text-[#313166]`}
                   minDate={new Date(2025, 0, 1)}
                   maxDate={new Date()}
                   showYearDropdown
@@ -356,7 +390,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
               )}
             />
             {errors.firstVisit && (
-              <p className="text-red-500 text-xs">{errors.firstVisit.message}</p>
+              <p className="text-red-500 text-xs">
+                {errors.firstVisit.message}
+              </p>
             )}
           </div>
         </div>
