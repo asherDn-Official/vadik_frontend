@@ -520,7 +520,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                     Product Name
                   </th>
                   <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
-                    Offer %
+                    Discount Percentage & Amount
                   </th>
                   <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
                     Action
@@ -571,7 +571,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
                       />
                     </td>
-                    <td className="border border-gray-200 px-4 py-3">
+                    {/* <td className="border border-gray-200 px-4 py-3">
                       <input
                         type="text"
                         value={segment.offer + " %"}
@@ -585,7 +585,25 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                         disabled={true}
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
                       />
-                    </td>
+                    </td> */}
+
+                    <td className="border border-gray-200 px-4 py-3">
+  <div className="flex items-center">
+    {segment.couponType === 'percentage' ? (
+      <span className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm w-full">
+        {segment.offer}%
+      </span>
+    ) : segment.couponType === 'amount' ? (
+      <span className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm w-full">
+        ₹{segment.offer}
+      </span>
+    ) : (
+      <span className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm w-full text-gray-400">
+        Select a coupon
+      </span>
+    )}
+  </div>
+</td>
 
                     <td className="border border-gray-200 px-4 py-3">
                       {formData.segments?.length > 1 && (
