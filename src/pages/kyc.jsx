@@ -365,10 +365,10 @@ const KYCPage = () => {
                       {formatPhone(customerData.mobileNumber)}
                     </p>
                   </div>
-                  <div>
+                  {/* <div>
                     <p className="text-sm text-gray-500">Vadik ID</p>
                     <p className="font-medium">{customerData.customerId}</p>
-                  </div>
+                  </div> */}
                   <div>
                     <p className="text-sm text-gray-500">First Visit</p>
                     <p className="font-medium">
