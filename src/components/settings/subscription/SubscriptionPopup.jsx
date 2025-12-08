@@ -277,16 +277,18 @@ const SubscriptionPopup = ({
                   currentPlanName.toLowerCase() === plan.name.toLowerCase();
                 const hasActiveSubscription = currentPlanName ? true : false;
 
+                const features = [
+                  plan.customerLimit > 0 && `${plan.customerLimit} Customers`,
+                  plan.activityLimit > 0 && `${plan.activityLimit} Activities`,
+                  plan.whatsappActivityLimit > 0 && `${plan.whatsappActivityLimit} WhatsApp Credits`,
+                  plan.isFreeTrial ? "Free Trial Available" : "Full Access",
+                ].filter(Boolean);
+
                 const transformedPlan = {
                   title: plan.name,
                   price: plan.price,
                   period: `${plan.durationInDays} days`,
-                  features: [
-                    `${plan.customerLimit} Customers`,
-                    `${plan.activityLimit} Activities`,
-                    `${plan.whatsappActivityLimit} WhatsApp Credits`,
-                    plan.isFreeTrial ? "Free Trial Available" : "Full Access",
-                  ],
+                  features,
                   variant:
                     plan.name.toLowerCase() === "enterprise"
                       ? "primary"
@@ -329,15 +331,18 @@ const SubscriptionPopup = ({
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {addons.map((addon) => {
+
+                    const features= [
+                      addon.extraCustomers > 0 && `+${addon.extraCustomers} Additional Customers`,
+                      addon.extraActivities > 0 && `+${addon.extraActivities} Additional Activities`,
+                      addon.extraWhatsappActivities > 0 &&  `+${addon.extraWhatsappActivities} Additional WhatsApp Credits`,
+                      `Validity Based On The Active Plan`,
+                    ].filter((Boolean));
+
                   const transformedPlan = {
                     title: addon.name,
                     price: addon.price,
-                    features: [
-                      `+${addon.extraCustomers} Additional Customers`,
-                      `+${addon.extraActivities} Additional Activities`,
-                      `+${addon.extraWhatsappActivities} Additional WhatsApp Credits`,
-                      `Validity Based On The Active Plan`,
-                    ],
+                    features,
                     variant: "primary",
                   };
 

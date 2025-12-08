@@ -258,7 +258,7 @@ export default function SubscriptionPage() {
       }
 
       const { order, subscriptionId } = orderResponse.data;
-      console.log("razorpay key ID 1 :",import.meta.env.VITE_RAZORPAY_KEY_ID)
+      console.log("razorpay key ID 1 :", import.meta.env.VITE_RAZORPAY_KEY_ID);
       // Step 3: Initialize Razorpay Payment
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -347,7 +347,7 @@ export default function SubscriptionPage() {
       }
 
       const { order, subscriptionId } = orderResponse.data;
-      console.log("razorpay key ID 2 :",import.meta.env.VITE_RAZORPAY_KEY_ID)
+      console.log("razorpay key ID 2 :", import.meta.env.VITE_RAZORPAY_KEY_ID);
       // Step 3: Initialize Razorpay Payment
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -482,15 +482,17 @@ export default function SubscriptionPage() {
             </div>
           )}
         </div>
-       
-       {/* taps */}
+
+        {/* taps */}
         <div className="mb-6">
           <div className="flex items-center justify-between border-b border-gray-200">
             <div className="flex gap-6">
               <button
                 onClick={() => setActiveTab("subscription")}
                 className={`pb-3 px-1 font-medium transition-colors relative ${
-                  activeTab === "subscription" ? "text-gray-800" : "text-gray-500"
+                  activeTab === "subscription"
+                    ? "text-gray-800"
+                    : "text-gray-500"
                 }`}
               >
                 Subscription Plan
@@ -510,7 +512,7 @@ export default function SubscriptionPage() {
                 )}
               </button>
             </div>
-            <div className="flex items-center gap-2 pb-3">
+            {/* <div className="flex items-center gap-2 pb-3">
               <label htmlFor="autoplay" className="text-gray-700 font-medium">
                 Autopay
               </label>
@@ -521,9 +523,8 @@ export default function SubscriptionPage() {
                 onChange={(e) => setAutoplay(e.target.checked)}
                 className="w-4 h-4 cursor-pointer"
               />
-            </div>
+            </div> */}
           </div>
-
         </div>
 
         {activeTab === "subscription" ? (
@@ -535,16 +536,19 @@ export default function SubscriptionPage() {
                 currentPlanName.toLowerCase() === plan.name.toLowerCase();
               const hasActiveSubscription = currentPlanName ? true : false;
 
+              const features = [
+                plan.customerLimit > 0 && `${plan.customerLimit} Customers`,
+                plan.activityLimit > 0 && `${plan.activityLimit} Activities`,
+                plan.whatsappActivityLimit > 0 &&
+                  `${plan.whatsappActivityLimit} WhatsApp Credits`,
+                plan.isFreeTrial ? "Free Trial Available" : "Full Access",
+              ].filter(Boolean);
+
               const transformedPlan = {
                 title: plan.name,
                 price: plan.price,
                 period: `${plan.durationInDays} days`,
-                features: [
-                  `${plan.customerLimit} Customers`,
-                  `${plan.activityLimit} Activities`,
-                  `${plan.whatsappActivityLimit} WhatsApp Credits`,
-                  plan.isFreeTrial ? "Free Trial Available" : "Full Access",
-                ],
+                features,
                 variant:
                   plan.name.toLowerCase() === "enterprise"
                     ? "primary"
@@ -577,18 +581,21 @@ export default function SubscriptionPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
             {addons.map((addon) => {
+              const features = [
+                addon.extraCustomers > 0 &&
+                  `+${addon.extraCustomers} Additional Customers`,
+                addon.extraActivities > 0 &&
+                  `+${addon.extraActivities} Additional Activities`,
+                addon.extraWhatsappActivities > 0 &&
+                  `+${addon.extraWhatsappActivities} Additional WhatsApp Credits`,
+                `Validity Based On The Active Plan`,
+              ].filter(Boolean);
+
               const transformedPlan = {
                 title: addon.name,
                 price: addon.price,
                 period: `${addon.durationInDays} days`,
-                features: [
-                  `+${addon.extraCustomers} Additional Customers`,
-                  `+${addon.extraActivities} Additional Activities`,
-                  `+${addon.extraWhatsappActivities} Additional WhatsApp Credits`,
-                  // addon.description,
-                  // `${addon.durationInDays} Days Validity`,
-                  `Validity Based On The Active Plan`
-                ],
+                features,
                 variant: "primary",
               };
 

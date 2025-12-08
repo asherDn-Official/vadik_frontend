@@ -95,7 +95,7 @@ function Layout() {
         {!isDemo && currentPlans === null && showSubscriptionPopup && (
           <SubscriptionPopup
             onClose={() => setShowSubscriptionPopup(false)}
-            showAutopay={true}
+            showAutopay={false}
             showSubscription={true}
             showAddon={true}
           />
