@@ -8,7 +8,7 @@ import { get } from "react-hook-form";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 
 // Add optional props: backButton to control visibility and onClose to notify parent (e.g., close modal)
-const Quiz = ({ backButton = false, onClose }) => {
+const Quiz = ({ backButton = true, onClose }) => {
   const [quizzes, setQuizzes] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState(null);
@@ -71,7 +71,7 @@ const Quiz = ({ backButton = false, onClose }) => {
               onClick={() => (onClose ? onClose() : setShowForm(false))}
               className="flex items-center text-slate-600 hover:text-slate-800 transition-colors mb-6"
             >
-              <ArrowLeft className="w-5 h-5 mr-2" />
+              <ArrowLeft className="w-5 h-5 mr-2" />  
               Back
             </button>
           )}
@@ -89,7 +89,7 @@ const Quiz = ({ backButton = false, onClose }) => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
-          {backButton && (
+          {/* {backButton && (
             <button
               onClick={() => (onClose ? onClose() : null)}
               className="flex items-center text-slate-600 hover:text-slate-800 transition-colors"
@@ -97,7 +97,7 @@ const Quiz = ({ backButton = false, onClose }) => {
               <ArrowLeft className="w-5 h-5 mr-1" />
               Back
             </button>
-          )}
+          )} */}
           <h3 className="text-lg font-semibold text-slate-800">
             {pagination?.totalDocs || quizzes.length} Quiz Activities
           </h3>
