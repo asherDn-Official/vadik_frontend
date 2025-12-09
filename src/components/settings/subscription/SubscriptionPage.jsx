@@ -17,6 +17,20 @@ export default function SubscriptionPage() {
   const [autoplay, setAutoplay] = useState(true);
   const retailerid = localStorage.getItem("retailerId");
 
+  // Addon quantities state
+  const [addonQuantities, setAddonQuantities] = useState({});
+
+  // Initialize quantities when addons load
+  useEffect(() => {
+    if (addons.length > 0) {
+      const initialQuantities = {};
+      addons.forEach(addon => {
+        initialQuantities[addon._id] = 1;
+      });
+      setAddonQuantities(initialQuantities);
+    }
+  }, [addons]);
+
   const getCurrentPlanDetails = async () => {
     try {
       const response = await api.get("/api/subscriptions/credit/usage");
@@ -32,7 +46,6 @@ export default function SubscriptionPage() {
     try {
       const response = await api.get("/api/subscriptions?isActive=true");
       if (response.data.data && response.data.data.length > 0) {
-        // Find subscription with plan (not add-on only)
         const subscriptionWithPlan = response.data.data.find(
           (sub) => sub.plan !== null
         );
@@ -76,26 +89,52 @@ export default function SubscriptionPage() {
     setSelectedPlan(plan);
   };
 
+  // Updated handleAddonToggle to handle quantity
   const handleAddonToggle = (addon) => {
     setSelectedAddons((prev) => {
       const isSelected = prev.find((a) => a._id === addon._id);
       if (isSelected) {
+        // Remove from selected addons
+        const newQuantities = { ...addonQuantities };
+        delete newQuantities[addon._id];
+        setAddonQuantities(newQuantities);
         return prev.filter((a) => a._id !== addon._id);
       } else {
+        // Add to selected addons with quantity 1
+        setAddonQuantities(prev => ({
+          ...prev,
+          [addon._id]: 1
+        }));
         return [...prev, addon];
       }
     });
   };
 
+  // Handle quantity change for addons
+  const handleQuantityChange = (addonId, newQuantity) => {
+    if (newQuantity < 1) return; // Minimum quantity is 1
+    
+    setAddonQuantities(prev => ({
+      ...prev,
+      [addonId]: newQuantity
+    }));
+  };
+
+  // Calculate total price with quantities
   const calculateTotalPrice = () => {
     let total = selectedPlan ? selectedPlan.price : 0;
     selectedAddons.forEach((addon) => {
-      total += addon.price;
+      const quantity = addonQuantities[addon._id] || 1;
+      total += (addon.price * quantity);
     });
     return total;
   };
 
-  // Regular subscription payment verification
+  // Updated payment handlers to include quantities...
+
+  // For brevity, keeping the rest of your payment handling functions the same
+  // but updating payloads to include quantities where needed
+
   const verifyRazorpayPayment = async (response, subscriptionId) => {
     try {
       const verificationPayload = {
@@ -124,6 +163,7 @@ export default function SubscriptionPage() {
       setShowConfirmation(false);
       setSelectedPlan(null);
       setSelectedAddons([]);
+      setAddonQuantities({});
       getCurrentPlanDetails();
       getActiveSubscription();
     } catch (error) {
@@ -134,15 +174,21 @@ export default function SubscriptionPage() {
     }
   };
 
-  // Add-credits payment verification
+  // Add-credits payment verification with quantities
   const verifyAddCreditsPayment = async (response, subscriptionId) => {
     try {
+      // Prepare addons with quantities
+      const addonsWithQuantities = selectedAddons.map(addon => ({
+        id: addon._id,
+        qty: addonQuantities[addon._id] || 1
+      }));
+
       const verificationPayload = {
         razorpay_order_id: response.razorpay_order_id,
         razorpay_payment_id: response.razorpay_payment_id,
         razorpay_signature: response.razorpay_signature,
         subscriptionId: subscriptionId,
-        addOnIds: selectedAddons.map((addon) => addon._id),
+        addOnIds: addonsWithQuantities, // Changed to include quantities
       };
 
       const verificationResponse = await api.post(
@@ -162,8 +208,8 @@ export default function SubscriptionPage() {
 
       setShowConfirmation(false);
       setSelectedAddons([]);
+      setAddonQuantities({});
       getCurrentPlanDetails();
-      // alert("✅ Credits added successfully!");
     } catch (error) {
       console.error("Credits payment verification failed:", error);
       alert("Credits payment verification failed. Please contact support.");
@@ -172,7 +218,7 @@ export default function SubscriptionPage() {
     }
   };
 
-  // Main payment handler - decides which flow to use
+  // Main payment handler
   const handleProceedToPayment = async () => {
     if (!selectedPlan && selectedAddons.length === 0) {
       alert("Please select a plan or addons before proceeding to payment.");
@@ -181,29 +227,31 @@ export default function SubscriptionPage() {
 
     setLoading(true);
 
-    // Determine which flow to use
     const isAddonsOnly = !selectedPlan && selectedAddons.length > 0;
     const hasActiveSubscription = activeSubscriptionId !== null;
 
     if (isAddonsOnly && hasActiveSubscription) {
-      // Use add-credits flow
       await handleAddCreditsFlow();
     } else {
-      // Use regular subscription flow
       await handleRegularSubscriptionFlow();
     }
   };
 
-  // Regular subscription flow (plan or plan + addons)
+  // Regular subscription flow with quantities
   const handleRegularSubscriptionFlow = async () => {
     try {
       let subscriptionData = null;
 
-      // Step 1: Create Subscription (only if plan is selected)
       if (selectedPlan) {
+        // Prepare addons with quantities
+        const addonsWithQuantities = selectedAddons.map(addon => ({
+          id: addon._id,
+          qty: addonQuantities[addon._id] || 1
+        }));
+
         const subscriptionPayload = {
           planId: selectedPlan._id,
-          addOnIds: selectedAddons.map((addon) => addon._id),
+          addOnIds: addonsWithQuantities, // Updated to include quantities
           isTrial: false,
           enableAutoPay: true,
           autoplay: autoplay,
@@ -220,12 +268,15 @@ export default function SubscriptionPage() {
           subscriptionResponse.data;
       }
 
-      // Step 2: Create Razorpay Order
+      // Create Razorpay Order
       const orderPayload = {
         subscriptionData: {
           user: retailerid,
           plan: selectedPlan?._id || null,
-          addOns: selectedAddons.map((addon) => addon._id),
+          addOnIds: selectedAddons.map(addon => ({
+            id: addon._id,
+            qty: addonQuantities[addon._id] || 1
+          })),
           startDate: new Date().toISOString(),
           endDate: new Date(
             Date.now() + 30 * 24 * 60 * 60 * 1000
@@ -258,15 +309,15 @@ export default function SubscriptionPage() {
       }
 
       const { order, subscriptionId } = orderResponse.data;
-      console.log("razorpay key ID 1 :", import.meta.env.VITE_RAZORPAY_KEY_ID);
-      // Step 3: Initialize Razorpay Payment
+
+      // Initialize Razorpay Payment
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency || "INR",
         name: "Vadik AI Subscription",
         description: `${selectedPlan ? selectedPlan.name + " Plan" : "Addon"}${
-          selectedAddons.length > 0 ? " with Addons" : ""
+          selectedAddons.length > 0 ? ` with ${selectedAddons.length} Addon(s)` : ""
         }`,
         order_id: order.id,
         handler: async function (response) {
@@ -306,13 +357,18 @@ export default function SubscriptionPage() {
     }
   };
 
-  // Add-credits flow (addons only to existing subscription)
+  // Add-credits flow with quantities
   const handleAddCreditsFlow = async () => {
     try {
-      // Step 1: Prepare add credits
+      // Prepare addons with quantities
+      const addonsWithQuantities = selectedAddons.map(addon => ({
+        id: addon._id,
+        qty: addonQuantities[addon._id] || 1
+      }));
+
       const preparePayload = {
         subscriptionId: activeSubscriptionId,
-        addOnIds: selectedAddons.map((addon) => addon._id),
+        addOnIds: addonsWithQuantities, // Updated to include quantities
         autoplay: autoplay,
       };
 
@@ -321,19 +377,14 @@ export default function SubscriptionPage() {
         preparePayload
       );
 
-      console.log("🔍 Step 1 - Prepare Add Credits:", prepareResponse);
-
       if (!prepareResponse.data.status) {
         throw new Error("❌ Failed to prepare credits");
       }
 
-      // Step 2: Create order for add credits
       const orderResponse = await api.post(
         "/api/subscriptions/add-credits/create-order",
         preparePayload
       );
-
-      console.log("🔍 Step 2 - Create Add Credits Order:", orderResponse);
 
       if (!orderResponse.data.order) {
         throw new Error(
@@ -347,14 +398,13 @@ export default function SubscriptionPage() {
       }
 
       const { order, subscriptionId } = orderResponse.data;
-      console.log("razorpay key ID 2 :", import.meta.env.VITE_RAZORPAY_KEY_ID);
-      // Step 3: Initialize Razorpay Payment
+
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency || "INR",
         name: "Vadik AI Add Credits",
-        description: `Add credits to subscription`,
+        description: `Add credits to subscription (${selectedAddons.length} addon(s))`,
         order_id: order.id,
         handler: async function (response) {
           await verifyAddCreditsPayment(response, subscriptionId);
@@ -417,7 +467,6 @@ export default function SubscriptionPage() {
         isTrial: true,
       });
 
-      // alert("✅ Trial subscription activated successfully!");
       getCurrentPlanDetails();
       getActiveSubscription();
     } catch (error) {
@@ -483,7 +532,7 @@ export default function SubscriptionPage() {
           )}
         </div>
 
-        {/* taps */}
+        {/* Tabs */}
         <div className="mb-6">
           <div className="flex items-center justify-between border-b border-gray-200">
             <div className="flex gap-6">
@@ -512,18 +561,6 @@ export default function SubscriptionPage() {
                 )}
               </button>
             </div>
-            {/* <div className="flex items-center gap-2 pb-3">
-              <label htmlFor="autoplay" className="text-gray-700 font-medium">
-                Autopay
-              </label>
-              <input
-                id="autoplay"
-                type="checkbox"
-                checked={autoplay}
-                onChange={(e) => setAutoplay(e.target.checked)}
-                className="w-4 h-4 cursor-pointer"
-              />
-            </div> */}
           </div>
         </div>
 
@@ -601,6 +638,8 @@ export default function SubscriptionPage() {
 
               const isCurrentPlanFreeTrial =
                 currentPlans?.subscription?.isTrial;
+              const isSelected = selectedAddons.some((a) => a._id === addon._id);
+              const quantity = addonQuantities[addon._id] || 1;
 
               return (
                 <SubscriptionCard
@@ -612,8 +651,10 @@ export default function SubscriptionPage() {
                   features={transformedPlan.features}
                   variant={transformedPlan.variant}
                   isAddon={true}
-                  isSelected={selectedAddons.some((a) => a._id === addon._id)}
+                  isSelected={isSelected}
+                  quantity={quantity}
                   onSelect={handleAddonToggle}
+                  onQuantityChange={handleQuantityChange}
                   loading={loading}
                   isCurrentPlanFreeTrial={isCurrentPlanFreeTrial}
                 />
@@ -642,6 +683,8 @@ export default function SubscriptionPage() {
           onClose={() => setShowConfirmation(false)}
           selectedPlan={selectedPlan}
           selectedAddons={selectedAddons}
+          addonQuantities={addonQuantities}
+          onQuantityChange={handleQuantityChange}
           totalPrice={calculateTotalPrice()}
           onConfirm={handleProceedToPayment}
           loading={loading}

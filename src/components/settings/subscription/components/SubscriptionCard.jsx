@@ -9,7 +9,9 @@ export default function SubscriptionCard({
   hasActiveSubscription = false,
   isAddon = false,
   isSelected = false,
+  quantity = 1,
   onSelect,
+  onQuantityChange,
   onTrial,
   plan,
   loading = false,
@@ -84,6 +86,29 @@ export default function SubscriptionCard({
     }
   };
 
+  // Quantity handlers for addons
+  const handleIncreaseQuantity = (e) => {
+    e.stopPropagation();
+    if (onQuantityChange && plan) {
+      onQuantityChange(plan._id, quantity + 1);
+    }
+  };
+
+  const handleDecreaseQuantity = (e) => {
+    e.stopPropagation();
+    if (onQuantityChange && plan && quantity > 1) {
+      onQuantityChange(plan._id, quantity - 1);
+    }
+  };
+
+  const handleQuantityInputChange = (e) => {
+    e.stopPropagation();
+    const value = parseInt(e.target.value);
+    if (!isNaN(value) && value >= 1 && onQuantityChange && plan) {
+      onQuantityChange(plan._id, value);
+    }
+  };
+
   if (variant === 'secondary') {
     return (
       <div 
@@ -91,7 +116,7 @@ export default function SubscriptionCard({
           isSelected ? 'border-pink-700 border-2' : 'border-gray-200'
         } ${cardStyles}`}
         onClick={(e) => {
-          if (e.target.type === 'radio' || e.target.type === 'checkbox') {
+          if (e.target.type === 'radio' || e.target.type === 'checkbox' || e.target.type === 'number') {
             return;
           }
           handleCardClick(e);
@@ -164,7 +189,7 @@ export default function SubscriptionCard({
         isSelected ? 'ring-2 ring-white ring-opacity-50' : ''
       } ${cardStyles}`}
       onClick={(e) => {
-        if (e.target.type === 'checkbox' || e.target.type === 'radio') {
+        if (e.target.type === 'checkbox' || e.target.type === 'radio' || e.target.type === 'number' || e.target.classList.contains('quantity-btn')) {
           return;
         }
         handleCardClick(e);
@@ -183,14 +208,18 @@ export default function SubscriptionCard({
           {title}
         </h3>
         {isAddon ? (
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={handleCheckboxChange}
-            onClick={(e) => e.stopPropagation()}
-            disabled={isCurrentPlanFreeTrial}
-            className={`w-5 h-5 text-pink-700 bg-white border-gray-300 rounded focus:ring-pink-700 focus:ring-2 ${isCurrentPlanFreeTrial ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-          />
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={handleCheckboxChange}
+              onClick={(e) => e.stopPropagation()}
+              disabled={isCurrentPlanFreeTrial}
+              className={`w-5 h-5 text-pink-700 bg-white border-gray-300 rounded focus:ring-pink-700 focus:ring-2 ${
+                isCurrentPlanFreeTrial ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+              }`}
+            />
+          </div>
         ) : (
           <input
             type="radio"
@@ -218,6 +247,47 @@ export default function SubscriptionCard({
           </div>
         ))}
       </div>
+
+      {/* Quantity Selector for Addons */}
+      {isAddon && isSelected && !isCurrentPlanFreeTrial && (
+        <div className="mb-4" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-center gap-3">
+            <span className={`text-sm ${variant === 'primary' ? 'text-white' : 'text-gray-700'}`}>
+              Quantity:
+            </span>
+            <div className="flex items-center border rounded-lg overflow-hidden">
+              <button
+                onClick={handleDecreaseQuantity}
+                disabled={quantity <= 1}
+                className={`quantity-btn px-3 py-1 ${variant === 'primary' ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} transition-colors disabled:opacity-50`}
+              >
+                -
+              </button>
+              <input
+                type="number"
+                value={quantity}
+                onChange={handleQuantityInputChange}
+                min="1"
+                className={`w-12 text-center py-1 focus:outline-none ${
+                  variant === 'primary' 
+                    ? 'bg-white/10 text-white' 
+                    : 'bg-white text-gray-800'
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <button
+                onClick={handleIncreaseQuantity}
+                className={`quantity-btn px-3 py-1 ${variant === 'primary' ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} transition-colors`}
+              >
+                +
+              </button>
+            </div>
+            <span className={`text-sm ${variant === 'primary' ? 'text-white/80' : 'text-gray-500'}`}>
+              × Rs. {price.toLocaleString()} = Rs. {(price * quantity).toLocaleString()}
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         {!isAddon && plan?.isFreeTrial && !isCurrentPlan && !hasActiveSubscription && (
