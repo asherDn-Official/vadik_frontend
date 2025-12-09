@@ -275,7 +275,7 @@ export default function SubscriptionPage() {
         subscriptionData: {
           user: retailerid,
           plan: selectedPlan?._id || null,
-          addOnIds: selectedAddons.map((addon) => ({
+          addOns: selectedAddons.map((addon) => ({
             id: addon._id,
             qty: addonQuantities[addon._id] || 1,
           })),
