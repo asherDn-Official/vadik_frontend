@@ -3,6 +3,7 @@ import SubscriptionCard from "./components/SubscriptionCard";
 import UsageTable from "./components/UsageTable";
 import ConfirmationModal from "./components/ConfirmationModal";
 import api from "../../../api/apiconfig";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function SubscriptionPage() {
   const [activeTab, setActiveTab] = useState("subscription");
@@ -16,6 +17,7 @@ export default function SubscriptionPage() {
   const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
   const [autoplay, setAutoplay] = useState(true);
   const retailerid = localStorage.getItem("retailerId");
+  const { auth } = useAuth();
 
   // Addon quantities state
   const [addonQuantities, setAddonQuantities] = useState({});
@@ -24,7 +26,7 @@ export default function SubscriptionPage() {
   useEffect(() => {
     if (addons.length > 0) {
       const initialQuantities = {};
-      addons.forEach(addon => {
+      addons.forEach((addon) => {
         initialQuantities[addon._id] = 1;
       });
       setAddonQuantities(initialQuantities);
@@ -101,9 +103,9 @@ export default function SubscriptionPage() {
         return prev.filter((a) => a._id !== addon._id);
       } else {
         // Add to selected addons with quantity 1
-        setAddonQuantities(prev => ({
+        setAddonQuantities((prev) => ({
           ...prev,
-          [addon._id]: 1
+          [addon._id]: 1,
         }));
         return [...prev, addon];
       }
@@ -113,10 +115,10 @@ export default function SubscriptionPage() {
   // Handle quantity change for addons
   const handleQuantityChange = (addonId, newQuantity) => {
     if (newQuantity < 1) return; // Minimum quantity is 1
-    
-    setAddonQuantities(prev => ({
+
+    setAddonQuantities((prev) => ({
       ...prev,
-      [addonId]: newQuantity
+      [addonId]: newQuantity,
     }));
   };
 
@@ -125,7 +127,7 @@ export default function SubscriptionPage() {
     let total = selectedPlan ? selectedPlan.price : 0;
     selectedAddons.forEach((addon) => {
       const quantity = addonQuantities[addon._id] || 1;
-      total += (addon.price * quantity);
+      total += addon.price * quantity;
     });
     return total;
   };
@@ -178,9 +180,9 @@ export default function SubscriptionPage() {
   const verifyAddCreditsPayment = async (response, subscriptionId) => {
     try {
       // Prepare addons with quantities
-      const addonsWithQuantities = selectedAddons.map(addon => ({
+      const addonsWithQuantities = selectedAddons.map((addon) => ({
         id: addon._id,
-        qty: addonQuantities[addon._id] || 1
+        qty: addonQuantities[addon._id] || 1,
       }));
 
       const verificationPayload = {
@@ -244,9 +246,9 @@ export default function SubscriptionPage() {
 
       if (selectedPlan) {
         // Prepare addons with quantities
-        const addonsWithQuantities = selectedAddons.map(addon => ({
+        const addonsWithQuantities = selectedAddons.map((addon) => ({
           id: addon._id,
-          qty: addonQuantities[addon._id] || 1
+          qty: addonQuantities[addon._id] || 1,
         }));
 
         const subscriptionPayload = {
@@ -273,9 +275,9 @@ export default function SubscriptionPage() {
         subscriptionData: {
           user: retailerid,
           plan: selectedPlan?._id || null,
-          addOnIds: selectedAddons.map(addon => ({
+          addOnIds: selectedAddons.map((addon) => ({
             id: addon._id,
-            qty: addonQuantities[addon._id] || 1
+            qty: addonQuantities[addon._id] || 1,
           })),
           startDate: new Date().toISOString(),
           endDate: new Date(
@@ -317,16 +319,18 @@ export default function SubscriptionPage() {
         currency: order.currency || "INR",
         name: "Vadik AI Subscription",
         description: `${selectedPlan ? selectedPlan.name + " Plan" : "Addon"}${
-          selectedAddons.length > 0 ? ` with ${selectedAddons.length} Addon(s)` : ""
+          selectedAddons.length > 0
+            ? ` with ${selectedAddons.length} Addon(s)`
+            : ""
         }`,
         order_id: order.id,
         handler: async function (response) {
           await verifyRazorpayPayment(response, subscriptionId);
         },
         prefill: {
-          name: "Customer Name",
-          email: "customer@email.com",
-          contact: "9999999999",
+          name: auth?.user?.fullName,
+          email: auth?.user?.email,
+          contact: auth?.user?.phone,
         },
         theme: {
           color: "#D3285B",
@@ -361,9 +365,9 @@ export default function SubscriptionPage() {
   const handleAddCreditsFlow = async () => {
     try {
       // Prepare addons with quantities
-      const addonsWithQuantities = selectedAddons.map(addon => ({
+      const addonsWithQuantities = selectedAddons.map((addon) => ({
         id: addon._id,
-        qty: addonQuantities[addon._id] || 1
+        qty: addonQuantities[addon._id] || 1,
       }));
 
       const preparePayload = {
@@ -410,9 +414,9 @@ export default function SubscriptionPage() {
           await verifyAddCreditsPayment(response, subscriptionId);
         },
         prefill: {
-          name: "Customer Name",
-          email: "customer@email.com",
-          contact: "9999999999",
+          name: auth?.user?.fullName,
+          email: auth?.user?.email,
+          contact: auth?.user?.phone,
         },
         theme: {
           color: "#D3285B",
@@ -638,7 +642,9 @@ export default function SubscriptionPage() {
 
               const isCurrentPlanFreeTrial =
                 currentPlans?.subscription?.isTrial;
-              const isSelected = selectedAddons.some((a) => a._id === addon._id);
+              const isSelected = selectedAddons.some(
+                (a) => a._id === addon._id
+              );
               const quantity = addonQuantities[addon._id] || 1;
 
               return (
