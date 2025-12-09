@@ -540,7 +540,7 @@ export default function SubscriptionPage() {
                 plan.customerLimit > 0 && `${plan.customerLimit} Customers`,
                 plan.activityLimit > 0 && `${plan.activityLimit} Activities`,
                 plan.whatsappActivityLimit > 0 &&
-                  `${plan.whatsappActivityLimit} WhatsApp Credits`,
+                  `₹ ${plan.whatsappActivityLimit} WhatsApp Credits`,
                 plan.isFreeTrial ? "Free Trial Available" : "Full Access",
               ].filter(Boolean);
 
@@ -587,7 +587,7 @@ export default function SubscriptionPage() {
                 addon.extraActivities > 0 &&
                   `+${addon.extraActivities} Additional Activities`,
                 addon.extraWhatsappActivities > 0 &&
-                  `+${addon.extraWhatsappActivities} Additional WhatsApp Credits`,
+                  `+ ₹${addon.extraWhatsappActivities} Additional WhatsApp Credits`,
                 `Validity Based On The Active Plan`,
               ].filter(Boolean);
 
