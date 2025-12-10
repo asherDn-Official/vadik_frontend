@@ -13,9 +13,11 @@ export default function SubscriptionCard({
   onSelect,
   onQuantityChange,
   onTrial,
+  onCancel,
   plan,
   loading = false,
-  isCurrentPlanFreeTrial = false
+  isCurrentPlanFreeTrial = false,
+  activeSubscriptionId = null,
 }) {
   const cardStyles = variant === 'primary'
     ? 'bg-gradient-to-b from-pink-700 to-purple-800'
@@ -109,6 +111,14 @@ export default function SubscriptionCard({
     }
   };
 
+  // Cancel subscription handler
+  const handleCancelClick = (e) => {
+    e.stopPropagation();
+    if (onCancel && activeSubscriptionId) {
+      onCancel(activeSubscriptionId);
+    }
+  };
+
   if (variant === 'secondary') {
     return (
       <div 
@@ -169,13 +179,27 @@ export default function SubscriptionCard({
             )}
             
             {!(plan?.isFreeTrial && !hasActiveSubscription) && (
-              <button 
-                disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
-                onClick={handleCardClick}
-                className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
-              >
-                {loading ? 'Processing...' : getButtonText()}
-              </button>
+              <>
+                <button 
+                  disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
+                  onClick={handleCardClick}
+                  className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
+                >
+                  {loading ? 'Processing...' : getButtonText()}
+                </button>
+                
+                {/* Cancel Subscription text for current plan (non-free trial) */}
+                {isCurrentPlan && !isAddon && !plan?.isFreeTrial && (
+                  <div className="text-center mt-2">
+                    <button
+                      onClick={handleCancelClick}
+                      className="text-sm text-gray-500 hover:text-red-600 underline transition-colors"
+                    >
+                      Cancel Subscription
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -305,13 +329,27 @@ export default function SubscriptionCard({
         )}
         
         {!(plan?.isFreeTrial && !hasActiveSubscription) && (
-          <button 
-            disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
-            onClick={handleCardClick}
-            className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
-          >
-            {loading ? 'Processing...' : getButtonText()}
-          </button>
+          <>
+            <button 
+              disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
+              onClick={handleCardClick}
+              className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
+            >
+              {loading ? 'Processing...' : getButtonText()}
+            </button>
+            
+            {/* Cancel Subscription text for current plan (non-free trial) - Primary variant */}
+            {isCurrentPlan && !isAddon && !plan?.isFreeTrial && (
+              <div className="text-center mt-2">
+                <button
+                  onClick={handleCancelClick}
+                  className={`text-sm ${variant === 'primary' ? 'text-white/80 hover:text-red-200' : 'text-gray-500 hover:text-red-600'} underline transition-colors`}
+                >
+                  Cancel Subscription
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

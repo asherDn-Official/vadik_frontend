@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import SubscriptionCard from "./components/SubscriptionCard";
 import UsageTable from "./components/UsageTable";
 import ConfirmationModal from "./components/ConfirmationModal";
+import CancelConfirmationModal from "./components/CancelConfirmationModal";
 import api from "../../../api/apiconfig";
 import { useAuth } from "../../../context/AuthContext";
+import showToast from "../../../utils/ToastNotification";
 
 export default function SubscriptionPage() {
   const [activeTab, setActiveTab] = useState("subscription");
@@ -13,9 +15,12 @@ export default function SubscriptionPage() {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
   const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
   const [autoplay, setAutoplay] = useState(true);
+  const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const retailerid = localStorage.getItem("retailerId");
   const { auth } = useAuth();
 
@@ -53,10 +58,16 @@ export default function SubscriptionPage() {
         );
         if (subscriptionWithPlan) {
           setActiveSubscriptionId(subscriptionWithPlan._id);
+          setSubscriptionDetails(subscriptionWithPlan);
+        } else {
+          setSubscriptionDetails(null);
         }
+      } else {
+        setSubscriptionDetails(null);
       }
     } catch (error) {
       console.error("Error fetching active subscription:", error);
+      setSubscriptionDetails(null);
     }
   };
 
@@ -131,11 +142,6 @@ export default function SubscriptionPage() {
     });
     return total;
   };
-
-  // Updated payment handlers to include quantities...
-
-  // For brevity, keeping the rest of your payment handling functions the same
-  // but updating payloads to include quantities where needed
 
   const verifyRazorpayPayment = async (response, subscriptionId) => {
     try {
@@ -487,6 +493,42 @@ export default function SubscriptionPage() {
     }
   };
 
+  // Cancel subscription function
+  const handleCancelSubscription = async () => {
+    setCancelLoading(true);
+    try {
+      const response = await api.put(
+        `/api/subscriptions/${activeSubscriptionId}/cancel`
+      );
+      
+      if (response.data.status) {
+        // console.log("✅ Subscription cancelled successfully:", response.data);
+        showToast(response.data.message, "success");
+        
+        // Refresh data
+        getCurrentPlanDetails();
+        getActiveSubscription();
+        
+        setShowCancelConfirmation(false);
+      } else {
+        throw new Error(response.data.message || "Failed to cancel subscription");
+      }
+    } catch (error) {
+      console.error("❌ Error cancelling subscription:", error);
+      alert(`Failed to cancel subscription: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  // Open cancel confirmation
+  const openCancelConfirmation = () => {
+    setShowCancelConfirmation(true);
+  };
+
+  // Check if current plan has free trial
+  const isCurrentPlanFreeTrial = currentPlans?.subscription?.isTrial || false;
+
   useEffect(() => {
     getCurrentPlanDetails();
     getSubscriptionPlans();
@@ -614,6 +656,8 @@ export default function SubscriptionPage() {
                   isSelected={selectedPlan?._id === plan._id}
                   onSelect={handlePlanSelect}
                   onTrial={handleTrialSubscription}
+                  onCancel={openCancelConfirmation}
+                  activeSubscriptionId={activeSubscriptionId}
                   loading={loading}
                 />
               );
@@ -640,8 +684,6 @@ export default function SubscriptionPage() {
                 variant: "primary",
               };
 
-              const isCurrentPlanFreeTrial =
-                currentPlans?.subscription?.isTrial;
               const isSelected = selectedAddons.some(
                 (a) => a._id === addon._id
               );
@@ -663,6 +705,7 @@ export default function SubscriptionPage() {
                   onQuantityChange={handleQuantityChange}
                   loading={loading}
                   isCurrentPlanFreeTrial={isCurrentPlanFreeTrial}
+                  hasActiveSubscription={!!currentPlans}
                 />
               );
             })}
@@ -683,7 +726,7 @@ export default function SubscriptionPage() {
           </div>
         )}
 
-        {/* Confirmation Modal */}
+        {/* Confirmation Modal for subscription and addons */}
         <ConfirmationModal
           isOpen={showConfirmation}
           onClose={() => setShowConfirmation(false)}
@@ -694,6 +737,14 @@ export default function SubscriptionPage() {
           totalPrice={calculateTotalPrice()}
           onConfirm={handleProceedToPayment}
           loading={loading}
+        />
+
+        {/* Cancel Confirmation Modal */}
+        <CancelConfirmationModal
+          isOpen={showCancelConfirmation}
+          onClose={() => setShowCancelConfirmation(false)}
+          onConfirm={handleCancelSubscription}
+          loading={cancelLoading}
         />
       </div>
     </div>
