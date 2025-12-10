@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import SubscriptionCard from "./components/SubscriptionCard";
 import ConfirmationModal from "./components/ConfirmationModal";
 import api from "../../../api/apiconfig";
+import { useAuth } from "../../../context/AuthContext";
 
 const SubscriptionPopup = ({
   onClose,
   activeTabName = "subscription",
   showCloseButton = false,
   showAutopay = false,
-  showSubscription = true, // Default to true for backward compatibility
-  showAddon = true, // Default to true for backward compatibility
-  title = "Subscription Plan", // Custom title prop
+  showSubscription = true,
+  showAddon = true,
+  title = "Subscription Plan",
 }) => {
   const [open, setOpen] = useState(true);
   const [subscription, setSubscription] = useState([]);
@@ -19,19 +20,24 @@ const SubscriptionPopup = ({
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentPlans, setCurrentPlans] = useState(null);
+  const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
+  const [autoplay, setAutoplay] = useState(true);
+  const [addonQuantities, setAddonQuantities] = useState({});
   
-  // Check if we should show tabs (only show if both are enabled)
+  const retailerid = localStorage.getItem("retailerId");
+  const { auth } = useAuth();
+  
+  // Check if we should show tabs
   const shouldShowTabs = showSubscription && showAddon;
   
   // Set active tab based on props and availability
   const [activeTab, setActiveTab] = useState(() => {
-    // If tabs are hidden, determine which single content to show
     if (!shouldShowTabs) {
       if (showSubscription) return "subscription";
       if (showAddon) return "addon";
     }
     
-    // If tabs are shown, use normal logic
     if (activeTabName === "subscription" && !showSubscription) {
       return showAddon ? "addon" : "subscription";
     }
@@ -40,11 +46,17 @@ const SubscriptionPopup = ({
     }
     return activeTabName;
   });
-  
-  const [currentPlans, setCurrentPlans] = useState(null);
-  const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
-  const [autoplay, setAutoplay] = useState(true);
-  const retailerid = localStorage.getItem("retailerId");
+
+  // Initialize quantities when addons load
+  useEffect(() => {
+    if (addons.length > 0) {
+      const initialQuantities = {};
+      addons.forEach((addon) => {
+        initialQuantities[addon._id] = 1;
+      });
+      setAddonQuantities(initialQuantities);
+    }
+  }, [addons]);
 
   const getCurrentPlanDetails = async () => {
     try {
@@ -95,30 +107,146 @@ const SubscriptionPopup = ({
     setSelectedPlan(plan);
   };
 
+  // Updated handleAddonToggle to handle quantity
   const handleAddonToggle = (addon) => {
     setSelectedAddons((prev) => {
       const isSelected = prev.find((a) => a._id === addon._id);
       if (isSelected) {
+        // Remove from selected addons
+        const newQuantities = { ...addonQuantities };
+        delete newQuantities[addon._id];
+        setAddonQuantities(newQuantities);
         return prev.filter((a) => a._id !== addon._id);
       } else {
+        // Add to selected addons with quantity 1
+        setAddonQuantities((prev) => ({
+          ...prev,
+          [addon._id]: 1,
+        }));
         return [...prev, addon];
       }
     });
   };
 
+  // Handle quantity change for addons
+  const handleQuantityChange = (addonId, newQuantity) => {
+    if (newQuantity < 1) return; // Minimum quantity is 1
+
+    setAddonQuantities((prev) => ({
+      ...prev,
+      [addonId]: newQuantity,
+    }));
+  };
+
+  // Calculate total price with quantities
   const calculateTotalPrice = () => {
     let total = selectedPlan ? selectedPlan.price : 0;
     selectedAddons.forEach((addon) => {
-      total += addon.price;
+      const quantity = addonQuantities[addon._id] || 1;
+      total += addon.price * quantity;
     });
     return total;
   };
 
+  const verifyRazorpayPayment = async (response, subscriptionId) => {
+    try {
+      // Prepare addons with quantities
+      const addonsWithQuantities = selectedAddons.map((addon) => ({
+        id: addon._id,
+        qty: addonQuantities[addon._id] || 1,
+      }));
+
+      const verificationPayload = {
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
+        subscriptionId: subscriptionId,
+        addOnIds: addonsWithQuantities, // Include quantities
+      };
+
+      const verificationResponse = await api.post(
+        "/api/subscriptions/verify-payment",
+        verificationPayload
+      );
+
+      if (!verificationResponse.data?.status) {
+        throw new Error("❌ Payment verification returned false status");
+      }
+
+      console.log("✅ Payment Verified:", {
+        subscriptionId: verificationResponse.data?.subscription?._id,
+        plan: verificationResponse.data?.subscription?.plan?.name,
+        autoPay: verificationResponse.data?.subscription?.autoPay,
+        status: verificationResponse.data?.status,
+      });
+
+      setShowConfirmation(false);
+      setSelectedPlan(null);
+      setSelectedAddons([]);
+      setAddonQuantities({});
+      getCurrentPlanDetails();
+      getActiveSubscription();
+      handleClose();
+    } catch (error) {
+      console.error("Payment verification failed:", error);
+      alert("Payment verification failed. Please contact support.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add-credits payment verification with quantities
+  const verifyAddCreditsPayment = async (response, subscriptionId) => {
+    try {
+      // Prepare addons with quantities
+      const addonsWithQuantities = selectedAddons.map((addon) => ({
+        id: addon._id,
+        qty: addonQuantities[addon._id] || 1,
+      }));
+
+      const verificationPayload = {
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
+        subscriptionId: subscriptionId,
+        addOnIds: addonsWithQuantities,
+      };
+
+      const verificationResponse = await api.post(
+        "/api/subscriptions/add-credits/verify",
+        verificationPayload
+      );
+
+      if (!verificationResponse.data?.status) {
+        throw new Error("❌ Credits payment verification failed");
+      }
+
+      console.log("✅ Credits Added:", {
+        subscriptionId: verificationResponse.data?.data?.subscription?._id,
+        creditsAdded: verificationResponse.data?.data?.creditsAdded,
+        newTotals: verificationResponse.data?.data?.newTotals,
+      });
+
+      setShowConfirmation(false);
+      setSelectedAddons([]);
+      setAddonQuantities({});
+      getCurrentPlanDetails();
+      handleClose();
+    } catch (error) {
+      console.error("Credits payment verification failed:", error);
+      alert("Credits payment verification failed. Please contact support.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Main payment handler
   const handleProceedToPayment = async () => {
     if (!selectedPlan && selectedAddons.length === 0) {
       alert("Please select a plan or addons before proceeding to payment.");
       return;
     }
+
     setShowConfirmation(true);
   };
 
@@ -148,7 +276,7 @@ const SubscriptionPopup = ({
 
       getCurrentPlanDetails();
       getActiveSubscription();
-      handleClose(); // Close popup after trial activation
+      handleClose();
     } catch (error) {
       console.error("❌ Trial subscription failed:", {
         message: error.message,
@@ -157,6 +285,228 @@ const SubscriptionPopup = ({
       const errorMessage =
         error.response?.data?.message ||
         "Failed to activate trial. Please try again.";
+      alert(`❌ Error: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Main payment processing function
+  const handlePaymentProcess = async () => {
+    setLoading(true);
+
+    const isAddonsOnly = !selectedPlan && selectedAddons.length > 0;
+    const hasActiveSubscription = activeSubscriptionId !== null;
+
+    if (isAddonsOnly && hasActiveSubscription) {
+      await handleAddCreditsFlow();
+    } else {
+      await handleRegularSubscriptionFlow();
+    }
+  };
+
+  // Regular subscription flow with quantities
+  const handleRegularSubscriptionFlow = async () => {
+    try {
+      let subscriptionData = null;
+
+      if (selectedPlan) {
+        // Prepare addons with quantities
+        const addonsWithQuantities = selectedAddons.map((addon) => ({
+          id: addon._id,
+          qty: addonQuantities[addon._id] || 1,
+        }));
+
+        const subscriptionPayload = {
+          planId: selectedPlan._id,
+          addOnIds: addonsWithQuantities,
+          isTrial: false,
+          enableAutoPay: true,
+          autoplay: autoplay,
+        };
+
+        const subscriptionResponse = await api.post(
+          "/api/subscriptions",
+          subscriptionPayload
+        );
+
+        subscriptionData =
+          subscriptionResponse.data.subscriptionData ||
+          subscriptionResponse.data.data ||
+          subscriptionResponse.data;
+      }
+
+      // Create Razorpay Order
+      const orderPayload = {
+        subscriptionData: {
+          user: retailerid,
+          plan: selectedPlan?._id || null,
+          addOns: selectedAddons.map((addon) => ({
+            id: addon._id,
+            qty: addonQuantities[addon._id] || 1,
+          })),
+          startDate: new Date().toISOString(),
+          endDate: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          isActive: false,
+          isTrial: selectedPlan?.isFreeTrial || false,
+          autoplay: autoplay,
+          autoPay: {
+            enabled: true,
+            razorpayCustomerId: null,
+            razorpayTokenId: null,
+          },
+          totalCustomersAllowed: subscriptionData?.totalCustomersAllowed || 0,
+          totalActivitiesAllowed: subscriptionData?.totalActivitiesAllowed || 0,
+          totalWhatsappActivitiesAllowed:
+            subscriptionData?.totalWhatsappActivitiesAllowed || 0,
+        },
+      };
+
+      const orderResponse = await api.post(
+        "/api/subscriptions/create-order",
+        orderPayload
+      );
+
+      if (!orderResponse.data.order) {
+        throw new Error("❌ Missing 'order' in create-order response");
+      }
+      if (!orderResponse.data.subscriptionId) {
+        throw new Error("❌ Missing 'subscriptionId' in create-order response");
+      }
+
+      const { order, subscriptionId } = orderResponse.data;
+
+      // Initialize Razorpay Payment
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency || "INR",
+        name: "Vadik AI Subscription",
+        description: `${selectedPlan ? selectedPlan.name + " Plan" : "Addon"}${
+          selectedAddons.length > 0
+            ? ` with ${selectedAddons.length} Addon(s)`
+            : ""
+        }`,
+        order_id: order.id,
+        handler: async function (response) {
+          await verifyRazorpayPayment(response, subscriptionId);
+        },
+        prefill: {
+          name: auth?.user?.fullName,
+          email: auth?.user?.email,
+          contact: auth?.user?.phone,
+        },
+        theme: {
+          color: "#D3285B",
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.on("payment.failed", function (response) {
+        console.error("Razorpay payment failed:", response.error);
+        alert(`Payment failed: ${response.error.description}`);
+        setLoading(false);
+      });
+      razorpay.open();
+    } catch (error) {
+      console.error("❌ Payment process failed:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to process payment. Please try again.";
+      alert(`❌ Error: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add-credits flow with quantities
+  const handleAddCreditsFlow = async () => {
+    try {
+      // Prepare addons with quantities
+      const addonsWithQuantities = selectedAddons.map((addon) => ({
+        id: addon._id,
+        qty: addonQuantities[addon._id] || 1,
+      }));
+
+      const preparePayload = {
+        subscriptionId: activeSubscriptionId,
+        addOnIds: addonsWithQuantities,
+        autoplay: autoplay,
+      };
+
+      const prepareResponse = await api.post(
+        "/api/subscriptions/add-credits/prepare",
+        preparePayload
+      );
+
+      if (!prepareResponse.data.status) {
+        throw new Error("❌ Failed to prepare credits");
+      }
+
+      const orderResponse = await api.post(
+        "/api/subscriptions/add-credits/create-order",
+        preparePayload
+      );
+
+      if (!orderResponse.data.order) {
+        throw new Error(
+          "❌ Missing 'order' in add-credits create-order response"
+        );
+      }
+      if (!orderResponse.data.subscriptionId) {
+        throw new Error(
+          "❌ Missing 'subscriptionId' in add-credits create-order response"
+        );
+      }
+
+      const { order, subscriptionId } = orderResponse.data;
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency || "INR",
+        name: "Vadik AI Add Credits",
+        description: `Add credits to subscription (${selectedAddons.length} addon(s))`,
+        order_id: order.id,
+        handler: async function (response) {
+          await verifyAddCreditsPayment(response, subscriptionId);
+        },
+        prefill: {
+          name: auth?.user?.fullName,
+          email: auth?.user?.email,
+          contact: auth?.user?.phone,
+        },
+        theme: {
+          color: "#D3285B",
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.on("payment.failed", function (response) {
+        console.error("Razorpay payment failed:", response.error);
+        alert(`Payment failed: ${response.error.description}`);
+        setLoading(false);
+      });
+      razorpay.open();
+    } catch (error) {
+      console.error("❌ Add credits process failed:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to process credits addition. Please try again.";
       alert(`❌ Error: ${errorMessage}`);
     } finally {
       setLoading(false);
@@ -182,6 +532,9 @@ const SubscriptionPopup = ({
   }, []);
 
   if (!open) return null;
+
+  // Check if current plan has free trial
+  const isCurrentPlanFreeTrial = currentPlans?.subscription?.isTrial || false;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
@@ -331,13 +684,12 @@ const SubscriptionPopup = ({
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {addons.map((addon) => {
-
-                    const features= [
-                      addon.extraCustomers > 0 && `+${addon.extraCustomers} Additional Customers`,
-                      addon.extraActivities > 0 && `+${addon.extraActivities} Additional Activities`,
-                      addon.extraWhatsappActivities > 0 &&  `+${addon.extraWhatsappActivities} Additional WhatsApp Credits`,
-                      `Validity Based On The Active Plan`,
-                    ].filter((Boolean));
+                  const features = [
+                    addon.extraCustomers > 0 && `+${addon.extraCustomers} Additional Customers`,
+                    addon.extraActivities > 0 && `+${addon.extraActivities} Additional Activities`,
+                    addon.extraWhatsappActivities > 0 &&  `+${addon.extraWhatsappActivities} Additional WhatsApp Credits`,
+                    `Validity Based On The Active Plan`,
+                  ].filter(Boolean);
 
                   const transformedPlan = {
                     title: addon.name,
@@ -346,6 +698,10 @@ const SubscriptionPopup = ({
                     variant: "primary",
                   };
 
+                  const isSelected = selectedAddons.some(
+                    (a) => a._id === addon._id
+                  );
+                  const quantity = addonQuantities[addon._id] || 1;
                   const isCurrentPlanFreeTrial =
                     currentPlans?.subscription?.isTrial ||
                     selectedPlan?.isFreeTrial;
@@ -360,12 +716,13 @@ const SubscriptionPopup = ({
                       features={transformedPlan.features}
                       variant={transformedPlan.variant}
                       isAddon={true}
-                      isSelected={selectedAddons.some(
-                        (a) => a._id === addon._id
-                      )}
+                      isSelected={isSelected}
+                      quantity={quantity}
                       onSelect={handleAddonToggle}
+                      onQuantityChange={handleQuantityChange}
                       loading={loading}
                       isCurrentPlanFreeTrial={isCurrentPlanFreeTrial}
+                      hasActiveSubscription={!!currentPlans}
                       compact={true}
                     />
                   );
@@ -428,139 +785,10 @@ const SubscriptionPopup = ({
         onClose={() => setShowConfirmation(false)}
         selectedPlan={selectedPlan}
         selectedAddons={selectedAddons}
+        addonQuantities={addonQuantities}
+        onQuantityChange={handleQuantityChange}
         totalPrice={calculateTotalPrice()}
-        onConfirm={async () => {
-          setLoading(true);
-          try {
-            let subscriptionData = null;
-
-            if (selectedPlan) {
-              const subscriptionPayload = {
-                planId: selectedPlan._id,
-                addOnIds: selectedAddons.map((addon) => addon._id),
-                isTrial: false,
-                enableAutoPay: true,
-                autoplay: autoplay,
-              };
-
-              const subscriptionResponse = await api.post(
-                "/api/subscriptions",
-                subscriptionPayload
-              );
-
-              subscriptionData =
-                subscriptionResponse.data.subscriptionData ||
-                subscriptionResponse.data.data ||
-                subscriptionResponse.data;
-            }
-
-            const orderPayload = {
-              subscriptionData: {
-                user: retailerid,
-                plan: selectedPlan?._id || null,
-                addOns: selectedAddons.map((addon) => addon._id),
-                startDate: new Date().toISOString(),
-                endDate: new Date(
-                  Date.now() + 30 * 24 * 60 * 60 * 1000
-                ).toISOString(),
-                isActive: false,
-                isTrial: selectedPlan?.isFreeTrial || false,
-                autoplay: autoplay,
-                autoPay: {
-                  enabled: true,
-                  razorpayCustomerId: null,
-                  razorpayTokenId: null,
-                },
-                totalCustomersAllowed:
-                  subscriptionData?.totalCustomersAllowed || 0,
-                totalActivitiesAllowed:
-                  subscriptionData?.totalActivitiesAllowed || 0,
-                totalWhatsappActivitiesAllowed:
-                  subscriptionData?.totalWhatsappActivitiesAllowed || 0,
-              },
-            };
-
-            const orderResponse = await api.post(
-              "/api/subscriptions/create-order",
-              orderPayload
-            );
-
-            if (!orderResponse.data.order) {
-              throw new Error("Missing 'order' in create-order response");
-            }
-            if (!orderResponse.data.subscriptionId) {
-              throw new Error(
-                "Missing 'subscriptionId' in create-order response"
-              );
-            }
-
-            const { order, subscriptionId } = orderResponse.data;
-
-            const options = {
-              key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-              amount: order.amount,
-              currency: order.currency || "INR",
-              name: "Vadik AI Subscription",
-              description: `${
-                selectedPlan ? selectedPlan.name + " Plan" : "Addon"
-              }${selectedAddons.length > 0 ? " with Addons" : ""}`,
-              order_id: order.id,
-              handler: async function (response) {
-                try {
-                  const verificationPayload = {
-                    razorpay_order_id: response.razorpay_order_id,
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_signature: response.razorpay_signature,
-                    subscriptionId: subscriptionId,
-                  };
-
-                  const verificationResponse = await api.post(
-                    "/api/subscriptions/verify-payment",
-                    verificationPayload
-                  );
-
-                  if (!verificationResponse.data?.status) {
-                    throw new Error(
-                      "Payment verification returned false status"
-                    );
-                  }
-
-                  setShowConfirmation(false);
-                  setSelectedPlan(null);
-                  setSelectedAddons([]);
-                  getCurrentPlanDetails();
-                  getActiveSubscription();
-                  handleClose();
-                } catch (error) {
-                  console.error("Payment verification failed:", error);
-                  alert("Payment verification failed. Please contact support.");
-                } finally {
-                  setLoading(false);
-                }
-              },
-              prefill: {
-                name: "Customer Name",
-                email: "customer@email.com",
-                contact: "9999999999",
-              },
-              theme: {
-                color: "#D3285B",
-              },
-            };
-
-            const razorpay = new window.Razorpay(options);
-            razorpay.on("payment.failed", function (response) {
-              console.error("Razorpay payment failed:", response.error);
-              alert(`Payment failed: ${response.error.description}`);
-              setLoading(false);
-            });
-            razorpay.open();
-          } catch (error) {
-            console.error("Payment process failed:", error);
-            alert("Error: " + (error.response?.data?.message || error.message));
-            setLoading(false);
-          }
-        }}
+        onConfirm={handlePaymentProcess}
         loading={loading}
       />
     </div>

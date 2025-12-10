@@ -16,11 +16,9 @@ function Layout() {
   const [email] = useState(() => localStorage.getItem("email"));
   const [isTourComplete, setIsTourComplete] = useState(null);
   const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(true);
+  const { currentPlans, refreshPlans,loading } = usePlan();
 
-  const { currentPlans, refreshPlans } = usePlan();
 
-  // console.log("api base url",import.meta.env.VITE_API_BASE_URL);
-  // console.log("rezor pay key id",import.meta.env.VITE_RAZORPAY_KEY_ID); //VITE_RAZORPAY_KEY_ID
 
   useEffect(() => {
     // Tour opens by default on mount with quick-start
@@ -54,17 +52,6 @@ function Layout() {
     }
   }
 
-  // const isCurrentPlansAvailable = async () => {
-  //   try {
-  //     const response = await api.get("/api/subscriptions/credit/usage");
-  //     setCurrentPlans(response.data);
-  //   } catch (error) {
-  //     if (error.response?.status === 404) {
-  //       setCurrentPlans(null);
-  //     }
-  //   }
-  // };
-
   useEffect(() => {
     getDemoStatus();
     getTourStatus();
@@ -92,7 +79,7 @@ function Layout() {
           />
         )}
 
-        {!isDemo && currentPlans === null && showSubscriptionPopup && (
+        {!isDemo && currentPlans === null && showSubscriptionPopup && !loading && (
           <SubscriptionPopup
             onClose={() => setShowSubscriptionPopup(false)}
             showAutopay={false}
