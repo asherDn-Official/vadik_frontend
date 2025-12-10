@@ -48,7 +48,7 @@ export default function SubscriptionCard({
       return 'Subscribed';
     }
     if (hasActiveSubscription && !isAddon && !isCurrentPlan) {
-      return 'Change Plan';
+      return 'Select Plan';
     }
     if (isAddon && hasActiveSubscription) {
       if (isCurrentPlanFreeTrial) {
