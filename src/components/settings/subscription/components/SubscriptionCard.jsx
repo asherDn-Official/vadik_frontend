@@ -119,6 +119,15 @@ export default function SubscriptionCard({
     }
   };
 
+  const handleCreditsClick = (e) => {
+    e.stopPropagation();
+    if (!isSelected) {
+      onSelect(plan);
+    } else {
+      handleIncreaseQuantity(e);
+    }
+  };
+
   if (variant === 'secondary') {
     return (
       <div 
@@ -180,13 +189,23 @@ export default function SubscriptionCard({
             
             {!(plan?.isFreeTrial && !hasActiveSubscription) && (
               <>
-                <button 
-                  disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
-                  onClick={handleCardClick}
-                  className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
-                >
-                  {loading ? 'Processing...' : getButtonText()}
-                </button>
+                {isAddon && hasActiveSubscription && !isCurrentPlanFreeTrial ? (
+                  <button 
+                    onClick={handleCreditsClick}
+                    disabled={loading}
+                    className="w-full py-3 rounded-lg font-medium transition-colors bg-pink-700 text-white hover:bg-pink-800 disabled:opacity-60"
+                  >
+                    {loading ? 'Processing...' : isSelected ? `+ Credits` : 'Add Credits'}
+                  </button>
+                ) : (
+                  <button 
+                    disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
+                    onClick={handleCardClick}
+                    className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
+                  >
+                    {loading ? 'Processing...' : getButtonText()}
+                  </button>
+                )}
                 
                 {/* Cancel Subscription text for current plan (non-free trial) */}
                 {isCurrentPlan && !isAddon && !plan?.isFreeTrial && (
@@ -330,13 +349,27 @@ export default function SubscriptionCard({
         
         {!(plan?.isFreeTrial && !hasActiveSubscription) && (
           <>
-            <button 
-              disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
-              onClick={handleCardClick}
-              className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
-            >
-              {loading ? 'Processing...' : getButtonText()}
-            </button>
+            {isAddon && hasActiveSubscription && !isCurrentPlanFreeTrial ? (
+              <button 
+                onClick={handleCreditsClick}
+                disabled={loading}
+                className={`w-full py-3 rounded-lg font-medium transition-colors ${
+                  variant === 'primary'
+                    ? 'bg-white text-pink-700 hover:bg-gray-100'
+                    : 'bg-pink-700 text-white hover:bg-pink-800'
+                } transition-colors disabled:opacity-60`}
+              >
+                {loading ? 'Processing...' : isSelected ? `+ Credits` : 'Add Credits'}
+              </button>
+            ) : (
+              <button 
+                disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
+                onClick={handleCardClick}
+                className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
+              >
+                {loading ? 'Processing...' : getButtonText()}
+              </button>
+            )}
             
             {/* Cancel Subscription text for current plan (non-free trial) - Primary variant */}
             {isCurrentPlan && !isAddon && !plan?.isFreeTrial && (
