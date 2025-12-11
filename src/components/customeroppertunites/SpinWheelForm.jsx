@@ -272,9 +272,17 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     }
   };
 
-  const handleTargetedCouponChange = (couponId) => {
-    // Enforce exactly one targeted coupon selected
-    setValue("targetedCoupons", [couponId]);
+  const handleTargetedCouponChange = (couponId, isChecked) => {
+    const currentValues = getValues("targetedCoupons") || [];
+    let updatedValues;
+    
+    if (isChecked) {
+      updatedValues = [...currentValues, couponId];
+    } else {
+      updatedValues = currentValues.filter(id => id !== couponId);
+    }
+    
+    setValue("targetedCoupons", updatedValues);
     clearErrors("targetedCoupons");
   };
 
@@ -697,10 +705,10 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                       }`}
                     >
                       <input
-                        type="radio"
+                        type="checkbox"
                         name="targetedCoupons"
                         checked={formData.targetedCoupons?.includes(coupon._id)}
-                        onChange={() => handleTargetedCouponChange(coupon._id)}
+                        onChange={(e) => handleTargetedCouponChange(coupon._id, e.target.checked)}
                         disabled={!hasAvailableCoupons}
                         className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
                       />
