@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { FiChevronDown, FiChevronUp, FiFilter, FiX } from "react-icons/fi";
+import { FiChevronDown, FiChevronUp, FiFilter, FiX, FiTag, FiCalendar, FiPercent, FiDollarSign } from "react-icons/fi";
 import api from "../api/apiconfig";
 import showToast from "../utils/ToastNotification";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useForm } from "react-hook-form";
-import { Search, SearchX } from "lucide-react";
+import { Search, SearchX, Copy } from "lucide-react";
 
 const KYCPage = () => {
   const [searchType, setSearchType] = useState("phone");
@@ -13,6 +13,7 @@ const KYCPage = () => {
   const [customerData, setCustomerData] = useState(null);
   const [orderHistory, setOrderHistory] = useState([]);
   const [statistics, setStatistics] = useState(null);
+  const [claimedCoupons, setClaimedCoupons] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -32,9 +33,11 @@ const KYCPage = () => {
     productName: "",
   });
 
+  // Coupon modal state
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
+
   const searchOptions = [
     { key: "phone", label: "Phone" },
-    // { key: "name", label: "Name" },
     { key: "vadiId", label: "Vadik ID" },
   ];
 
@@ -53,14 +56,6 @@ const KYCPage = () => {
         return {
           required: "Phone is required",
           pattern: { value: /^[0-9]+$/, message: "Only numbers allowed" },
-        };
-      case "name":
-        return {
-          required: "Name is required",
-          pattern: {
-            value: /^[A-Za-z]+$/,
-            message: "Only letters allowed",
-          },
         };
       case "vadiId":
         return {}; // No validation for Vadik ID
@@ -110,11 +105,12 @@ const KYCPage = () => {
         },
       });
 
-      const { customer, statistics, orderHistory } = response.data.data || {};
+      const { customer, statistics, orderHistory, claimedCoupons } = response.data.data || {};
       if (!customer) {
         setCustomerData(null);
         setStatistics(null);
         setOrderHistory([]);
+        setClaimedCoupons([]);
         setTotalPages(1);
         setError("Customer not found for this retailer");
         return;
@@ -123,12 +119,14 @@ const KYCPage = () => {
       setCustomerData(customer);
       setStatistics(statistics);
       setOrderHistory(orderHistory.orders);
+      setClaimedCoupons(claimedCoupons?.coupons || []);
       setTotalPages(orderHistory.pagination.totalPages);
     } catch (err) {
       console.error("Error fetching customer data:", err);
       setCustomerData(null);
       setStatistics(null);
       setOrderHistory([]);
+      setClaimedCoupons([]);
       setTotalPages(1);
       setError("Customer not found for this retailer");
     } finally {
@@ -258,6 +256,50 @@ const KYCPage = () => {
     return `${day}/${month}/${year}`;
   }
 
+  // Function to format coupon date for display
+  function formatCouponDate(isoDate) {
+    const date = new Date(isoDate);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  // Function to copy coupon code to clipboard
+  const copyToClipboard = (code) => {
+    navigator.clipboard.writeText(code)
+      .then(() => {
+        showToast("Coupon code copied to clipboard!", "success");
+      })
+      .catch(() => {
+        showToast("Failed to copy coupon code", "error");
+      });
+  };
+
+  // Function to get coupon status badge color
+  const getCouponStatusColor = (status) => {
+    switch (status) {
+      case 'claimed':
+        return 'bg-blue-100 text-blue-800';
+      case 'used':
+        return 'bg-green-100 text-green-800';
+      case 'expired':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Function to format coupon discount display
+  const formatDiscountDisplay = (coupon) => {
+    if (coupon.couponType === 'percentage') {
+      return `${coupon.discount}% OFF`;
+    } else if (coupon.couponType === 'fixed' || coupon.couponType === 'amount') {
+      return `₹${coupon.discount} OFF`;
+    }
+    return `₹${coupon.discount} OFF`;
+  };
+
   return (
     <div className="p-8">
       <h1 className="text-[#313166] font-bold text-xl mb-6">Quick Search</h1>
@@ -313,13 +355,6 @@ const KYCPage = () => {
               </p>
             )}
           </div>
-          {/* <button
-            type="submit"
-            className="px-6 py-3 bg-[#313166] text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
-            disabled={loading}
-          >
-            {loading ? "Searching..." : "Search"}
-          </button> */}
         </form>
       </div>
 
@@ -365,10 +400,6 @@ const KYCPage = () => {
                       {formatPhone(customerData.mobileNumber)}
                     </p>
                   </div>
-                  {/* <div>
-                    <p className="text-sm text-gray-500">Vadik ID</p>
-                    <p className="font-medium">{customerData.customerId}</p>
-                  </div> */}
                   <div>
                     <p className="text-sm text-gray-500">First Visit</p>
                     <p className="font-medium">
@@ -379,7 +410,7 @@ const KYCPage = () => {
                     <p className="text-sm text-gray-500">Vadik ID</p>
                     <p className="font-medium">{customerData.customerId}</p>
                   </div>
-                   <div>
+                  <div>
                     <p className="text-sm text-gray-500">Loyality Point</p>
                     <p className="font-medium">{customerData.loyaltyPoints}</p>
                   </div>
@@ -440,6 +471,99 @@ const KYCPage = () => {
               </div>
             </div>
           </div>
+
+          {/* Claimed Coupons Section */}
+          {claimedCoupons.length > 0 && (
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <h2 className="text-lg font-semibold text-[#313166] mb-4">
+                 Coupons
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {claimedCoupons.map((claimedCoupon) => {
+                  const { coupon, status, claimDate, claimId } = claimedCoupon;
+                  return (
+                    <div
+                      key={claimId}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => {
+                        setSelectedCoupon(claimedCoupon);
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-semibold text-gray-800">
+                            {coupon.name}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                              {coupon.code}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyToClipboard(coupon.code);
+                              }}
+                              className="text-gray-500 hover:text-[#313166]"
+                              title="Copy coupon code"
+                            >
+                              <Copy size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        <span className={`px-2 py-1 text-xs rounded-full ${getCouponStatusColor(status)}`}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <FiTag className="text-gray-400" />
+                          <span className="text-sm font-medium">
+                            {formatDiscountDisplay(coupon)}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            ({coupon.couponType})
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <FiCalendar className="text-gray-400" />
+                          <span className="text-sm text-gray-600">
+                            Valid until: {formatCouponDate(coupon.expiryDate)}
+                          </span>
+                        </div>
+
+                        <div className="text-xs text-gray-500">
+                          Claimed on: {new Date(claimDate).toLocaleDateString()}
+                        </div>
+
+                        {coupon.condition && (
+                          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-100 rounded text-xs">
+                            <span className="font-medium">Condition:</span>
+                            Minimum purchase of ₹{coupon.conditionValue}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {claimedCoupons.length > 3 && (
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => {
+                      // You could expand this to show all coupons in a modal
+                      setSelectedCoupon(null);
+                    }}
+                    className="text-sm text-[#313166] hover:underline"
+                  >
+                    View all {claimedCoupons.length} coupons
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Filters Section */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
@@ -745,6 +869,7 @@ const KYCPage = () => {
               )}
             </div>
           </div>
+         
         </>
       )}
     </div>
