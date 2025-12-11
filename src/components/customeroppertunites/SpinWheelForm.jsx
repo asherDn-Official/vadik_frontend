@@ -97,6 +97,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       setLoadingQuizzes(false);
     }
   };
+  
   useEffect(() => {
     fetchQuizzes();
   }, [isQuizePopupOpen]);
@@ -165,15 +166,27 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         ?.map((s) => s.couponId)
         .filter((id) => id && String(id).trim().length > 0) || [];
     const currentTargeted = getValues("targetedCoupons") || [];
-    if (
-      currentTargeted.length > 0 &&
-      !segmentCouponIds.includes(currentTargeted[0])
-    ) {
-      // Reset if not valid
-      setValue("targetedCoupons", []);
-      clearErrors("targetedCoupons");
+    
+    // Filter out any targeted coupons that are no longer in segments
+    const validTargetedCoupons = currentTargeted.filter(id => 
+      segmentCouponIds.includes(id)
+    );
+    
+    // Update targeted coupons if some were removed
+    if (validTargetedCoupons.length !== currentTargeted.length) {
+      setValue("targetedCoupons", validTargetedCoupons);
+      
+      // If no targeted coupons left, show error
+      if (validTargetedCoupons.length === 0) {
+        setError("targetedCoupons", {
+          type: "required",
+          message: "At least one targeted coupon is required"
+        });
+      } else {
+        clearErrors("targetedCoupons");
+      }
     }
-  }, [formData.segments, getValues, setValue, clearErrors]);
+  }, [formData.segments, getValues, setValue, clearErrors, setError]);
 
   const handleSegmentChange = (segmentId, field, value) => {
     const updatedSegments = formData.segments.map((s) =>
@@ -231,6 +244,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
           : s
       );
       setValue("segments", updatedSegments);
+      
+      // Trigger targeted coupons validation
+      trigger("targetedCoupons");
       return;
     }
 
@@ -263,6 +279,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       if (count >= 3) {
         clearErrors("segments");
       }
+      
+      // Trigger targeted coupons validation
+      trigger("targetedCoupons");
     } catch (error) {
       console.error("Failed to fetch coupon details", error);
       showToast(
@@ -283,7 +302,16 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     }
     
     setValue("targetedCoupons", updatedValues);
-    clearErrors("targetedCoupons");
+    
+    // Clear error if at least one coupon is selected
+    if (updatedValues.length > 0) {
+      clearErrors("targetedCoupons");
+    } else {
+      setError("targetedCoupons", {
+        type: "required",
+        message: "At least one targeted coupon is required"
+      });
+    }
   };
 
   const onSubmit = async (data) => {
@@ -296,6 +324,15 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       setError("segments", {
         type: "manual",
         message: "Minimum 3 coupons in the table",
+      });
+      return;
+    }
+
+    // Additional validation for targeted coupons
+    if (!data.targetedCoupons || data.targetedCoupons.length === 0) {
+      setError("targetedCoupons", {
+        type: "required",
+        message: "At least one targeted coupon is required",
       });
       return;
     }
@@ -481,29 +518,6 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                 </div>
               </div>
             </div>
-
-            {/* {formData.targetedCoupons?.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Targeted Coupons
-                </label>
-                <div className="space-y-2">
-                  {coupons?.filter(c => formData.targetedCoupons.includes(c._id)).map(coupon => (
-                    <div key={coupon._id} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={formData.targetedCoupons.includes(coupon._id)}
-                        onChange={(e) => handleTargetedCouponChange(coupon._id, e.target.checked)}
-                        className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">
-                        {coupon.name} ({coupon.code})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )} */}
           </div>
         </div>
 
@@ -579,39 +593,24 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
                       />
                     </td>
-                    {/* <td className="border border-gray-200 px-4 py-3">
-                      <input
-                        type="text"
-                        value={segment.offer + " %"}
-                        onChange={(e) =>
-                          handleSegmentChange(
-                            segment.id,
-                            "offer",
-                            e.target.value.replace(" %", "")
-                          )
-                        }
-                        disabled={true}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
-                      />
-                    </td> */}
 
                     <td className="border border-gray-200 px-4 py-3">
-  <div className="flex items-center">
-    {segment.couponType === 'percentage' ? (
-      <span className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm w-full">
-        {segment.offer}%
-      </span>
-    ) : segment.couponType === 'amount' ? (
-      <span className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm w-full">
-        ₹{segment.offer}
-      </span>
-    ) : (
-      <span className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm w-full text-gray-400">
-        Select a coupon
-      </span>
-    )}
-  </div>
-</td>
+                      <div className="flex items-center">
+                        {segment.couponType === 'percentage' ? (
+                          <span className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm w-full">
+                            {segment.offer}%
+                          </span>
+                        ) : segment.couponType === 'amount' ? (
+                          <span className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm w-full">
+                            ₹{segment.offer}
+                          </span>
+                        ) : (
+                          <span className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm w-full text-gray-400">
+                            Select a coupon
+                          </span>
+                        )}
+                      </div>
+                    </td>
 
                     <td className="border border-gray-200 px-4 py-3">
                       {formData.segments?.length > 1 && (
@@ -666,6 +665,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
             segmentCouponIds.includes(coupon._id)
           );
           const hasAvailableCoupons = availableTargetedCoupons.length > 0;
+          const hasSelectedCoupons = formData.targetedCoupons?.length > 0;
+          
           return (
             <div className={`mt-6 ${!hasAvailableCoupons ? "opacity-50" : ""}`}>
               <h3 className="text-lg font-medium text-gray-700 mb-2">
@@ -687,6 +688,11 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                   segments first.
                 </p>
               )}
+              {!hasSelectedCoupons && hasAvailableCoupons && (
+                <p className="text-sm text-red-500 mb-2">
+                  Please select at least one targeted coupon
+                </p>
+              )}
               {loadingCoupons ? (
                 <div>Loading coupons...</div>
               ) : (
@@ -701,7 +707,11 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                       className={`flex items-center p-3 border border-gray-200 rounded-lg ${
                         !hasAvailableCoupons
                           ? "cursor-not-allowed"
-                          : "cursor-pointer"
+                          : "cursor-pointer hover:bg-gray-50"
+                      } ${
+                        formData.targetedCoupons?.includes(coupon._id)
+                          ? "border-pink-500 bg-pink-50"
+                          : ""
                       }`}
                     >
                       <input
