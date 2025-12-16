@@ -379,10 +379,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                   onChange={(date) => field.onChange(date)}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="DD/MM/YYYY"
-                  className={`w-full p-2 border ${
-                    errors.firstVisit ? "border-red-500" : "border-gray-300"
-                  } rounded text-[#313166]`}
-                  minDate={new Date(2025, 0, 1)}
+                  minDate={new Date(2000, 0, 1)}
                   maxDate={new Date()}
                   showYearDropdown
                   scrollableYearDropdown
