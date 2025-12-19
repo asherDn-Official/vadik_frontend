@@ -15,6 +15,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const [quizzes, setQuizzes] = useState([]);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [isQuizePopupOpen, setIsQuizePopupOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isFullyRandom, setIsFullyRandom] = useState(true);
 
   const {
     register,
@@ -81,6 +83,21 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     fetchCoupons();
   }, [getValues, setValue, clearErrors]);
 
+  useEffect(() => {
+    if (campaign) {
+      const hasTargeted =
+        Array.isArray(campaign.targetedCoupons) &&
+        campaign.targetedCoupons.length > 0;
+
+      setIsFullyRandom(!hasTargeted); // 🔑 KEY LINE
+    }
+  }, [campaign]);
+  useEffect(() => {
+    if (campaign) {
+      setIsInitialized(true);
+    }
+  }, [campaign]);
+
   const fetchQuizzes = async () => {
     try {
       const today = new Date().toISOString();
@@ -97,7 +114,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       setLoadingQuizzes(false);
     }
   };
-  
+
   useEffect(() => {
     fetchQuizzes();
   }, [isQuizePopupOpen]);
@@ -161,32 +178,30 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
 
   // Ensure targetedCoupons is valid when segments change
   useEffect(() => {
+    if (!isInitialized) return; // 🔑 KEY FIX
+
     const segmentCouponIds =
-      formData.segments
-        ?.map((s) => s.couponId)
-        .filter((id) => id && String(id).trim().length > 0) || [];
+      formData.segments?.map((s) => s.couponId).filter(Boolean) || [];
+
     const currentTargeted = getValues("targetedCoupons") || [];
-    
-    // Filter out any targeted coupons that are no longer in segments
-    const validTargetedCoupons = currentTargeted.filter(id => 
+
+    const validTargetedCoupons = currentTargeted.filter((id) =>
       segmentCouponIds.includes(id)
     );
-    
-    // Update targeted coupons if some were removed
+
     if (validTargetedCoupons.length !== currentTargeted.length) {
       setValue("targetedCoupons", validTargetedCoupons);
-      
-      // If no targeted coupons left, show error
+
       if (validTargetedCoupons.length === 0) {
         setError("targetedCoupons", {
           type: "required",
-          message: "At least one targeted coupon is required"
+          message: "At least one targeted coupon is required",
         });
       } else {
         clearErrors("targetedCoupons");
       }
     }
-  }, [formData.segments, getValues, setValue, clearErrors, setError]);
+  }, [formData.segments, isInitialized]);
 
   const handleSegmentChange = (segmentId, field, value) => {
     const updatedSegments = formData.segments.map((s) =>
@@ -244,7 +259,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
           : s
       );
       setValue("segments", updatedSegments);
-      
+
       // Trigger targeted coupons validation
       trigger("targetedCoupons");
       return;
@@ -279,7 +294,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       if (count >= 3) {
         clearErrors("segments");
       }
-      
+
       // Trigger targeted coupons validation
       trigger("targetedCoupons");
     } catch (error) {
@@ -294,22 +309,22 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const handleTargetedCouponChange = (couponId, isChecked) => {
     const currentValues = getValues("targetedCoupons") || [];
     let updatedValues;
-    
+
     if (isChecked) {
       updatedValues = [...currentValues, couponId];
     } else {
-      updatedValues = currentValues.filter(id => id !== couponId);
+      updatedValues = currentValues.filter((id) => id !== couponId);
     }
-    
+
     setValue("targetedCoupons", updatedValues);
-    
+
     // Clear error if at least one coupon is selected
     if (updatedValues.length > 0) {
       clearErrors("targetedCoupons");
     } else {
       setError("targetedCoupons", {
         type: "required",
-        message: "At least one targeted coupon is required"
+        message: "At least one targeted coupon is required",
       });
     }
   };
@@ -329,12 +344,14 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     }
 
     // Additional validation for targeted coupons
-    if (!data.targetedCoupons || data.targetedCoupons.length === 0) {
-      setError("targetedCoupons", {
-        type: "required",
-        message: "At least one targeted coupon is required",
-      });
-      return;
+    if (!isFullyRandom) {
+      if (!data.targetedCoupons || data.targetedCoupons.length === 0) {
+        setError("targetedCoupons", {
+          type: "required",
+          message: "At least one targeted coupon is required",
+        });
+        return;
+      }
     }
 
     // Convert Date to ISO midnight in UTC
@@ -346,7 +363,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       name: data.name.trim(),
       noOfSpins: Number(data.noOfSpins),
       couponOptions: validCouponIds,
-      targetedCoupons: data.targetedCoupons,
+      targetedCoupons: isFullyRandom ? [] : data.targetedCoupons,
       isActive: data.isActive,
       allocatedQuizCampainId: data.allocatedQuizCampainId || "",
       expiryDate: expiryIso,
@@ -422,6 +439,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
               </label>
               <input
                 type="number"
+                min={1}
+                step={1}
                 {...register("noOfSpins", {
                   required: "No Of Spins is required",
                   min: {
@@ -429,7 +448,16 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                     message: "No Of Spins must be at least 1",
                   },
                   valueAsNumber: true,
+                  setValueAs: (value) => {
+                    const num = Number(value);
+                    return Number.isNaN(num) || num < 1 ? 1 : num;
+                  },
                 })}
+                onKeyDown={(e) => {
+                  if (e.key === "-" || e.key === "e" || e.key === "E") {
+                    e.preventDefault();
+                  }
+                }}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
                   errors.noOfSpins ? "border-red-500" : "border-gray-300"
                 }`}
@@ -514,7 +542,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                   className="text-sm text-blue-900 cursor-pointer underline"
                   onClick={() => setIsQuizePopupOpen(true)}
                 >
-                  Create Quize
+                  Create A New Quiz
                 </div>
               </div>
             </div>
@@ -596,11 +624,11 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
 
                     <td className="border border-gray-200 px-4 py-3">
                       <div className="flex items-center">
-                        {segment.couponType === 'percentage' ? (
+                        {segment.couponType === "percentage" ? (
                           <span className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm w-full">
                             {segment.offer}%
                           </span>
-                        ) : segment.couponType === 'amount' ? (
+                        ) : segment.couponType === "amount" ? (
                           <span className="px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm w-full">
                             ₹{segment.offer}
                           </span>
@@ -665,76 +693,108 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
             segmentCouponIds.includes(coupon._id)
           );
           const hasAvailableCoupons = availableTargetedCoupons.length > 0;
+          const isDisabled = isFullyRandom || !hasAvailableCoupons;
           const hasSelectedCoupons = formData.targetedCoupons?.length > 0;
-          
+
           return (
-            <div className={`mt-6 ${!hasAvailableCoupons ? "opacity-50" : ""}`}>
+            <div className={`mt-6`}>
               <h3 className="text-lg font-medium text-gray-700 mb-2">
                 Targeted Coupons
               </h3>
-              <p className="text-sm text-gray-500 mb-2">
-                Select coupons that will be targeted for this spin wheel
-                campaign. Only coupons selected in the spin wheel segments are
-                available.
-              </p>
-              {errors.targetedCoupons && (
-                <p className="mb-2 text-sm text-red-600">
-                  {errors.targetedCoupons.message}
+              <div className="flex items-center gap-3 mb-3">
+                <input
+                  type="checkbox"
+                  checked={isFullyRandom}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setIsFullyRandom(checked);
+
+                    if (checked) {
+                      // Clear targeted coupons when fully random
+                      setValue("targetedCoupons", []);
+                      clearErrors("targetedCoupons");
+                    }
+                  }}
+                  className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
+                />
+                <label className="text-sm font-medium text-gray-700">
+                  Fully randomise (doesn’t target any coupons)
+                </label>
+              </div>
+              <div className={`${isDisabled ? "opacity-50" : ""}`}>
+                <p className="text-sm text-gray-500 mb-2">
+                  Select coupons that will be targeted for this spin wheel
+                  campaign. Only coupons selected in the spin wheel segments are
+                  available.
                 </p>
-              )}
-              {!hasAvailableCoupons && (
-                <p className="text-sm text-orange-600 mb-2">
-                  No coupons available. Please add coupons to the spin wheel
-                  segments first.
-                </p>
-              )}
-              {!hasSelectedCoupons && hasAvailableCoupons && (
-                <p className="text-sm text-red-500 mb-2">
-                  Please select at least one targeted coupon
-                </p>
-              )}
-              {loadingCoupons ? (
-                <div>Loading coupons...</div>
-              ) : (
-                <div
-                  className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${
-                    !hasAvailableCoupons ? "pointer-events-none" : ""
-                  }`}
-                >
-                  {availableTargetedCoupons.map((coupon) => (
-                    <label
-                      key={coupon._id}
-                      className={`flex items-center p-3 border border-gray-200 rounded-lg ${
-                        !hasAvailableCoupons
-                          ? "cursor-not-allowed"
-                          : "cursor-pointer hover:bg-gray-50"
-                      } ${
-                        formData.targetedCoupons?.includes(coupon._id)
-                          ? "border-pink-500 bg-pink-50"
-                          : ""
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        name="targetedCoupons"
-                        checked={formData.targetedCoupons?.includes(coupon._id)}
-                        onChange={(e) => handleTargetedCouponChange(coupon._id, e.target.checked)}
-                        disabled={!hasAvailableCoupons}
-                        className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
-                      />
-                      <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-700">
-                          {coupon.name}
+                {errors.targetedCoupons && (
+                  <p className="mb-2 text-sm text-red-600">
+                    {errors.targetedCoupons.message}
+                  </p>
+                )}
+                {!hasAvailableCoupons && (
+                  <p className="text-sm text-orange-600 mb-2">
+                    No coupons available. Please add coupons to the spin wheel
+                    segments first.
+                  </p>
+                )}
+                {!isFullyRandom &&
+                  !hasSelectedCoupons &&
+                  hasAvailableCoupons && (
+                    <p className="text-sm text-red-500 mb-2">
+                      Please select at least one targeted coupon
+                    </p>
+                  )}
+                {loadingCoupons ? (
+                  <div>Loading coupons...</div>
+                ) : (
+                  <div
+                    className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${
+                      isDisabled ? "pointer-events-none" : ""
+                    }`}
+                  >
+                    {availableTargetedCoupons.map((coupon) => (
+                      <label
+                        key={coupon._id}
+                        className={`flex items-center p-3 border border-gray-200 rounded-lg ${
+                          !hasAvailableCoupons
+                            ? "cursor-not-allowed"
+                            : "cursor-pointer hover:bg-gray-50"
+                        } ${
+                          formData.targetedCoupons?.includes(coupon._id)
+                            ? "border-pink-500 bg-pink-50"
+                            : ""
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          name="targetedCoupons"
+                          checked={formData.targetedCoupons?.includes(
+                            coupon._id
+                          )}
+                          onChange={(e) =>
+                            handleTargetedCouponChange(
+                              coupon._id,
+                              e.target.checked
+                            )
+                          }
+                          disabled={isDisabled}
+                          className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
+                        />
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-700">
+                            {coupon.name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {coupon.code} - {coupon.discount}
+                            {coupon.couponType === "percentage" ? "%" : "₹"} off
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {coupon.code} - {coupon.discount}
-                          {coupon.couponType === "percentage" ? "%" : "₹"} off
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           );
         })()}

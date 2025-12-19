@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/apiconfig";
-import profileIcon from "../../../public/assets/user-in-cp.png";
+import profileIcon from "/assets/user-in-cp.png";
 import { formatIndianMobile } from "./formatIndianMobile";
 
 const CustomerSidebar = () => {

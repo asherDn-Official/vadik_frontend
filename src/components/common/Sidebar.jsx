@@ -4,14 +4,14 @@ import { useAuth } from "../../context/AuthContext";
 import { LogOut } from "lucide-react";
 import ToggleBadge from "./ToggleBadge";
 import LogoutConfirmModal from "./LogoutConfirmModal";
-import dashboardIcon from "../../../public/assets/mage_dashboard-icon.png";
-import customersIcon from "../../../public/assets/bi_person-fill-icon.png";
-import personalisationIcon from "../../../public/assets/fluent-insights.png";
-import customerOpportunitiesIcon from "../../../public/assets/user-check-icon.png";
-import performanceIcon from "../../../public/assets/mdi_performance-icon.png";
-import integrationIcon from "../../../public/assets/integration-icon.png";
-import kycIcon from "../../../public/assets/kyc-icon.png";
-import settingsIcon from "../../../public/assets/settings-icon.png";
+import dashboardIcon from "/assets/mage_dashboard-icon.png";
+import customersIcon from "/assets/bi_person-fill-icon.png";
+import personalisationIcon from "/assets/fluent-insights.png";
+import customerOpportunitiesIcon from "/assets/user-check-icon.png";
+import performanceIcon from "/assets/mdi_performance-icon.png";
+import integrationIcon from "/assets/integration-icon.png";
+import kycIcon from "/assets/kyc-icon.png";
+import settingsIcon from "/assets/settings-icon.png";
 
 function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);

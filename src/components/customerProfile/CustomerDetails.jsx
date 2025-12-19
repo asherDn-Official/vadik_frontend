@@ -9,10 +9,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import menDefaultUrl from "../../../public/assets/men.png";
-import womenDefaultUrl from "../../../public/assets/women.png";
-import allowNotificationIconUrl from "../../../public/assets/allowNotification.png";
-import loyalityIconUrl from "../../../public/assets/loyality.png";
+import menDefaultUrl from "/assets/men.png";
+import womenDefaultUrl from "/assets/women.png";
+import allowNotificationIconUrl from "/assets/allowNotification.png";
+import loyalityIconUrl from "/assets/loyality.png";
 
 import * as yup from "yup";
 import {
@@ -23,8 +23,8 @@ import {
   getInputType,
   getFieldType,
 } from "../../utils/customerDataUtils";
-import EditIcon from "../../../public/assets/edit-icon.png";
-import profileImg from "../../../public/assets/profile.png";
+import EditIcon from "/assets/edit-icon.png";
+import profileImg from "/assets/profile.png";
 import PurchaseHistory from "../customeroppertunites/PurchaseHistory";
 import { formatIndianMobile } from "./formatIndianMobile";
 import DatePicker from "react-datepicker";
