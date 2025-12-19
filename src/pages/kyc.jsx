@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { FiChevronDown, FiChevronUp, FiFilter, FiX, FiTag, FiCalendar, FiPercent, FiDollarSign } from "react-icons/fi";
+import {
+  FiChevronDown,
+  FiChevronUp,
+  FiFilter,
+  FiX,
+  FiTag,
+  FiCalendar,
+  FiPercent,
+  FiDollarSign,
+} from "react-icons/fi";
 import api from "../api/apiconfig";
 import showToast from "../utils/ToastNotification";
 import DatePicker from "react-datepicker";
@@ -105,7 +114,8 @@ const KYCPage = () => {
         },
       });
 
-      const { customer, statistics, orderHistory, claimedCoupons } = response.data.data || {};
+      const { customer, statistics, orderHistory, claimedCoupons } =
+        response.data.data || {};
       if (!customer) {
         setCustomerData(null);
         setStatistics(null);
@@ -160,7 +170,23 @@ const KYCPage = () => {
       setCurrentPage(newPage);
     }
   };
+  const markCouponAsUsed = async (claimId) => {
+    try {
+      await api.put(`/api/coupons/claim/${claimId}/mark-used`);
 
+      showToast("Coupon marked as used", "success");
+
+      // Update UI state instantly
+      setClaimedCoupons((prev) =>
+        prev.map((item) =>
+          item.claimId === claimId ? { ...item, status: "used" } : item
+        )
+      );
+    } catch (err) {
+      console.error("Failed to mark coupon as used:", err);
+      showToast("Failed to mark coupon as used", "error");
+    }
+  };
   function formatPhone(raw) {
     if (!raw && raw !== "") return "";
 
@@ -267,7 +293,8 @@ const KYCPage = () => {
 
   // Function to copy coupon code to clipboard
   const copyToClipboard = (code) => {
-    navigator.clipboard.writeText(code)
+    navigator.clipboard
+      .writeText(code)
       .then(() => {
         showToast("Coupon code copied to clipboard!", "success");
       })
@@ -279,22 +306,25 @@ const KYCPage = () => {
   // Function to get coupon status badge color
   const getCouponStatusColor = (status) => {
     switch (status) {
-      case 'claimed':
-        return 'bg-blue-100 text-blue-800';
-      case 'used':
-        return 'bg-green-100 text-green-800';
-      case 'expired':
-        return 'bg-red-100 text-red-800';
+      case "claimed":
+        return "bg-blue-100 text-blue-800";
+      case "used":
+        return "bg-green-100 text-green-800";
+      case "expired":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   // Function to format coupon discount display
   const formatDiscountDisplay = (coupon) => {
-    if (coupon.couponType === 'percentage') {
+    if (coupon.couponType === "percentage") {
       return `${coupon.discount}% OFF`;
-    } else if (coupon.couponType === 'fixed' || coupon.couponType === 'amount') {
+    } else if (
+      coupon.couponType === "fixed" ||
+      coupon.couponType === "amount"
+    ) {
       return `₹${coupon.discount} OFF`;
     }
     return `₹${coupon.discount} OFF`;
@@ -476,7 +506,7 @@ const KYCPage = () => {
           {claimedCoupons.length > 0 && (
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <h2 className="text-lg font-semibold text-[#313166] mb-4">
-                 Coupons
+                Coupons
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {claimedCoupons.map((claimedCoupon) => {
@@ -510,9 +540,27 @@ const KYCPage = () => {
                             </button>
                           </div>
                         </div>
-                        <span className={`px-2 py-1 text-xs rounded-full ${getCouponStatusColor(status)}`}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${getCouponStatusColor(
+                              status
+                            )}`}
+                          >
+                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                          </span>
+
+                          {status === "claimed" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markCouponAsUsed(claimId);
+                              }}
+                              className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                            >
+                              Mark Used
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-2">
@@ -869,7 +917,6 @@ const KYCPage = () => {
               )}
             </div>
           </div>
-         
         </>
       )}
     </div>
