@@ -650,7 +650,7 @@ const MyProfile = () => {
         <div className="md:w-64 flex flex-col items-center bg-[#F4F5F9] p-5 rounded-[10px] justify-evenly h-[315px]">
           <div className="text-center mb-4">
             <h3 className="font-medium mb-1 text-[#313166] text-[14px]">
-             Business Profile Picture
+             Business Logo
             </h3>
           </div>
           <div className="w-34 h-34 rounded-full overflow-hidden mb-4 border-2 border-gray-200">

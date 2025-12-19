@@ -223,7 +223,7 @@ const CustomerPersonalisation = () => {
                   ))}
                 </select>
               </div>
-
+{/* 
               <button
                 className="px-4 bg-[#3131661A] py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
                 onClick={() => setShowExport(!showExport)}
@@ -244,7 +244,7 @@ const CustomerPersonalisation = () => {
                   <circle cx="12" cy="5" r="1" />
                   <circle cx="12" cy="19" r="1" />
                 </svg>
-              </button>
+              </button> */}
 
               {showExport && (
                 <div className="absolute right-0 mt-12 w-48 bg-white rounded-md shadow-lg  z-40 border border-gray-200">
