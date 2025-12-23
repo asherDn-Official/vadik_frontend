@@ -503,7 +503,7 @@ const KYCPage = () => {
           </div>
 
           {/* Claimed Coupons Section */}
-          {claimedCoupons.length > 0 && (
+          {/* {claimedCoupons.length > 0 && (
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <h2 className="text-lg font-semibold text-[#313166] mb-4">
                 Coupons
@@ -565,21 +565,33 @@ const KYCPage = () => {
 
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
+                          {!coupon.couponType=="product" && (<>
                           <FiTag className="text-gray-400" />
                           <span className="text-sm font-medium">
                             {formatDiscountDisplay(coupon)}
-                          </span>
+                          </span></>)}
                           <span className="text-xs text-gray-500">
                             ({coupon.couponType})
                           </span>
                         </div>
-
                         <div className="flex items-center gap-2">
                           <FiCalendar className="text-gray-400" />
                           <span className="text-sm text-gray-600">
                             Valid until: {formatCouponDate(coupon.expiryDate)}
                           </span>
                         </div>
+                        {coupon?.productNames?.length > 0 && (
+                          <>
+                              <span className="text-sm text-gray-600">
+                            Free Product : 
+                          </span>
+                          <ul className="text-sm text-gray-600 list-disc ml-4">
+                            {coupon.productNames.map((product, index) => (
+                              <li key={index}>{product}</li>
+                            ))}
+                          </ul>
+                          </>
+                        )}
 
                         <div className="text-xs text-gray-500">
                           Claimed on: {new Date(claimDate).toLocaleDateString()}
@@ -611,7 +623,114 @@ const KYCPage = () => {
                 </div>
               )}
             </div>
-          )}
+          )} */}
+          {/* Claimed Coupons Section */}
+{claimedCoupons.length > 0 && (
+  <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
+    <div className="flex justify-between items-center mb-6">
+      <h2 className="text-xl font-bold text-[#313166] flex items-center gap-2">
+        <FiTag className="text-blue-500" />
+        Available Coupons
+      </h2>
+      <span className="text-sm font-medium px-3 py-1 bg-blue-50 text-blue-600 rounded-full">
+        {claimedCoupons.length} Rewards Found
+      </span>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {claimedCoupons.map((claimedCoupon) => {
+        const { coupon, status, claimDate, claimId, notes } = claimedCoupon;
+        const isProductCoupon = coupon.couponType === "product";
+        const isExpired = status === "expired";
+        const isUsed = status === "used";
+
+        return (
+          <div
+            key={claimId}
+            className={`relative flex flex-col border rounded-xl overflow-hidden transition-all duration-200 ${
+              isUsed ? "opacity-75 grayscale-[0.5]" : "hover:shadow-lg hover:-translate-y-1"
+            } ${isExpired ? "border-red-100 bg-red-50/30" : "border-gray-200 bg-white"}`}
+          >
+            {/* Top Section: Discount/Value */}
+            <div className={`p-4 ${isProductCoupon ? "bg-purple-50" : "bg-blue-50"} border-b border-dashed border-gray-300`}>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    {coupon.name}
+                  </p>
+                  <h3 className="text-2xl font-black text-gray-800">
+                    {isProductCoupon ? "FREE GIFT" : formatDiscountDisplay(coupon)}
+                  </h3>
+                </div>
+                <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${getCouponStatusColor(status)}`}>
+                  {status}
+                </span>
+              </div>
+            </div>
+
+            {/* Middle Section: Code & Info */}
+            <div className="p-4 flex-1 space-y-3">
+              <div className="flex items-center justify-between bg-gray-50 p-2 rounded-lg border border-gray-200">
+                <code className="text-sm font-mono font-bold text-[#313166]">{coupon.code}</code>
+                <button
+                  onClick={(e) => { e.stopPropagation(); copyToClipboard(coupon.code); }}
+                  className="p-1.5 hover:bg-white rounded text-gray-400 hover:text-blue-600 transition-colors shadow-sm"
+                >
+                  <Copy size={14} />
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                {isProductCoupon && coupon.productNames?.length > 0 && (
+                  <div className="flex items-start gap-2">
+                    <div className="mt-1 min-w-[14px]"><FiTag size={14} className="text-purple-500" /></div>
+                    <p className="text-xs text-gray-700 font-medium">
+                      Gift: <span className="text-purple-700">{coupon.productNames.join(", ")}</span>
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <FiCalendar size={14} className="text-gray-400" />
+                  <span>Expires: {formatCouponDate(coupon.expiryDate)}</span>
+                </div>
+
+                {notes && (
+                  <div className="text-[11px] italic text-gray-400">
+                    Source: {notes}
+                  </div>
+                )}
+              </div>
+
+              {/* Conditions Box */}
+              {coupon.condition && (
+                <div className="mt-2 text-[10px] bg-orange-50 text-orange-700 p-2 rounded border border-orange-100">
+                  <span className="font-bold">REQUIREMENT:</span> Min. spend ₹{coupon.conditionValue}
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Section: Actions */}
+            <div className="p-3 bg-gray-50 border-t flex items-center justify-between">
+              <span className="text-[10px] text-gray-400">
+                Claimed: {new Date(claimDate).toLocaleDateString()}
+              </span>
+              
+              {status === "claimed" && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); markCouponAsUsed(claimId); }}
+                  className="text-xs font-bold px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors shadow-sm"
+                >
+                  Apply & Mark Used
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
 
           {/* Filters Section */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">

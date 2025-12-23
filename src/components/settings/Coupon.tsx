@@ -16,7 +16,7 @@ import {
 } from "react-icons/fi";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import DatePicker from "react-datepicker";
@@ -68,7 +68,7 @@ const CouponManagement = () => {
     condition: false,
     conditionType: "greater",
     conditionValue: 0,
-    productId: "",
+    productNames: [],
   };
 
   // react-hook-form schema and setup
@@ -140,11 +140,19 @@ const CouponManagement = () => {
               .required("Condition value is required"),
           otherwise: (s) => s.transform(() => 0).default(0),
         }),
-      productId: yup.string().when("couponType", {
-        is: "product",
-        then: (s) => s.required("Product ID is required for product coupons"),
-        otherwise: (s) => s.transform(() => "").default(""),
-      }),
+      productNames: yup
+        .array()
+        .of(
+          yup
+            .string()
+            .max(15, "Product name can not be more than 15 characters")
+            .required("Product name is required")
+        )
+        .when("couponType", {
+          is: "product",
+          then: (s) => s.min(1, "At least one product name is required"),
+          otherwise: (s) => s.notRequired(),
+        }),
     })
     .required();
 
@@ -154,11 +162,17 @@ const CouponManagement = () => {
     reset,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(couponSchema),
     defaultValues: initialCouponData,
     mode: "OnChange",
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "productNames",
   });
 
   const watchCouponType = watch("couponType");
@@ -221,7 +235,7 @@ const CouponManagement = () => {
       condition: coupon.condition || false,
       conditionType: coupon.conditionType || "greater",
       conditionValue: coupon.conditionValue || 0,
-      productId: coupon.productId || "",
+      productNames: coupon.productNames || [],
     };
     reset(editData);
   };
@@ -241,8 +255,8 @@ const CouponManagement = () => {
         ...data,
         // Ensure conditionValue is 0 if condition is false
         conditionValue: data.condition ? data.conditionValue : 0,
-        // Ensure productId is empty string if not a product coupon
-        productId: data.couponType === "product" ? data.productId : "",
+        // Ensure productNames is empty array if not a product coupon
+        productNames: data.couponType === "product" ? data.productNames : [],
       };
 
       if (editingCouponId) {
@@ -536,27 +550,49 @@ const CouponManagement = () => {
                     <option value="percentage">
                       Percentage (e.g., 10% off)
                     </option>
-                    {/* <option value="product">Product (e.g., Free Gift)</option> */}
+                    <option value="product">Product (e.g., Free Gift)</option>
                   </select>
                 </div>
 
-                {/* Product ID (only for product coupons) */}
+                {/* Product Names (only for product coupons) */}
                 {watchCouponType === "product" && (
-                  <div>
+                  <div className="col-span-1 md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Product ID *
+                      Product Names *
                     </label>
-                    <input
-                      type="text"
-                      {...register("productId")}
-                      className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                        errors.productId ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="Enter product ID"
-                    />
-                    {errors.productId && (
+                    <div className="space-y-2">
+                      {fields.map((field, index) => (
+                        <div key={field.id} className="flex gap-2">
+                          <input
+                            type="text"
+                            {...register(`productNames.${index}`)}
+                            className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                              errors.productNames?.[index]
+                                ? "border-red-500"
+                                : "border-gray-300"
+                            }`}
+                            placeholder="Enter product name"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => remove(index)}
+                            className="p-3 text-red-500 hover:bg-red-50 rounded-lg"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => append("")}
+                        className="flex items-center px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors"
+                      >
+                        <FiPlus className="mr-2" /> Add Product
+                      </button>
+                    </div>
+                    {errors.productNames && (
                       <p className="mt-1 text-sm text-red-600">
-                        {errors.productId.message}
+                        {errors.productNames.message}
                       </p>
                     )}
                   </div>
@@ -962,8 +998,11 @@ const CouponManagement = () => {
                             </span>
                           )}
                           {coupon.couponType === "product" &&
-                            coupon.productId && (
-                              <span>| Product: {coupon.productId}</span>
+                            coupon.productNames &&
+                            coupon.productNames.length > 0 && (
+                              <span>
+                                | Products: {coupon.productNames.join(", ")}
+                              </span>
                             )}
                         </div>
                       </div>
