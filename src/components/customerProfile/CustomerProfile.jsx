@@ -54,32 +54,23 @@ const CustomerProfile = () => {
     return result;
   }
 
-  const removePlusFromPhone = (phone) => {
-    if (!phone) return '';
-    return phone.replace(/^\+/, '');
-  };
-
-  const handleSave = async (formData) => {
-
-    const payloadData = {
-      ...formData,
-      mobileNumber: removePlusFromPhone(formData.mobileNumber)
-    };
-
+  const handleSave = async (apiData) => {
     try {
       setIsLoading(true);
 
+      // Convert date strings in the payload
+      const payload = convertDateObjectToISO(apiData);
+
       const response = await api.patch(
         `/api/customers/${selectedCustomer._id}`,
-        convertDateObjectToISO(payloadData)
+        payload
       );
       showToast('Customer data updated successfully!', 'success');
       const updatedCustomer = response.data;
       setSelectedCustomer(updatedCustomer);
       setIsEditing(false);
     } catch (error) {
-      // console.error(error.response.data.message, error);
-      showToast(error.response.data.message, 'error');
+      showToast(error.response?.data?.message || 'Error updating customer', 'error');
     } finally {
       setIsLoading(false);
     }

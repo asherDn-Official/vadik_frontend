@@ -109,6 +109,7 @@ const FilterPanel = ({
           // Static filters
           firstname: { type: "string" },
           lastname: { type: "string" },
+          countryCode: { type: "string" },
           mobileNumber: { type: "number" },
           gender: ["Male", "Female", "Others"],
           firstVisit: { type: "date" },

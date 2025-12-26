@@ -2,11 +2,10 @@ import { X } from "lucide-react";
 import { usePlan } from "../../context/PlanContext";
 
 function Campaign({ onUpdatePlan, onClose }) {
-  const { currentPlans, refreshPlans } = usePlan();
+  const { currentPlans } = usePlan();
 
   // Check if data exists before accessing
   if (!currentPlans?.data?.whatsappActivities) {
-    refreshPlans();
     return null;
   }
 

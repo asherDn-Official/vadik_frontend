@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import api from "../../api/apiconfig";
 
+import { formatIndianMobile } from "../customerProfile/formatIndianMobile";
+
 const CustomerList = ({
   customers,
   loading,
@@ -108,11 +110,7 @@ const CustomerList = ({
       case "name":
         return `${customer.firstname || ""} ${customer.lastname || ""}`.trim();
       case "mobileNumber":
-        return (
-          `+${customer.mobileNumber.slice(0, 2)} ${customer.mobileNumber.slice(
-            2
-          )}` || ""
-        );
+        return formatIndianMobile(customer.mobileNumber);
       case "gender":
         return customer.gender || "";
       case "firstVisit":

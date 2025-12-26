@@ -1,7 +1,6 @@
 import React from "react";
 import { Controller, useForm } from "react-hook-form";
-import PhoneInput from "react-phone-number-input";
-import { isValidPhoneNumber } from "react-phone-number-input";
+import PhoneInput, { isValidPhoneNumber, parsePhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 
 import DatePicker from "react-datepicker";
@@ -148,30 +147,29 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
   const validateMobileNumber = (value) => {
     if (!value) return "Mobile Number is required";
 
-    // Check if the phone number is valid (using libphonenumber-js or similar)
-    if (!isValidPhoneNumber(value)) {
-      return "Invalid phone number";
+    const phoneNumber = parsePhoneNumber(value);
+    if (!phoneNumber) return "Invalid phone number";
+
+    const nationalNumber = phoneNumber.nationalNumber;
+    const countryCallingCode = phoneNumber.countryCallingCode;
+
+    // Must be between 4 and 14 digits
+    if (nationalNumber.length < 4 || nationalNumber.length > 14) {
+      return "Mobile number must be between 4 and 14 digits";
     }
 
-    // Extract just the national number (last 10 digits)
-    const nationalNumber = value.replace(/\D/g, "").slice(-10);
-
-    // Must be exactly 10 digits
-    if (nationalNumber.length !== 10) {
-      return "Mobile number must be exactly 10 digits";
-    }
-
-    // Must start with 6, 7, 8, or 9 (India mobile numbers)
-    if (!/^[6-9]\d{9}$/.test(nationalNumber)) {
-      return "Mobile number must be valid India mobile number";
+    // Country code must be between 1 and 4 digits
+    if (countryCallingCode.length < 1 || countryCallingCode.length > 4) {
+      return "Invalid country code";
     }
 
     return true;
   };
 
   const onFormSubmit = (data) => {
-    // Format mobile number by removing all non-digit characters
-    const formattedMobile = data.mobileNumber.replace(/\D/g, "");
+    const phoneNumber = parsePhoneNumber(data.mobileNumber);
+    const countryCode = phoneNumber.countryCallingCode;
+    const mobileNumber = phoneNumber.nationalNumber;
 
     // Ensure firstVisit is sent as YYYY-MM-DD string
     const firstVisitDate = data.firstVisit ? new Date(data.firstVisit) : null;
@@ -186,7 +184,8 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
 
     onSubmit({
       ...data,
-      mobileNumber: formattedMobile,
+      countryCode,
+      mobileNumber,
       firstVisit: formattedFirstVisit,
     });
   };
@@ -306,7 +305,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
               </p>
             )}
             <p className="text-xs text-gray-500">
-              Enter 10-digit mobile number
+              Enter 4-14 digit mobile number
             </p>
           </div>
 

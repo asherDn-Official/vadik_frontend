@@ -30,7 +30,7 @@ import { formatIndianMobile } from "./formatIndianMobile";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import DetailItem from "./components/DetailItem";
-import PhoneInput from "react-phone-number-input";
+import PhoneInput, { isValidPhoneNumber, parsePhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import api from "../../api/apiconfig";
 
@@ -177,7 +177,9 @@ const FieldItem = React.memo(
           )
         ) : (
           <p className="font-medium text-[16px] leading-[30px] tracking-normal text-[#313166]">
-            {formatFieldForDisplay(actualValue, fieldType)}
+            {isMobileNumber
+              ? formatIndianMobile(actualValue)
+              : formatFieldForDisplay(actualValue, fieldType)}
           </p>
         )}
       </div>
@@ -194,13 +196,13 @@ const basicSchema = yup.object().shape({
   firstname: yup
     .string()
     .required("First name is required")
-    .matches(/^[A-Za-z]+$/, "Only letters are allowed")
+    .matches(/^[A-Za-z\s]+$/, "Only letters are allowed")
     .min(3, "Must be at least 3 characters")
     .max(15, "Must be 15 characters or less"),
   lastname: yup
     .string()
     .required("Last name is required")
-    .matches(/^[A-Za-z]+$/, "Only letters are allowed")
+    .matches(/^[A-Za-z\s]+$/, "Only letters are allowed")
     .min(1, "Must be at least 1 character")
     .max(15, "Must be 15 characters or less"),
   source: yup.string().optional(),
@@ -210,12 +212,14 @@ const basicSchema = yup.object().shape({
     .string()
     .required("Mobile number is required")
     .test(
-      "is-indian-number",
-      "Enter a valid 10-digit Indian mobile number after +91 (e.g., +919876543210)",
+      "is-valid-phone",
+      "Enter a valid mobile number (4-14 digits)",
       (value) => {
         if (!value) return false;
-        const normalized = String(value).replace(/\s/g, "");
-        return /^\+?91[6-9]\d{9}$/.test(normalized);
+        const phoneNumber = parsePhoneNumber(value);
+        if (!phoneNumber) return false;
+        const nationalNumber = phoneNumber.nationalNumber;
+        return nationalNumber.length >= 4 && nationalNumber.length <= 14;
       }
     ),
 });
@@ -267,7 +271,14 @@ const CustomerDetails = ({
         basic: {
           firstname: transformedCustomer?.firstname || "",
           lastname: transformedCustomer?.lastname || "",
-          mobileNumber: "+" + transformedCustomer?.mobileNumber || "",
+          mobileNumber:
+            transformedCustomer?.countryCode && transformedCustomer?.mobileNumber
+              ? `+${transformedCustomer.countryCode}${transformedCustomer.mobileNumber}`
+              : transformedCustomer?.mobileNumber
+              ? (transformedCustomer.mobileNumber.startsWith("+")
+                ? transformedCustomer.mobileNumber
+                : "+" + transformedCustomer.mobileNumber)
+              : "",
           source: transformedCustomer?.source || "",
           customerId: transformedCustomer?.customerId || "",
           firstVisit: transformedCustomer?.firstVisit
@@ -329,13 +340,13 @@ const CustomerDetails = ({
           firstname: transformedCustomer?.firstname || "",
           lastname: transformedCustomer?.lastname || "",
           mobileNumber:
-            transformedCustomer?.mobileNumber &&
-            transformedCustomer.mobileNumber.startsWith("91")
-              ? `+${transformedCustomer.mobileNumber.slice(
-                  0,
-                  2
-                )} ${transformedCustomer.mobileNumber.slice(2)}`
-              : transformedCustomer?.mobileNumber || "",
+            transformedCustomer?.countryCode && transformedCustomer?.mobileNumber
+              ? `+${transformedCustomer.countryCode}${transformedCustomer.mobileNumber}`
+              : transformedCustomer?.mobileNumber
+              ? (transformedCustomer.mobileNumber.startsWith("+")
+                ? transformedCustomer.mobileNumber
+                : "+" + transformedCustomer.mobileNumber)
+              : "",
           source: transformedCustomer?.source || "",
           customerId: transformedCustomer?.customerId || "",
           firstVisit: transformedCustomer?.firstVisit
@@ -760,7 +771,11 @@ const CustomerDetails = ({
                         label="Mobile Number"
                         name="mobileNumber"
                         defaultValue={formatIndianMobile(
-                          transformedCustomer?.mobileNumber
+                          transformedCustomer?.countryCode &&
+                            transformedCustomer?.mobileNumber
+                            ? transformedCustomer.countryCode +
+                                transformedCustomer.mobileNumber
+                            : transformedCustomer?.mobileNumber
                         )}
                         isEditable={isEditing}
                         value={formData?.basic?.mobileNumber}

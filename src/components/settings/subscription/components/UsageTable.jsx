@@ -3,7 +3,6 @@ export default function UsageTable({ data }) {
   const safeData = data || {
     customers: { allowed: 0, used: 0, remaining: 0 },
     activities: { allowed: 0, used: 0, remaining: 0 },
-    whatsappActivities: { allowed: 0, used: 0, remaining: 0 },
     mediaStorage: { allowed: 0, used: 0 }
   };
 
@@ -50,20 +49,7 @@ export default function UsageTable({ data }) {
               {isDataLoading ? '-' : safeData.activities.remaining}
             </td>
           </tr>
-          <tr className="border-t border-gray-200">
-            <td className="py-3 px-4 text-gray-700">
-              WhatsApp Credits 
-            </td>
-            <td className="py-3 px-4 text-center text-gray-700">
-              {isDataLoading ? '-' :  `₹${safeData.whatsappActivities.allowed}`}
-            </td>
-            <td className="py-3 px-4 text-center text-gray-700">
-              {isDataLoading ? '-' : `₹${safeData.whatsappActivities.used}`}
-            </td>
-            <td className="py-3 px-4 text-center font-medium text-gray-700">
-{isDataLoading ? '-' : `₹${safeData.whatsappActivities.remaining}`}
-            </td>
-          </tr>
+       
           {/* <tr className="border-t border-gray-200">
             <td className="py-3 px-4 text-gray-700">
               Media Storage (MB) {isDataLoading && <span className="text-xs text-gray-400">(Loading...)</span>}

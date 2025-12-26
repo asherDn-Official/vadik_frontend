@@ -1,3 +1,5 @@
+import { parsePhoneNumber } from "react-phone-number-input";
+
 // Utility functions to handle the new customer data format
 
 /**
@@ -80,11 +82,25 @@ export const transformCustomerData = (customer) => {
  * @returns {Object} - Transformed data for API
  */
 export const transformFormDataToAPI = (formData, originalCustomer) => {
+  let countryCode = "";
+  let mobileNumber = formData.basic.mobileNumber;
+
+  try {
+    const phoneNumber = parsePhoneNumber(formData.basic.mobileNumber);
+    if (phoneNumber) {
+      countryCode = phoneNumber.countryCallingCode;
+      mobileNumber = phoneNumber.nationalNumber;
+    }
+  } catch (error) {
+    console.warn("Could not parse phone number, sending as is", error);
+  }
+
   const apiData = {
     ...originalCustomer,
     firstname: formData.basic.firstname,
     lastname: formData.basic.lastname,
-    mobileNumber: formData.basic.mobileNumber,
+    countryCode: countryCode || originalCustomer.countryCode || "",
+    mobileNumber,
     source: formData.basic.source,
     customerId: formData.basic.customerId,
     firstVisit: formData.basic.firstVisit,
