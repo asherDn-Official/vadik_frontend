@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import SubscriptionCard from "./components/SubscriptionCard";
 import ConfirmationModal from "./components/ConfirmationModal";
+import WhatsAppCredits from "./components/WhatsAppCredits";
 import api from "../../../api/apiconfig";
 import { useAuth } from "../../../context/AuthContext";
 
@@ -582,6 +583,17 @@ const SubscriptionPopup = ({
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
                   )}
                 </button>
+                <button
+                  onClick={() => setActiveTab("whatsapp")}
+                  className={`pb-3 px-1 font-medium transition-colors relative ${
+                    activeTab === "whatsapp" ? "text-gray-800" : "text-gray-500"
+                  }`}
+                >
+                  WhatsApp Credits
+                  {activeTab === "whatsapp" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
+                  )}
+                </button>
               </div>
               {showAutopay && (
                 <div className="flex items-center gap-2 pb-3">
@@ -729,27 +741,33 @@ const SubscriptionPopup = ({
                 })}
               </div>
             </div>
-          ) : null}
+          ) : (
+            <WhatsAppCredits />
+          )}
         </div>
 
         {/* Footer with Action Buttons */}
         <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 rounded-b-xl">
           <div className="flex justify-between items-center">
             <div>
-              {!selectedPlan?.isFreeTrial &&
-              (selectedPlan || selectedAddons.length > 0) ? (
-                <div className="text-gray-700">
-                  <span className="font-medium">Total:</span>{" "}
-                  <span className="text-xl font-bold text-pink-700">
-                    ₹{calculateTotalPrice()}
-                  </span>
-                </div>
-              ) : (
-                <div className="text-gray-500">
-                  {selectedPlan?.isFreeTrial
-                    ? ""
-                    : "Select a plan or addon to proceed"}
-                </div>
+              {activeTab !== "whatsapp" && (
+                <>
+                  {!selectedPlan?.isFreeTrial &&
+                  (selectedPlan || selectedAddons.length > 0) ? (
+                    <div className="text-gray-700">
+                      <span className="font-medium">Total:</span>{" "}
+                      <span className="text-xl font-bold text-pink-700">
+                        ₹{calculateTotalPrice()}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500">
+                      {selectedPlan?.isFreeTrial
+                        ? ""
+                        : "Select a plan or addon to proceed"}
+                    </div>
+                  )}
+                </>
               )}
             </div>
             <div className="flex gap-4">
@@ -758,11 +776,11 @@ const SubscriptionPopup = ({
                   onClick={handleClose}
                   className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                 >
-                  Cancel
+                  {activeTab === "whatsapp" ? "Close" : "Cancel"}
                 </button>
               )}
 
-              {!selectedPlan?.isFreeTrial &&
+              {activeTab !== "whatsapp" && !selectedPlan?.isFreeTrial &&
                 ((selectedPlan && !selectedPlan.isFreeTrial) ||
                   (selectedAddons.length > 0 &&
                     (currentPlans?.subscription || selectedPlan))) && (

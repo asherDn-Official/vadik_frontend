@@ -3,6 +3,7 @@ import SubscriptionCard from "./components/SubscriptionCard";
 import UsageTable from "./components/UsageTable";
 import ConfirmationModal from "./components/ConfirmationModal";
 import CancelConfirmationModal from "./components/CancelConfirmationModal";
+import WhatsAppCredits from "./components/WhatsAppCredits";
 import api from "../../../api/apiconfig";
 import { useAuth } from "../../../context/AuthContext";
 import showToast from "../../../utils/ToastNotification";
@@ -606,6 +607,17 @@ export default function SubscriptionPage() {
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
                 )}
               </button>
+              <button
+                onClick={() => setActiveTab("whatsapp")}
+                className={`pb-3 px-1 font-medium transition-colors relative ${
+                  activeTab === "whatsapp" ? "text-gray-800" : "text-gray-500"
+                }`}
+              >
+                WhatsApp Credits
+                {activeTab === "whatsapp" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -663,7 +675,7 @@ export default function SubscriptionPage() {
               );
             })}
           </div>
-        ) : (
+        ) : activeTab === "addon" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
             {addons.map((addon) => {
               const features = [
@@ -710,10 +722,12 @@ export default function SubscriptionPage() {
               );
             })}
           </div>
+        ) : (
+          <WhatsAppCredits />
         )}
 
         {/* Proceed Button */}
-        {((selectedPlan && !selectedPlan.isFreeTrial) ||
+        {activeTab !== "whatsapp" && ((selectedPlan && !selectedPlan.isFreeTrial) ||
           (selectedAddons.length > 0 &&
             (currentPlans?.subscription || selectedPlan))) && (
           <div className="fixed bottom-6 left-2/3 transform -translate-x-1/2">
