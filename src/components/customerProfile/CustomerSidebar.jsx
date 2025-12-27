@@ -196,7 +196,7 @@ const CustomerSidebar = () => {
                       </h3>
                     </div>
                     <p className="  font-[400] pl-8 text-[15px] text-[#31316680]">
-                      {formatIndianMobile(customer.mobileNumber)}
+                       {(customer.countryCode + " ").concat(customer.mobileNumber)}
                     </p>
                   </div>
                 </div>

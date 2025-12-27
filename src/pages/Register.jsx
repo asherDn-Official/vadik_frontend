@@ -31,23 +31,31 @@ const Register = ({ formData, updateFormData }) => {
       const response = await api.get(`/api/retailer/profile`);
       const data = response.data.data;
       setInitialOnboardingData(data);
-      
-      // Get saved form data from localStorage
+
       const savedFormData = localStorage.getItem("formData");
       const parsedSavedData = savedFormData ? JSON.parse(savedFormData) : {};
-      
-      // Update form data directly from API response, but preserve any recent user changes
+
       const nameParts = data.fullName.split(" ");
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
-      
+
+      const sanitizeDigits = (value) => (value || "").replace(/\D/g, "");
+      const apiMobile = sanitizeDigits(data.phone);
+      const apiCountryCode = sanitizeDigits(data.phoneCode);
+
+      const hasSavedMobile = Object.prototype.hasOwnProperty.call(parsedSavedData, "mobile");
+      const hasSavedCountry = Object.prototype.hasOwnProperty.call(parsedSavedData, "countryCode") ||
+        Object.prototype.hasOwnProperty.call(parsedSavedData, "phoneCode");
+
       updateFormData({
         firstName: parsedSavedData.firstName || firstName,
         lastName: parsedSavedData.lastName || lastName,
         email: data.email,
-        mobile: data.phone,
+        countryCode: hasSavedCountry
+          ? sanitizeDigits(parsedSavedData.countryCode || parsedSavedData.phoneCode)
+          : apiCountryCode,
+        mobile: hasSavedMobile ? sanitizeDigits(parsedSavedData.mobile) : apiMobile,
         storeName: parsedSavedData.storeName || data.storeName,
-        phoneCode: data.phoneCode,
       });
     } catch (err) {
       console.error("Error fetching onboarding context:", err);
@@ -81,7 +89,12 @@ const Register = ({ formData, updateFormData }) => {
     if (savedFormData) {
       try {
         const parsedData = JSON.parse(savedFormData);
-        updateFormData(parsedData);
+        const sanitizeDigits = (value) => (value || "").replace(/\D/g, "");
+        updateFormData({
+          ...parsedData,
+          countryCode: sanitizeDigits(parsedData.countryCode || parsedData.phoneCode),
+          mobile: sanitizeDigits(parsedData.mobile),
+        });
       } catch (err) {
         console.error("Error parsing saved form data:", err);
       }
@@ -92,6 +105,7 @@ const Register = ({ formData, updateFormData }) => {
     return (
       formData.firstName &&
       formData.lastName &&
+      formData.countryCode &&
       formData.mobile &&
       formData.email
     );

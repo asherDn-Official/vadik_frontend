@@ -90,7 +90,7 @@ const FieldItem = React.memo(
 
     const handlePhoneChange = useCallback(
       (phoneValue) => {
-        onChange(section, name, phoneValue);
+        onChange(section, name, phoneValue || "");
       },
       [onChange, section, name]
     );

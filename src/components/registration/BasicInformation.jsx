@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
-import PhoneInput from "react-phone-input-2";
-import "react-phone-input-2/lib/style.css";
 import * as yup from "yup";
 
-// Define validation schema
 const schema = yup.object().shape({
   firstName: yup
     .string()
@@ -17,19 +14,15 @@ const schema = yup.object().shape({
     .matches(/^[A-Za-z\s]+$/, "Only letters are allowed")
     .min(1, "Minimum 1 character required")
     .max(15, "Maximum 15 characters allowed"),
+  countryCode: yup
+    .string()
+    .required("Country code is required")
+    .matches(/^\d{1,4}$/, "Country code must be 1-4 digits"),
   mobile: yup
     .string()
     .required("Mobile number is required")
-    .test(
-      "is-indian-mobile",
-      "Enter a valid 10-digit Indian mobile number",
-      (value) => {
-        if (!value) return false;
-        const digits = value.replace(/\D/g, "");
-        return /^(\+91|91|0)?[6-9]\d{9}$/.test(digits);
-      }
-    ),
- email: yup
+    .matches(/^\d{4,14}$/, "Enter a valid mobile number (4-14 digits)"),
+  email: yup
     .string()
     .required("Email address is required")
     .email("Invalid email format"),
@@ -40,11 +33,11 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
   const [touched, setTouched] = useState({
     firstName: false,
     lastName: false,
+    countryCode: false,
     mobile: false,
     email: false,
   });
 
-  // Validate field immediately when formData changes
   useEffect(() => {
     const validateField = async (field, value) => {
       try {
@@ -55,7 +48,6 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
       }
     };
 
-    // Validate all touched fields in real-time
     Object.entries(touched).forEach(([field, isTouched]) => {
       if (isTouched) {
         validateField(field, formData[field]);
@@ -67,16 +59,24 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
     const { name, value } = e.target;
     updateFormData({ [name]: value });
 
-    // Mark field as touched on first interaction
     if (!touched[name]) {
       setTouched((prev) => ({ ...prev, [name]: true }));
     }
   };
 
-  const handleMobileChange = (value) => {
-    updateFormData({ mobile: value });
+  const handleCountryCodeChange = (e) => {
+    const digitsOnly = e.target.value.replace(/\D/g, "");
+    updateFormData({ countryCode: digitsOnly });
 
-    // Mark mobile as touched on first interaction
+    if (!touched.countryCode) {
+      setTouched((prev) => ({ ...prev, countryCode: true }));
+    }
+  };
+
+  const handleMobileChange = (e) => {
+    const digitsOnly = e.target.value.replace(/\D/g, "");
+    updateFormData({ mobile: digitsOnly });
+
     if (!touched.mobile) {
       setTouched((prev) => ({ ...prev, mobile: true }));
     }
@@ -90,20 +90,18 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
     e.preventDefault();
 
     try {
-      // Mark all fields as touched to show all errors
       setTouched({
         firstName: true,
         lastName: true,
+        countryCode: true,
         mobile: true,
         email: true,
       });
 
-      // Validate entire form
       await schema.validate(formData, { abortEarly: false });
       goToNextStep();
     } catch (error) {
       if (error instanceof yup.ValidationError) {
-        // Handle validation errors
         const newErrors = {};
         error.inner.forEach((err) => {
           newErrors[err.path] = err.message;
@@ -142,7 +140,7 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
               touched.firstName && errors.firstName ? "border-red-500" : ""
             }`}
             placeholder="First Name"
-            autocomplete="off"
+            autoComplete="off"
           />
           {touched.firstName && errors.firstName && (
             <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
@@ -167,7 +165,7 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
               touched.lastName && errors.lastName ? "border-red-500" : ""
             }`}
             placeholder="Last Name"
-            autocomplete="off"
+            autoComplete="off"
           />
           {touched.lastName && errors.lastName && (
             <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
@@ -181,27 +179,46 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
           <p className="text-[16px] text-[#31316699] mb-1">
             We'll use this to send you OTPs and updates.
           </p>
-          <div className="mt-8">
-            <PhoneInput
-              country={"in"}
-              value={`${formData.phoneCode || ""}${formData.mobile || ""}`} // display only
-              inputProps={{
-                name: "mobile",
-                readOnly: true, // makes the field uneditable
-                required: true,
-                className: `pl-10 py-3 w-full border ${
-                  touched.mobile && errors.mobile
+          <div className="flex gap-4 mt-4">
+            <div className="w-1/3">
+              <input
+                type="text"
+                id="countryCode"
+                name="countryCode"
+                value={formData.countryCode || ""}
+                onChange={handleCountryCodeChange}
+                onBlur={() => handleBlur("countryCode")}
+                className={`form-input ${
+                  touched.countryCode && errors.countryCode
                     ? "border-red-500"
-                    : "border-gray-300"
-                } rounded-md outline-none bg-gray-100 cursor-not-allowed`,
-              }}
-              countryCodeEditable={false}
-              onlyCountries={["in"]}
-            />
+                    : ""
+                }`}
+                placeholder="Code"
+                autoComplete="off"
+              />
+              {touched.countryCode && errors.countryCode && (
+                <p className="text-red-500 text-xs mt-1">{errors.countryCode}</p>
+              )}
+            </div>
+            <div className="flex-1">
+              <input
+                type="text"
+                id="mobile"
+                name="mobile"
+                value={formData.mobile || ""}
+                onChange={handleMobileChange}
+                onBlur={() => handleBlur("mobile")}
+                className={`form-input ${
+                  touched.mobile && errors.mobile ? "border-red-500" : ""
+                }`}
+                placeholder="Mobile Number"
+                autoComplete="off"
+              />
+              {touched.mobile && errors.mobile && (
+                <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>
+              )}
+            </div>
           </div>
-          {touched.mobile && errors.mobile && (
-            <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>
-          )}
         </div>
 
         <div>
@@ -223,7 +240,7 @@ const BasicInformation = ({ formData, updateFormData, goToNextStep }) => {
             }`}
             disabled={true}
             placeholder="Email Address"
-            autocomplete="off"
+            autoComplete="off"
           />
           {touched.email && errors.email && (
             <p className="text-red-500 text-xs mt-1">{errors.email}</p>

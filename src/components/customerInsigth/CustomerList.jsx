@@ -110,7 +110,7 @@ const CustomerList = ({
       case "name":
         return `${customer.firstname || ""} ${customer.lastname || ""}`.trim();
       case "mobileNumber":
-        return formatIndianMobile(customer.mobileNumber);
+        return (customer?.countryCode || "" + " ").concat(customer.mobileNumber);
       case "gender":
         return customer.gender || "";
       case "firstVisit":
