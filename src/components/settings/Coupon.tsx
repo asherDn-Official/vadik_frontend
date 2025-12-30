@@ -57,6 +57,19 @@ const CouponManagement = () => {
     setValue("expiryDate", date, { shouldValidate: true });
   };
 
+  const handleProductImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setValue("productImage", reader.result?.toString() || "", {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const initialCouponData = {
     name: "",
     code: "",
@@ -68,6 +81,7 @@ const CouponManagement = () => {
     condition: false,
     conditionType: "greater",
     conditionValue: 0,
+    productImage: "",
     productNames: [],
   };
 
@@ -153,6 +167,7 @@ const CouponManagement = () => {
           then: (s) => s.min(1, "At least one product name is required"),
           otherwise: (s) => s.notRequired(),
         }),
+      productImage: yup.string().nullable().notRequired(),
     })
     .required();
 
@@ -177,6 +192,7 @@ const CouponManagement = () => {
 
   const watchCouponType = watch("couponType");
   const watchCondition = watch("condition");
+  const watchProductImage = watch("productImage");
 
   const fetchCoupons = async () => {
     setIsLoading(true);
@@ -235,6 +251,7 @@ const CouponManagement = () => {
       condition: coupon.condition || false,
       conditionType: coupon.conditionType || "greater",
       conditionValue: coupon.conditionValue || 0,
+      productImage: coupon.productImage || "",
       productNames: coupon.productNames || [],
     };
     reset(editData);
@@ -257,6 +274,7 @@ const CouponManagement = () => {
         conditionValue: data.condition ? data.conditionValue : 0,
         // Ensure productNames is empty array if not a product coupon
         productNames: data.couponType === "product" ? data.productNames : [],
+        productImage: data.couponType === "product" ? data.productImage || "" : "",
       };
 
       if (editingCouponId) {
@@ -556,46 +574,100 @@ const CouponManagement = () => {
 
                 {/* Product Names (only for product coupons) */}
                 {watchCouponType === "product" && (
-                  <div className="col-span-1 md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Product Names *
-                    </label>
-                    <div className="space-y-2">
-                      {fields.map((field, index) => (
-                        <div key={field.id} className="flex gap-2">
-                          <input
-                            type="text"
-                            {...register(`productNames.${index}`)}
-                            className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                              errors.productNames?.[index]
-                                ? "border-red-500"
-                                : "border-gray-300"
-                            }`}
-                            placeholder="Enter product name"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => remove(index)}
-                            className="p-3 text-red-500 hover:bg-red-50 rounded-lg"
-                          >
-                            <FiTrash2 />
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => append("")}
-                        className="flex items-center px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors"
-                      >
-                        <FiPlus className="mr-2" /> Add Product
-                      </button>
+                  <>
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Product Name *
+                      </label>
+                      <div className="space-y-2">
+                        {fields.map((field, index) => (
+                          <div key={field.id} className="flex gap-2">
+                            <input
+                              type="text"
+                              {...register(`productNames.${index}`)}
+                              className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                                errors.productNames?.[index]
+                                  ? "border-red-500"
+                                  : "border-gray-300"
+                              }`}
+                              placeholder="Enter product name"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => remove(index)}
+                              className="p-3 text-red-500 hover:bg-red-50 rounded-lg"
+                            >
+                              <FiTrash2 />
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => append("")}
+                          className="flex items-center px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors"
+                        >
+                          <FiPlus className="mr-2" /> Add Product
+                        </button>
+                      </div>
+                      {errors.productNames && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.productNames.message}
+                        </p>
+                      )}
                     </div>
-                    {errors.productNames && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.productNames.message}
-                      </p>
-                    )}
-                  </div>
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Product Image
+                      </label>
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          {...register("productImage")}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                          placeholder="Image URL or data URL"
+                        />
+                        <div className="flex items-center gap-3">
+                          <label className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 cursor-pointer hover:bg-gray-50">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleProductImageChange}
+                            />
+                            Upload Image
+                          </label>
+                          {watchProductImage && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setValue("productImage", "", {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                })
+                              }
+                              className="px-4 py-2 text-sm text-red-600 border border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                        {watchProductImage && (
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={watchProductImage}
+                              alt="Product"
+                              className="h-16 w-16 rounded-lg object-cover border"
+                            />
+                            <span className="text-xs text-gray-500 break-all">
+                              {watchProductImage.length > 60
+                                ? `${watchProductImage.slice(0, 60)}...`
+                                : watchProductImage}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 {/* Active Status */}
@@ -1005,6 +1077,15 @@ const CouponManagement = () => {
                               </span>
                             )}
                         </div>
+                        {coupon.couponType === "product" && coupon.productImage && (
+                          <div className="mt-3">
+                            <img
+                              src={coupon.productImage}
+                              alt="Product"
+                              className="h-16 w-16 rounded-lg object-cover border"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-1">

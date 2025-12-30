@@ -114,9 +114,7 @@ const CustomerList = ({
       case "gender":
         return customer.gender || "";
       case "firstVisit":
-        return customer.firstVisit
-          ? new Date(customer.firstVisit).toLocaleDateString("en-GB") // DD/MM/YYYY
-          : "-";
+         return formatUTCDate(customer.firstVisit);
       case "source":
         return customer.source
           ? customer.source.charAt(0).toUpperCase() + customer.source.slice(1)
@@ -320,3 +318,10 @@ const CustomerList = ({
 };
 
 export default CustomerList;
+export const formatUTCDate = (isoDate) => {
+  if (!isoDate) return "-";
+  const d = new Date(isoDate);
+  return `${String(d.getUTCDate()).padStart(2, "0")}/${
+    String(d.getUTCMonth() + 1).padStart(2, "0")
+  }/${d.getUTCFullYear()}`;
+};

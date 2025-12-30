@@ -81,7 +81,7 @@ function Sidebar() {
       label: "Integration Management",
     },
     {
-      path: "/kyc",
+      path: "/quicksearch",
       module: "Quick Search",
       icon: kycIcon,
       label: "Quick Search",

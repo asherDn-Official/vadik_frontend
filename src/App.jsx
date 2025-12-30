@@ -117,7 +117,7 @@ function App() {
               element={onboardingDone ? <IntegrationPage /> : <Navigate to="/register" replace />}
             />
             <Route
-              path="kyc"
+              path="quicksearch"
               element={onboardingDone ? <KYCPage /> : <Navigate to="/register" replace />}
             />
             <Route
