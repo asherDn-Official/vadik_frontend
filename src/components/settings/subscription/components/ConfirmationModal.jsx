@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { calculateTotalWithGST } from "../../../../utils/billingUtils";
 
 export default function ConfirmationModal({
   isOpen,
@@ -9,9 +10,12 @@ export default function ConfirmationModal({
   onQuantityChange,
   totalPrice,
   onConfirm,
-  loading = false
+  loading = false,
+  orderData = null
 }) {
   if (!isOpen) return null;
+
+  const billingAddress = orderData?.billingAddress;
 
   // Quantity handlers for modal
   const handleIncreaseQuantity = (addonId) => {
@@ -122,13 +126,67 @@ export default function ConfirmationModal({
             </div>
           )}
 
-          {/* Total Price */}
-          <div className="border-t pt-4 mt-4">
-            <div className="flex justify-between items-center text-lg font-semibold">
-              <span>Total Amount:</span>
-              <span className="text-pink-700">Rs. {totalPrice.toLocaleString()}</span>
+          {/* Price Breakdown with GST */}
+          {(() => {
+            const billing = calculateTotalWithGST(totalPrice);
+            return (
+              <div className="border-t pt-4 mt-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="text-gray-800 font-medium">Rs. {billing.subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">GST ({billing.gstPercentage}%):</span>
+                  <span className="text-gray-800 font-medium">Rs. {billing.gstAmount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center text-lg font-semibold border-t pt-3">
+                  <span>Total Amount:</span>
+                  <span className="text-pink-700">Rs. {billing.totalAmount.toLocaleString()}</span>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Billing Details */}
+          {/* <div className="border-t mt-4 pt-4">
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="font-medium text-gray-700 text-sm">Billing Address</h4>
+              {orderData?.orderId && (
+                <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
+                  ID: {orderData.orderId}
+                </span>
+              )}
             </div>
-          </div>
+            <div className="bg-gray-50 p-3 rounded-lg space-y-2 text-sm text-gray-700">
+              {billingAddress ? (
+                <>
+                  <div>
+                    <p className="font-semibold">{orderData.userName || 'Customer'}</p>
+                    <p className="text-gray-600 text-xs">{billingAddress.address}</p>
+                    <p className="text-gray-600 text-xs">
+                      {billingAddress.city}, {billingAddress.state} {billingAddress.pincode}
+                    </p>
+                    <p className="text-gray-600 text-xs">{billingAddress.country}</p>
+                  </div>
+                  <div className="space-y-1 pt-1 border-t border-gray-200">
+                    {billingAddress.gstNumber && (
+                      <p><span className="text-gray-600">GSTIN:</span> {billingAddress.gstNumber}</p>
+                    )}
+                    <p><span className="text-gray-600">Email:</span> {orderData.userEmail}</p>
+                    {orderData.userPhone && (
+                      <p><span className="text-gray-600">Phone:</span> {orderData.userPhone}</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-1">
+                  <p className="font-semibold">RK Platforms India Private Limited</p>
+                  <p><span className="text-gray-600">GSTIN:</span> 33AAJCR5770J1Z1</p>
+                  <p><span className="text-gray-600">Email:</span> accounts@rkplatforms.com</p>
+                </div>
+              )}
+            </div>
+          </div> */}
 
           {/* Payment Steps Info */}
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
@@ -138,6 +196,7 @@ export default function ConfirmationModal({
               <li>Generate Razorpay order</li>
               <li>Complete payment in popup</li>
               <li>Verify and activate subscription</li>
+              <li>We will invoice you through mail</li>
             </ol>
           </div>
         </div>

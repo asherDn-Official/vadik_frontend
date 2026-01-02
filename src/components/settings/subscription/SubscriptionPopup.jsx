@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import SubscriptionCard from "./components/SubscriptionCard";
 import ConfirmationModal from "./components/ConfirmationModal";
+import BillingDetailsModal from "./components/BillingDetailsModal";
 import WhatsAppCredits from "./components/WhatsAppCredits";
 import api from "../../../api/apiconfig";
 import { useAuth } from "../../../context/AuthContext";
+import { calculateTotalWithGST } from "../../../utils/billingUtils";
 
 const SubscriptionPopup = ({
   onClose,
@@ -25,6 +27,8 @@ const SubscriptionPopup = ({
   const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
   const [autoplay, setAutoplay] = useState(true);
   const [addonQuantities, setAddonQuantities] = useState({});
+  const [billingDetails, setBillingDetails] = useState(null);
+  const [showBillingModal, setShowBillingModal] = useState(false);
   
   const retailerid = localStorage.getItem("retailerId");
   const { auth } = useAuth();
@@ -174,12 +178,23 @@ const SubscriptionPopup = ({
         throw new Error("❌ Payment verification returned false status");
       }
 
+      const billing = verificationResponse.data?.billing;
       console.log("✅ Payment Verified:", {
         subscriptionId: verificationResponse.data?.subscription?._id,
         plan: verificationResponse.data?.subscription?.plan?.name,
         autoPay: verificationResponse.data?.subscription?.autoPay,
+        billing,
         status: verificationResponse.data?.status,
       });
+
+      setBillingDetails({
+        billNumber: billing?.billNumber,
+        totalAmount: billing?.totalAmount,
+        gstAmount: billing?.gstAmount,
+        subtotal: billing?.subtotal || (billing?.totalAmount - billing?.gstAmount),
+        isCredits: false,
+      });
+      setShowBillingModal(true);
 
       setShowConfirmation(false);
       setSelectedPlan(null);
@@ -222,11 +237,22 @@ const SubscriptionPopup = ({
         throw new Error("❌ Credits payment verification failed");
       }
 
+      const billing = verificationResponse.data?.billing;
       console.log("✅ Credits Added:", {
         subscriptionId: verificationResponse.data?.data?.subscription?._id,
         creditsAdded: verificationResponse.data?.data?.creditsAdded,
         newTotals: verificationResponse.data?.data?.newTotals,
+        billing,
       });
+
+      setBillingDetails({
+        billNumber: billing?.billNumber,
+        totalAmount: billing?.totalAmount,
+        gstAmount: billing?.gstAmount,
+        subtotal: billing?.subtotal || (billing?.totalAmount - billing?.gstAmount),
+        isCredits: true,
+      });
+      setShowBillingModal(true);
 
       setShowConfirmation(false);
       setSelectedAddons([]);
@@ -754,12 +780,28 @@ const SubscriptionPopup = ({
                 <>
                   {!selectedPlan?.isFreeTrial &&
                   (selectedPlan || selectedAddons.length > 0) ? (
-                    <div className="text-gray-700">
-                      <span className="font-medium">Total:</span>{" "}
-                      <span className="text-xl font-bold text-pink-700">
-                        ₹{calculateTotalPrice()}
-                      </span>
-                    </div>
+                    (() => {
+                      const totalPrice = calculateTotalPrice();
+                      const billing = calculateTotalWithGST(totalPrice);
+                      return (
+                        <div className="space-y-1">
+                          <div className="text-gray-600 text-sm">
+                            <span>Subtotal: </span>
+                            <span className="font-medium">₹{billing.subtotal.toLocaleString()}</span>
+                          </div>
+                          <div className="text-gray-600 text-sm">
+                            <span>GST (18%): </span>
+                            <span className="font-medium">₹{billing.gstAmount.toLocaleString()}</span>
+                          </div>
+                          <div className="text-gray-700 font-medium">
+                            <span>Total: </span>
+                            <span className="text-xl font-bold text-pink-700">
+                              ₹{billing.totalAmount.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()
                   ) : (
                     <div className="text-gray-500">
                       {selectedPlan?.isFreeTrial
@@ -808,6 +850,20 @@ const SubscriptionPopup = ({
         totalPrice={calculateTotalPrice()}
         onConfirm={handlePaymentProcess}
         loading={loading}
+      />
+
+      {/* Billing Details Modal */}
+      <BillingDetailsModal
+        isOpen={showBillingModal}
+        onClose={() => {
+          setShowBillingModal(false);
+          handleClose();
+        }}
+        billNumber={billingDetails?.billNumber}
+        totalAmount={billingDetails?.totalAmount}
+        gstAmount={billingDetails?.gstAmount}
+        subtotal={billingDetails?.subtotal}
+        isCredits={billingDetails?.isCredits}
       />
     </div>
   );
