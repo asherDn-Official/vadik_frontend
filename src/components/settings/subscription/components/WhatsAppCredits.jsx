@@ -320,10 +320,10 @@ const handleConfirmTopup = async () => {
               {isTopupLoading ? "..." : "Top-up"}
             </button>
           </div>
-          <p className="text-[10px] text-gray-400 mt-2 flex items-center gap-1">
+          {/* <p className="text-[10px] text-gray-400 mt-2 flex items-center gap-1">
             <Info className="w-3 h-3 cursor-help" data-tooltip-id="pricing-tooltip" />
             Pricing per template message varies
-          </p>
+          </p> */}
         </div>
       </div>
 
