@@ -7,7 +7,7 @@ import {
   FiUsers,
   FiSettings, 
 } from "react-icons/fi";
-import { LayoutTemplate, MessageSquare } from 'lucide-react';
+import { LayoutTemplate } from 'lucide-react';
 import { BadgeIndianRupee } from 'lucide-react';
 
 
@@ -25,7 +25,6 @@ import Coupon from "../components/settings/Coupon";
 import LoyaltyPoint from "../components/settings/LoyaltyPoint";
 import Template from "../components/settings/Template";
 import SubscriptionPage from "../components/settings/subscription/SubscriptionPage";
-import IntegrationDashboard from "./IntegrationPage";
 
 const SettingsPage = () => {
   const { tab } = useParams();
@@ -105,12 +104,6 @@ const SettingsPage = () => {
             isActive={activeTab === "subscription"}
             onClick={() => handleTabChange("subscription")}
           />
-          <SettingsTab
-            icon={<MessageSquare  />}
-            text="Integration Management"
-            isActive={activeTab === "integration-management"}
-            onClick={() => handleTabChange("integration-management")}
-          />
         </div>
       </div>
 
@@ -130,7 +123,6 @@ const SettingsPage = () => {
         {activeTab === "loyalty" && <LoyaltyPoint />}
         {activeTab === "template" && <Template />}
         {activeTab === "subscription" && <SubscriptionPage />}
-        {activeTab === "integration-management" && <IntegrationDashboard />}
       </div>
     </div>
   );

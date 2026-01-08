@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Plus, Search, CheckCircle, LinkIcon, ArrowRight } from "lucide-react";
 import GooglePlaceReview from "../components/integration/GooglePlaceReview";
-import WhatsAppIntegration from "../components/settings/WhatsAppIntegration";
+import WhatsAppIntegration from "../components/integration/WhatsAppIntegration";
 
 // Mock components for demonstration
 const FacebookIntegration = () => (
