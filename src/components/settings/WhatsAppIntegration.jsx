@@ -16,6 +16,8 @@ const WhatsAppIntegration = () => {
     language: 'en_US',
     bodyText: ''
   });
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualConfig, setManualConfig] = useState({
     accessToken: '',
@@ -199,6 +201,23 @@ const WhatsAppIntegration = () => {
     setManualConfig({ accessToken: '', wabaId: '', phoneNumberId: '', businessId: '' });
   };
 
+  const formatTemplateText = (text, example) => {
+    if (!text) return '';
+    if (!example) return text;
+
+    let formattedText = text;
+    
+    // Handle body_text or header_text examples
+    const exampleValues = example.body_text?.[0] || example.header_text?.[0] || [];
+    
+    exampleValues.forEach((val, index) => {
+      const placeholder = `{{${index + 1}}}`;
+      formattedText = formattedText.split(placeholder).join(val);
+    });
+
+    return formattedText;
+  };
+
   const handleCreateTemplate = async (e) => {
     e.preventDefault();
     try {
@@ -234,7 +253,7 @@ const WhatsAppIntegration = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-[#313166] mb-2">WhatsApp Business Integration</h2>
+        <h2 className="text-2xl font-bold text-[#313166] mb-2">WhatsApp Integration Opened</h2>
         <p className="text-gray-600">Connect your own WhatsApp Business account to send messages using your own number and branding.</p>
       </div>
 
@@ -355,7 +374,14 @@ const WhatsAppIntegration = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {templates.map((template) => (
-                <div key={template.id} className="border border-gray-100 rounded-lg p-4 hover:border-gray-200 transition-colors">
+                <div 
+                  key={template.id} 
+                  className="border border-gray-100 rounded-lg p-4 hover:border-[#313166] hover:shadow-md transition-all cursor-pointer group"
+                  onClick={() => {
+                    setSelectedTemplate(template);
+                    setShowDetailModal(true);
+                  }}
+                >
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-xs font-bold uppercase tracking-wider text-gray-400">{template.category}</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
@@ -365,10 +391,14 @@ const WhatsAppIntegration = () => {
                       {template.status}
                     </span>
                   </div>
-                  <h4 className="font-medium text-[#313166] mb-1">{template.name}</h4>
-                  <p className="text-sm text-gray-500 line-clamp-2">
+                  <h4 className="font-medium text-[#313166] mb-1 group-hover:text-[#313166]">{template.name}</h4>
+                  <p className="text-sm text-gray-500 line-clamp-2 mb-3">
                     {template.components.find(c => c.type === 'BODY')?.text}
                   </p>
+                  <div className="flex justify-between items-center mt-auto pt-2 border-t border-gray-50">
+                    <span className="text-[10px] text-gray-400 uppercase">{template.language}</span>
+                    <span className="text-[10px] text-[#313166] font-bold opacity-0 group-hover:opacity-100 transition-opacity">View Details →</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -511,6 +541,132 @@ const WhatsAppIntegration = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {showDetailModal && selectedTemplate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
+              <div>
+                <h3 className="text-xl font-bold text-[#313166]">{selectedTemplate.name}</h3>
+                <div className="flex items-center space-x-2 mt-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400">{selectedTemplate.category}</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="text-xs text-gray-500 uppercase">{selectedTemplate.language}</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span className={`text-xs px-2 py-1 rounded-full font-bold uppercase ${
+                  selectedTemplate.status === 'APPROVED' ? 'bg-green-100 text-green-700' : 
+                  selectedTemplate.status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {selectedTemplate.status}
+                </span>
+                <button onClick={() => setShowDetailModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <XCircle size={24} />
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* WhatsApp Preview Style */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-semibold text-gray-500">Message Preview</span>
+                  {selectedTemplate.components.some(c => c.example) && (
+                    <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium italic">
+                      Showing example values
+                    </span>
+                  )}
+                </div>
+                <div className="bg-[#e5ddd5] p-4 rounded-lg relative overflow-hidden">
+                  <div className="bg-white p-3 rounded-lg shadow-sm max-w-[85%] relative">
+                    {selectedTemplate.components.map((comp, idx) => {
+                      if (comp.type === 'HEADER') {
+                        return (
+                          <div key={idx} className="mb-2">
+                            {comp.format === 'TEXT' ? (
+                              <div className="font-bold text-sm">{formatTemplateText(comp.text, comp.example)}</div>
+                            ) : comp.format === 'IMAGE' ? (
+                              <div className="bg-gray-200 aspect-video rounded flex items-center justify-center text-gray-400 text-xs mb-2">
+                                Image Header
+                              </div>
+                            ) : (
+                              <div className="bg-gray-100 p-2 rounded text-xs text-gray-500 italic mb-2">
+                                {comp.format} Header
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      if (comp.type === 'BODY') {
+                        return (
+                          <div key={idx} className="text-sm text-gray-800 whitespace-pre-wrap">
+                            {formatTemplateText(comp.text, comp.example)}
+                          </div>
+                        );
+                      }
+                      if (comp.type === 'FOOTER') {
+                        return (
+                          <div key={idx} className="text-[11px] text-gray-400 mt-1">
+                            {comp.text}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
+                    
+                    {/* Buttons in preview */}
+                  {selectedTemplate.components.find(c => c.type === 'BUTTONS') && (
+                    <div className="mt-3 border-t pt-2 flex flex-col space-y-1">
+                      {selectedTemplate.components.find(c => c.type === 'BUTTONS').buttons.map((btn, bIdx) => (
+                        <div key={bIdx} className="bg-white text-blue-500 text-sm py-2 text-center border rounded font-medium flex items-center justify-center space-x-1">
+                          {btn.type === 'PHONE_NUMBER' && <span className="text-xs">📞</span>}
+                          {btn.type === 'URL' && <span className="text-xs">🔗</span>}
+                          <span>{btn.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+              {/* Technical Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <span className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Components</span>
+                  <div className="space-y-1">
+                    {selectedTemplate.components.map((comp, idx) => (
+                      <div key={idx} className="text-xs flex justify-between">
+                        <span className="text-gray-600">{comp.type}</span>
+                        <span className="text-gray-400">{comp.format || (comp.buttons ? `${comp.buttons.length} buttons` : 'TEXT')}</span>
+                      </div>
+                    ))}
+                    {selectedTemplate.sub_category && (
+                      <div className="text-xs flex justify-between pt-1 border-t border-gray-100 mt-1">
+                        <span className="text-gray-600">Sub-category</span>
+                        <span className="text-gray-400">{selectedTemplate.sub_category}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <span className="text-[10px] text-gray-400 uppercase font-bold block mb-1">ID</span>
+                  <span className="text-xs font-mono break-all text-gray-600">{selectedTemplate.id}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="px-6 py-2 bg-[#313166] text-white rounded-lg font-medium hover:bg-[#25254d]"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

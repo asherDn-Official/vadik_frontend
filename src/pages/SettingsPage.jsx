@@ -25,7 +25,7 @@ import Coupon from "../components/settings/Coupon";
 import LoyaltyPoint from "../components/settings/LoyaltyPoint";
 import Template from "../components/settings/Template";
 import SubscriptionPage from "../components/settings/subscription/SubscriptionPage";
-import WhatsAppIntegration from "../components/settings/WhatsAppIntegration";
+import IntegrationDashboard from "./IntegrationPage";
 
 const SettingsPage = () => {
   const { tab } = useParams();
@@ -107,9 +107,9 @@ const SettingsPage = () => {
           />
           <SettingsTab
             icon={<MessageSquare  />}
-            text="WhatsApp Integration"
-            isActive={activeTab === "whatsapp-integration"}
-            onClick={() => handleTabChange("whatsapp-integration")}
+            text="Integration Management"
+            isActive={activeTab === "integration-management"}
+            onClick={() => handleTabChange("integration-management")}
           />
         </div>
       </div>
@@ -130,7 +130,7 @@ const SettingsPage = () => {
         {activeTab === "loyalty" && <LoyaltyPoint />}
         {activeTab === "template" && <Template />}
         {activeTab === "subscription" && <SubscriptionPage />}
-        {activeTab === "whatsapp-integration" && <WhatsAppIntegration />}
+        {activeTab === "integration-management" && <IntegrationDashboard />}
       </div>
     </div>
   );
