@@ -23,6 +23,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 import VideoPopupWithShare from "../common/VideoPopupWithShare";
+import CouponPopup from "./couponPopup";
 
 const CouponManagement = () => {
   const [coupons, setCoupons] = useState([]);
@@ -42,6 +43,7 @@ const CouponManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [expiryDate, setExpiryDate] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   const [filters, setFilters] = useState({
     isActive: "",
@@ -411,7 +413,7 @@ const CouponManagement = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="bg-white overflow-hidden rounded-lg shadow-sm">
-        <div className="p-8">
+        <div className="p-9">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h3 className="text-xl font-semibold text-[#313166] mb-1">
@@ -423,7 +425,11 @@ const CouponManagement = () => {
             </div>
             {!isAddingCoupon && (
               <div className=" flex items-center gap-2">
-
+                <button className="flex items-center text-sm text-white px-4 py-3 bg-[#313166] rounded-lg  hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md" 
+                onClick={() => setIsOpen(true)}
+                >
+                  coupon guidance
+                </button>
                 <VideoPopupWithShare
                   video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
                   buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
@@ -439,6 +445,7 @@ const CouponManagement = () => {
               </div>
             )}
           </div>
+          <CouponPopup isOpen = {isOpen} onClose = {() => setIsOpen(false)} />
 
           {isAddingCoupon && (
             <form
