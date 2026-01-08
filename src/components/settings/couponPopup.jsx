@@ -27,8 +27,8 @@ export default function CouponPopup({ isOpen, onClose }) {
         , {
             id: 3,
             title: "Scroll to availble coupons",
-            image: "/assets/coupon-claim.png",
-            description: "After searching the customer id, scroll down to the section named available coupons to the list of coupons"
+            image: "/assets/coupon-claim.jpeg",
+            description: " After searching the customer id, scroll down to the section named available coupons to the list of coupons the customer claimed , and highlighted button mark as used which meant to be Coupon used by the customer"
         }
     ]
     const currentInstruction = Instructions[currentIndex]
