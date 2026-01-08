@@ -428,7 +428,7 @@ const CouponManagement = () => {
                  <button className="flex items-center text-sm text-white px-4 py-3 bg-[#313166] rounded-lg  hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md" 
                 onClick={() => setIsOpen(true)}
                 >
-                  coupon guidance
+                  coupon Tutorial
                 </button>
 
                 <VideoPopupWithShare
