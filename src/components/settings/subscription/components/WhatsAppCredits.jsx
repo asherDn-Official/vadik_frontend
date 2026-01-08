@@ -5,15 +5,17 @@ import "react-tooltip/dist/react-tooltip.css";
 import api from "../../../../api/apiconfig";
 import showToast from "../../../../utils/ToastNotification";
 import { useAuth } from "../../../../context/AuthContext";
+import { calculateTotalWithGST } from "../../../../utils/billingUtils";
+import TopupConfirmationModal from "./TopupConfirmationModal";
 
 const TEMPLATE_PRICING = {
   quiz_link_message: 0.78,
-  scratch_card_offer: 0.78,
-  spinwheel_offer: 0.78,
+  scratch_card_offer: 0.79,
+  spinwheel_offer: 0.79,
   optin_optout: 0.12,
   custom_event_greeting: 0.78,
   customer_appreciation: 0.78,
-  birthday_greeting: 0.79,
+  birthday_greeting: 0.82,
   customer_otp: 0.15,
   sale_reminder: 0.78,
   opt_in_success_1: 0.78,
@@ -29,6 +31,8 @@ export default function WhatsAppCredits() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [topupAmount, setTopupAmount] = useState(100);
   const [isTopupLoading, setIsTopupLoading] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingOrderData, setPendingOrderData] = useState(null);
   const { auth } = useAuth();
 
   const fetchBalance = async () => {
@@ -63,6 +67,23 @@ export default function WhatsAppCredits() {
     fetchBalance();
     fetchHistory();
   }, []);
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+
+    document.body.appendChild(script);
+  });
+};
 
   const handleTopup = async () => {
     if (topupAmount <= 0) {
@@ -79,48 +100,8 @@ export default function WhatsAppCredits() {
 
       if (response.data.status) {
         const orderData = response.data.data;
-        
-        const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          amount: orderData.amount,
-          currency: orderData.currency,
-          name: "Vadik AI WhatsApp Credits",
-          description: `Top-up ${orderData.creditsAmount} WhatsApp credits`,
-          order_id: orderData.orderId,
-          handler: async function (razorpayResponse) {
-            try {
-              const verifyResponse = await api.post("/api/whatsapp-credits/topup/verify", {
-                razorpayOrderId: razorpayResponse.razorpay_order_id,
-                razorpayPaymentId: razorpayResponse.razorpay_payment_id,
-                razorpaySignature: razorpayResponse.razorpay_signature,
-                creditsAmount: orderData.creditsAmount,
-                pricePerCredit: orderData.pricePerCredit
-              });
-
-              if (verifyResponse.data.status) {
-                showToast("Top-up successful!", "success");
-                fetchBalance();
-                fetchHistory();
-              } else {
-                showToast(verifyResponse.data.message || "Verification failed", "error");
-              }
-            } catch (error) {
-              console.error("Verification error:", error);
-              showToast("Error verifying payment", "error");
-            }
-          },
-          prefill: {
-            name: auth?.user?.fullName,
-            email: auth?.user?.email,
-            contact: auth?.user?.phone,
-          },
-          theme: {
-            color: "#D3285B",
-          },
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.open();
+        setPendingOrderData(orderData);
+        setShowConfirmation(true);
       }
     } catch (error) {
       console.error("Top-up initiation error:", error);
@@ -129,6 +110,137 @@ export default function WhatsAppCredits() {
       setIsTopupLoading(false);
     }
   };
+const handleConfirmTopup = async () => {
+  if (!pendingOrderData) return;
+
+  setIsTopupLoading(true);
+
+  try {
+    const loaded = await loadRazorpayScript();
+
+    if (!loaded || !window.Razorpay) {
+      showToast("Razorpay SDK failed to load", "error");
+      return;
+    }
+
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: pendingOrderData.amount,
+      currency: pendingOrderData.currency,
+      name: "Vadik AI WhatsApp Credits",
+      description: `Top-up ${pendingOrderData.creditsAmount} WhatsApp credits`,
+      order_id: pendingOrderData.orderId,
+
+      handler: async (razorpayResponse) => {
+        try {
+          const verifyResponse = await api.post(
+            "/api/whatsapp-credits/topup/verify",
+            {
+              razorpayOrderId: razorpayResponse.razorpay_order_id,
+              razorpayPaymentId: razorpayResponse.razorpay_payment_id,
+              razorpaySignature: razorpayResponse.razorpay_signature,
+              creditsAmount: pendingOrderData.creditsAmount,
+              pricePerCredit: pendingOrderData.pricePerCredit,
+            }
+          );
+
+          if (verifyResponse.data.status) {
+            showToast("✅ Top-up successful", "success");
+            fetchBalance();
+            fetchHistory();
+          } else {
+            showToast("Payment verification failed", "error");
+          }
+        } catch (err) {
+          console.error("Verification error:", err);
+          showToast("Error verifying payment", "error");
+        } finally {
+          setIsTopupLoading(false);
+          setShowConfirmation(false);
+          setPendingOrderData(null);
+        }
+      },
+
+      prefill: {
+        name: auth?.user?.fullName,
+        email: auth?.user?.email,
+        contact: auth?.user?.phone,
+      },
+
+      theme: {
+        color: "#D3285B",
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  } catch (error) {
+    console.error("Payment processing error:", error);
+    showToast("Error processing payment", "error");
+  } finally {
+    setIsTopupLoading(false);
+  }
+};
+
+  // const handleConfirmTopup = async () => {
+  //   if (!pendingOrderData) return;
+
+  //   setIsTopupLoading(true);
+  //   try {
+  //     const options = {
+  //       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+  //       amount: pendingOrderData.amount,
+  //       currency: pendingOrderData.currency,
+  //       name: "Vadik AI WhatsApp Credits",
+  //       description: `Top-up ${pendingOrderData.creditsAmount} WhatsApp credits`,
+  //       order_id: pendingOrderData.orderId,
+  //       handler: async function (razorpayResponse) {
+  //         try {
+  //           const verifyResponse = await api.post("/api/whatsapp-credits/topup/verify", {
+  //             razorpayOrderId: razorpayResponse.razorpay_order_id,
+  //             razorpayPaymentId: razorpayResponse.razorpay_payment_id,
+  //             razorpaySignature: razorpayResponse.razorpay_signature,
+  //             creditsAmount: pendingOrderData.creditsAmount,
+  //             pricePerCredit: pendingOrderData.pricePerCredit
+  //           });
+
+  //           if (verifyResponse.data.status) {
+  //             const billingInfo = verifyResponse.data?.billing;
+  //             showToast(`✅ Top-up successful! Invoice #${billingInfo?.billNumber}`, "success");
+  //             fetchBalance();
+  //             fetchHistory();
+  //           } else {
+  //             showToast(verifyResponse.data.message || "Verification failed", "error");
+  //           }
+  //         } catch (error) {
+  //           console.error("Verification error:", error);
+  //           showToast("Error verifying payment", "error");
+  //         } finally {
+  //           setIsTopupLoading(false);
+  //           setShowConfirmation(false);
+  //           setPendingOrderData(null);
+  //         }
+  //       },
+  //       prefill: {
+  //         name: auth?.user?.fullName,
+  //         email: auth?.user?.email,
+  //         contact: auth?.user?.phone,
+  //       },
+  //       theme: {
+  //         color: "#D3285B",
+  //       },
+  //     };
+
+  //     const rzp = new window.Razorpay(options);
+  //     rzp.open();
+  //   } catch (error) {
+  //     console.error("Payment processing error:", error);
+  //     showToast("Error processing payment", "error");
+  //     setIsTopupLoading(false);
+  //     setShowConfirmation(false);
+  //     setPendingOrderData(null);
+  //   }
+  // };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString('en-IN', {
@@ -142,6 +254,17 @@ export default function WhatsAppCredits() {
 
   return (
     <div className="space-y-6">
+      <TopupConfirmationModal
+        isOpen={showConfirmation}
+        onClose={() => {
+          setShowConfirmation(false);
+          setPendingOrderData(null);
+        }}
+        amount={topupAmount}
+        onConfirm={handleConfirmTopup}
+        loading={isTopupLoading}
+      />
+
       {/* Credits Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
@@ -197,10 +320,10 @@ export default function WhatsAppCredits() {
               {isTopupLoading ? "..." : "Top-up"}
             </button>
           </div>
-          <p className="text-[10px] text-gray-400 mt-2 flex items-center gap-1">
+          {/* <p className="text-[10px] text-gray-400 mt-2 flex items-center gap-1">
             <Info className="w-3 h-3 cursor-help" data-tooltip-id="pricing-tooltip" />
             Pricing per template message varies
-          </p>
+          </p> */}
         </div>
       </div>
 

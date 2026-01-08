@@ -7,6 +7,7 @@ import WhatsAppCredits from "./components/WhatsAppCredits";
 import api from "../../../api/apiconfig";
 import { useAuth } from "../../../context/AuthContext";
 import showToast from "../../../utils/ToastNotification";
+import { calculateTotalWithGST } from "../../../utils/billingUtils";
 
 export default function SubscriptionPage() {
   const [activeTab, setActiveTab] = useState("subscription");
@@ -162,12 +163,16 @@ export default function SubscriptionPage() {
         throw new Error("❌ Payment verification returned false status");
       }
 
+      const billing = verificationResponse.data?.billing;
       console.log("✅ Payment Verified:", {
         subscriptionId: verificationResponse.data?.subscription?._id,
         plan: verificationResponse.data?.subscription?.plan?.name,
         autoPay: verificationResponse.data?.subscription?.autoPay,
+        billing,
         status: verificationResponse.data?.status,
       });
+
+      showToast(`✅ Payment successful! Invoice #${billing?.billNumber}. We will invoice you through mail.`, "success");
 
       setShowConfirmation(false);
       setSelectedPlan(null);
@@ -177,7 +182,7 @@ export default function SubscriptionPage() {
       getActiveSubscription();
     } catch (error) {
       console.error("Payment verification failed:", error);
-      alert("Payment verification failed. Please contact support.");
+      showToast("Payment verification failed. Please contact support.", "error");
     } finally {
       setLoading(false);
     }
@@ -209,11 +214,15 @@ export default function SubscriptionPage() {
         throw new Error("❌ Credits payment verification failed");
       }
 
+      const billing = verificationResponse.data?.billing;
       console.log("✅ Credits Added:", {
         subscriptionId: verificationResponse.data?.data?.subscription?._id,
         creditsAdded: verificationResponse.data?.data?.creditsAdded,
         newTotals: verificationResponse.data?.data?.newTotals,
+        billing,
       });
+
+      showToast(`✅ Credits added! Invoice #${billing?.billNumber}. We will invoice you through mail.`, "success");
 
       setShowConfirmation(false);
       setSelectedAddons([]);
@@ -221,7 +230,7 @@ export default function SubscriptionPage() {
       getCurrentPlanDetails();
     } catch (error) {
       console.error("Credits payment verification failed:", error);
-      alert("Credits payment verification failed. Please contact support.");
+      showToast("Credits payment verification failed. Please contact support.", "error");
     } finally {
       setLoading(false);
     }
