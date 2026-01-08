@@ -7,7 +7,7 @@ import {
   FiUsers,
   FiSettings, 
 } from "react-icons/fi";
-import { LayoutTemplate } from 'lucide-react';
+import { LayoutTemplate, MessageSquare } from 'lucide-react';
 import { BadgeIndianRupee } from 'lucide-react';
 
 
@@ -25,6 +25,7 @@ import Coupon from "../components/settings/Coupon";
 import LoyaltyPoint from "../components/settings/LoyaltyPoint";
 import Template from "../components/settings/Template";
 import SubscriptionPage from "../components/settings/subscription/SubscriptionPage";
+import WhatsAppIntegration from "../components/settings/WhatsAppIntegration";
 
 const SettingsPage = () => {
   const { tab } = useParams();
@@ -104,6 +105,12 @@ const SettingsPage = () => {
             isActive={activeTab === "subscription"}
             onClick={() => handleTabChange("subscription")}
           />
+          <SettingsTab
+            icon={<MessageSquare  />}
+            text="WhatsApp Integration"
+            isActive={activeTab === "whatsapp-integration"}
+            onClick={() => handleTabChange("whatsapp-integration")}
+          />
         </div>
       </div>
 
@@ -123,6 +130,7 @@ const SettingsPage = () => {
         {activeTab === "loyalty" && <LoyaltyPoint />}
         {activeTab === "template" && <Template />}
         {activeTab === "subscription" && <SubscriptionPage />}
+        {activeTab === "whatsapp-integration" && <WhatsAppIntegration />}
       </div>
     </div>
   );
