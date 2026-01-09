@@ -1,12 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, X, Share2, Copy, Check } from 'lucide-react';
+import Lottie from "lottie-react"
 
-const VideoPopupWithShare = ({ video_url, buttonCss = "" }) => {
+
+const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showSharePopup, setShowSharePopup] = useState(false);
   const [copied, setCopied] = useState(false);
   const popupRef = useRef(null);
   const shareRef = useRef(null);
+      const LottieRef = useRef(null)
+
+    
 
   // Get current page URL for sharing
   const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
@@ -133,6 +138,13 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "" }) => {
                 allowFullScreen
                 title="Video Player"
               />
+               <Lottie
+                        animationData={animationData}
+                        loop={true}
+                        autoplay={true}
+                        lottieRef={LottieRef}
+                        className="absolute top-0 left-0 w-full h-full"
+                    />
             </div>
 
             {/* Share Popup */}
