@@ -1097,6 +1097,14 @@ const RolesAndPermissions = () => {
       setSearchTerm(e.target.value);
     }, []);
 
+     const handleClick =  () => {
+      if(filteredUsers.length >= 5){
+        showToast("user limit reached.cannot add more users","error")
+        return
+      }
+      setCurrentView("addEmployee")
+    }
+
     if (loading) return <div className="text-center py-8">Loading...</div>;
     if (error) return <div className="text-center py-8 text-red-600">{error}</div>;
 
@@ -1121,7 +1129,7 @@ const RolesAndPermissions = () => {
                   buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
                 />
             <button
-              onClick={() => setCurrentView("addEmployee")}
+              onClick={handleClick}
               className="flex items-center px-4 py-2 bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-[10px] hover:opacity-90 transition-opacity"
             >
               <Plus className="mr-2" /> Create User
