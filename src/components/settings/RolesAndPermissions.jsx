@@ -31,7 +31,7 @@ const RolesAndPermissions = () => {
 
     }, []);
 
-    console.log(soon,"soon")
+  
 
   // API base URL
   const END_POINT = "api/staff";

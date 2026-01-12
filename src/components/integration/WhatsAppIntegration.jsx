@@ -953,9 +953,11 @@ import axios from 'axios';
 import { API_BASE_URL } from '../../api/apiconfig.js';
 import { MessageSquare, CheckCircle, XCircle, RefreshCw, Trash2, Layout, Plus, Send } from 'lucide-react';
 import { toast } from 'react-toastify';
+import VideoPopupWithShare from '../common/VideoPopupWithShare.jsx';
 
 const WhatsAppIntegration = () => {
   const [config, setConfig] = useState(null);
+  const [soon, setSoon] = useState()
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [templates, setTemplates] = useState([]);
@@ -974,6 +976,15 @@ const WhatsAppIntegration = () => {
     variables: {}, // { 'body': { '1': 'ex', '2': 'ex' }, 'header': { '1': 'ex' } }
     buttons: [] // { type: 'QUICK_REPLY', text: '', url: '', phoneNumber: '' }
   });
+
+
+   useEffect(() => {
+        fetch("/assets/Comingsoon.json")
+            .then((res) => res.json())
+            .then(setSoon)
+            .catch(console.error)
+
+    }, []);
 
   const extractVariables = (text) => {
     const regex = /{{(\d+)}}/g;
@@ -1359,7 +1370,15 @@ const WhatsAppIntegration = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-[#313166] mb-2">WhatsApp Integration Opened</h2>
+        <div className='flex items-center justify-between'>
+           <h2 className="text-2xl font-bold text-[#313166] mb-2">WhatsApp Integration Opened</h2>
+           <VideoPopupWithShare
+                  // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
+                  animationData={soon}
+                  buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
+                />
+        </div>
+       
         <p className="text-gray-600">Connect your own WhatsApp Business account to send messages using your own number and branding.</p>
       </div>
 

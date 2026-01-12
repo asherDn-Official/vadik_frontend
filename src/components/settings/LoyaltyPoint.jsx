@@ -11,6 +11,16 @@ function LoyaltyPoint() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [soon, setSoon] = useState()
+  
+
+   useEffect(() => {
+        fetch("/assets/Comingsoon.json")
+            .then((res) => res.json())
+            .then(setSoon)
+            .catch(console.error)
+
+    }, []);
 
   // React Hook Form initialization
   const {
@@ -129,10 +139,11 @@ function LoyaltyPoint() {
               <p className="mt-1">Configure your loyalty program settings</p>
             </div>
 
-            <VideoPopupWithShare
-              video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-              buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
-            />
+           <VideoPopupWithShare
+                  // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
+                  animationData={soon}
+                  buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
+                />
           </div>
 
           {/* Content */}
