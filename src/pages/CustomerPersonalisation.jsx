@@ -14,6 +14,16 @@ const CustomerPersonalisation = () => {
   const [appliedFiltersCount, setAppliedFiltersCount] = useState(0);
   const [filteredData, setFilteredData] = useState([]);
   const dropdownRef = useRef(null);
+  const [soon, setSoon] = useState()
+
+
+   useEffect(() => {
+        fetch("/assets/Comingsoon.json")
+            .then((res) => res.json())
+            .then(setSoon)
+            .catch(console.error)
+
+    }, []);
 
   const [pagination, setPagination] = useState({
     page: 1,
@@ -196,9 +206,10 @@ const CustomerPersonalisation = () => {
             </div>
             <div className="flex items-center gap-4 relative" ref={dropdownRef}>
               <VideoPopupWithShare
-                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
-              />
+                  // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
+                  animationData={soon}
+                  buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
+                />
 
               {/* Per page selector */}
               <div className="flex items-center gap-2">
