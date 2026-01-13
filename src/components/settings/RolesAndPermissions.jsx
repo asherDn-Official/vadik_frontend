@@ -11,6 +11,7 @@ import VideoPopupWithShare from "../common/VideoPopupWithShare";
 import Lottie from "lottie-react"
 
 
+
 const RolesAndPermissions = () => {
   const [currentView, setCurrentView] = useState("userManagement");
   const [selectedUser, setSelectedUser] = useState(null);
@@ -20,6 +21,7 @@ const RolesAndPermissions = () => {
   const [error, setError] = useState(null);
       // const LottieRef = useRef(null)
     const [soon, setSoon] = useState()
+    const [subscriptionData, setSubscriptionData] = useState(null);
 
 
 
@@ -31,7 +33,19 @@ const RolesAndPermissions = () => {
 
     }, []);
 
-    console.log(soon,"soon")
+    useEffect(() =>{
+      const subscription = async () => {
+        try {
+          const res = await api.get("/api/subscriptions/credit/usage");
+          const data = res.data;
+          setSubscriptionData(data.subscription.plan.toLowerCase());
+          console.log("subscription data plan:", subscriptionData);
+        }catch (error) {
+        console.log("error", error);
+      } 
+      }
+      subscription();      
+    },[])
 
   // API base URL
   const END_POINT = "api/staff";
@@ -1097,6 +1111,30 @@ const RolesAndPermissions = () => {
       setSearchTerm(e.target.value);
     }, []);
 
+     const handleClick =  () => {
+
+      if(subscriptionData === "free trail" && filteredUsers.length >= 0){
+        showToast("Cannot add more users,Subscribe for create user","error")
+        return
+      }
+     
+      if(subscriptionData === "seed start" && filteredUsers.length >= 3){
+        showToast("Your user limit reached.cannot add more users,Change plan to add more","error")
+        return
+      }
+      if(subscriptionData === "growth" && filteredUsers.length >= 5){
+        showToast("Your user limit reached.cannot add more users,Change plan to add more","error")
+        return
+      }
+      if(subscriptionData === "growth plus" && filteredUsers.length >= 7){
+        showToast("Your user limit reached.cannot add more users,Change plan to add more","error")
+        return
+      }
+
+      
+      setCurrentView("addEmployee")
+    }
+
     if (loading) return <div className="text-center py-8">Loading...</div>;
     if (error) return <div className="text-center py-8 text-red-600">{error}</div>;
 
@@ -1121,7 +1159,7 @@ const RolesAndPermissions = () => {
                   buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
                 />
             <button
-              onClick={() => setCurrentView("addEmployee")}
+              onClick={handleClick}
               className="flex items-center px-4 py-2 bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-[10px] hover:opacity-90 transition-opacity"
             >
               <Plus className="mr-2" /> Create User
