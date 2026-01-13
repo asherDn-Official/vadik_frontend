@@ -44,6 +44,7 @@ const CouponManagement = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [expiryDate, setExpiryDate] = useState(null);
   const [isOpen, setIsOpen] = useState(false)
+  const [soon, setSoon] = useState()
 
   const [filters, setFilters] = useState({
     isActive: "",
@@ -53,6 +54,15 @@ const CouponManagement = () => {
     discount: "",
     conditionType: "",
   });
+
+
+   useEffect(() => {
+        fetch("/assets/Comingsoon.json")
+            .then((res) => res.json())
+            .then(setSoon)
+            .catch(console.error)
+
+    }, []);
 
   const handleDateChange = (date) => {
     setExpiryDate(date);
@@ -432,7 +442,8 @@ const CouponManagement = () => {
                 </button>
 
                 <VideoPopupWithShare
-                  video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                  // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
+                  animationData={soon}
                   buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
                 />
                 <button
