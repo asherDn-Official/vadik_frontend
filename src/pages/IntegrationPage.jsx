@@ -1,9 +1,36 @@
 import React, { useState } from "react";
 import { Plus, Search, CheckCircle, LinkIcon, ArrowRight } from "lucide-react";
 import GooglePlaceReview from "../components/integration/GooglePlaceReview";
-import WhatsAppIntegration from "../components/integration/WhatsAppIntegration";
 
 // Mock components for demonstration
+// const GooglePlaceReview = () => (
+//   <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+//     <h2 className="text-2xl font-semibold mb-4 text-[#313166]">Google Place Review</h2>
+//     <p className="text-[#313166] mb-4">Manage your Google Place Review integration settings here.</p>
+//     <div className="bg-gray-100 p-4 rounded-lg">
+//       <h3 className="font-medium mb-2">Integration Details</h3>
+//       <p className="text-sm">Status: Connected</p>
+//       <p className="text-sm">Last synced: Today at 10:30 AM</p>
+//     </div>
+//   </div>
+// );
+
+const WhatsAppIntegration = () => (
+  <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+    <h2 className="text-2xl font-semibold mb-4 text-[#313166]">
+      WhatsApp Integration
+    </h2>
+    <p className="text-[#313166] mb-4">
+      Manage your WhatsApp Business API integration settings here.
+    </p>
+    <div className="bg-gray-100 p-4 rounded-lg">
+      <h3 className="font-medium mb-2">Integration Details</h3>
+      <p className="text-sm">Status: Connected</p>
+      <p className="text-sm">Connected number: +1 555-123-4567</p>
+    </div>
+  </div>
+);
+
 const FacebookIntegration = () => (
   <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
     <h2 className="text-2xl font-semibold mb-4 text-[#313166]">
@@ -63,17 +90,8 @@ const IntegrationDashboard = () => {
       icon: "./assets/whatsapp-icon.png",
       description:
         "Export customer context, quiz responses, and analytics directly to Google Sheets for comprehensive reporting and analysis.",
-      status: "integrated",
+      status: "working",
       component: GooglePlaceReview,
-    },
-    {
-      title: "WhatsApp",
-      icon: "./assets/whatsapp-icon.png",
-      description:
-        "Enable automated customer communications and campaign notifications through WhatsApp Business API integration.",
-      status: "integrated",
-      component: WhatsAppIntegration,
-      button: true,
     },
   ];
 
@@ -85,6 +103,15 @@ const IntegrationDashboard = () => {
         "Export customer context, quiz responses, and analytics directly to Google Sheets for comprehensive reporting and analysis.",
       status: "Comming soon",
       component: GSheetsIntegration,
+      button: false,
+    },
+    {
+      title: "WhatsApp",
+      icon: "./assets/whatsapp-icon.png",
+      description:
+        "Enable automated customer communications and campaign notifications through WhatsApp Business API integration.",
+      status: "Comming soon",
+      component: WhatsAppIntegration,
       button: false,
     },
     {
@@ -343,7 +370,7 @@ const IntegrationDashboard = () => {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-[20px] font-[500] mb-2 text-[#313166]">
-          Integration Management
+          Integrations
         </h1>
         <p className="text-[14px] font-[400] text-[#313166]">
           Effortless Integration for Seamless User Engagement and Automated
