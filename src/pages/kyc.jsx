@@ -15,7 +15,6 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useForm } from "react-hook-form";
 import { Search, SearchX, Copy } from "lucide-react";
-import { formatIndianMobile } from "../components/customerProfile/formatIndianMobile";
 
 const KYCPage = () => {
   const [searchType, setSearchType] = useState("phone");
@@ -428,7 +427,7 @@ const KYCPage = () => {
                   <div>
                     <p className="text-sm text-gray-500">Mobile</p>
                     <p className="font-medium">
-                       {formatIndianMobile(customerData.countryCode + " " + customerData.mobileNumber)}
+                      {formatPhone(customerData.mobileNumber)}
                     </p>
                   </div>
                   <div>

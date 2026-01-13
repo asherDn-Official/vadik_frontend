@@ -8,7 +8,6 @@ import api from "../../../api/apiconfig";
 import { useAuth } from "../../../context/AuthContext";
 import showToast from "../../../utils/ToastNotification";
 import { calculateTotalWithGST } from "../../../utils/billingUtils";
-import VideoPopupWithShare from "../../common/VideoPopupWithShare";
 
 export default function SubscriptionPage() {
   const [activeTab, setActiveTab] = useState("subscription");
@@ -26,16 +25,6 @@ export default function SubscriptionPage() {
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const retailerid = localStorage.getItem("retailerId");
   const { auth } = useAuth();
-      const [soon, setSoon] = useState()
-
-
-      useEffect(() => {
-        fetch("/assets/Comingsoon.json")
-            .then((res) => res.json())
-            .then(setSoon)
-            .catch(console.error)
-
-    }, []);
 
   // Addon quantities state
   const [addonQuantities, setAddonQuantities] = useState({});
@@ -559,18 +548,10 @@ export default function SubscriptionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 relative">
-      <div className="max-w-6xl mx-auto ">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-gray-800 mb-8">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-2xl font-semibold text-gray-800 mb-8">
           My Subscription
         </h1>
-        <VideoPopupWithShare
-                  // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
-                  animationData={soon}
-                  buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
-                />
-        </div>
-        
 
         {/* Current Plan Details */}
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">

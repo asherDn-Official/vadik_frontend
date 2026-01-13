@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, { useState } from "react";
 import PersonalizationCampaign from "../components/customeroppertunites/PersonalizationCampaign";
 import CustomerRecommendation from "../components/customeroppertunites/CustomerRecommendation";
 import StoreRecommendation from "../components/customeroppertunites/StoreRecommendation";
@@ -8,19 +8,9 @@ import ComingSoon from "../components/common/ComingSoon";
 import Campaign from "../components/customeroppertunites/Campaign";
 import SubscriptionPopup from "../components/settings/subscription/SubscriptionPopup";
 
-
 const CustomerOpportunities = () => {
   const [activeTab, setActiveTab] = useState("engagement");
   const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
-  const [soon, setSoon] = useState()
-
-   useEffect(() => {
-        fetch("/assets/Comingsoon.json")
-            .then((res) => res.json())
-            .then(setSoon)
-            .catch(console.error)
-
-    }, []);
 
   const handleUpdatePlan = () => {
     setShowSubscriptionPopup((prev) => !prev);
@@ -83,10 +73,9 @@ const CustomerOpportunities = () => {
                     Birthday and anniversary-based personalized offers.
                     <span className=" float-right">
                       <VideoPopupWithShare
-                  // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
-                  animationData={soon}
-                  buttonCss="flex text-pink-500 items-center gap-2 whitespace-nowrap"
-                />
+                        video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                        buttonCss=" flex text-pink-500 items-center gap-2 whitespace-nowrap "
+                      />
                     </span>
                   </span>
                 </div>
@@ -115,10 +104,9 @@ const CustomerOpportunities = () => {
                     Festival and region-specific campaign suggestions.
                     <span className=" float-right">
                       <VideoPopupWithShare
-                  // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
-                  animationData={soon}
-                  buttonCss="flex text-pink-500 items-center gap-2 whitespace-nowrap"
-                />
+                        video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                        buttonCss=" flex text-pink-500  items-center gap-2 whitespace-nowrap "
+                      />
                     </span>
                   </span>
                 </div>
