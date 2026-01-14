@@ -1111,10 +1111,12 @@ const RolesAndPermissions = () => {
       setSearchTerm(e.target.value);
     }, []);
 
+    
+
      const handleClick =  () => {
 
-      if(subscriptionData === "free trail" && filteredUsers.length >= 0){
-        showToast("Cannot add more users,Subscribe for create user","error")
+      if(subscriptionData === "free trial" ){
+        showToast("Cannot add users,Subscribe for create user","error")
         return
       }
      
