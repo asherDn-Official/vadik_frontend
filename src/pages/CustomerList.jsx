@@ -11,6 +11,7 @@ const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [soon, setSoon] = useState()
   const [pagination, setPagination] = useState({
     totalItems: 0,
     totalPages: 1,
@@ -58,6 +59,14 @@ const CustomerList = () => {
   useEffect(() => {
     fetchCustomers();
   }, [fetchCustomers]);
+
+  useEffect(() => {
+        fetch("/assets/Comingsoon.json")
+            .then((res) => res.json())
+            .then(setSoon)
+            .catch(console.error)
+
+    }, []); 
 
   // Debounced search to avoid too many API calls while typing
   const debouncedSearch = useCallback(
@@ -111,9 +120,10 @@ const CustomerList = () => {
             </h1>
             <div className="flex flex-wrap gap-3 sm:gap-4 items-center">
               <VideoPopupWithShare
-                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
-              />
+                  // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
+                  animationData={soon}
+                  buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
+                />
               <div className="relative w-full sm:w-auto">
                 <input
                   type="text"
