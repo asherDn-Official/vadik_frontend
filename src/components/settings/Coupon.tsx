@@ -255,7 +255,7 @@ const CouponManagement = () => {
       conditionType: coupon.conditionType || "greater",
       conditionValue: coupon.conditionValue || 0,
       productImage: coupon.productImage || "",
-      productNames: coupon.productNames || [],
+      productNames: coupon.productNames || "",
     };
     reset(editData);
   };
@@ -589,29 +589,20 @@ const CouponManagement = () => {
                         Product Name *
                       </label>
                       <div className="space-y-2">
-                         {/* {fields.map((field, index) => ( */}
                           <div  className="flex gap-2">
 
                             <input
                               type="text"
                               {...register("productNames")}
                               className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                                errors.productNames?.[index]
+                                errors.productNames
                                   ? "border-red-500"
                                   : "border-gray-300"
                               }`}
                               placeholder="Enter product name"
                             />
-                            <button
-                              type="button"
-                              onClick={() => remove(index)}
-                              className="p-3 text-red-500 hover:bg-red-50 rounded-lg"
-                            >
-                              <FiTrash2 />
-                            </button> */}
 
                           </div>
-                        {/* ))} */}
                         {/* <button
                           type="button"
                           onClick={() => append("")}
