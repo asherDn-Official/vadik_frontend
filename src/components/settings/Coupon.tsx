@@ -84,7 +84,7 @@ const CouponManagement = () => {
     conditionType: "greater",
     conditionValue: 0,
     productImage: "",
-    productNames: [],
+    productNames: "",
   };
 
   // react-hook-form schema and setup
@@ -157,13 +157,11 @@ const CouponManagement = () => {
           otherwise: (s) => s.transform(() => 0).default(0),
         }),
       productNames: yup
-        .array()
-        .of(
-          yup
+        
             .string()
             .max(15, "Product name can not be more than 15 characters")
             .required("Product name is required")
-        )
+        
         .when("couponType", {
           is: "product",
           then: (s) => s.min(1, "At least one product name is required"),
@@ -185,16 +183,19 @@ const CouponManagement = () => {
     resolver: yupResolver(couponSchema),
     defaultValues: initialCouponData,
     mode: "OnChange",
+
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "productNames",
-  });
+  // const { fields, append, remove } = useFieldArray({
+  //   control,
+  //   name: "productNames",
+  // });
+  
 
   const watchCouponType = watch("couponType");
   const watchCondition = watch("condition");
   const watchProductImage = watch("productImage");
+  
 
   const fetchCoupons = async () => {
     setIsLoading(true);
@@ -275,7 +276,7 @@ const CouponManagement = () => {
         // Ensure conditionValue is 0 if condition is false
         conditionValue: data.condition ? data.conditionValue : 0,
         // Ensure productNames is empty array if not a product coupon
-        productNames: data.couponType === "product" ? data.productNames : [],
+        productNames: data.couponType === "product" ? data.productNames : "",
         productImage: data.couponType === "product" ? data.productImage || "" : "",
       };
 
@@ -588,11 +589,12 @@ const CouponManagement = () => {
                         Product Name *
                       </label>
                       <div className="space-y-2">
-                        {fields.map((field, index) => (
-                          <div key={field.id} className="flex gap-2">
+                         {/* {fields.map((field, index) => ( */}
+                          <div  className="flex gap-2">
+
                             <input
                               type="text"
-                              {...register(`productNames.${index}`)}
+                              {...register("productNames")}
                               className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
                                 errors.productNames?.[index]
                                   ? "border-red-500"
@@ -606,16 +608,18 @@ const CouponManagement = () => {
                               className="p-3 text-red-500 hover:bg-red-50 rounded-lg"
                             >
                               <FiTrash2 />
-                            </button>
+                            </button> */}
+
                           </div>
-                        ))}
-                        <button
+                        {/* ))} */}
+                        {/* <button
                           type="button"
                           onClick={() => append("")}
-                          className="flex items-center px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors"
+                          className={`flex items-center px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors ${fields.length === 0 ? " " : "cursor-not-allowed hover:bg-gray-200 hover:text-gray-500"}`}
                         >
                           <FiPlus className="mr-2" /> Add Product
-                        </button>
+                        </button> */}
+
                       </div>
                       {errors.productNames && (
                         <p className="mt-1 text-sm text-red-600">
@@ -1081,7 +1085,7 @@ const CouponManagement = () => {
                             coupon.productNames &&
                             coupon.productNames.length > 0 && (
                               <span>
-                                | Products: {coupon.productNames.join(", ")}
+                                | Products: {coupon.productNames}
                               </span>
                             )}
                         </div>

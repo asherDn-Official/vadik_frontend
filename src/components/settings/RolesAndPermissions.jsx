@@ -1080,6 +1080,32 @@ const RolesAndPermissions = () => {
       setSearchTerm(e.target.value);
     }, []);
 
+    
+
+     const handleClick =  () => {
+
+      if(subscriptionData === "free trial" ){
+        showToast("Cannot add users,Subscribe for create user","error")
+        return
+      }
+     
+      if(subscriptionData === "seed start" && filteredUsers.length >= 3){
+        showToast("Your user limit reached.cannot add more users,Change plan to add more","error")
+        return
+      }
+      if(subscriptionData === "growth" && filteredUsers.length >= 5){
+        showToast("Your user limit reached.cannot add more users,Change plan to add more","error")
+        return
+      }
+      if(subscriptionData === "growth plus" && filteredUsers.length >= 7){
+        showToast("Your user limit reached.cannot add more users,Change plan to add more","error")
+        return
+      }
+
+      
+      setCurrentView("addEmployee")
+    }
+
     if (loading) return <div className="text-center py-8">Loading...</div>;
     if (error) return <div className="text-center py-8 text-red-600">{error}</div>;
 
