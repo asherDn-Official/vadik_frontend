@@ -44,6 +44,7 @@ const CouponManagement = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [expiryDate, setExpiryDate] = useState(null);
   const [isOpen, setIsOpen] = useState(false)
+  const [soon, setSoon] = useState()
 
   const [filters, setFilters] = useState({
     isActive: "",
@@ -53,6 +54,15 @@ const CouponManagement = () => {
     discount: "",
     conditionType: "",
   });
+
+
+   useEffect(() => {
+        fetch("/assets/Comingsoon.json")
+            .then((res) => res.json())
+            .then(setSoon)
+            .catch(console.error)
+
+    }, []);
 
   const handleDateChange = (date) => {
     setExpiryDate(date);
@@ -255,7 +265,7 @@ const CouponManagement = () => {
       conditionType: coupon.conditionType || "greater",
       conditionValue: coupon.conditionValue || 0,
       productImage: coupon.productImage || "",
-      productNames: coupon.productNames || "",
+      productNames: coupon.productNames || [],
     };
     reset(editData);
   };
@@ -433,7 +443,8 @@ const CouponManagement = () => {
                 </button>
 
                 <VideoPopupWithShare
-                  video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                  // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
+                  animationData={soon}
                   buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
                 />
                 <button
@@ -509,7 +520,8 @@ const CouponManagement = () => {
                 </div>
 
                 {/* Discount */}
-                <div>
+                {watchCouponType !== "product" && (
+                  <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Discount *
                   </label>
@@ -517,11 +529,12 @@ const CouponManagement = () => {
                     type="number"
                     {...register("discount", { valueAsNumber: true })}
                     className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                      errors.discount ? "border-red-500" : "border-gray-300"
+                      errors.discount  ? "border-red-500" : "border-gray-300" }
                     }`}
                     placeholder="e.g., 50 or 10"
                     min={0}
                     step={watchCouponType === "percentage" ? 0.1 : 1}
+                    disabled={watchCouponType === "product"}
                   />
                   {errors.discount && (
                     <p className="mt-1 text-sm text-red-600">
@@ -529,6 +542,8 @@ const CouponManagement = () => {
                     </p>
                   )}
                 </div>
+                  )}
+                
 
                 {/* Expiry Date */}
                 <div>
@@ -589,6 +604,7 @@ const CouponManagement = () => {
                         Product Name *
                       </label>
                       <div className="space-y-2">
+                         {/* {fields.map((field, index) => ( */}
                           <div  className="flex gap-2">
 
                             <input
@@ -601,8 +617,16 @@ const CouponManagement = () => {
                               }`}
                               placeholder="Enter product name"
                             />
+                            {/* <button
+                              type="button"
+                              onClick={() => remove(index)}
+                              className="p-3 text-red-500 hover:bg-red-50 rounded-lg"
+                            >
+                              <FiTrash2 />
+                            </button> */}
 
                           </div>
+                        {/* ))} */}
                         {/* <button
                           type="button"
                           onClick={() => append("")}

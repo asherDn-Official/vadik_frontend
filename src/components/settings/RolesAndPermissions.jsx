@@ -7,6 +7,10 @@ import { Eye, EyeOff } from "lucide-react";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
+import VideoPopupWithShare from "../common/VideoPopupWithShare";
+import Lottie from "lottie-react"
+
+
 
 const RolesAndPermissions = () => {
   const [currentView, setCurrentView] = useState("userManagement");
@@ -15,6 +19,33 @@ const RolesAndPermissions = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+      // const LottieRef = useRef(null)
+    const [soon, setSoon] = useState()
+    const [subscriptionData, setSubscriptionData] = useState(null);
+
+
+
+       useEffect(() => {
+        fetch("/assets/Comingsoon.json")
+            .then((res) => res.json())
+            .then(setSoon)
+            .catch(console.error)
+
+    }, []);
+
+    useEffect(() =>{
+      const subscription = async () => {
+        try {
+          const res = await api.get("/api/subscriptions/credit/usage");
+          const data = res.data;
+          setSubscriptionData(data.subscription.plan.toLowerCase());
+          console.log("subscription data plan:", subscriptionData);
+        }catch (error) {
+        console.log("error", error);
+      } 
+      }
+      subscription();      
+    },[])
 
   // API base URL
   const END_POINT = "api/staff";
@@ -1124,8 +1155,13 @@ const RolesAndPermissions = () => {
               />
               <Search className="absolute right-3 top-3 text-[#31316699] text-[20px] cursor-pointer" />
             </div>
+            <VideoPopupWithShare
+                  // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
+                  animationData={soon}
+                  buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
+                />
             <button
-              onClick={() => setCurrentView("addEmployee")}
+              onClick={handleClick}
               className="flex items-center px-4 py-2 bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-[10px] hover:opacity-90 transition-opacity"
             >
               <Plus className="mr-2" /> Create User
