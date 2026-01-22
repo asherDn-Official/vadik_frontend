@@ -215,10 +215,10 @@ const Template = () => {
 
   const validateVariableStructure = (text, expectedCount) => {
     const actualCount = getVariableCount(text);
-    if (actualCount !== expectedCount) return false;
+    if (actualCount > expectedCount) return false;
     
     // Ensure sequential {{1}}, {{2}}...
-    for (let i = 1; i <= expectedCount; i++) {
+    for (let i = 1; i <= actualCount; i++) {
       if (!text.includes(`{{${i}}}`)) return false;
     }
     return true;
@@ -230,10 +230,10 @@ const Template = () => {
     const templateVars = getVariableCount(templateBody);
     const requiredVars = role.vars.length;
     
-    if (templateVars !== requiredVars) {
+    if (templateVars > requiredVars) {
       return { 
         eligible: false, 
-        reason: `Variable mismatch. Role needs ${requiredVars} variables, template has ${templateVars}.` 
+        reason: `Too many variables. Role provides max ${requiredVars}, template uses ${templateVars}.` 
       };
     }
     
@@ -286,13 +286,13 @@ const Template = () => {
           templateData: {
             name: sanitizedName,
             category: template.category,
-            language: 'en_US',
+            language: 'en',
             components: [
               {
                 type: 'BODY',
                 text: template.text,
                 example: varCount > 0 ? {
-                  body_text: [Array.from({ length: varCount }, (_, idx) => `Sample ${idx + 1}`)]
+                  body_text: [Array.from({ length: getVariableCount(template.text) }, (_, idx) => `Sample ${idx + 1}`)]
                 } : undefined
               }
             ]
@@ -343,7 +343,7 @@ const Template = () => {
 
     const role = quickCreateData.role;
     if (!validateVariableStructure(quickCreateData.text, role.vars.length)) {
-      toast.error(`Template must include variables {{1}} through {{${role.vars.length}}}`);
+      toast.error(`Template must include sequential variables {{1}}, {{2}}, etc. (Max ${role.vars.length})`);
       return;
     }
 
@@ -360,11 +360,12 @@ const Template = () => {
               type: 'BODY',
               text: quickCreateData.text,
               example: {
-                body_text: [role.vars.map((_, i) => `Sample ${i + 1}`)]
+                body_text: [Array.from({ length: getVariableCount(quickCreateData.text) }, (_, i) => `Sample ${i + 1}`)]
               }
             }
           ]
-        }
+        },
+        role: role.id
       };
 
       const res = await axios.post(`${API_BASE_URL}/api/integrationManagement/whatsapp/templates`, payload, {
@@ -397,11 +398,12 @@ const Template = () => {
     setShowSyncModal(true);
   };
 
-  const updateMapping = async (roleId, templateName) => {
+  const updateMapping = async (roleId, templateName, language = "en") => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(`${API_BASE_URL}/api/integrationManagement/whatsapp/templates/mapping`, {
-        mappings: { [roleId]: templateName }
+        mappings: { [roleId]: templateName },
+        languages: { [roleId]: language }
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -424,200 +426,198 @@ const Template = () => {
   if (loading) return <div className="flex justify-center items-center h-64"><RefreshCw className="animate-spin text-[#313166]" /></div>;
 
   const isUsingOwn = config?.isUsingOwnWhatsapp;
-
-  if (selectedRole) {
-    const role = STANDARD_TEMPLATES.find(r => r.id === selectedRole);
-    return (
-      <div className="p-6 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-        <button 
-          onClick={() => setSelectedRole(null)}
-          className="flex items-center gap-2 text-gray-500 hover:text-[#313166] mb-6 transition-colors font-medium"
-        >
-          <ArrowLeft size={20} />
-          Back to Dashboard
-        </button>
-
-        <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-xl mb-8">
-          <div className="p-8 bg-gradient-to-r from-[#313166] to-[#4a4a8a] text-white">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-3xl font-black">{role.label}</h2>
-                  <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">{role.category}</span>
-                </div>
-                <p className="text-gray-200 text-sm max-w-2xl leading-relaxed">{role.description}</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10">
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-2">Required Variables</p>
-                <div className="flex flex-wrap gap-2">
-                  {role.vars.map((v, i) => (
-                    <span key={i} className="bg-white text-[#313166] px-2.5 py-1 rounded-lg text-[10px] font-bold">
-                      {"{{"}{i + 1}{"}}"} : {v}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-8">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-              <h3 className="text-xl font-bold text-[#313166]">Eligible Templates</h3>
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => {
-                    setQuickCreateData({
-                      name: `${role.id}_custom_${Date.now().toString().slice(-4)}`,
-                      text: role.defaultText,
-                      role: role
-                    });
-                    setShowQuickCreate(true);
-                  }}
-                  className="bg-[#db3b76] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#b83163] transition-colors shadow-lg flex items-center gap-2"
-                >
-                  <Plus size={16} />
-                  Create Replacement
-                </button>
-                <div className="relative w-full md:w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input 
-                    type="text" 
-                    placeholder="Search templates..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#db3b76]/20 focus:border-[#db3b76] transition-all text-sm"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Default Option Card */}
-              <div 
-                onClick={() => updateMapping(role.id, "")}
-                className={`relative group cursor-pointer p-6 rounded-2xl border-2 transition-all ${
-                  !mappings[role.id] 
-                    ? 'border-[#db3b76] bg-pink-50/30' 
-                    : 'border-gray-100 hover:border-[#db3b76]/30 hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 bg-gray-200 rounded-xl text-gray-600">
-                    <Layout size={24} />
-                  </div>
-                  {!mappings[role.id] && <CheckCircle size={20} className="text-[#db3b76]" />}
-                </div>
-                <h4 className="font-bold text-[#313166] text-lg mb-1">System Default</h4>
-                <p className="text-xs text-gray-500 mb-4">Uses Vadik&apos;s standard message format for this role.</p>
-                <div className="bg-white border border-gray-100 p-4 rounded-xl text-xs text-gray-400 italic">
-                  &quot;{role.defaultText}&quot;
-                </div>
-              </div>
-
-              {/* Eligible Custom Templates */}
-              {templates.map(t => {
-                const eligibility = checkEligibility(t, role);
-                const isSelected = mappings[role.id] === t.name;
-                
-                return (
-                  <div 
-                    key={t.id}
-                    onClick={() => eligibility.eligible && updateMapping(role.id, t.name)}
-                    className={`relative group p-6 rounded-2xl border-2 transition-all ${
-                      isSelected 
-                        ? 'border-[#db3b76] bg-pink-50/30' 
-                        : eligibility.eligible 
-                          ? 'border-gray-100 cursor-pointer hover:border-[#db3b76]/30 hover:bg-gray-50' 
-                          : 'border-gray-50 opacity-50 cursor-not-allowed bg-gray-50/50'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className={`p-3 rounded-xl ${
-                        t.status === 'APPROVED' ? 'bg-green-100 text-green-600' : 
-                        t.status === 'PENDING' ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600'
-                      }`}>
-                        <FileText size={24} />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {isSelected && <CheckCircle size={20} className="text-[#db3b76]" />}
-                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
-                          t.status === 'APPROVED' ? 'bg-green-600 text-white' : 'bg-gray-400 text-white'
-                        }`}>
-                          {t.status}
-                        </span>
-                      </div>
-                    </div>
-                    <h4 className="font-bold text-[#313166] text-lg mb-1 truncate pr-8">{t.name}</h4>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">{t.language} • {t.category}</p>
-                    
-                    <div className="bg-white border border-gray-100 p-4 rounded-xl text-xs text-gray-600 italic line-clamp-3 mb-4">
-                      &quot;{t.components.find(c => c.type === 'BODY')?.text}&quot;
-                    </div>
-
-                    {!eligibility.eligible && (
-                      <div className="flex items-center gap-2 text-red-500 text-[10px] font-bold bg-red-50 p-2 rounded-lg mt-2">
-                        <AlertCircle size={14} />
-                        {eligibility.reason}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            
-            {templates.length === 0 && (
-              <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-3xl">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileText className="text-gray-300" size={32} />
-                </div>
-                <h4 className="text-[#313166] font-bold">No custom templates yet</h4>
-                <p className="text-gray-400 text-sm max-w-xs mx-auto mt-1">Create or sync templates to see them listed here for mapping.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const role = selectedRole ? STANDARD_TEMPLATES.find(r => r.id === selectedRole) : null;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header Section */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
-        <div>
-          <h2 className="text-3xl font-black text-[#313166] tracking-tight flex items-center gap-3">
-            WhatsApp Template Manager
-            <button onClick={() => setShowRules(true)} className="text-gray-300 hover:text-[#db3b76] transition-colors">
-              <HelpCircle size={22} />
-            </button>
-          </h2>
-          <p className="text-sm text-gray-500 mt-2 font-medium">
-            {isUsingOwn 
-              ? "Automate your customer engagement with custom meta-approved templates." 
-              : "Standard account active. Connect your own to unlock custom branding."}
-          </p>
-        </div>
-        <div className="flex items-center gap-3 w-full lg:w-auto">
-          {isUsingOwn && (
-            <button 
-              onClick={handleOpenSyncModal}
-              className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-[#313166] text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#25254d] transition-all shadow-lg active:scale-95 group"
-            >
-              <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
-              <span>Smart Sync</span>
-            </button>
-          )}
-          <a 
-            href="https://business.facebook.com/wa/manage/templates" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-white border-2 border-gray-100 text-[#313166] px-6 py-3 rounded-2xl font-bold hover:border-[#313166] transition-all group"
+      {selectedRole ? (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <button 
+            onClick={() => setSelectedRole(null)}
+            className="flex items-center gap-2 text-gray-500 hover:text-[#313166] mb-6 transition-colors font-medium"
           >
-            <ExternalLink size={18} className="text-[#db3b76]" />
-            <span>Meta Manager</span>
-          </a>
+            <ArrowLeft size={20} />
+            Back to Dashboard
+          </button>
+
+          <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-xl mb-8">
+            <div className="p-8 bg-gradient-to-r from-[#313166] to-[#4a4a8a] text-white">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h2 className="text-3xl font-black">{role.label}</h2>
+                    <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">{role.category}</span>
+                  </div>
+                  <p className="text-gray-200 text-sm max-w-2xl leading-relaxed">{role.description}</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-2">Required Variables</p>
+                  <div className="flex flex-wrap gap-2">
+                    {role.vars.map((v, i) => (
+                      <span key={i} className="bg-white text-[#313166] px-2.5 py-1 rounded-lg text-[10px] font-bold">
+                        {"{{"}{i + 1}{"}}"} : {v}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-8">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+                <h3 className="text-xl font-bold text-[#313166]">Eligible Templates</h3>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => {
+                      setQuickCreateData({
+                        name: `${role.id}_custom_${Date.now().toString().slice(-4)}`,
+                        text: role.defaultText,
+                        role: role
+                      });
+                      setShowQuickCreate(true);
+                    }}
+                    className="bg-[#db3b76] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#b83163] transition-colors shadow-lg flex items-center gap-2"
+                  >
+                    <Plus size={16} />
+                    Create Replacement
+                  </button>
+                  <div className="relative w-full md:w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                      type="text" 
+                      placeholder="Search templates..."
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#db3b76]/20 focus:border-[#db3b76] transition-all text-sm"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Default Option Card */}
+                <div 
+                  onClick={() => updateMapping(role.id, "")}
+                  className={`relative group cursor-pointer p-6 rounded-2xl border-2 transition-all ${
+                    !mappings[role.id] 
+                      ? 'border-[#db3b76] bg-pink-50/30' 
+                      : 'border-gray-100 hover:border-[#db3b76]/30 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="p-3 bg-gray-200 rounded-xl text-gray-600">
+                      <Layout size={24} />
+                    </div>
+                    {!mappings[role.id] && <CheckCircle size={20} className="text-[#db3b76]" />}
+                  </div>
+                  <h4 className="font-bold text-[#313166] text-lg mb-1">System Default</h4>
+                  <p className="text-xs text-gray-500 mb-4">Uses Vadik&apos;s standard message format for this role.</p>
+                  <div className="bg-white border border-gray-100 p-4 rounded-xl text-xs text-gray-400 italic">
+                    &quot;{role.defaultText}&quot;
+                  </div>
+                </div>
+
+                {/* Eligible Custom Templates */}
+                {templates.map(t => {
+                  const eligibility = checkEligibility(t, role);
+                  const isSelected = mappings[role.id] === t.name;
+                  
+                  return (
+                    <div 
+                      key={t.id}
+                      onClick={() => eligibility.eligible && updateMapping(role.id, t.name, t.language)}
+                      className={`relative group p-6 rounded-2xl border-2 transition-all ${
+                        isSelected 
+                          ? 'border-[#db3b76] bg-pink-50/30' 
+                          : eligibility.eligible 
+                            ? 'border-gray-100 cursor-pointer hover:border-[#db3b76]/30 hover:bg-gray-50' 
+                            : 'border-gray-50 opacity-50 cursor-not-allowed bg-gray-50/50'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div className={`p-3 rounded-xl ${
+                          t.status === 'APPROVED' ? 'bg-green-100 text-green-600' : 
+                          t.status === 'PENDING' ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600'
+                        }`}>
+                          <FileText size={24} />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isSelected && <CheckCircle size={20} className="text-[#db3b76]" />}
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                            t.status === 'APPROVED' ? 'bg-green-600 text-white' : 'bg-gray-400 text-white'
+                          }`}>
+                            {t.status}
+                          </span>
+                        </div>
+                      </div>
+                      <h4 className="font-bold text-[#313166] text-lg mb-1 truncate pr-8">{t.name}</h4>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">{t.language} • {t.category}</p>
+                      
+                      <div className="bg-white border border-gray-100 p-4 rounded-xl text-xs text-gray-600 italic line-clamp-3 mb-4">
+                        &quot;{t.components.find(c => c.type === 'BODY')?.text}&quot;
+                      </div>
+
+                      {!eligibility.eligible && (
+                        <div className="flex items-center gap-2 text-red-500 text-[10px] font-bold bg-red-50 p-2 rounded-lg mt-2">
+                          <AlertCircle size={14} />
+                          {eligibility.reason}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {templates.length === 0 && (
+                <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-3xl">
+                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FileText className="text-gray-300" size={32} />
+                  </div>
+                  <h4 className="text-[#313166] font-bold">No custom templates yet</h4>
+                  <p className="text-gray-400 text-sm max-w-xs mx-auto mt-1">Create or sync templates to see them listed here for mapping.</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Header Section */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
+            <div>
+              <h2 className="text-3xl font-black text-[#313166] tracking-tight flex items-center gap-3">
+                WhatsApp Template Manager
+                <button onClick={() => setShowRules(true)} className="text-gray-300 hover:text-[#db3b76] transition-colors">
+                  <HelpCircle size={22} />
+                </button>
+              </h2>
+              <p className="text-sm text-gray-500 mt-2 font-medium">
+                {isUsingOwn 
+                  ? "Automate your customer engagement with custom meta-approved templates." 
+                  : "Standard account active. Connect your own to unlock custom branding."}
+              </p>
+            </div>
+            <div className="flex items-center gap-3 w-full lg:w-auto">
+              {isUsingOwn && (
+                <button 
+                  onClick={handleOpenSyncModal}
+                  className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-[#313166] text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#25254d] transition-all shadow-lg active:scale-95 group"
+                >
+                  <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
+                  <span>Smart Sync</span>
+                </button>
+              )}
+              <a 
+                href="https://business.facebook.com/wa/manage/templates" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-white border-2 border-gray-100 text-[#313166] px-6 py-3 rounded-2xl font-bold hover:border-[#313166] transition-all group"
+              >
+                <ExternalLink size={18} className="text-[#db3b76]" />
+                <span>Meta Manager</span>
+              </a>
+            </div>
+          </div>
 
       {/* Rules Banner */}
       {showRules && (
@@ -824,6 +824,8 @@ const Template = () => {
           </div>
         </section>
       </div>
+    </>
+  )}
 
       {/* Enhanced Sync Modal */}
       {showSyncModal && (
@@ -1096,7 +1098,7 @@ const Template = () => {
                       {!validateVariableStructure(quickCreateData.text, quickCreateData.role?.vars.length) && (
                         <div className="mt-2 p-3 bg-red-100 text-red-700 rounded-xl text-xs font-bold flex items-center gap-2">
                           <AlertCircle size={14} />
-                          Variable Structure Invalid: Must use all sequential variables.
+                          Variable Structure Invalid: Must use sequential variables {"{{1}}"}, {"{{2}}"}, etc.
                         </div>
                       )}
                     </div>
