@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../../api/apiconfig.js';
-import { MessageSquare, CheckCircle, XCircle, RefreshCw, Trash2, X } from 'lucide-react';
+import { MessageSquare, CheckCircle, XCircle, RefreshCw, Trash2, X, Link as LinkIcon, Copy, ExternalLink, Info } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const WhatsAppIntegration = () => {
   const [config, setConfig] = useState(null);
+  const [webhookInfo, setWebhookInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [whatsappDetails, setWhatsappDetails] = useState(null);
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualConfig, setManualConfig] = useState({
     accessToken: '',
@@ -39,7 +42,7 @@ const WhatsAppIntegration = () => {
             });
           }
         }
-      } catch (e) {
+      } catch {
         // Not a JSON or not from Meta
       }
     };
@@ -75,11 +78,32 @@ const WhatsAppIntegration = () => {
       });
       if (response.data.status) {
         setConfig(response.data.data);
+        setWebhookInfo(response.data.webhook);
+        if (response.data.data.isUsingOwnWhatsapp) {
+          fetchDetails();
+        }
       }
     } catch (error) {
       console.error("Error fetching WhatsApp config:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDetails = async () => {
+    setDetailsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE_URL}/api/integrationManagement/whatsapp/details`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.status) {
+        setWhatsappDetails(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching WhatsApp details:", error);
+    } finally {
+      setDetailsLoading(false);
     }
   };
 
@@ -133,8 +157,9 @@ const WhatsAppIntegration = () => {
       if (response.data.status) {
         toast.success("WhatsApp disconnected");
         setConfig({ ...config, isUsingOwnWhatsapp: false, whatsappStatus: 'disconnected' });
+        setWhatsappDetails(null);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to disconnect WhatsApp");
     }
   };
@@ -189,7 +214,7 @@ const WhatsAppIntegration = () => {
                 {config?.isUsingOwnWhatsapp ? 'Custom WhatsApp Account' : 'Platform Default Account'}
               </h3>
               <p className="text-sm text-gray-500">
-                {config?.isUsingOwnWhatsapp ? `Connected to WABA: ${config.whatsappWabaId}` : 'Currently using Vadik AI\'s shared WhatsApp number'}
+                {config?.isUsingOwnWhatsapp ? `Connected to WABA: ${config.whatsappWabaId}` : "Currently using Vadik AI's shared WhatsApp number"}
               </p>
             </div>
           </div>
@@ -207,29 +232,191 @@ const WhatsAppIntegration = () => {
         </div>
 
         {config?.isUsingOwnWhatsapp && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100 mb-6">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">WABA ID</p>
-              <p className="text-sm font-mono text-[#313166]">{config.whatsappWabaId}</p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Phone Number ID</p>
-              <p className="text-sm font-mono text-[#313166]">{config.whatsappPhoneNumberId}</p>
-            </div>
-            {config.whatsappBusinessId && (
+          <>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100 mb-6">
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Business ID</p>
-                <p className="text-sm font-mono text-[#313166]">{config.whatsappBusinessId}</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">WABA ID</p>
+                <p className="text-sm font-mono text-[#313166]">{config.whatsappWabaId}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Phone Number ID</p>
+                <p className="text-sm font-mono text-[#313166]">{config.whatsappPhoneNumberId}</p>
+              </div>
+              {config.whatsappBusinessId && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Business ID</p>
+                  <p className="text-sm font-mono text-[#313166]">{config.whatsappBusinessId}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Connection Status</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className={`w-2 h-2 rounded-full ${config.whatsappStatus === 'verified' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                  <p className="text-sm capitalize text-[#313166]">{config.whatsappStatus || 'Connected'}</p>
+                </div>
+              </div>
+            </div>
+
+            {detailsLoading ? (
+              <div className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+                <RefreshCw size={14} className="animate-spin" />
+                <span>Fetching real-time business details...</span>
+              </div>
+            ) : (whatsappDetails?.business && whatsappDetails?.phone) && (
+              <div className="mb-6 space-y-6">
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                  <h4 className="text-sm font-bold text-[#313166] mb-3 flex items-center">
+                    <CheckCircle size={16} className="mr-2 text-blue-600" />
+                    Business Details
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Business Name</p>
+                      <p className="text-sm font-semibold text-[#313166]">{whatsappDetails.business.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Account Status</p>
+                      <p className="text-sm text-[#313166] capitalize">{whatsappDetails.business.status?.replace(/_/g, ' ')}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Currency</p>
+                      <p className="text-sm text-[#313166]">{whatsappDetails.business.currency}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Ownership</p>
+                      <p className="text-sm text-[#313166] capitalize">{whatsappDetails.business.owner_business_info?.name || 'Business Owned'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">WABA ID</p>
+                      <p className="text-sm text-[#313166]">{whatsappDetails.business.id}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 border border-green-100 rounded-lg p-4">
+                  <h4 className="text-sm font-bold text-[#313166] mb-3 flex items-center">
+                    <CheckCircle size={16} className="mr-2 text-green-600" />
+                    Phone Number Details
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Display Number</p>
+                      <p className="text-sm font-semibold text-[#313166]">{whatsappDetails.phone.display_phone_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Verified Name</p>
+                      <p className="text-sm text-[#313166]">{whatsappDetails.phone.verified_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Quality Rating</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <div className={`w-2 h-2 rounded-full ${
+                          whatsappDetails.phone.quality_rating === 'GREEN' ? 'bg-green-500' : 
+                          whatsappDetails.phone.quality_rating === 'YELLOW' ? 'bg-yellow-500' : 'bg-red-500'
+                        }`}></div>
+                        <p className="text-sm text-[#313166]">{whatsappDetails.phone.quality_rating}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Name Status</p>
+                      <p className="text-sm text-[#313166] capitalize">{whatsappDetails.phone.name_status?.replace(/_/g, ' ')}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Verification</p>
+                      <p className="text-sm text-[#313166] capitalize">{whatsappDetails.phone.code_verification_status?.replace(/_/g, ' ')}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Connection Status</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <div className={`w-2 h-2 rounded-full ${config.whatsappStatus === 'verified' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                <p className="text-sm capitalize text-[#313166]">{config.whatsappStatus || 'Connected'}</p>
+
+            {/* Webhook Configuration Section */}
+            <div className="mt-8 border-t border-gray-100 pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-bold text-[#313166] flex items-center">
+                  <LinkIcon size={20} className="mr-2 text-[#db3b76]" />
+                  Webhook Configuration
+                </h4>
+                <div className="flex items-center">
+                  {config.isWebhookVerified ? (
+                    <span className="flex items-center text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs font-medium border border-green-100">
+                      <CheckCircle size={14} className="mr-1" /> Webhook Connected
+                    </span>
+                  ) : (
+                    <span className="flex items-center text-amber-600 bg-amber-50 px-3 py-1 rounded-full text-xs font-medium border border-amber-100">
+                      <RefreshCw size={14} className="mr-1 animate-spin" /> Waiting for Setup
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                <p className="text-sm text-gray-600 mb-5">
+                  To receive incoming messages and status updates, you must configure the following webhook in your Meta App Dashboard.
+                </p>
+
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] uppercase tracking-wider text-gray-400 font-bold">Callback URL</label>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(webhookInfo?.callbackUrl);
+                          toast.success("Callback URL copied!");
+                        }}
+                        className="text-[#db3b76] hover:text-[#c73369] flex items-center gap-1 text-[11px] font-bold"
+                      >
+                        <Copy size={12} /> COPY
+                      </button>
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono text-gray-700 break-all">
+                      {webhookInfo?.callbackUrl}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] uppercase tracking-wider text-gray-400 font-bold">Verify Token</label>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(webhookInfo?.verifyToken);
+                          toast.success("Verify Token copied!");
+                        }}
+                        className="text-[#db3b76] hover:text-[#c73369] flex items-center gap-1 text-[11px] font-bold"
+                      >
+                        <Copy size={12} /> COPY
+                      </button>
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono text-gray-700">
+                      {webhookInfo?.verifyToken}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-100">
+                  <h5 className="text-xs font-bold text-blue-800 flex items-center mb-2">
+                    <Info size={14} className="mr-1.5" /> Setup Instructions
+                  </h5>
+                  <ol className="text-xs text-blue-700 space-y-2 list-decimal ml-4">
+                    <li>Go to your <b>Meta App Dashboard</b> and select your app.</li>
+                    <li>Navigate to <b>WhatsApp &gt; Configuration</b> in the left sidebar.</li>
+                    <li>Click <b>Edit</b> next to the Callback URL section.</li>
+                    <li>Paste the <b>Callback URL</b> and <b>Verify Token</b> provided above.</li>
+                    <li>Click <b>Verify and Save</b>.</li>
+                    <li>Under <b>Webhook fields</b>, click <b>Manage</b> and subscribe to <b>messages</b>.</li>
+                  </ol>
+                  <a 
+                    href="https://developers.facebook.com/apps/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center text-[11px] font-bold text-blue-600 hover:underline"
+                  >
+                    Go to Meta Dashboard <ExternalLink size={12} className="ml-1" />
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
 
         <div className="border-t border-gray-100 pt-6">
