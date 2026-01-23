@@ -159,7 +159,7 @@ const SpinWheelPreview = ({ segments = [] }) => {
                     </defs>
                     <path
                       d={pathData}
-                      fill={segment.color || colors[index % colors.length]}
+                      fill={colors[index % colors.length]}
                       stroke="#fff"
                       strokeWidth="2"
                       filter={`url(#shadow-${index})`}
