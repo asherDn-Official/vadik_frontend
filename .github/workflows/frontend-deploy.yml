@@ -21,6 +21,8 @@ jobs:
         run: |
           echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" >> .env
           echo "VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }}" >> .env
+          echo "VITE_FACEBOOK_APP_ID=${{ secrets.VITE_FACEBOOK_APP_ID }}" >> .env
+          echo "VITE_FACEBOOK_CONFIG_ID=${{ secrets.VITE_FACEBOOK_CONFIG_ID }}" >> .env
 
       - name: Build React App
         run: npm run build
