@@ -17,6 +17,7 @@ const WhatsAppIntegration = () => {
     phoneNumberId: '',
     businessId: ''
   });
+  const [fbInitialized, setFbInitialized] = useState(false);
   const tokenRef = useRef(null);
 
   useEffect(() => {
@@ -52,22 +53,46 @@ const WhatsAppIntegration = () => {
   }, []);
 
   const loadFacebookSDK = () => {
-    window.fbAsyncInit = function() {
-      window.FB.init({
-        appId      : import.meta.env.VITE_FACEBOOK_APP_ID,
-        cookie     : true,
-        xfbml      : true,
-        version    : 'v18.0'
-      });
+    const appId = import.meta.env.VITE_FACEBOOK_APP_ID;
+    
+    if (!appId) {
+      console.error("Facebook App ID is missing. Check your environment variables.");
+      return;
+    }
+
+    const initFB = () => {
+      if (window.FB) {
+        window.FB.init({
+          appId      : appId,
+          cookie     : true,
+          xfbml      : true,
+          version    : 'v18.0'
+        });
+        setFbInitialized(true);
+        console.log("Facebook SDK Initialized with App ID:", appId);
+      }
     };
 
-    (function(d, s, id) {
-      var js, fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) return;
-      js = d.createElement(s); js.id = id;
-      js.src = "https://connect.facebook.net/en_US/sdk.js";
-      fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
+    // If SDK is already loaded, initialize it directly
+    if (window.FB) {
+      initFB();
+    } else {
+      // Otherwise, set up the async init callback
+      window.fbAsyncInit = function() {
+        initFB();
+      };
+
+      // Load the SDK script if not already present
+      if (!document.getElementById('facebook-jssdk')) {
+        (function(d, s, id) {
+          var js, fjs = d.getElementsByTagName(s)[0];
+          if (d.getElementById(id)) return;
+          js = d.createElement(s); js.id = id;
+          js.src = "https://connect.facebook.net/en_US/sdk.js";
+          fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+      }
+    }
   };
 
   const fetchConfig = async () => {
@@ -108,7 +133,27 @@ const WhatsAppIntegration = () => {
   };
 
   const handleEmbeddedSignup = () => {
+    if (!fbInitialized && !window.FB) {
+      toast.error("Facebook SDK still loading... Please wait a moment.");
+      loadFacebookSDK(); // Try reloading if it failed
+      return;
+    }
+
     if (window.FB) {
+      // Double check initialization if not already marked
+      if (!fbInitialized) {
+        const appId = import.meta.env.VITE_FACEBOOK_APP_ID;
+        if (appId) {
+          window.FB.init({
+            appId: appId,
+            cookie: true,
+            xfbml: true,
+            version: 'v18.0'
+          });
+          setFbInitialized(true);
+        }
+      }
+
       window.FB.login((response) => {
         if (response.authResponse) {
           const accessToken = response.authResponse.accessToken;
@@ -127,7 +172,7 @@ const WhatsAppIntegration = () => {
         }
       });
     } else {
-      toast.error("Facebook SDK not loaded");
+      toast.error("Facebook SDK not loaded. Check your connection or App ID.");
     }
   };
 
