@@ -72,6 +72,15 @@ const CouponManagement = () => {
   const handleProductImageChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Check file size (limit to 1MB)
+    const maxSize = 1 * 1024 * 1024; 
+    if (file.size > maxSize) {
+      showToast("Image size must be less than 1MB", "error");
+      e.target.value = ""; 
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setValue("productImage", reader.result?.toString() || "", {
