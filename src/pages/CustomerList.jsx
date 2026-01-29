@@ -154,7 +154,7 @@ const CustomerList = () => {
                   onChange={(e) => setSource(e.target.value)}
                 >
                   <option value="">select source</option>
-                  <option value="walk-in">walk-in</option>
+                  <option value="walk-in">walkin</option>
                   <option value="website">website</option>
                   <option value="social-media">social-media</option>
                   <option value="others">others</option>
