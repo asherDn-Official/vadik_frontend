@@ -9,6 +9,7 @@ const WhatsAppIntegration = () => {
   const [webhookInfo, setWebhookInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [signupStatus, setSignupStatus] = useState(null); // 'initializing', 'authorized', 'exchanging', 'completed', 'failed'
   const [whatsappDetails, setWhatsappDetails] = useState(null);
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualConfig, setManualConfig] = useState({
@@ -18,14 +19,24 @@ const WhatsAppIntegration = () => {
     businessId: ''
   });
   const [fbInitialized, setFbInitialized] = useState(false);
-  const tokenRef = useRef(null);
+  const codeRef = useRef(null);
 
   useEffect(() => {
     fetchConfig();
     loadFacebookSDK();
 
+    // Check if we have a code in the URL (in case of redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      console.log("Found code in URL:", code);
+      codeRef.current = code;
+      // If we have WABA and Phone IDs in localStorage or state, we could proceed
+      // But usually we get them via postMessage.
+    }
+
     // Listen for messages from Meta Embedded Signup
-    const handleMetaMessage = (event) => {
+    const handleMetaMessage = async (event) => {
       if (event.origin !== "https://www.facebook.com") return;
       
       try {
@@ -34,13 +45,16 @@ const WhatsAppIntegration = () => {
           console.log("WhatsApp Embedded Signup Complete:", data);
           const { waba_id, phone_number_id } = data.data;
           
-          if (waba_id && phone_number_id && tokenRef.current) {
-            toast.success("WhatsApp account linked! Saving configuration...");
-            saveConfig({
-              accessToken: tokenRef.current,
+          if (waba_id && phone_number_id && codeRef.current) {
+            toast.success("WhatsApp account linked! Completing setup...");
+            exchangeCode({
+              code: codeRef.current,
               wabaId: waba_id,
               phoneNumberId: phone_number_id
             });
+          } else if (waba_id && phone_number_id) {
+             // We have IDs but no code yet? Wait for FB.login callback or try using stored code
+             console.log("Got IDs but no code yet");
           }
         }
       } catch {
@@ -135,12 +149,11 @@ const WhatsAppIntegration = () => {
   const handleEmbeddedSignup = () => {
     if (!fbInitialized && !window.FB) {
       toast.error("Facebook SDK still loading... Please wait a moment.");
-      loadFacebookSDK(); // Try reloading if it failed
+      loadFacebookSDK();
       return;
     }
 
     if (window.FB) {
-      // Double check initialization if not already marked
       if (!fbInitialized) {
         const appId = import.meta.env.VITE_FACEBOOK_APP_ID;
         if (appId) {
@@ -154,13 +167,21 @@ const WhatsAppIntegration = () => {
         }
       }
 
+      setSignupStatus('initializing');
+
       window.FB.login((response) => {
         if (response.authResponse) {
-          const accessToken = response.authResponse.accessToken;
-          tokenRef.current = accessToken;
-          console.log("Logged in to Meta", response);
-          toast.info("Meta login successful. Please ensure your Business Account and WhatsApp IDs are configured.");
+          const code = response.authResponse.code;
+          console.log("Meta authorization successful, code received:", code);
+          codeRef.current = code;
+          setSignupStatus('authorized');
+          
+          // We wait for the postMessage (WA_EMBEDDED_SIGNUP_COMPLETE) to get IDs
+          // and then we will call the exchange endpoint.
+          // In some cases, we might not get the message if it redirects.
+          // If we have the code, we can try to proceed if we also have WABA ID.
         } else {
+          setSignupStatus('failed');
           toast.error("User cancelled login or did not fully authorize.");
         }
       }, {
@@ -169,6 +190,8 @@ const WhatsAppIntegration = () => {
           feature: 'whatsapp_embedded_signup',
           config_id: import.meta.env.VITE_FACEBOOK_CONFIG_ID,
           response_type: 'code',
+          // Try adding redirect_uri to ensure it doesn't fallback to landing page
+          redirect_uri: window.location.href.split('?')[0] 
         }
       });
     } else {
@@ -188,6 +211,50 @@ const WhatsAppIntegration = () => {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to connect WhatsApp");
+    }
+  };
+
+  const handleSyncTemplates = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API_BASE_URL}/api/integrationManagement/whatsapp/sync-templates`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.status) {
+        toast.success("Standard templates synced successfully");
+      }
+    } catch (error) {
+      console.error("Error syncing templates:", error);
+      throw error;
+    }
+  };
+
+  const exchangeCode = async (data) => {
+    setSignupStatus('exchanging');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API_BASE_URL}/api/integrationManagement/whatsapp/exchange-code`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.status) {
+        toast.success("WhatsApp account linked! Syncing templates...");
+        setSignupStatus('syncing');
+        
+        // Auto-trigger template sync
+        try {
+          await handleSyncTemplates();
+        } catch (e) {
+          console.error("Auto-sync failed:", e);
+        }
+
+        setSignupStatus('completed');
+        fetchConfig();
+        // Clear code
+        codeRef.current = null;
+      }
+    } catch (error) {
+      setSignupStatus('failed');
+      toast.error(error.response?.data?.message || "Failed to complete WhatsApp setup");
     }
   };
 
@@ -249,6 +316,26 @@ const WhatsAppIntegration = () => {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm">
+        {signupStatus && signupStatus !== 'completed' && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg animate-pulse">
+            <div className="flex items-center space-x-3">
+              <RefreshCw size={20} className="animate-spin text-blue-600" />
+              <div>
+                <h4 className="font-semibold text-blue-800 capitalize">
+                  Signup Status: {signupStatus}
+                </h4>
+                <p className="text-sm text-blue-600">
+                  {signupStatus === 'initializing' && "Waiting for Meta authorization popup..."}
+                  {signupStatus === 'authorized' && "Meta authorized. Waiting for account selection details..."}
+                  {signupStatus === 'exchanging' && "Connecting your WhatsApp account to Vadik AI..."}
+                  {signupStatus === 'syncing' && "Syncing standard templates to your account..."}
+                  {signupStatus === 'failed' && "Something went wrong. Please check your Meta Business Account and try again."}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <div className={`p-3 rounded-full ${config?.isUsingOwnWhatsapp ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
