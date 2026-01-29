@@ -30,7 +30,10 @@ import { formatIndianMobile } from "./formatIndianMobile";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import DetailItem from "./components/DetailItem";
-import PhoneInput, { isValidPhoneNumber, parsePhoneNumber } from "react-phone-number-input";
+import PhoneInput, {
+  isValidPhoneNumber,
+  parsePhoneNumber,
+} from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import api from "../../api/apiconfig";
 
@@ -60,8 +63,8 @@ const FieldItem = React.memo(
       externalFieldType || isGender
         ? "options"
         : isSource
-        ? "options"
-        : fieldData.type || getFieldType(customer, section, name);
+          ? "options"
+          : fieldData.type || getFieldType(customer, section, name);
 
     const inputType = getInputType(fieldType);
 
@@ -78,21 +81,21 @@ const FieldItem = React.memo(
       (e) => {
         onChange(section, name, e.target.value);
       },
-      [onChange, section, name]
+      [onChange, section, name],
     );
 
     const handleSelectChange = useCallback(
       (e) => {
         onChange(section, name, e.target.value);
       },
-      [onChange, section, name]
+      [onChange, section, name],
     );
 
     const handlePhoneChange = useCallback(
       (phoneValue) => {
         onChange(section, name, phoneValue || "");
       },
-      [onChange, section, name]
+      [onChange, section, name],
     );
 
     // Debug logging (remove in production)
@@ -184,7 +187,7 @@ const FieldItem = React.memo(
         )}
       </div>
     );
-  }
+  },
 );
 
 // Set display names for debugging
@@ -220,7 +223,7 @@ const basicSchema = yup.object().shape({
         if (!phoneNumber) return false;
         const nationalNumber = phoneNumber.nationalNumber;
         return nationalNumber.length >= 4 && nationalNumber.length <= 14;
-      }
+      },
     ),
 });
 
@@ -261,7 +264,7 @@ const CustomerDetails = ({
   // Transform customer data to handle new nested structure
   const transformedCustomer = useMemo(
     () => transformCustomerData(customer),
-    [customer]
+    [customer],
   );
 
   // Initialize form data with proper default values
@@ -272,17 +275,20 @@ const CustomerDetails = ({
           firstname: transformedCustomer?.firstname || "",
           lastname: transformedCustomer?.lastname || "",
           mobileNumber:
-            transformedCustomer?.countryCode && transformedCustomer?.mobileNumber
+            transformedCustomer?.countryCode &&
+            transformedCustomer?.mobileNumber
               ? `+${transformedCustomer.countryCode}${transformedCustomer.mobileNumber}`
               : transformedCustomer?.mobileNumber
-              ? (transformedCustomer.mobileNumber.startsWith("+")
-                ? transformedCustomer.mobileNumber
-                : "+" + transformedCustomer.mobileNumber)
-              : "",
+                ? transformedCustomer.mobileNumber.startsWith("+")
+                  ? transformedCustomer.mobileNumber
+                  : "+" + transformedCustomer.mobileNumber
+                : "",
           source: transformedCustomer?.source || "",
           customerId: transformedCustomer?.customerId || "",
           firstVisit: transformedCustomer?.firstVisit
-            ? new Date(transformedCustomer.firstVisit).toLocaleDateString('en-GB')
+            ? new Date(transformedCustomer.firstVisit).toLocaleDateString(
+                "en-GB",
+              )
             : "",
           loyaltyPoints: transformedCustomer?.loyaltyPoints ?? "",
           isOptedIn: transformedCustomer?.isOptedIn ?? null,
@@ -340,17 +346,20 @@ const CustomerDetails = ({
           firstname: transformedCustomer?.firstname || "",
           lastname: transformedCustomer?.lastname || "",
           mobileNumber:
-            transformedCustomer?.countryCode && transformedCustomer?.mobileNumber
+            transformedCustomer?.countryCode &&
+            transformedCustomer?.mobileNumber
               ? `+${transformedCustomer.countryCode}${transformedCustomer.mobileNumber}`
               : transformedCustomer?.mobileNumber
-              ? (transformedCustomer.mobileNumber.startsWith("+")
-                ? transformedCustomer.mobileNumber
-                : "+" + transformedCustomer.mobileNumber)
-              : "",
+                ? transformedCustomer.mobileNumber.startsWith("+")
+                  ? transformedCustomer.mobileNumber
+                  : "+" + transformedCustomer.mobileNumber
+                : "",
           source: transformedCustomer?.source || "",
           customerId: transformedCustomer?.customerId || "",
           firstVisit: transformedCustomer?.firstVisit
-            ? new Date(transformedCustomer.firstVisit).toLocaleDateString('en-GB')
+            ? new Date(transformedCustomer.firstVisit).toLocaleDateString(
+                "en-GB",
+              )
             : "",
           loyaltyPoints: transformedCustomer?.loyaltyPoints ?? "",
           isOptedIn: transformedCustomer?.isOptedIn ?? null,
@@ -367,7 +376,7 @@ const CustomerDetails = ({
       setCustomerNameInput(
         [newFormData.basic.firstname, newFormData.basic.lastname]
           .filter(Boolean)
-          .join(" ")
+          .join(" "),
       );
     }
   }, [transformedCustomer]);
@@ -426,7 +435,7 @@ const CustomerDetails = ({
       handleInputChange("basic", "firstname", first);
       handleInputChange("basic", "lastname", last);
     },
-    [handleInputChange]
+    [handleInputChange],
   );
 
   // Validate form in real-time
@@ -533,7 +542,7 @@ const CustomerDetails = ({
       stars.push(
         <span key={i} className="text-yellow-400">
           ★
-        </span>
+        </span>,
       );
     }
 
@@ -541,7 +550,7 @@ const CustomerDetails = ({
       stars.push(
         <span key="half" className="text-yellow-400">
           ☆
-        </span>
+        </span>,
       );
     }
 
@@ -550,7 +559,7 @@ const CustomerDetails = ({
       stars.push(
         <span key={`empty-${i}`} className="text-gray-300">
           ★
-        </span>
+        </span>,
       );
     }
 
@@ -606,7 +615,7 @@ const CustomerDetails = ({
         }
       });
     },
-    [formData, isEditing, handleInputChange, customer, errors]
+    [formData, isEditing, handleInputChange, customer, errors],
   );
 
   const defaultImage = {
@@ -682,10 +691,10 @@ const CustomerDetails = ({
                         transformedCustomer?.gender === "male"
                           ? defaultImage.menDefaultImgUrl
                           : transformedCustomer?.gender === "female"
-                          ? defaultImage.femaleDefaultImgUrl
-                          : transformedCustomer?.gender === "others"
-                          ? defaultImage.menDefaultImgUrl
-                          : defaultImage.menDefaultImgUrl
+                            ? defaultImage.femaleDefaultImgUrl
+                            : transformedCustomer?.gender === "others"
+                              ? defaultImage.menDefaultImgUrl
+                              : defaultImage.menDefaultImgUrl
                       }
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
                       className="w-[202px] h-[192px] rounded-2xl   "
@@ -775,7 +784,7 @@ const CustomerDetails = ({
                             transformedCustomer?.mobileNumber
                             ? transformedCustomer.countryCode +
                                 transformedCustomer.mobileNumber
-                            : transformedCustomer?.mobileNumber
+                            : transformedCustomer?.mobileNumber,
                         )}
                         isEditable={isEditing}
                         value={formData?.basic?.mobileNumber}
@@ -820,8 +829,8 @@ const CustomerDetails = ({
                         defaultValue={
                           transformedCustomer?.firstVisit
                             ? new Date(
-                                transformedCustomer.firstVisit
-                              ).toLocaleDateString('en-GB')
+                                transformedCustomer.firstVisit,
+                              ).toLocaleDateString("en-GB")
                             : ""
                         }
                         value={formData?.basic?.firstVisit}
@@ -880,7 +889,7 @@ const CustomerDetails = ({
                     {transformedCustomer?.advancedDetails &&
                       renderDynamicFields(
                         transformedCustomer?.advancedDetails,
-                        "advancedDetails"
+                        "advancedDetails",
                       )}
                   </div>
                 )}
@@ -891,7 +900,7 @@ const CustomerDetails = ({
                       {transformedCustomer?.advancedPrivacyDetails &&
                         renderDynamicFields(
                           transformedCustomer?.advancedPrivacyDetails,
-                          "advancedPrivacyDetails"
+                          "advancedPrivacyDetails",
                         )}
                     </div>
 
@@ -909,7 +918,7 @@ const CustomerDetails = ({
                       0 ? (
                       renderDynamicFields(
                         transformedCustomer?.additionalData,
-                        "additionalData"
+                        "additionalData",
                       )
                     ) : (
                       <div className="col-span-2 text-center py-8 text-gray-500">
@@ -1040,7 +1049,7 @@ const CustomerDetails = ({
                                   </div>
                                 </td>
                               </tr>
-                            )
+                            ),
                           )}
                         </tbody>
                       </table>

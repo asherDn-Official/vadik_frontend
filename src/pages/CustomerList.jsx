@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import debounce from "lodash.debounce";
 import api from "../api/apiconfig";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
-
+import BulkImportModal from "../components/customerProfile/BulkImportModal";
 import { formatIndianMobile } from "../components/customerProfile/formatIndianMobile";
 
 const CustomerList = () => {
@@ -11,12 +11,14 @@ const CustomerList = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [soon, setSoon] = useState()
+  const [soon, setSoon] = useState();
   const [pagination, setPagination] = useState({
     totalItems: 0,
     totalPages: 1,
     currentPage: 1,
   });
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
   });
@@ -61,12 +63,11 @@ const CustomerList = () => {
   }, [fetchCustomers]);
 
   useEffect(() => {
-        fetch("/assets/Comingsoon.json")
-            .then((res) => res.json())
-            .then(setSoon)
-            .catch(console.error)
-
-    }, []); 
+    fetch("/assets/Comingsoon.json")
+      .then((res) => res.json())
+      .then(setSoon)
+      .catch(console.error);
+  }, []);
 
   // Debounced search to avoid too many API calls while typing
   const debouncedSearch = useCallback(
@@ -74,7 +75,7 @@ const CustomerList = () => {
       setSearchParams(term ? { search: term } : {});
       setPagination((prev) => ({ ...prev, currentPage: 1 }));
     }, 500),
-    []
+    [],
   );
 
   const handleSearchChange = (e) => {
@@ -107,6 +108,11 @@ const CustomerList = () => {
     );
   }
 
+  const handleBulkSuccess = (message) => {
+    setSuccessMessage(message);
+    fetchCustomers();
+  };
+
   return (
     <div className="flex min-h-screen bg-[#F4F5F9]">
       <div className="flex-1 flex flex-col overflow-hidden m-2 rounded-[20px]">
@@ -120,10 +126,10 @@ const CustomerList = () => {
             </h1>
             <div className="flex flex-wrap gap-3 sm:gap-4 items-center">
               <VideoPopupWithShare
-                  // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
-                  animationData={soon}
-                  buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
-                />
+                // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
+                animationData={soon}
+                buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
+              />
               <div className="relative w-full sm:w-auto">
                 <input
                   type="text"
@@ -161,8 +167,15 @@ const CustomerList = () => {
                 </select>
               </div>
               <button
+                onClick={() => setShowBulkImport(true)}
+                className="w-full sm:w-auto bg-white border border-[#313166] text-[#313166] px-4 py-2 rounded-md"
+              >
+                Bulk Import
+              </button>
+
+              <button
                 onClick={handleAddNewCustomer}
-                className="w-full sm:w-auto sm:ml-4 bg-[#313166] text-white px-4 py-2 rounded-md"
+                className="w-full sm:w-auto sm:ml-2 bg-[#313166] text-white px-4 py-2 rounded-md"
               >
                 Add New Customer
               </button>
@@ -218,7 +231,9 @@ const CustomerList = () => {
                               {customer.lastname || "-"}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
-                              {(customer.countryCode + " ").concat(customer.mobileNumber)}
+                              {(customer.countryCode + " ").concat(
+                                customer.mobileNumber,
+                              )}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
                               {customer.source}
@@ -264,12 +279,12 @@ const CustomerList = () => {
                 Showing{" "}
                 {Math.min(
                   (pagination.currentPage - 1) * itemsPerPage + 1,
-                  pagination.totalItems
+                  pagination.totalItems,
                 )}{" "}
                 to{" "}
                 {Math.min(
                   pagination.currentPage * itemsPerPage,
-                  pagination.totalItems
+                  pagination.totalItems,
                 )}{" "}
                 of {pagination.totalItems} results
               </div>
@@ -287,7 +302,7 @@ const CustomerList = () => {
                 </button>
                 {Array.from(
                   { length: pagination.totalPages },
-                  (_, i) => i + 1
+                  (_, i) => i + 1,
                 ).map((page) => (
                   <button
                     key={page}
@@ -317,6 +332,11 @@ const CustomerList = () => {
           </div>
         )}
       </div>
+      <BulkImportModal
+        isOpen={showBulkImport}
+        onClose={() => setShowBulkImport(false)}
+        onSuccess={handleBulkSuccess}
+      />
     </div>
   );
 };
