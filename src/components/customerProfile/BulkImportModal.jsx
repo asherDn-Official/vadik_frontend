@@ -132,7 +132,10 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
             )}
           </div>
         </div>
-
+        <div className="text-xs text-gray-500 mt-1">
+          Required columns: First Name, Last Name, Mobile Number, Country Code,
+          Source, Gender, First Visit (DD-MM-YYYY)
+        </div>
         {summary && (
           <div className="mb-4 flex gap-4 text-sm">
             <span className="text-green-600">
@@ -159,7 +162,9 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
                   <tr key={index} className="border-t">
                     <td className="px-3 py-2">{err.row}</td>
                     <td className="px-3 py-2 text-gray-600">
-                      +{err.countryCode} - {err.mobileNumber}
+                      {err.countryCode && err.mobileNumber
+                        ? `+${err.countryCode} - ${err.mobileNumber}`
+                        : "—"}
                     </td>
                     <td className="px-3 py-2 text-red-600">
                       <ul className="list-disc ml-4">
@@ -200,8 +205,12 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
 
           <button
             onClick={() => handleUpload(false)}
-            className="px-4 py-2 bg-[#313166] text-white rounded-md"
-            disabled={loading}
+            className={`px-4 py-2 rounded-md ${
+              loading || !file
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-[#313166] text-white"
+            }`}
+            disabled={loading || !file}
           >
             {loading ? "Uploading..." : "Upload"}
           </button>
