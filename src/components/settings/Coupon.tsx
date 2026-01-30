@@ -24,6 +24,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 import VideoPopupWithShare from "../common/VideoPopupWithShare";
 import CouponPopup from "./couponPopup";
+import CouponInstruction from "../common/couponInstruction";
 
 const CouponManagement = () => {
   const [coupons, setCoupons] = useState([]);
@@ -35,6 +36,7 @@ const CouponManagement = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   // New states for pagination, sorting, filtering, and search
   const [currentPage, setCurrentPage] = useState(1);
+  const [instructionOpen, setInstructionOpen] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCoupons, setTotalCoupons] = useState(0);
@@ -55,6 +57,13 @@ const CouponManagement = () => {
     conditionType: "",
   });
 
+
+   const handleInstructionOpen = () =>{
+    setInstructionOpen(true);
+  }
+  const handleInstructionClose = () =>{
+  setInstructionOpen(false);
+  }
 
    useEffect(() => {
         fetch("/assets/Comingsoon.json")
@@ -1034,8 +1043,9 @@ const CouponManagement = () => {
           </div>
 
           {/* Items Per Page Selector */}
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-sm text-gray-700">Items per page:</span>
+          <div className="flex items-center gap-2  justify-between mb-4">
+            <div className="flex items-center gap-2 ">
+               <span className="text-sm text-gray-700">Items per page:</span>
             <select
               value={itemsPerPage}
               onChange={(e) => {
@@ -1049,8 +1059,15 @@ const CouponManagement = () => {
               <option value="20">20</option>
               <option value="50">50</option>
             </select>
+            </div>
+           
+            <div>
+             <button className="border border-gray-300 p-2 rounded-lg text-sm bg-white hover:bg-gray-200 transition-all duration-300" onClick={handleInstructionOpen}>Coupon Instruction</button>
+            </div>
           </div>
-
+{instructionOpen &&(
+           <CouponInstruction  onClose={handleInstructionClose}  />
+          )}
           <div className="space-y-4">
             {coupons.length > 0 ? (
               coupons.map((coupon) => (
