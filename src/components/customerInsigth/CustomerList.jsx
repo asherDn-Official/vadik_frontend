@@ -26,7 +26,7 @@ const CustomerList = ({
     return localStorage.getItem("retailerId") || "";
   });
 
-  console.log(customers.isOptedIn); // null  //false
+  console.log(customers.isOptedIn,); // null  //false
 
   // Function to safely get nested values from customer object
   const getNestedValue = (obj, path) => {

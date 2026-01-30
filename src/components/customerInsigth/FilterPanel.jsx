@@ -72,16 +72,16 @@ const FilterPanel = ({
   };
 
   // Initialize defaults on component mount
-  React.useEffect(() => {
-    if (!selectedPeriod) {
-      onPeriodChange("Yearly");
-    }
+  // React.useEffect(() => {
+  //   if (!selectedPeriod) {
+  //     onPeriodChange("Yearly");
+  //   }
 
-    if (!filters.periodValue && selectedPeriod === "Yearly") {
-      const currentYear = new Date().getFullYear().toString();
-      onFilterChange("periodValue", currentYear);
-    }
-  }, [selectedPeriod, filters.periodValue, onPeriodChange, onFilterChange]);
+  //   if (!filters.periodValue && selectedPeriod === "Yearly") {
+  //     const currentYear = new Date().getFullYear().toString();
+  //     onFilterChange("periodValue", currentYear);
+  //   }
+  // }, [selectedPeriod, filters.periodValue, onPeriodChange, onFilterChange]);
 
   // Fetch filter options from API
   useEffect(() => {
@@ -276,9 +276,9 @@ const FilterPanel = ({
   const renderPeriodPicker = () => {
     if (selectedPeriod === "Yearly") {
       const currentYear = new Date().getFullYear();
-      const selectedYear = filters.periodValue
-        ? parseInt(filters.periodValue)
-        : currentYear;
+      const selectedYear = 
+         parseInt(filters.periodValue)
+       
       const years = [];
 
       for (let year = 1999; year <= currentYear + 5; year++) {
@@ -454,7 +454,7 @@ const FilterPanel = ({
       iconName: item.iconName || "filter",
     }));
 
-    console.log(dynamicFilters)
+    // console.log(dynamicFilters)
 
     // Combine static filters with dynamic filters
     const allFilters = [...staticFilters, ...dynamicFilters];
