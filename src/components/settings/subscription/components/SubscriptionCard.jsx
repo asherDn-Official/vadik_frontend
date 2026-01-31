@@ -178,27 +178,13 @@ export default function SubscriptionCard({
 
           <div className="space-y-2">
             {plan?.isFreeTrial && !isCurrentPlan && !hasActiveSubscription && (
-              <>
-              {!plan?.isFreeTrial ? (
-                <button 
+              <button 
                 onClick={handleTrialClick}
                 disabled={loading}
                 className="w-full py-2 border border-pink-700 text-pink-700 rounded-lg font-medium hover:bg-pink-50 transition-colors animate-zoom"
               >
-                {loading   ? 'Processing...' : 'Start Free Trial'}
+                {loading ? 'Processing...' : 'Start Free Trial'}
               </button>
-              ) : (
-                <>
-                <button 
-                onClick={handleTrialClick}
-                disabled={true}
-                className="w-full py-2 border border-pink-700 text-pink-700 rounded-lg font-medium hover:bg-pink-50 transition-colors animate-zoom disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading    ? 'Processing...' : 'Expired'}
-              </button>
-              </>
-              )}
-              </>
             )}
             
             {!(plan?.isFreeTrial && !hasActiveSubscription) && (
