@@ -24,6 +24,7 @@ const WhatsAppIntegration = () => {
     accessToken: null,
     wabaId: null,
     phoneNumberId: null,
+    businessId: null,
     authorizedAt: null,
     exchanging: false
   });
@@ -91,6 +92,7 @@ const WhatsAppIntegration = () => {
           
           if (wabaId) signupRef.current.wabaId = wabaId;
           if (phoneNumberId) signupRef.current.phoneNumberId = phoneNumberId;
+          if (businessId) signupRef.current.businessId = businessId;
           
           tryCompleteSignup();
         } else if (data.event === 'CANCEL') {
@@ -206,7 +208,7 @@ const WhatsAppIntegration = () => {
   };
 
   const performExchange = () => {
-    const { code, accessToken, wabaId, phoneNumberId } = signupRef.current;
+    const { code, accessToken, wabaId, phoneNumberId, businessId } = signupRef.current;
     
     // Prevent multiple calls
     if (signupRef.current.exchanging) return;
@@ -218,7 +220,8 @@ const WhatsAppIntegration = () => {
       code,
       accessToken,
       wabaId,
-      phoneNumberId
+      phoneNumberId,
+      businessId
     });
   };
 
@@ -354,6 +357,7 @@ const WhatsAppIntegration = () => {
           accessToken: null, 
           wabaId: null, 
           phoneNumberId: null, 
+          businessId: null,
           authorizedAt: null,
           exchanging: false 
         };
