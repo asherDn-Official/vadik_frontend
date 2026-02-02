@@ -19,7 +19,11 @@ const WhatsAppIntegration = () => {
     businessId: ''
   });
   const [fbInitialized, setFbInitialized] = useState(false);
-  const codeRef = useRef(null);
+  const signupRef = useRef({
+    code: null,
+    wabaId: null,
+    phoneNumberId: null
+  });
 
   useEffect(() => {
     fetchConfig();
@@ -30,35 +34,37 @@ const WhatsAppIntegration = () => {
     const code = urlParams.get('code');
     if (code) {
       console.log("Found code in URL:", code);
-      codeRef.current = code;
-      // If we have WABA and Phone IDs in localStorage or state, we could proceed
-      // But usually we get them via postMessage.
+      signupRef.current.code = code;
     }
 
     // Listen for messages from Meta Embedded Signup
-    const handleMetaMessage = async (event) => {
-      if (event.origin !== "https://www.facebook.com") return;
+    const handleMetaMessage = (event) => {
+      const ALLOWED_ORIGINS = [
+        "https://www.facebook.com",
+        "https://web.facebook.com",
+        "https://business.facebook.com"
+      ];
+
+      if (!ALLOWED_ORIGINS.includes(event.origin)) return;
       
+      let data;
       try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'WA_EMBEDDED_SIGNUP_COMPLETE') {
-          console.log("WhatsApp Embedded Signup Complete:", data);
-          const { waba_id, phone_number_id } = data.data;
-          
-          if (waba_id && phone_number_id && codeRef.current) {
-            toast.success("WhatsApp account linked! Completing setup...");
-            exchangeCode({
-              code: codeRef.current,
-              wabaId: waba_id,
-              phoneNumberId: phone_number_id
-            });
-          } else if (waba_id && phone_number_id) {
-             // We have IDs but no code yet? Wait for FB.login callback or try using stored code
-             console.log("Got IDs but no code yet");
-          }
-        }
-      } catch {
-        // Not a JSON or not from Meta
+        data = typeof event.data === "string"
+          ? JSON.parse(event.data)
+          : event.data;
+      } catch (err) {
+        return;
+      }
+
+      if (data.type === 'WA_EMBEDDED_SIGNUP_COMPLETE') {
+        console.log("WhatsApp Embedded Signup Complete Event:", data);
+        const { waba_id, phone_number_id } = data.data || {};
+        
+        if (waba_id) signupRef.current.wabaId = waba_id;
+        if (phone_number_id) signupRef.current.phoneNumberId = phone_number_id;
+
+        console.log("Current signup data accumulated:", signupRef.current);
+        tryCompleteSignup();
       }
     };
 
@@ -146,6 +152,22 @@ const WhatsAppIntegration = () => {
     }
   };
 
+  const tryCompleteSignup = () => {
+    const { code, wabaId, phoneNumberId } = signupRef.current;
+
+    if (!code || !wabaId || !phoneNumberId) {
+      console.log("Waiting for remaining signup data...", { code: !!code, wabaId: !!wabaId, phoneNumberId: !!phoneNumberId });
+      return;
+    }
+
+    toast.success("WhatsApp account linked! Completing setup...");
+    exchangeCode({
+      code,
+      wabaId,
+      phoneNumberId
+    });
+  };
+
   const handleEmbeddedSignup = () => {
     if (!fbInitialized && !window.FB) {
       toast.error("Facebook SDK still loading... Please wait a moment.");
@@ -173,13 +195,10 @@ const WhatsAppIntegration = () => {
         if (response.authResponse) {
           const code = response.authResponse.code;
           console.log("Meta authorization successful, code received:", code);
-          codeRef.current = code;
+          signupRef.current.code = code;
           setSignupStatus('authorized');
           
-          // We wait for the postMessage (WA_EMBEDDED_SIGNUP_COMPLETE) to get IDs
-          // and then we will call the exchange endpoint.
-          // In some cases, we might not get the message if it redirects.
-          // If we have the code, we can try to proceed if we also have WABA ID.
+          tryCompleteSignup();
         } else {
           setSignupStatus('failed');
           toast.error("User cancelled login or did not fully authorize.");
@@ -189,9 +208,7 @@ const WhatsAppIntegration = () => {
         extras: {
           feature: 'whatsapp_embedded_signup',
           config_id: import.meta.env.VITE_FACEBOOK_CONFIG_ID,
-          response_type: 'code',
-          // Try adding redirect_uri to ensure it doesn't fallback to landing page
-          redirect_uri: window.location.href.split('?')[0] 
+          response_type: 'code'
         }
       });
     } else {
@@ -249,8 +266,8 @@ const WhatsAppIntegration = () => {
 
         setSignupStatus('completed');
         fetchConfig();
-        // Clear code
-        codeRef.current = null;
+        // Clear signup data
+        signupRef.current = { code: null, wabaId: null, phoneNumberId: null };
       }
     } catch (error) {
       setSignupStatus('failed');
