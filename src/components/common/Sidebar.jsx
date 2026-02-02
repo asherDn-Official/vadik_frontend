@@ -119,8 +119,12 @@ function Sidebar() {
       />
       
       <aside className="sticky left-0 top-0 h-screen w-full md:w-60  bg-[#313166] text-white flex flex-col overflow-y-auto">
-      <div className="pt-4 font-medium text-base md:text-lg lg:text-xl text-center truncate">
-        Vadik AI
+      <div className=" flex pt-2 font-medium text-base md:text-lg lg:text-xl text-center truncate justify-center">
+         <img
+              className="w-20"
+              src="./vadik_ai_logo.svg"
+              alt="Vadik Logo"
+            />
       </div>
       <div className="my-3">{userRole === "retailer" && <ToggleBadge />}</div>
       <nav className="flex-1 pb-2 ">
