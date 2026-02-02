@@ -380,6 +380,7 @@ const FilterPanel = ({
         </>
       );
     }
+    
 
     if (selectedPeriod === "Yearly") {
       return (
@@ -472,6 +473,7 @@ const FilterPanel = ({
       </FilterItem>
     ));
   };
+  
 
   return (
     <div className="bg-white rounded-tl-[20px] rounded-bl-[20px] shadow-sm h-screen  overflow-hidden flex flex-col min-h-0">
@@ -511,12 +513,7 @@ const FilterPanel = ({
                 }`}
               onClick={() => {
                 onPeriodChange(period);
-                if (period === "Yearly" && !filters.periodValue) {
-                  onFilterChange(
-                    "periodValue",
-                    new Date().getFullYear().toString()
-                  );
-                } else if (period !== "Yearly") {
+                if (period !== "Yearly") {
                   onFilterChange("periodValue", "");
                 }
               }}

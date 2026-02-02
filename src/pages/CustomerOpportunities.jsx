@@ -154,7 +154,7 @@ const CustomerOpportunities = () => {
                   Vadik Assistance
                 </div>
                 <div className="text-xs text-gray-500 text-start">
-                  Retailer Stock Management Suggestion
+                   Stock Management Suggestion
                 </div>
               </div>
             </button>
