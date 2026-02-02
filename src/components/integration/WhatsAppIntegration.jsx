@@ -99,7 +99,7 @@ const WhatsAppIntegration = () => {
           appId      : appId,
           cookie     : true,
           xfbml      : true,
-          version    : 'v18.0'
+          version    : 'v19.0'
         });
         setFbInitialized(true);
         console.log("Facebook SDK Initialized with App ID:", appId);
@@ -221,7 +221,7 @@ const WhatsAppIntegration = () => {
             appId: appId,
             cookie: true,
             xfbml: true,
-            version: 'v18.0'
+            version: 'v19.0'
           });
           setFbInitialized(true);
         }
@@ -229,9 +229,25 @@ const WhatsAppIntegration = () => {
 
       setSignupStatus('initializing');
 
+      const configId = import.meta.env.VITE_FACEBOOK_CONFIG_ID;
+      console.log("Starting FB login with Config ID:", configId);
+
       window.FB.login((response) => {
+        console.log("Full FB login response:", response);
+        
         if (response.authResponse) {
-          const code = response.authResponse.code;
+          // Meta can sometimes return the code in different places depending on SDK version
+          const code = response.authResponse.code || response.code;
+          
+          if (!code) {
+            console.error("Auth response received but no 'code' found. Response keys:", Object.keys(response.authResponse));
+            console.log("Check if response contains accessToken instead:", !!response.authResponse.accessToken);
+            
+            setSignupStatus('failed');
+            toast.error("Authorization succeeded but no code was returned. Check Meta App configuration.");
+            return;
+          }
+
           console.log("Meta authorization successful, code received:", code);
           signupRef.current.code = code;
           signupRef.current.authorizedAt = Date.now();
@@ -239,14 +255,16 @@ const WhatsAppIntegration = () => {
           
           tryCompleteSignup();
         } else {
+          console.warn("FB login failed or cancelled. Response:", response);
           setSignupStatus('failed');
           toast.error("User cancelled login or did not fully authorize.");
         }
       }, {
-        scope: 'whatsapp_business_management,whatsapp_business_messaging',
+        // Adding public_profile as it's often a baseline requirement
+        scope: 'public_profile,whatsapp_business_management,whatsapp_business_messaging',
         extras: {
           feature: 'whatsapp_embedded_signup',
-          config_id: import.meta.env.VITE_FACEBOOK_CONFIG_ID,
+          config_id: configId,
           response_type: 'code'
         }
       });
