@@ -28,6 +28,19 @@ const WhatsAppIntegration = () => {
     exchanging: false
   });
 
+  const decodeSignedRequest = (signedRequest) => {
+    try {
+      const parts = signedRequest.split('.');
+      if (parts.length !== 2) return null;
+      const payload = parts[1];
+      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+      return decoded;
+    } catch (e) {
+      console.error("Error decoding signedRequest:", e);
+      return null;
+    }
+  };
+
   useEffect(() => {
     fetchConfig();
     loadFacebookSDK();
@@ -264,8 +277,18 @@ const WhatsAppIntegration = () => {
         
         if (response.authResponse) {
           // Meta can sometimes return the code in different places depending on SDK version
-          const code = response.authResponse.code || response.code;
+          let code = response.authResponse.code || response.code;
           const accessToken = response.authResponse.accessToken;
+          const signedRequest = response.authResponse.signedRequest;
+          
+          // Try to extract code from signedRequest if missing
+          if (!code && signedRequest) {
+            const decoded = decodeSignedRequest(signedRequest);
+            if (decoded && decoded.code) {
+              code = decoded.code;
+              console.log("Extracted code from signedRequest payload");
+            }
+          }
           
           if (!code && !accessToken) {
             console.error("Auth response received but no 'code' or 'accessToken' found. Response keys:", Object.keys(response.authResponse));
