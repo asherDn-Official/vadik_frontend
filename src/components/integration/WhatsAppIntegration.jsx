@@ -24,7 +24,8 @@ const WhatsAppIntegration = () => {
     accessToken: null,
     wabaId: null,
     phoneNumberId: null,
-    authorizedAt: null
+    authorizedAt: null,
+    exchanging: false
   });
 
   useEffect(() => {
@@ -178,39 +179,51 @@ const WhatsAppIntegration = () => {
   };
 
   const tryCompleteSignup = () => {
-    const { code, accessToken, wabaId, phoneNumberId } = signupRef.current;
+    const { code, accessToken, wabaId, phoneNumberId, authorizedAt } = signupRef.current;
 
     console.log("Checking if signup can be completed:", { 
       hasCode: !!code, 
       hasAccessToken: !!accessToken,
       hasWabaId: !!wabaId, 
-      hasPhoneNumberId: !!phoneNumberId 
+      hasPhoneNumberId: !!phoneNumberId,
+      timeElapsed: authorizedAt ? `${Math.floor((Date.now() - authorizedAt) / 1000)}s` : '0s'
     });
 
     if (!code && !accessToken) {
-      console.log("Waiting for Meta authorization code or access token...");
+      console.log("Waiting for Meta authorization...");
       return;
     }
 
-    if (!wabaId || !phoneNumberId) {
-      console.log("Waiting for WABA ID and Phone Number ID from Meta message...");
-      
-      // If we've been waiting for more than 5 seconds after getting the code/token, 
-      // proceed anyway as the backend now has fallback logic
-      if (signupRef.current.authorizedAt && (Date.now() - signupRef.current.authorizedAt > 5000)) {
-        console.log("Timeout waiting for Meta message. Proceeding with what we have.");
-      } else {
-        // Set authorizedAt if not set
-        if (!signupRef.current.authorizedAt) {
-          signupRef.current.authorizedAt = Date.now();
-          // Check again in 2 seconds
-          setTimeout(tryCompleteSignup, 2000);
-        }
-        return;
-      }
+    // If we have everything, proceed immediately
+    if (wabaId && phoneNumberId) {
+      console.log("All data received from Meta. Completing signup...");
+      performExchange();
+      return;
     }
 
-    console.log("Proceeding to exchange data for token.");
+    // If we are missing IDs, wait for the postMessage event or timeout
+    const now = Date.now();
+    const startTime = authorizedAt || now;
+    if (!signupRef.current.authorizedAt) signupRef.current.authorizedAt = startTime;
+
+    if (now - startTime > 5000) {
+      console.log("Reached 5s timeout waiting for Meta IDs. Proceeding with fallback retrieval...");
+      performExchange();
+    } else {
+      console.log(`Waiting for Meta message... (${Math.floor((5000 - (now - startTime)) / 1000)}s remaining)`);
+      // Re-check every second
+      setTimeout(tryCompleteSignup, 1000);
+    }
+  };
+
+  const performExchange = () => {
+    const { code, accessToken, wabaId, phoneNumberId } = signupRef.current;
+    
+    // Prevent multiple calls
+    if (signupRef.current.exchanging) return;
+    signupRef.current.exchanging = true;
+
+    console.log("Initiating backend exchange...");
     toast.success("WhatsApp account linked! Completing setup...");
     exchangeCode({
       code,
@@ -340,9 +353,17 @@ const WhatsAppIntegration = () => {
         setSignupStatus('completed');
         fetchConfig();
         // Clear signup data
-        signupRef.current = { code: null, accessToken: null, wabaId: null, phoneNumberId: null, authorizedAt: null };
+        signupRef.current = { 
+          code: null, 
+          accessToken: null, 
+          wabaId: null, 
+          phoneNumberId: null, 
+          authorizedAt: null,
+          exchanging: false 
+        };
       }
     } catch (error) {
+      signupRef.current.exchanging = false;
       setSignupStatus('failed');
       toast.error(error.response?.data?.message || "Failed to complete WhatsApp setup");
     }
