@@ -21,6 +21,7 @@ const WhatsAppIntegration = () => {
   const [fbInitialized, setFbInitialized] = useState(false);
   const signupRef = useRef({
     code: null,
+    accessToken: null,
     wabaId: null,
     phoneNumberId: null,
     authorizedAt: null
@@ -53,11 +54,22 @@ const WhatsAppIntegration = () => {
       
       let data;
       try {
-        data = typeof event.data === "string"
-          ? JSON.parse(event.data)
-          : event.data;
+        if (typeof event.data === "string") {
+          // Meta SDK sends some internal messages that are not JSON (e.g., "cb=...")
+          // We only try to parse if it looks like a JSON object
+          if (event.data.trim().startsWith('{')) {
+            data = JSON.parse(event.data);
+          } else {
+            return; // Ignore non-JSON string messages
+          }
+        } else {
+          data = event.data;
+        }
       } catch (err) {
-        console.error("Error parsing message data:", err);
+        // Only log if it's not a common Meta SDK internal message
+        if (typeof event.data === 'string' && !event.data.includes('cb=')) {
+          console.error("Error parsing message data:", err);
+        }
         return;
       }
 
@@ -166,26 +178,27 @@ const WhatsAppIntegration = () => {
   };
 
   const tryCompleteSignup = () => {
-    const { code, wabaId, phoneNumberId } = signupRef.current;
+    const { code, accessToken, wabaId, phoneNumberId } = signupRef.current;
 
     console.log("Checking if signup can be completed:", { 
       hasCode: !!code, 
+      hasAccessToken: !!accessToken,
       hasWabaId: !!wabaId, 
       hasPhoneNumberId: !!phoneNumberId 
     });
 
-    if (!code) {
-      console.log("Waiting for Meta authorization code...");
+    if (!code && !accessToken) {
+      console.log("Waiting for Meta authorization code or access token...");
       return;
     }
 
     if (!wabaId || !phoneNumberId) {
       console.log("Waiting for WABA ID and Phone Number ID from Meta message...");
       
-      // If we've been waiting for more than 5 seconds after getting the code, 
+      // If we've been waiting for more than 5 seconds after getting the code/token, 
       // proceed anyway as the backend now has fallback logic
       if (signupRef.current.authorizedAt && (Date.now() - signupRef.current.authorizedAt > 5000)) {
-        console.log("Timeout waiting for Meta message. Proceeding with code only.");
+        console.log("Timeout waiting for Meta message. Proceeding with what we have.");
       } else {
         // Set authorizedAt if not set
         if (!signupRef.current.authorizedAt) {
@@ -197,10 +210,11 @@ const WhatsAppIntegration = () => {
       }
     }
 
-    console.log("Proceeding to exchange code for token.");
+    console.log("Proceeding to exchange data for token.");
     toast.success("WhatsApp account linked! Completing setup...");
     exchangeCode({
       code,
+      accessToken,
       wabaId,
       phoneNumberId
     });
@@ -238,18 +252,19 @@ const WhatsAppIntegration = () => {
         if (response.authResponse) {
           // Meta can sometimes return the code in different places depending on SDK version
           const code = response.authResponse.code || response.code;
+          const accessToken = response.authResponse.accessToken;
           
-          if (!code) {
-            console.error("Auth response received but no 'code' found. Response keys:", Object.keys(response.authResponse));
-            console.log("Check if response contains accessToken instead:", !!response.authResponse.accessToken);
+          if (!code && !accessToken) {
+            console.error("Auth response received but no 'code' or 'accessToken' found. Response keys:", Object.keys(response.authResponse));
             
             setSignupStatus('failed');
-            toast.error("Authorization succeeded but no code was returned. Check Meta App configuration.");
+            toast.error("Authorization succeeded but no token was returned. Check Meta App configuration.");
             return;
           }
 
-          console.log("Meta authorization successful, code received:", code);
+          console.log("Meta authorization successful. Code:", code ? "Yes" : "No", "Token:", accessToken ? "Yes" : "No");
           signupRef.current.code = code;
+          signupRef.current.accessToken = accessToken;
           signupRef.current.authorizedAt = Date.now();
           setSignupStatus('authorized');
           
@@ -265,7 +280,8 @@ const WhatsAppIntegration = () => {
         extras: {
           feature: 'whatsapp_embedded_signup',
           config_id: configId,
-          response_type: 'code'
+          response_type: 'code',
+          setup: {} // Some SDK versions expect this to trigger code return
         }
       });
     } else {
@@ -324,7 +340,7 @@ const WhatsAppIntegration = () => {
         setSignupStatus('completed');
         fetchConfig();
         // Clear signup data
-        signupRef.current = { code: null, wabaId: null, phoneNumberId: null, authorizedAt: null };
+        signupRef.current = { code: null, accessToken: null, wabaId: null, phoneNumberId: null, authorizedAt: null };
       }
     } catch (error) {
       setSignupStatus('failed');
