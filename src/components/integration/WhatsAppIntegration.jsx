@@ -55,55 +55,50 @@ const WhatsAppIntegration = () => {
 
     // Listen for messages from Meta Embedded Signup
     const handleMetaMessage = (event) => {
-      const ALLOWED_ORIGINS = [
-        "https://www.facebook.com",
-        "https://web.facebook.com",
-        "https://business.facebook.com",
-        "https://facebook.com"
-      ];
-
-      // Origin check with and without trailing slash
-      const origin = event.origin.replace(/\/$/, "");
-      if (!ALLOWED_ORIGINS.includes(origin)) return;
+      // Documentation says origin should end with facebook.com
+      if (!event.origin.endsWith('facebook.com')) return;
       
       let data;
       try {
         if (typeof event.data === "string") {
           // Meta SDK sends some internal messages that are not JSON (e.g., "cb=...")
-          // We only try to parse if it looks like a JSON object
           if (event.data.trim().startsWith('{')) {
             data = JSON.parse(event.data);
           } else {
-            return; // Ignore non-JSON string messages
+            return; 
           }
         } else {
           data = event.data;
         }
       } catch (err) {
-        // Only log if it's not a common Meta SDK internal message
-        if (typeof event.data === 'string' && !event.data.includes('cb=')) {
-          console.error("Error parsing message data:", err);
-        }
         return;
       }
 
-      console.log("Message received from Meta origin:", origin, "Data:", data);
+      console.log("Message received from Meta:", data);
 
-      if (data.type === 'WA_EMBEDDED_SIGNUP_COMPLETE' || data.event === 'FINISH') {
-        console.log("WhatsApp Embedded Signup Complete/Finish Event detected");
+      // Documentation specifies 'WA_EMBEDDED_SIGNUP' type
+      if (data.type === 'WA_EMBEDDED_SIGNUP') {
+        console.log("WhatsApp Embedded Signup Event detected:", data.event);
         
-        // Extract IDs - try various possible locations in the data object
-        const extractedData = data.data || data;
-        const wabaId = extractedData.waba_id || extractedData.whatsapp_business_account_id;
-        const phoneNumberId = extractedData.phone_number_id;
+        // Handle successful completion
+        if (['FINISH', 'FINISH_ONLY_WABA', 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING'].includes(data.event)) {
+          const extractedData = data.data || {};
+          const wabaId = extractedData.waba_id;
+          const phoneNumberId = extractedData.phone_number_id;
+          const businessId = extractedData.business_id;
 
-        console.log("Extracted IDs:", { wabaId, phoneNumberId });
-        
-        if (wabaId) signupRef.current.wabaId = wabaId;
-        if (phoneNumberId) signupRef.current.phoneNumberId = phoneNumberId;
-
-        console.log("Current signup data accumulated in Ref:", signupRef.current);
-        tryCompleteSignup();
+          console.log("Extracted IDs from message:", { wabaId, phoneNumberId, businessId });
+          
+          if (wabaId) signupRef.current.wabaId = wabaId;
+          if (phoneNumberId) signupRef.current.phoneNumberId = phoneNumberId;
+          
+          tryCompleteSignup();
+        } else if (data.event === 'CANCEL') {
+          console.log("User cancelled flow at step:", data.data?.current_step);
+          if (data.data?.error_message) {
+            toast.error(`Setup Error: ${data.data.error_message}`);
+          }
+        }
       }
     };
 
@@ -125,7 +120,7 @@ const WhatsAppIntegration = () => {
           appId      : appId,
           cookie     : true,
           xfbml      : true,
-          version    : 'v19.0'
+          version    : 'v21.0'
         });
         setFbInitialized(true);
         console.log("Facebook SDK Initialized with App ID:", appId);
@@ -261,7 +256,7 @@ const WhatsAppIntegration = () => {
             appId: appId,
             cookie: true,
             xfbml: true,
-            version: 'v19.0'
+            version: 'v21.0'
           });
           setFbInitialized(true);
         }
@@ -276,12 +271,12 @@ const WhatsAppIntegration = () => {
         console.log("Full FB login response:", response);
         
         if (response.authResponse) {
-          // Meta can sometimes return the code in different places depending on SDK version
-          let code = response.authResponse.code || response.code;
+          // Meta returns the code in response.authResponse.code when response_type: 'code' is used
+          let code = response.authResponse.code;
           const accessToken = response.authResponse.accessToken;
           const signedRequest = response.authResponse.signedRequest;
           
-          // Try to extract code from signedRequest if missing
+          // Try to extract code from signedRequest if missing (fallback)
           if (!code && signedRequest) {
             const decoded = decodeSignedRequest(signedRequest);
             if (decoded && decoded.code) {
@@ -291,10 +286,9 @@ const WhatsAppIntegration = () => {
           }
           
           if (!code && !accessToken) {
-            console.error("Auth response received but no 'code' or 'accessToken' found. Response keys:", Object.keys(response.authResponse));
-            
+            console.error("Auth response received but no 'code' or 'accessToken' found.");
             setSignupStatus('failed');
-            toast.error("Authorization succeeded but no token was returned. Check Meta App configuration.");
+            toast.error("Authorization succeeded but no token was returned.");
             return;
           }
 
@@ -311,13 +305,11 @@ const WhatsAppIntegration = () => {
           toast.error("User cancelled login or did not fully authorize.");
         }
       }, {
-        // Adding public_profile as it's often a baseline requirement
-        scope: 'public_profile,whatsapp_business_management,whatsapp_business_messaging',
+        config_id: configId,
+        response_type: 'code',
+        override_default_response_type: true,
         extras: {
-          feature: 'whatsapp_embedded_signup',
-          config_id: configId,
-          response_type: 'code',
-          setup: {} // Some SDK versions expect this to trigger code return
+          setup: {}
         }
       });
     } else {
