@@ -22,7 +22,8 @@ const WhatsAppIntegration = () => {
   const signupRef = useRef({
     code: null,
     wabaId: null,
-    phoneNumberId: null
+    phoneNumberId: null,
+    authorizedAt: null
   });
 
   useEffect(() => {
@@ -42,10 +43,13 @@ const WhatsAppIntegration = () => {
       const ALLOWED_ORIGINS = [
         "https://www.facebook.com",
         "https://web.facebook.com",
-        "https://business.facebook.com"
+        "https://business.facebook.com",
+        "https://facebook.com"
       ];
 
-      if (!ALLOWED_ORIGINS.includes(event.origin)) return;
+      // Origin check with and without trailing slash
+      const origin = event.origin.replace(/\/$/, "");
+      if (!ALLOWED_ORIGINS.includes(origin)) return;
       
       let data;
       try {
@@ -53,17 +57,26 @@ const WhatsAppIntegration = () => {
           ? JSON.parse(event.data)
           : event.data;
       } catch (err) {
+        console.error("Error parsing message data:", err);
         return;
       }
 
-      if (data.type === 'WA_EMBEDDED_SIGNUP_COMPLETE') {
-        console.log("WhatsApp Embedded Signup Complete Event:", data);
-        const { waba_id, phone_number_id } = data.data || {};
-        
-        if (waba_id) signupRef.current.wabaId = waba_id;
-        if (phone_number_id) signupRef.current.phoneNumberId = phone_number_id;
+      console.log("Message received from Meta origin:", origin, "Data:", data);
 
-        console.log("Current signup data accumulated:", signupRef.current);
+      if (data.type === 'WA_EMBEDDED_SIGNUP_COMPLETE' || data.event === 'FINISH') {
+        console.log("WhatsApp Embedded Signup Complete/Finish Event detected");
+        
+        // Extract IDs - try various possible locations in the data object
+        const extractedData = data.data || data;
+        const wabaId = extractedData.waba_id || extractedData.whatsapp_business_account_id;
+        const phoneNumberId = extractedData.phone_number_id;
+
+        console.log("Extracted IDs:", { wabaId, phoneNumberId });
+        
+        if (wabaId) signupRef.current.wabaId = wabaId;
+        if (phoneNumberId) signupRef.current.phoneNumberId = phoneNumberId;
+
+        console.log("Current signup data accumulated in Ref:", signupRef.current);
         tryCompleteSignup();
       }
     };
@@ -155,11 +168,36 @@ const WhatsAppIntegration = () => {
   const tryCompleteSignup = () => {
     const { code, wabaId, phoneNumberId } = signupRef.current;
 
-    if (!code || !wabaId || !phoneNumberId) {
-      console.log("Waiting for remaining signup data...", { code: !!code, wabaId: !!wabaId, phoneNumberId: !!phoneNumberId });
+    console.log("Checking if signup can be completed:", { 
+      hasCode: !!code, 
+      hasWabaId: !!wabaId, 
+      hasPhoneNumberId: !!phoneNumberId 
+    });
+
+    if (!code) {
+      console.log("Waiting for Meta authorization code...");
       return;
     }
 
+    if (!wabaId || !phoneNumberId) {
+      console.log("Waiting for WABA ID and Phone Number ID from Meta message...");
+      
+      // If we've been waiting for more than 5 seconds after getting the code, 
+      // proceed anyway as the backend now has fallback logic
+      if (signupRef.current.authorizedAt && (Date.now() - signupRef.current.authorizedAt > 5000)) {
+        console.log("Timeout waiting for Meta message. Proceeding with code only.");
+      } else {
+        // Set authorizedAt if not set
+        if (!signupRef.current.authorizedAt) {
+          signupRef.current.authorizedAt = Date.now();
+          // Check again in 2 seconds
+          setTimeout(tryCompleteSignup, 2000);
+        }
+        return;
+      }
+    }
+
+    console.log("Proceeding to exchange code for token.");
     toast.success("WhatsApp account linked! Completing setup...");
     exchangeCode({
       code,
@@ -196,6 +234,7 @@ const WhatsAppIntegration = () => {
           const code = response.authResponse.code;
           console.log("Meta authorization successful, code received:", code);
           signupRef.current.code = code;
+          signupRef.current.authorizedAt = Date.now();
           setSignupStatus('authorized');
           
           tryCompleteSignup();
@@ -267,7 +306,7 @@ const WhatsAppIntegration = () => {
         setSignupStatus('completed');
         fetchConfig();
         // Clear signup data
-        signupRef.current = { code: null, wabaId: null, phoneNumberId: null };
+        signupRef.current = { code: null, wabaId: null, phoneNumberId: null, authorizedAt: null };
       }
     } catch (error) {
       setSignupStatus('failed');
