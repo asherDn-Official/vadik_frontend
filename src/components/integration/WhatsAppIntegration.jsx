@@ -187,14 +187,11 @@ const WhatsAppIntegration = () => {
   };
 
   const tryCompleteSignup = () => {
-    const { code, accessToken, wabaId, phoneNumberId, authorizedAt } = signupRef.current;
+    const { code, accessToken } = signupRef.current;
 
     console.log("Checking if signup can be completed:", { 
       hasCode: !!code, 
-      hasAccessToken: !!accessToken,
-      hasWabaId: !!wabaId, 
-      hasPhoneNumberId: !!phoneNumberId,
-      timeElapsed: authorizedAt ? `${Math.floor((Date.now() - authorizedAt) / 1000)}s` : '0s'
+      hasAccessToken: !!accessToken
     });
 
     if (!code && !accessToken) {
@@ -202,26 +199,10 @@ const WhatsAppIntegration = () => {
       return;
     }
 
-    // If we have everything, proceed immediately
-    if (wabaId && phoneNumberId) {
-      console.log("All data received from Meta. Completing signup...");
-      performExchange();
-      return;
-    }
-
-    // If we are missing IDs, wait for the postMessage event or timeout
-    const now = Date.now();
-    const startTime = authorizedAt || now;
-    if (!signupRef.current.authorizedAt) signupRef.current.authorizedAt = startTime;
-
-    if (now - startTime > 5000) {
-      console.log("Reached 5s timeout waiting for Meta IDs. Proceeding with fallback retrieval...");
-      performExchange();
-    } else {
-      console.log(`Waiting for Meta message... (${Math.floor((5000 - (now - startTime)) / 1000)}s remaining)`);
-      // Re-check every second
-      setTimeout(tryCompleteSignup, 1000);
-    }
+    // We have the code or token, proceed to backend exchange
+    // The backend will now handle fetching WABA and Phone IDs if they're missing
+    console.log("Authorization received. Completing signup...");
+    performExchange();
   };
 
   const performExchange = () => {
