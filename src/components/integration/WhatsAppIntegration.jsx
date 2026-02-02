@@ -71,7 +71,7 @@ const WhatsAppIntegration = () => {
         } else {
           data = event.data;
         }
-      } catch (err) {
+      } catch {
         return;
       }
 
@@ -447,6 +447,36 @@ const WhatsAppIntegration = () => {
           </div>
         )}
 
+        {config?.whatsappStatus === 'authorised' && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <Info size={20} className="text-blue-600 mt-0.5" />
+              <div>
+                <h4 className="font-semibold text-blue-800">Account Authorization Successful</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  We&apos;ve successfully authorized your Meta account. We are now waiting for Meta to provision your WhatsApp Business Account and Phone Number. This typically takes a few minutes.
+                </p>
+                {config.whatsappOnboardingStatus && (
+                  <div className="mt-3 flex items-center space-x-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-blue-500">Current Step:</span>
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-mono capitalize">
+                      {config.whatsappOnboardingStatus === 'pending' && "Waiting for Account Creation..."}
+                      {config.whatsappOnboardingStatus === 'provisioning' && "Registering Phone Number..."}
+                      {config.whatsappOnboardingStatus === 'connected' && "Finalizing Connection..."}
+                    </span>
+                  </div>
+                )}
+                <button 
+                  onClick={fetchConfig}
+                  className="mt-4 flex items-center text-xs font-bold text-blue-600 hover:text-blue-800"
+                >
+                  <RefreshCw size={12} className="mr-1" /> CHECK STATUS
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <div className={`p-3 rounded-full ${config?.isUsingOwnWhatsapp ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
@@ -462,9 +492,13 @@ const WhatsAppIntegration = () => {
             </div>
           </div>
           <div className="flex items-center">
-            {config?.isUsingOwnWhatsapp ? (
+            {config?.whatsappStatus === 'connected' || config?.isUsingOwnWhatsapp ? (
               <span className="flex items-center text-green-600 bg-green-50 px-3 py-1 rounded-full text-sm font-medium">
                 <CheckCircle size={16} className="mr-1" /> Connected
+              </span>
+            ) : config?.whatsappStatus === 'authorised' ? (
+              <span className="flex items-center text-blue-600 bg-blue-50 px-3 py-1 rounded-full text-sm font-medium">
+                <RefreshCw size={16} className="mr-1 animate-spin" /> Authorised (Setting up...)
               </span>
             ) : (
               <span className="flex items-center text-gray-600 bg-gray-50 px-3 py-1 rounded-full text-sm font-medium">
@@ -671,7 +705,7 @@ const WhatsAppIntegration = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 p-4 border border-gray-100 rounded-lg bg-gray-50">
                   <h4 className="font-semibold text-[#313166] mb-2">Embedded Signup</h4>
-                  <p className="text-xs text-gray-500 mb-4">Recommended. Easy flow through Meta's popup.</p>
+                  <p className="text-xs text-gray-500 mb-4">Recommended. Easy flow through Meta&apos;s popup.</p>
                   <button
                     onClick={handleEmbeddedSignup}
                     className="w-full bg-[#313166] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#25254d] transition-colors"
