@@ -67,13 +67,13 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         setLoadingCoupons(false);
 
         // Default select first targeted coupon if none selected
-        if (list.length > 0) {
-          const currentTargeted = getValues("targetedCoupons");
-          if (!currentTargeted || currentTargeted.length === 0) {
-            setValue("targetedCoupons", [list[0]._id]);
-            clearErrors("targetedCoupons");
-          }
-        }
+        // if (list.length > 0) {
+        //   const currentTargeted = getValues("targetedCoupons");
+        //   if (!currentTargeted || currentTargeted.length === 0) {
+        //     setValue("targetedCoupons", [list[0]._id]);
+        //     clearErrors("targetedCoupons");
+        //   }
+        // }
       } catch (error) {
         console.error("Error fetching coupons:", error);
         setLoadingCoupons(false);
@@ -316,6 +316,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       updatedValues = currentValues.filter((id) => id !== couponId);
     }
 
+
     setValue("targetedCoupons", updatedValues);
 
     // Clear error if at least one coupon is selected
@@ -328,6 +329,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       });
     }
   };
+  
 
   const onSubmit = async (data) => {
     // Additional validation for segments
@@ -384,6 +386,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       showToast(error.response?.data?.message || "Request failed", "error");
     }
   };
+  
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -695,7 +698,6 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
           const hasAvailableCoupons = availableTargetedCoupons.length > 0;
           const isDisabled = isFullyRandom || !hasAvailableCoupons;
           const hasSelectedCoupons = formData.targetedCoupons?.length > 0;
-
           return (
             <div className={`mt-6`}>
               <h3 className="text-lg font-medium text-gray-700 mb-2">
