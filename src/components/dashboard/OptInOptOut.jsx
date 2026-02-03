@@ -33,7 +33,7 @@ function OptInOptOut() {
   }, []);
 
   return (
-    <div className="rounded-[26px] bg-white px-7 py-6 shadow-[0_18px_45px_rgba(23,29,76,0.08)] border border-[#EEF1FF]">
+    <div className="rounded-xl bg-white px-6 py-5 shadow-md border border-[#EEF1FF] h-[237px] flex flex-col justify-between">
       <h2 className="text-[20px] font-medium font-poppins text-[#1F1C5C] leading-[100%] mb-6">
         Opt-In/Opt-Out
       </h2>
@@ -64,14 +64,14 @@ function OptInOptOut() {
         </div>
       </div>
 
-      <div className="flex items-center gap-8 mt-7 text-sm font-medium">
+      <div className="flex items-center gap-6 text-sm font-medium">
         <div className="flex items-center gap-2 text-[#1F1C5C]">
           <span className="h-3 w-3 rounded-full bg-[#1F1C5C]"></span>
-          Opt-in
+          Opt-In
         </div>
         <div className="flex items-center gap-2 text-[#E43274]">
           <span className="h-3 w-3 rounded-full bg-[#E43274]"></span>
-          Opt-out
+          Opt-Out
         </div>
       </div>
     </div>
