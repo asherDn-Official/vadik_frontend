@@ -14,62 +14,57 @@ function CustomerProfileCollection() {
     },
     {
       date: new Date(
-        new Date().setDate(new Date().getDate() - 1)
+        new Date().setDate(new Date().getDate() - 1),
       ).toISOString(),
       newCustomers: 10,
       retentionCustomers: 44,
     },
     {
       date: new Date(
-        new Date().setDate(new Date().getDate() - 2)
+        new Date().setDate(new Date().getDate() - 2),
       ).toISOString(),
       newCustomers: 19,
       retentionCustomers: 84,
     },
     {
       date: new Date(
-        new Date().setDate(new Date().getDate() - 3)
+        new Date().setDate(new Date().getDate() - 3),
       ).toISOString(), // changed
       newCustomers: 50,
       retentionCustomers: 45,
     },
     {
       date: new Date(
-        new Date().setDate(new Date().getDate() - 4)
+        new Date().setDate(new Date().getDate() - 4),
       ).toISOString(), // changed
       newCustomers: 70,
       retentionCustomers: 89,
     },
     {
       date: new Date(
-        new Date().setDate(new Date().getDate() - 5)
+        new Date().setDate(new Date().getDate() - 5),
       ).toISOString(), // changed
       newCustomers: 70,
       retentionCustomers: 89,
     },
     {
       date: new Date(
-        new Date().setDate(new Date().getDate() - 6)
+        new Date().setDate(new Date().getDate() - 6),
       ).toISOString(), // changed
       newCustomers: 20,
       retentionCustomers: 29,
-    }
-    
+    },
   ]);
 
   const [startDate, setStartDate] = useState(
-    new Date(new Date().setDate(new Date().getDate() - 6))
+    new Date(new Date().setDate(new Date().getDate() - 6)),
   );
   const [endDate, setEndDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchCustomerData();
-    }, 3000); // Delay actual data load by 3 sec
-
-    return () => clearTimeout(timer);
+    fetchCustomerData();
   }, [startDate, endDate]);
 
   const fetchCustomerData = async () => {
@@ -78,7 +73,7 @@ function CustomerProfileCollection() {
       const formattedEnd = format(endDate, "yyyy-MM-dd");
 
       const res = await api.get(
-        `api/dashboard/customerProfileCollection?startDate=${formattedStart}&endDate=${formattedEnd}`
+        `api/dashboard/customerProfileCollection?startDate=${formattedStart}&endDate=${formattedEnd}`,
       );
 
       setData(res.data || []);
@@ -91,11 +86,11 @@ function CustomerProfileCollection() {
 
   const total = data.reduce(
     (sum, d) => sum + d.newCustomers + d.retentionCustomers,
-    0
+    0,
   );
 
   return (
-    <div className="dashboard-card bg-white rounded-xl p-6 shadow-md">
+    <div className="dashboard-card bg-white rounded-xl p-6 shadow-md w-full min-w-0 overflow-hidden">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-[20px] font-medium leading-[114%] tracking-normal text-[#313166] ">
@@ -134,7 +129,7 @@ function CustomerProfileCollection() {
         {total}
       </div>
       {/* Bar Graph */}
-      <div className="flex items-end gap-14 mb-4 h-40 relative">
+      <div className="flex items-end justify-between mb-4 h-40 relative w-full">
         {data.map(({ date, newCustomers, retentionCustomers }, index) => {
           const totalHeight = newCustomers + retentionCustomers;
           const day = new Date(date).getDate();
@@ -142,12 +137,12 @@ function CustomerProfileCollection() {
           return (
             <div
               key={date}
-              className="flex flex-col items-center w-[25px] relative group"
+              className="flex flex-col items-center w-4 sm:w-5 md:w-6 relative group flex-shrink-0"
               onMouseEnter={() => setHoveredIndex(index)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
               {hoveredIndex === index && totalHeight > 0 && (
-                <div className="absolute -top-14 z-10 bg-black text-white text-xs px-2 py-1 rounded-md shadow-lg">
+                <div className="absolute -top-14 z-10 bg-black text-white text-xs px-2 py-1 rounded-md shadow-lg whitespace-nowrap">
                   <div>New: {newCustomers}</div>
                   <div>Retention: {retentionCustomers}</div>
                 </div>
