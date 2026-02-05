@@ -60,7 +60,7 @@ const IntegrationDashboard = () => {
   const connectedPlatforms = [
     {
       title: "Google Place Review",
-      icon: "./assets/whatsapp-icon.png",
+      icon: "./assets/integration/gmap.png",
       description:
         "Export customer context, quiz responses, and analytics directly to Google Sheets for comprehensive reporting and analysis.",
       status: "integrated",
@@ -80,67 +80,59 @@ const IntegrationDashboard = () => {
   const campaignPlatforms = [
     {
       title: "G-Sheets",
-      icon: "./assets/whatsapp-icon.png",
+      icon: "./assets/integration/gsheet2.png",
       description:
         "Export customer context, quiz responses, and analytics directly to Google Sheets for comprehensive reporting and analysis.",
       status: "Comming soon",
       component: GSheetsIntegration,
       button: false,
     },
-    {
-      title: "Engage Bird",
-      icon: "./assets/whatsapp-icon.png",
-      description:
-        "Streamline customer engagement with automated responses and personalized messaging activities.",
-      status: "Comming soon",
-      component: null, // No component defined for this
-      button: false,
-    },
+   
     {
       title: "Meta",
-      icon: "./assets/whatsapp-icon.png",
+      icon: "./assets/integration/meta.png",
       description:
         "Connect with Facebook and Instagram audiences through targeted ads and automated social media activities.",
       status: "Comming soon",
       component: FacebookIntegration,
       button: false,
     },
-    {
-      title: "Quiz",
-      icon: "./assets/whatsapp-icon.png",
-      description:
-        "Create interactive quizzes to gather customer insights and generate qualified leads through engaging assessments.",
-       status: "Comming soon",
-      component: null, // No component defined for this
-      button: false,
-    },
-    {
-      title: "Digital coupons",
-      icon: "./assets/whatsapp-icon.png",
-      description:
-        "Generate and distribute digital vouchers to boost sales and track redemption rates in real-time.",
-      status: "Comming soon",
-      component: null, // No component defined for this
-      button: false,
-    },
-    {
-      title: "Fly-Wheel",
-      icon: "./assets/whatsapp-icon.png",
-      description:
-        "Implement gamified loyalty programs with points, rewards, and tiered benefits to increase customer retention.",
-      status: "Comming soon",
-      component: null, // No component defined for this
-      button: false,
-    },
-    {
-      title: "Scratch Card",
-      icon: "./assets/whatsapp-icon.png",
-      description:
-        "Deploy virtual scratch cards for instant rewards and promotional activities with guaranteed engagement.",
-       status: "Comming soon",
-      component: null, // No component defined for this
-      button: false,
-    },
+    // {
+    //   title: "Quiz",
+    //   icon: "./assets/whatsapp-icon.png",
+    //   description:
+    //     "Create interactive quizzes to gather customer insights and generate qualified leads through engaging assessments.",
+    //    status: "Comming soon",
+    //   component: null, // No component defined for this
+    //   button: false,
+    // },
+    // {
+    //   title: "Digital coupons",
+    //   icon: "./assets/whatsapp-icon.png",
+    //   description:
+    //     "Generate and distribute digital vouchers to boost sales and track redemption rates in real-time.",
+    //   status: "Comming soon",
+    //   component: null, // No component defined for this
+    //   button: false,
+    // },
+    // {
+    //   title: "Fly-Wheel",
+    //   icon: "./assets/whatsapp-icon.png",
+    //   description:
+    //     "Implement gamified loyalty programs with points, rewards, and tiered benefits to increase customer retention.",
+    //   status: "Comming soon",
+    //   component: null, // No component defined for this
+    //   button: false,
+    // },
+    // {
+    //   title: "Scratch Card",
+    //   icon: "./assets/whatsapp-icon.png",
+    //   description:
+    //     "Deploy virtual scratch cards for instant rewards and promotional activities with guaranteed engagement.",
+    //    status: "Comming soon",
+    //   component: null, // No component defined for this
+    //   button: false,
+    // },
   ];
 
   const IntegrationCard = ({

@@ -146,8 +146,11 @@ const CouponManagement = () => {
         .number()
         .typeError("Discount must be a number")
         .positive("Discount must be greater than 0")
-        .min(0, "Discount must be greater than or equal to 0"),
-      // .max(100, "Discount cannot exceed 100"),
+        .min(0, "Discount must be greater than or equal to 0")
+        .when("couponType", {
+          is: "percentage",
+          then: (s) => s.max(100, "Discount cannot exceed 100%"),
+        }),
       expiryDate: yup
         .string()
         .required("Expiry date is required")
@@ -546,11 +549,20 @@ const CouponManagement = () => {
                   <input
                     type="number"
                     {...register("discount", { valueAsNumber: true })}
+                    onChange={(e) => {
+                      let value = parseFloat(e.target.value);
+                      if (watchCouponType === "percentage" && value > 100) {
+                        value = 100;
+                        e.target.value = "100";
+                      }
+                      setValue("discount", value, { shouldValidate: true });
+                    }}
                     className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
                       errors.discount  ? "border-red-500" : "border-gray-300" }
                     }`}
                     placeholder="e.g., 50 or 10"
                     min={0}
+                    max={watchCouponType === "percentage" ? 100 : undefined}
                     step={watchCouponType === "percentage" ? 0.1 : 1}
                     disabled={watchCouponType === "product"}
                   />

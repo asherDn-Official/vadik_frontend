@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Info, History, CreditCard, ArrowUpCircle, RefreshCw, Calendar } from "lucide-react";
+import { Info, History, CreditCard, ArrowUpCircle, RefreshCw, Calendar, ArrowLeft, ArrowRight } from "lucide-react";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import api from "../../../../api/apiconfig";
@@ -27,6 +27,9 @@ const TEMPLATE_PRICING = {
 export default function WhatsAppCredits() {
   const [balance, setBalance] = useState(null);
   const [history, setHistory] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0);
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [topupAmount, setTopupAmount] = useState(100);
@@ -49,12 +52,15 @@ export default function WhatsAppCredits() {
     }
   };
 
-  const fetchHistory = async () => {
+  const fetchHistory = async (page = 1) => {
     setHistoryLoading(true);
     try {
-      const response = await api.get("/api/whatsapp-credits/history/usage");
+      const response = await api.get(`/api/whatsapp-credits/history/usage?page=${page}&limit=10`);
       if (response.data.status) {
         setHistory(response.data.data);
+        setCurrentPage(response.data.pagination.page);
+        setTotalPages(response.data.pagination.totalPages);
+        setTotalRecords(response.data.pagination.total);
       }
     } catch (error) {
       console.error("Error fetching history:", error);
@@ -396,6 +402,63 @@ const handleConfirmTopup = async () => {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+            <p className="text-xs text-gray-500">
+              Showing <span className="font-semibold text-gray-800">{(currentPage - 1) * 10 + 1}</span> to <span className="font-semibold text-gray-800">{Math.min(currentPage * 10, totalRecords)}</span> of <span className="font-semibold text-gray-800">{totalRecords}</span> records
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fetchHistory(currentPage - 1)}
+                disabled={currentPage === 1 || historyLoading}
+                className="p-1.5 border border-gray-200 rounded-lg hover:bg-white disabled:opacity-50 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4 text-gray-600" />
+              </button>
+              
+              <div className="flex items-center gap-1">
+                {[...Array(totalPages)].map((_, i) => {
+                  const pageNum = i + 1;
+                  // Show current, first, last, and pages around current
+                  if (
+                    pageNum === 1 ||
+                    pageNum === totalPages ||
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => fetchHistory(pageNum)}
+                        className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
+                          currentPage === pageNum
+                            ? "bg-pink-600 text-white"
+                            : "hover:bg-white border border-transparent hover:border-gray-200 text-gray-600"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  } else if (
+                    pageNum === currentPage - 2 ||
+                    pageNum === currentPage + 2
+                  ) {
+                    return <span key={pageNum} className="text-gray-400 text-xs">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+
+              <button
+                onClick={() => fetchHistory(currentPage + 1)}
+                disabled={currentPage === totalPages || historyLoading}
+                className="p-1.5 border border-gray-200 rounded-lg hover:bg-white disabled:opacity-50 transition-colors"
+              >
+                <ArrowRight className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
