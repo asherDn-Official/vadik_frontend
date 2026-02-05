@@ -7,16 +7,17 @@ import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import { useAuth } from "../../context/AuthContext";
 
-const MyProfile = () => {
+const MyProfile = ({ setHasUnsavedChanges }) => {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     setError,
     clearErrors,
     setValue,
     trigger,
     watch,
+    reset,
   } = useForm({
     defaultValues: {
       firstName: "",
@@ -50,6 +51,25 @@ const MyProfile = () => {
 
   const { auth } = useAuth();
 
+  // Watch for changes and notify parent component
+  useEffect(() => {
+    if (setHasUnsavedChanges) {
+      setHasUnsavedChanges(isDirty);
+    }
+  }, [isDirty, setHasUnsavedChanges]);
+
+  // Handle browser close/reload
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
   // Watch the automatedCustomersGreeting value for the toggle
   const automatedGreeting = watch("automatedCustomersGreeting");
 
@@ -73,25 +93,28 @@ const MyProfile = () => {
             (retailerData.phoneCode?.replace("+", "") || "") +
             (retailerData.phone || "");
 
-          // Set form values using setValue from react-hook-form
-          setValue("firstName", firstName);
-          setValue("lastName", lastName);
-          setValue("phone", formattedPhone);
-          setValue("email", retailerData.email || "");
-          setValue("storeName", retailerData.storeName || "");
-          setValue("address", retailerData.storeAddress || "");
-          setValue("retentionPeriod", retailerData.retentionPeriod || 30);
-          setValue("loyalCustomerPeriodDays", retailerData.loyalCustomerPeriodDays || 120);
-          setValue("automatedCustomersGreeting", retailerData.automatedCustomersGreeting || true);
-          setValue("GSTNumber", retailerData.GSTNumber || "");
-          setValue("numberOfCustomers", retailerData.numberOfCustomers || "");
-          setValue("numberOfEmployees", retailerData.numberOfEmployees || "");
-          setValue("storeCity", retailerData.storeCity || "");
-          setValue("storeContactNumber", retailerData.storeContactNumber || "");
-          setValue("storeOwnerName", retailerData.storeOwnerName || "");
-          setValue("storePincode", retailerData.storePincode || "");
-          setValue("storeType", retailerData.storeType || "");
-          setValue("profilePicture", retailerData.storeImage || "https://randomuser.me/api/portraits/men/36.jpg");
+          // Set form values and reset to new defaults to clear isDirty
+          const initialValues = {
+            firstName,
+            lastName,
+            phone: formattedPhone,
+            email: retailerData.email || "",
+            storeName: retailerData.storeName || "",
+            address: retailerData.storeAddress || "",
+            retentionPeriod: retailerData.retentionPeriod || 30,
+            loyalCustomerPeriodDays: retailerData.loyalCustomerPeriodDays || 120,
+            automatedCustomersGreeting: retailerData.automatedCustomersGreeting || true,
+            GSTNumber: retailerData.GSTNumber || "",
+            numberOfCustomers: retailerData.numberOfCustomers || "",
+            numberOfEmployees: retailerData.numberOfEmployees || "",
+            storeCity: retailerData.storeCity || "",
+            storeContactNumber: retailerData.storeContactNumber || "",
+            storeOwnerName: retailerData.storeOwnerName || "",
+            storePincode: retailerData.storePincode || "",
+            storeType: retailerData.storeType || "",
+            profilePicture: retailerData.storeImage || "https://randomuser.me/api/portraits/men/36.jpg",
+          };
+          reset(initialValues);
         }
 
         setLoading(false);
@@ -104,12 +127,12 @@ const MyProfile = () => {
     if (auth?.user) {
       fetchProfileData();
     }
-  }, [auth, setValue]);
+  }, [auth, reset, setError]);
 
   const gstValue = watch("GSTNumber");
 
   const handlePhoneChange = (phoneValue) => {
-    setValue("phone", phoneValue, { shouldValidate: true });
+    setValue("phone", phoneValue, { shouldValidate: true, shouldDirty: true });
 
     // Custom validation for 10 digits
     if (phoneValue) {
@@ -166,10 +189,13 @@ const MyProfile = () => {
 
       if (response.data.status === "success") {
         showToast("Profile Updated Successfully!", "success");
-
-        if (response.data.data?.avatarUrl) {
-          setValue("profilePicture", response.data.data.avatarUrl);
+        
+        // Update local state and reset form dirty state
+        const updatedData = { ...data };
+        if (response.data.data?.storeImage) {
+          updatedData.profilePicture = response.data.data.storeImage;
         }
+        reset(updatedData);
       }
     } catch (err) {
       showToast(err.response?.data?.message, "error")
@@ -192,7 +218,7 @@ const MyProfile = () => {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      setValue("profilePicture", event.target.result);
+      setValue("profilePicture", event.target.result, { shouldDirty: true });
       setUploadError("");
     };
     reader.onerror = () => {
@@ -224,23 +250,22 @@ const MyProfile = () => {
 
 
   return (
-    <div className="px-10 py-3 mx-auto">
-      <h2 className="text-[#313166] text-[14px] font-medium mb-6">
-        Admin Profile
-      </h2>
+    <div className="max-w-5xl mx-auto p-4 md:p-0">
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-[#313166] text-lg font-semibold">
+          Admin Profile
+        </h2>
+      </div>
 
       {successMessage && (
-        <div className="mb-4 p-2 bg-green-100 text-green-700 rounded">
+        <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl border border-green-100 animate-in fade-in slide-in-from-top-2 duration-300">
           {successMessage}
         </div>
       )}
-      {/* {error && (
-        <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">{error}</div>
-      )} */}
 
-      <div className="flex flex-col md:flex-row gap-10">
-        <div className="flex-1">
-          <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-6">
+      <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+        <div className="flex-1 order-2 lg:order-1">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block text-sm text-[#31316680]">
@@ -623,7 +648,7 @@ const MyProfile = () => {
                   type="button"
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${automatedGreeting ? 'bg-[#CB376D]' : 'bg-gray-300'
                     }`}
-                  onClick={() => setValue("automatedCustomersGreeting", !automatedGreeting)}
+                  onClick={() => setValue("automatedCustomersGreeting", !automatedGreeting, { shouldDirty: true })}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${automatedGreeting ? 'translate-x-6' : 'translate-x-1'
@@ -647,50 +672,61 @@ const MyProfile = () => {
           </form>
         </div>
 
-        <div className="md:w-64 flex flex-col items-center bg-[#F4F5F9] p-5 rounded-[10px] justify-evenly h-[315px]">
-          <div className="text-center mb-4">
-            <h3 className="font-medium mb-1 text-[#313166] text-[14px]">
-             Business Logo
-            </h3>
-          </div>
-          <div className="w-34 h-34 rounded-full overflow-hidden mb-4 border-2 border-gray-200">
-            <img
-              src={watch("profilePicture")}
-              alt="Profile"
-              className="w-[134px] h-[134px] object-cover"
+        <div className="w-full lg:w-72 order-1 lg:order-2">
+          <div className="sticky top-6 bg-gray-50 p-6 md:p-8 rounded-[24px] border border-gray-100 flex flex-col items-center">
+            <div className="text-center mb-6">
+              <h3 className="font-semibold text-[#313166] text-base">
+                Business Logo
+              </h3>
+            </div>
+            
+            <div className="relative group cursor-pointer" onClick={triggerFileInput}>
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden mb-6 border-4 border-white shadow-md transition-transform group-hover:scale-105">
+                <img
+                  src={watch("profilePicture")}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="text-center mb-6">
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">
+                Upload JPG or PNG
+              </p>
+              <p className="text-[#EC396F] text-[10px] font-medium">
+                Max 200x200px, 2MB
+              </p>
+            </div>
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              accept="image/*"
+              className="hidden"
             />
+
+            <button
+              type="button"
+              onClick={triggerFileInput}
+              className="w-full py-2.5 px-4 border border-gray-200 rounded-xl text-[#313166] font-medium hover:bg-white hover:shadow-sm transition-all text-sm"
+            >
+              Change Photo
+            </button>
+
+            {uploadError && (
+              <p className="text-red-500 text-xs mt-4 text-center bg-red-50 py-2 px-3 rounded-lg w-full">
+                {uploadError}
+              </p>
+            )}
           </div>
-          <div className="text-center text-xs text-gray-500 mb-2">
-            <span className="text-[#31316680] text-[10px]">
-              Upload jpg or png
-            </span>
-            <br />
-            <span className="text-[#EC396F] text-[10px]">
-              (max 200x200px, 2MB)
-            </span>
-          </div>
-
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImageUpload}
-            accept="image/*"
-            className="hidden"
-          />
-
-          <button
-            type="button"
-            onClick={triggerFileInput}
-            className="px-4 py-2 border border-1 border-[#313166] rounded hover:bg-gray-50 w-full"
-          >
-            Upload Photo
-          </button>
-
-          {uploadError && (
-            <p className="text-red-500 text-xs mt-2 text-center">
-              {uploadError}
-            </p>
-          )}
         </div>
       </div>
     </div>
