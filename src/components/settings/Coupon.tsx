@@ -127,35 +127,27 @@ const CouponManagement = () => {
       code: yup
         .string()
         .trim()
-        .required("Code is required")
-        .matches(
-          /^[A-Za-z0-9!@#$%^&*()_\-+=<>?{}[\]~`.,;:'"\\|/ ]+$/,
-          "Invalid characters"
-        ) // allow specials
-        .test(
-          "min-letters",
-          "Code must contain at least 4 letters",
-          (value) => (value.match(/[A-Za-z]/g) || []).length >= 4
-        )
-        .test(
-          "min-numbers",
-          "Code must contain at least 2 numbers",
-          (value) => (value.match(/[0-9]/g) || []).length >= 2
-        ),
+        .required("Code is required"),
       discount: yup
         .number()
         .typeError("Discount must be a number")
-        .positive("Discount must be greater than 0")
         .min(0, "Discount must be greater than or equal to 0")
+        .when("couponType", {
+          is: (val) => val !== "product",
+          then: (s) => s.moreThan(0, "Discount must be greater than 0"),
+        })
         .when("couponType", {
           is: "percentage",
           then: (s) => s.max(100, "Discount cannot exceed 100%"),
         }),
       expiryDate: yup
-        .string()
+        .mixed()
         .required("Expiry date is required")
         .test("future", "Expiry date must be today or later", (value) => {
           if (!value) return false;
+          // If we are editing, allow the existing date (even if it's in the past)
+          if (editingCouponId) return true;
+          
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           const d = new Date(value);
@@ -174,7 +166,7 @@ const CouponManagement = () => {
       condition: yup.boolean().default(false),
       conditionType: yup
         .mixed()
-        .oneOf(["greater", "lesser", "equal"])
+        .oneOf(["greater", "less", "equal"])
         .default("greater"),
       conditionValue: yup
         .number()
@@ -188,14 +180,11 @@ const CouponManagement = () => {
           otherwise: (s) => s.transform(() => 0).default(0),
         }),
       productNames: yup
-        
-            .string()
-            .max(15, "Product name can not be more than 15 characters")
-            .required("Product name is required")
-        
+        .string()
+        .nullable()
         .when("couponType", {
           is: "product",
-          then: (s) => s.min(1, "At least one product name is required"),
+          then: (s) => s.required("Product name is required").max(15, "Product name can not be more than 15 characters"),
           otherwise: (s) => s.notRequired(),
         }),
       productImage: yup.string().nullable().notRequired(),
@@ -274,6 +263,7 @@ const CouponManagement = () => {
   const startEditingCoupon = (coupon) => {
     setIsAddingCoupon(true);
     setEditingCouponId(coupon._id);
+    setExpiryDate(new Date(coupon.expiryDate));
     const editData = {
       name: coupon.name,
       code: coupon.code,
@@ -286,7 +276,7 @@ const CouponManagement = () => {
       conditionType: coupon.conditionType || "greater",
       conditionValue: coupon.conditionValue || 0,
       productImage: coupon.productImage || "",
-      productNames: coupon.productNames || [],
+      productNames: typeof coupon.productNames === "string" ? coupon.productNames : "",
     };
     reset(editData);
   };
@@ -483,7 +473,7 @@ const CouponManagement = () => {
 
           {isAddingCoupon && (
             <form
-              onSubmit={handleSubmit(handleSaveCoupon)}
+              onSubmit={handleSubmit(handleSaveCoupon, (err) => console.log("Validation Errors:", err))}
               className="mb-6 rounded-lg border bg-gray-50 p-6"
             >
               <h3 className="text-lg font-semibold mb-4">
@@ -564,7 +554,7 @@ const CouponManagement = () => {
                     min={0}
                     max={watchCouponType === "percentage" ? 100 : undefined}
                     step={watchCouponType === "percentage" ? 0.1 : 1}
-                    disabled={watchCouponType === "product"}
+                    disabled={watchCouponType === "product" || !!editingCouponId}
                   />
                   {errors.discount && (
                     <p className="mt-1 text-sm text-red-600">
@@ -594,12 +584,7 @@ const CouponManagement = () => {
                   {/* Hidden input for react-hook-form registration */}
                   <input
                     type="hidden"
-                    {...register("expiryDate", {
-                      required: "Expiry date is required",
-                      validate: (value) =>
-                        (value && value >= new Date()) ||
-                        "Expiry date must be today or later",
-                    })}
+                    {...register("expiryDate")}
                   />
 
                   {errors.expiryDate && (
@@ -616,7 +601,8 @@ const CouponManagement = () => {
                   </label>
                   <select
                     {...register("couponType")}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none disabled:bg-gray-100"
+                    disabled={!!editingCouponId}
                   >
                     <option value="amount">Amount (e.g., ₹50 off)</option>
                     <option value="percentage">
@@ -640,11 +626,12 @@ const CouponManagement = () => {
                             <input
                               type="text"
                               {...register("productNames")}
+                              disabled={!!editingCouponId}
                               className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
                                 errors.productNames
                                   ? "border-red-500"
                                   : "border-gray-300"
-                              }`}
+                              } disabled:bg-gray-100`}
                               placeholder="Enter product name"
                             />
                             {/* <button
@@ -680,29 +667,32 @@ const CouponManagement = () => {
                         <input
                           type="text"
                           {...register("productImage")}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                          disabled={!!editingCouponId}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100"
                           placeholder="Image URL or data URL"
                         />
                         <div className="flex items-center gap-3">
-                          <label className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 cursor-pointer hover:bg-gray-50">
+                          <label className={`px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 cursor-pointer hover:bg-gray-50 ${!!editingCouponId ? "opacity-50 cursor-not-allowed" : ""}`}>
                             <input
                               type="file"
                               accept="image/*"
                               className="hidden"
                               onChange={handleProductImageChange}
+                              disabled={!!editingCouponId}
                             />
                             Upload Image
                           </label>
                           {watchProductImage && (
                             <button
                               type="button"
+                              disabled={!!editingCouponId}
                               onClick={() =>
                                 setValue("productImage", "", {
                                   shouldDirty: true,
                                   shouldValidate: true,
                                 })
                               }
-                              className="px-4 py-2 text-sm text-red-600 border border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors"
+                              className="px-4 py-2 text-sm text-red-600 border border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors disabled:opacity-50"
                             >
                               Remove
                             </button>
@@ -748,7 +738,8 @@ const CouponManagement = () => {
                   <input
                     type="checkbox"
                     {...register("condition")}
-                    className="w-5 h-5 rounded text-primary focus:ring-primary"
+                    disabled={!!editingCouponId}
+                    className="w-5 h-5 rounded text-primary focus:ring-primary disabled:opacity-50"
                     id="conditionCheckbox"
                   />
                   <label
@@ -786,10 +777,11 @@ const CouponManagement = () => {
                     </label>
                     <select
                       {...register("conditionType")}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
+                      disabled={!!editingCouponId}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none disabled:bg-gray-100"
                     >
                       <option value="greater">Greater than</option>
-                      <option value="lesser">Lesser than</option>
+                      <option value="less">Lesser than</option>
                       <option value="equal">Equal to</option>
                     </select>
                   </div>
@@ -800,11 +792,12 @@ const CouponManagement = () => {
                     <input
                       type="number"
                       {...register("conditionValue", { valueAsNumber: true })}
+                      disabled={!!editingCouponId}
                       className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
                         errors.conditionValue
                           ? "border-red-500"
                           : "border-gray-300"
-                      }`}
+                      } disabled:bg-gray-100`}
                       placeholder="e.g., 299"
                       min="0"
                     />
@@ -960,7 +953,7 @@ const CouponManagement = () => {
                   >
                     <option value="">All Conditions</option>
                     <option value="greater">Greater than</option>
-                    <option value="lesser">Less than</option>
+                    <option value="less">Less than</option>
                     <option value="equal">Equal to</option>
                   </select>
                 </div>

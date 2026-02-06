@@ -642,7 +642,9 @@ const KYCPage = () => {
       {claimedCoupons.map((claimedCoupon) => {
         const { coupon, status, claimDate, claimId, notes } = claimedCoupon;
         const isProductCoupon = coupon.couponType === "product";
-        const isExpired = status === "expired";
+        const isExpiredByDate = new Date(coupon.expiryDate) < new Date();
+        const isExpired = status === "expired" || isExpiredByDate;
+        const isInactive = coupon.isActive === false;
         const isUsed = status === "used";
 
         return (
@@ -650,8 +652,24 @@ const KYCPage = () => {
             key={claimId}
             className={`relative flex flex-col border rounded-xl overflow-hidden transition-all duration-200 ${
               isUsed ? "opacity-75 grayscale-[0.5]" : "hover:shadow-lg hover:-translate-y-1"
-            } ${isExpired ? "border-red-100 bg-red-50/30" : "border-gray-200 bg-white"}`}
+            } ${isExpired || isInactive ? "border-red-100 bg-red-50/30" : "border-gray-200 bg-white"}`}
           >
+            {/* Warning Banners */}
+            {(isInactive || (isExpiredByDate && !isUsed)) && (
+              <div className="flex gap-2 px-4 pt-3">
+                {isInactive && (
+                  <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
+                    INACTIVE COUPON
+                  </span>
+                )}
+                {isExpiredByDate && !isUsed && (
+                  <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
+                    EXPIRED
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Top Section: Discount/Value */}
             <div className={`p-4 ${isProductCoupon ? "bg-purple-50" : "bg-blue-50"} border-b border-dashed border-gray-300`}>
               <div className="flex justify-between items-start">
