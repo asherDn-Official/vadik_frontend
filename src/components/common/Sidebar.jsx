@@ -121,8 +121,8 @@ function Sidebar() {
       <aside className="sticky left-0 top-0 h-screen w-full md:w-60  bg-[#313166] text-white flex flex-col overflow-y-auto">
       <div className=" flex pt-2 font-medium text-base md:text-lg lg:text-xl text-center truncate justify-center">
          <img
-              className="w-20"
-              src="./vadik_ai_logo.svg"
+              className="w-36"
+              src="/vadik_ai_log_.png"
               alt="Vadik Logo"
             />
       </div>

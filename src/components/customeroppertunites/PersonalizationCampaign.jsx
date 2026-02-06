@@ -648,7 +648,7 @@ const PersonalizationCampaign = () => {
                 )}
               </select>
               <h1 className="text-xl font-semibold">
-                Customer Lisl ({pagination.total})
+                Customer List ({pagination.total})
               </h1>
             </div>
           </div>

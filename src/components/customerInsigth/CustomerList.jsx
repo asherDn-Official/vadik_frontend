@@ -124,10 +124,14 @@ const CustomerList = ({
       default:
         // Check nested properties
         // Check nested properties (returns empty string if value is "")
-        const nestedValue =
+        const rawNestedValue =
           getNestedValue(customer, `additionalData.${header}.value`) ??
           getNestedValue(customer, `advancedDetails.${header}.value`) ??
           getNestedValue(customer, `advancedPrivacyDetails.${header}.value`);
+
+        const nestedValue = Array.isArray(rawNestedValue)
+          ? rawNestedValue.join(", ")
+          : rawNestedValue;
 
         // Handle null/undefined values
         if (

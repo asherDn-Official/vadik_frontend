@@ -98,7 +98,14 @@ const Login = () => {
 
   return (
     <div className="login-bg flex items-center justify-center min-h-screen p-4">
-      <div className="bg-white/20 backdrop-blur-md rounded-2xl shadow-xl max-w-md w-full p-8 text-white">
+      <div className="bg-white/20 backdrop-blur-md rounded-2xl  shadow-xl max-w-md w-full p-4 text-white">
+      <div className="flex justify-center ">
+        <img
+              className="w-30"
+              src="/vadik_ai_logo.svg"
+              alt="Vadik Logo"
+            />
+      </div>
         <h1 className="text-2xl font-bold text-center mb-8">
           Sign in to your account
         </h1>
