@@ -4,6 +4,8 @@ import { useAuth } from "../../context/AuthContext";
 import { LogOut } from "lucide-react";
 import ToggleBadge from "./ToggleBadge";
 import LogoutConfirmModal from "./LogoutConfirmModal";
+import UnsavedChangesModal from "./UnsavedChangesModal";
+import { useUnsavedChanges } from "../../context/UnsavedChangesContext";
 import dashboardIcon from "/assets/mage_dashboard-icon.png";
 import customersIcon from "/assets/bi_person-fill-icon.png";
 import personalisationIcon from "/assets/fluent-insights.png";
@@ -15,6 +17,9 @@ import settingsIcon from "/assets/settings-icon.png";
 
 function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [pendingPath, setPendingPath] = useState(null);
+  const { hasUnsavedChanges, setHasUnsavedChanges } = useUnsavedChanges();
   const location = useLocation();
   const { auth, setAuth } = useAuth();
   const userRole = auth?.data?.role;
@@ -94,7 +99,13 @@ function Sidebar() {
     },
   ];
 
-  const handleLogout = () => {
+  const handleLogout = (e) => {
+    if (hasUnsavedChanges) {
+      e.preventDefault();
+      setPendingPath("logout");
+      setShowUnsavedModal(true);
+      return;
+    }
     setShowLogoutConfirm(true);
   };
 
@@ -110,12 +121,39 @@ function Sidebar() {
     setShowLogoutConfirm(false);
   };
 
+  const handleNavigation = (e, path) => {
+    if (isActive(path)) return;
+
+    if (hasUnsavedChanges) {
+      e.preventDefault();
+      setPendingPath(path);
+      setShowUnsavedModal(true);
+    }
+  };
+
+  const confirmNavigation = () => {
+    setHasUnsavedChanges(false);
+    setShowUnsavedModal(false);
+    if (pendingPath === "logout") {
+      setShowLogoutConfirm(true);
+      setPendingPath(null);
+    } else if (pendingPath) {
+      navigate(pendingPath);
+    }
+  };
+
   return (
     <>
       <LogoutConfirmModal
         isOpen={showLogoutConfirm}
         onConfirm={confirmLogout}
         onCancel={cancelLogout}
+      />
+
+      <UnsavedChangesModal
+        isOpen={showUnsavedModal}
+        onConfirm={confirmNavigation}
+        onCancel={() => setShowUnsavedModal(false)}
       />
       
       <aside className="sticky left-0 top-0 h-screen w-full md:w-60  bg-[#313166] text-white flex flex-col overflow-y-auto">
@@ -135,6 +173,7 @@ function Sidebar() {
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={(e) => handleNavigation(e, item.path)}
               className={`sidebar-icon flex items-center px-4 md:px-6 py-2 text-white no-underline transition-colors hover:bg-[#3d3b83] ${
                 isActive(item.path) ? "sidebar-active bg-[#3d3b83]" : ""
               }`}
@@ -154,7 +193,7 @@ function Sidebar() {
         })}
        
         <button
-          onClick={handleLogout}
+          onClick={(e) => handleLogout(e)}
           className="flex w-full items-center px-4 md:px-6 py-3 md:py-4 text-white no-underline transition-colors hover:bg-[#3d3b83] mt-auto"
         >
           <LogOut

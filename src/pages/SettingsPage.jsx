@@ -27,12 +27,13 @@ import Template from "../components/settings/Template";
 import SubscriptionPage from "../components/settings/subscription/SubscriptionPage";
 
 import UnsavedChangesModal from "../components/common/UnsavedChangesModal";
+import { useUnsavedChanges } from "../context/UnsavedChangesContext";
 
 const SettingsPage = () => {
   const { tab } = useParams();
   const navigate = useNavigate();
   const [showAddProduct, setShowAddProduct] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const { hasUnsavedChanges, setHasUnsavedChanges } = useUnsavedChanges();
   const [pendingTab, setPendingTab] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -127,7 +128,7 @@ const SettingsPage = () => {
       {/* Main Content Area */}
       <div className="flex-1 p-4 md:p-8 bg-white rounded-[20px] shadow-sm overflow-auto">
         {activeTab === "my-profile" && (
-          <MyProfile setHasUnsavedChanges={setHasUnsavedChanges} />
+          <MyProfile />
         )}
         {activeTab === "inventory" && !showAddProduct && (
           <Inventory onAddProduct={handleAddProduct} />

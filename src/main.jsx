@@ -6,14 +6,17 @@ import "react-phone-number-input/style.css";
 import AuthContext from "../src/context/AuthContext.jsx";
 import { ToastContainer } from "react-toastify";
 import PlanProvider from "./context/PlanContext.jsx";
+import { UnsavedChangesProvider } from "./context/UnsavedChangesContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   // <StrictMode>
   <AuthContext>
-    <PlanProvider>
-      <ToastContainer />
-      <App />
-    </PlanProvider>
+    <UnsavedChangesProvider>
+      <PlanProvider>
+        <ToastContainer />
+        <App />
+      </PlanProvider>
+    </UnsavedChangesProvider>
   </AuthContext>
   // </StrictMode>,
 );

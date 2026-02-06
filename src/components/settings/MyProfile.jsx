@@ -6,8 +6,10 @@ import "react-phone-input-2/lib/style.css";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import { useAuth } from "../../context/AuthContext";
+import { useUnsavedChanges } from "../../context/UnsavedChangesContext";
 
-const MyProfile = ({ setHasUnsavedChanges }) => {
+const MyProfile = () => {
+  const { setHasUnsavedChanges } = useUnsavedChanges();
   const {
     register,
     handleSubmit,
