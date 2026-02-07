@@ -144,7 +144,8 @@ const DetailItem = React.memo(
     const displayContent =
       displayValue === null || displayValue === undefined || displayValue === ""
         ? "\u00A0"
-        : displayValue;
+        : displayValue.replace(/,\s*/g, ", ");
+
 
     return (
       <div
