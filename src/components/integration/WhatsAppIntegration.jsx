@@ -59,8 +59,13 @@ const WhatsAppIntegration = () => {
 
     // Listen for messages from Meta Embedded Signup
     const handleMetaMessage = (event) => {
+      // Log all messages for debugging during setup
+      console.log("PostMessage event received from origin:", event.origin);
+      
       // Documentation says origin should end with facebook.com
-      if (!event.origin.endsWith('facebook.com')) return;
+      if (!event.origin.endsWith('facebook.com') && !event.origin.endsWith('facebook.net')) {
+        return;
+      }
       
       let data;
       try {
@@ -78,7 +83,7 @@ const WhatsAppIntegration = () => {
         return;
       }
 
-      console.log("Message received from Meta:", data);
+      console.log("Decoded Meta message:", data);
 
       // Documentation specifies 'WA_EMBEDDED_SIGNUP' type
       if (data.type === 'WA_EMBEDDED_SIGNUP') {
@@ -91,14 +96,17 @@ const WhatsAppIntegration = () => {
           const phoneNumberId = extractedData.phone_number_id;
           const businessId = extractedData.business_id;
 
-          console.log("Extracted IDs from message:", { wabaId, phoneNumberId, businessId });
+          console.log("Captured IDs from Meta:", { wabaId, phoneNumberId, businessId });
           
           if (wabaId) signupRef.current.wabaId = wabaId;
           if (phoneNumberId) signupRef.current.phoneNumberId = phoneNumberId;
           if (businessId) signupRef.current.businessId = businessId;
           
-          console.log("Embedded signup finished. Proceeding with code exchange.");
-          tryCompleteSignup();
+          // If we already have the code, we can complete now
+          if (signupRef.current.code) {
+             console.log("IDs captured and code already present. Proceeding...");
+             tryCompleteSignup();
+          }
         } else if (data.event === 'CANCEL') {
           console.log("User cancelled flow at step:", data.data?.current_step);
           if (data.data?.error_message) {
@@ -111,6 +119,25 @@ const WhatsAppIntegration = () => {
     window.addEventListener('message', handleMetaMessage);
     return () => window.removeEventListener('message', handleMetaMessage);
   }, []);
+
+  // Polling for onboarding status if it's in progress
+  useEffect(() => {
+    let pollingInterval;
+    const needsPolling = 
+      config?.whatsappStatus === 'authorised' || 
+      ['pending', 'provisioning'].includes(config?.whatsappOnboardingStatus);
+
+    if (needsPolling) {
+      console.log("WhatsApp onboarding in progress. Starting status polling...");
+      pollingInterval = setInterval(() => {
+        fetchConfig();
+      }, 5000); 
+    }
+
+    return () => {
+      if (pollingInterval) clearInterval(pollingInterval);
+    };
+  }, [config?.whatsappStatus, config?.whatsappOnboardingStatus]);
 
   const loadFacebookSDK = () => {
     const appId = import.meta.env.VITE_FACEBOOK_APP_ID;
@@ -193,10 +220,11 @@ const WhatsAppIntegration = () => {
   };
 
   const tryCompleteSignup = () => {
-    const { code } = signupRef.current;
+    const { code, wabaId, phoneNumberId } = signupRef.current;
 
     console.log("Checking if signup can be completed:", { 
-      hasCode: !!code
+      hasCode: !!code,
+      hasIds: !!(wabaId && phoneNumberId)
     });
 
     if (!code) {
@@ -204,8 +232,21 @@ const WhatsAppIntegration = () => {
       return;
     }
 
-    // We have the code, proceed to backend exchange
-    console.log("Authorization code received. Completing signup...");
+    // If we have the code but NO IDs yet, wait a moment for the 'WA_EMBEDDED_SIGNUP' message
+    // which often arrives slightly after the login callback.
+    if (!wabaId || !phoneNumberId) {
+      console.log("Code received but IDs missing. Waiting 2 seconds for Meta event message...");
+      setTimeout(() => {
+        if (!signupRef.current.exchanging) {
+          console.log("Timeout reached. Proceeding with best available data (Backend will attempt discovery).");
+          performExchange();
+        }
+      }, 2000);
+      return;
+    }
+
+    // We have both, proceed immediately
+    console.log("Authorization code and IDs received. Completing signup...");
     performExchange();
   };
 
@@ -467,19 +508,29 @@ const WhatsAppIntegration = () => {
 
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm">
         {signupStatus && signupStatus !== 'completed' && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg animate-pulse">
-            <div className="flex items-center space-x-3">
-              <RefreshCw size={20} className="animate-spin text-blue-600" />
-              <div>
-                <h4 className="font-semibold text-blue-800 capitalize">
-                  Signup Status: {signupStatus}
+          <div className="mb-8 p-5 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-100 overflow-hidden relative border border-indigo-500">
+            <div className="absolute -right-8 -top-8 w-32 h-32 bg-indigo-500 rounded-full opacity-50 blur-3xl"></div>
+            <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-pink-500 rounded-full opacity-20 blur-3xl"></div>
+            
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="bg-white/10 p-3 rounded-xl backdrop-blur-md border border-white/20">
+                <RefreshCw size={24} className="animate-spin text-white" />
+              </div>
+              <div className="flex-grow">
+                <h4 className="text-white font-bold text-lg mb-0.5">
+                  {signupStatus === 'initializing' && "Opening Meta Secure Portal..."}
+                  {signupStatus === 'authorized' && "Authorization Successful!"}
+                  {signupStatus === 'exchanging' && "Linking Your Business Credentials..."}
+                  {signupStatus === 'pin_required' && "Security Verification Required"}
+                  {signupStatus === 'failed' && "Signup Interrupted"}
+                  {signupStatus === 'completed' && "Integration Active"}
                 </h4>
-                <p className="text-sm text-blue-600">
-                  {signupStatus === 'initializing' && "Waiting for Meta authorization popup..."}
-                  {signupStatus === 'authorized' && "Meta authorized. Waiting for account selection details..."}
-                  {signupStatus === 'exchanging' && "Connecting your WhatsApp account to Vadik AI..."}
-                  {signupStatus === 'syncing' && "Syncing standard templates to your account..."}
-                  {signupStatus === 'failed' && "Something went wrong. Please check your Meta Business Account and try again."}
+                <p className="text-indigo-100 text-sm font-medium">
+                  {signupStatus === 'initializing' && "Please complete the setup in the popup window."}
+                  {signupStatus === 'authorized' && "Meta has granted permissions. Finalizing account details..."}
+                  {signupStatus === 'exchanging' && "Establishing a secure connection between Vadik AI and Meta..."}
+                  {signupStatus === 'pin_required' && "Please enter your 6-digit PIN to verify ownership."}
+                  {signupStatus === 'failed' && "We encountered an issue. Please try again or use manual setup."}
                 </p>
               </div>
             </div>
@@ -487,30 +538,80 @@ const WhatsAppIntegration = () => {
         )}
 
         {config?.whatsappStatus === 'authorised' && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-start space-x-3">
-              <Info size={20} className="text-blue-600 mt-0.5" />
-              <div>
-                <h4 className="font-semibold text-blue-800">Account Authorization Successful</h4>
-                <p className="text-sm text-blue-700 mt-1">
-                  We&apos;ve successfully authorized your Meta account. We are now waiting for Meta to provision your WhatsApp Business Account and Phone Number. This typically takes a few minutes.
-                </p>
-                {config.whatsappOnboardingStatus && (
-                  <div className="mt-3 flex items-center space-x-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-blue-500">Current Step:</span>
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-mono capitalize">
-                      {config.whatsappOnboardingStatus === 'pending' && "Waiting for Account Creation..."}
-                      {config.whatsappOnboardingStatus === 'provisioning' && "Registering Phone Number..."}
-                      {config.whatsappOnboardingStatus === 'connected' && "Finalizing Connection..."}
-                    </span>
+          <div className="mb-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl shadow-sm overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-4 opacity-5">
+              <MessageSquare size={120} />
+            </div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-100">
+                  <CheckCircle size={22} />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-blue-900">Account Authorization Successful!</h4>
+                  <p className="text-sm text-blue-600 leading-relaxed">Meta is now provisioning your WhatsApp integration. This usually takes 2-5 minutes.</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="relative">
+                  <div className="absolute left-[15px] top-0 bottom-0 w-0.5 bg-blue-200/50"></div>
+                  
+                  <div className="space-y-8">
+                    {/* Step 1: Meta Authorization */}
+                    <div className="flex items-center gap-4 relative">
+                      <div className="z-10 bg-green-500 text-white p-1 rounded-full border-4 border-white shadow-sm">
+                        <CheckCircle size={16} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-blue-900">Meta Account Authorization</p>
+                        <p className="text-xs text-green-600 font-bold uppercase tracking-wider">Completed</p>
+                      </div>
+                    </div>
+
+                    {/* Step 2: Provisioning */}
+                    <div className="flex items-center gap-4 relative">
+                      <div className={`z-10 p-1 rounded-full border-4 border-white shadow-sm ${
+                        ['pending', 'provisioning'].includes(config.whatsappOnboardingStatus) 
+                        ? 'bg-blue-600 text-white animate-pulse' 
+                        : 'bg-blue-200 text-blue-400'
+                      }`}>
+                        <RefreshCw size={16} className={['pending', 'provisioning'].includes(config.whatsappOnboardingStatus) ? 'animate-spin' : ''} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-blue-900">Provisioning WABA & Phone</p>
+                        <p className="text-xs text-blue-600 font-medium animate-pulse">
+                          {config.whatsappOnboardingStatus === 'pending' ? "Waiting for Meta account sync..." : "Registering number with WhatsApp..."}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Step 3: Template Sync */}
+                    <div className="flex items-center gap-4 relative">
+                      <div className="z-10 bg-gray-200 text-gray-400 p-1 rounded-full border-4 border-white shadow-sm">
+                        <LinkIcon size={16} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-400">Syncing Standard Templates</p>
+                        <p className="text-xs text-gray-400 font-medium italic">Pending setup completion...</p>
+                      </div>
+                    </div>
                   </div>
-                )}
-                <button 
-                  onClick={fetchConfig}
-                  className="mt-4 flex items-center text-xs font-bold text-blue-600 hover:text-blue-800"
-                >
-                  <RefreshCw size={12} className="mr-1" /> CHECK STATUS
-                </button>
+                </div>
+
+                <div className="pt-4 flex items-center justify-between border-t border-blue-100/50">
+                  <div className="flex items-center gap-2 text-[10px] text-blue-500 font-bold uppercase tracking-wider">
+                    <RefreshCw size={12} className="animate-spin" />
+                    Auto-refreshing status...
+                  </div>
+                  <button 
+                    onClick={fetchConfig}
+                    className="bg-white hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg text-xs font-bold border border-blue-200 shadow-sm transition-all hover:shadow-md"
+                  >
+                    REFRESH NOW
+                  </button>
+                </div>
               </div>
             </div>
           </div>
