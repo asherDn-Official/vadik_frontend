@@ -210,15 +210,20 @@ const WhatsAppIntegration = () => {
   };
 
   const performExchange = () => {
-    const { code } = signupRef.current;
+    const { code, wabaId, phoneNumberId, businessId } = signupRef.current;
     
     // Prevent multiple calls
     if (signupRef.current.exchanging) return;
     signupRef.current.exchanging = true;
 
-    console.log("Initiating backend exchange with code...");
+    console.log("Initiating backend exchange with code and hint IDs...");
     toast.success("WhatsApp account linked! Completing setup...");
-    exchangeCode({ code });
+    exchangeCode({ 
+      code,
+      wabaId,
+      phoneNumberId,
+      businessId
+    });
   };
 
   const handleEmbeddedSignup = () => {
