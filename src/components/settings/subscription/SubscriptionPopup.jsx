@@ -30,11 +30,13 @@ const SubscriptionPopup = ({
   const [billingDetails, setBillingDetails] = useState(null);
   const [showBillingModal, setShowBillingModal] = useState(false);
   
+  
   const retailerid = localStorage.getItem("retailerId");
-  const { auth } = useAuth();
+  const { auth, setAuth } = useAuth();
   
   // Check if we should show tabs
   const shouldShowTabs = showSubscription && showAddon;
+  
   
   // Set active tab based on props and availability
   const [activeTab, setActiveTab] = useState(() => {
@@ -98,6 +100,15 @@ const SubscriptionPopup = ({
       console.log(error);
     }
   };
+
+  const confirmLogout = () => {
+    localStorage.removeItem("retailerId");
+    localStorage.removeItem("token");
+    localStorage.removeItem("formData");
+    setAuth(null);
+    navigate("/", { replace: true });
+  };
+
 
   const getAddons = async () => {
     try {
@@ -571,13 +582,13 @@ const SubscriptionPopup = ({
           <h1 className="text-2xl font-semibold text-gray-800">
             {title}
           </h1>
-          {/* <button
-            onClick={handleClose}
+          <button
+            onClick={confirmLogout}
             className="text-gray-500 hover:text-gray-700 text-2xl p-1"
             aria-label="Close"
           >
             ×
-          </button> */}
+          </button>
         </div>
 
         {/* Tab Navigation - Only show if both tabs are enabled */}
