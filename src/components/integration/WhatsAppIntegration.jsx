@@ -9,9 +9,13 @@ const WhatsAppIntegration = () => {
   const [webhookInfo, setWebhookInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [signupStatus, setSignupStatus] = useState(null); // 'initializing', 'authorized', 'exchanging', 'completed', 'failed'
+  const [signupStatus, setSignupStatus] = useState(null); // 'initializing', 'authorized', 'exchanging', 'completed', 'failed', 'pin_required'
   const [whatsappDetails, setWhatsappDetails] = useState(null);
   const [showManualModal, setShowManualModal] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pin, setPin] = useState('');
+  const [pinLoading, setPinLoading] = useState(false);
+  const [pendingPhoneId, setPendingPhoneId] = useState('');
   const [manualConfig, setManualConfig] = useState({
     accessToken: '',
     wabaId: '',
@@ -21,7 +25,6 @@ const WhatsAppIntegration = () => {
   const [fbInitialized, setFbInitialized] = useState(false);
   const signupRef = useRef({
     code: null,
-    accessToken: null,
     wabaId: null,
     phoneNumberId: null,
     businessId: null,
@@ -94,6 +97,7 @@ const WhatsAppIntegration = () => {
           if (phoneNumberId) signupRef.current.phoneNumberId = phoneNumberId;
           if (businessId) signupRef.current.businessId = businessId;
           
+          console.log("Embedded signup finished. Proceeding with code exchange.");
           tryCompleteSignup();
         } else if (data.event === 'CANCEL') {
           console.log("User cancelled flow at step:", data.data?.current_step);
@@ -189,36 +193,33 @@ const WhatsAppIntegration = () => {
   };
 
   const tryCompleteSignup = () => {
-    const { code, accessToken } = signupRef.current;
+    const { code } = signupRef.current;
 
     console.log("Checking if signup can be completed:", { 
-      hasCode: !!code, 
-      hasAccessToken: !!accessToken
+      hasCode: !!code
     });
 
-    if (!code && !accessToken) {
-      console.log("Waiting for Meta authorization...");
+    if (!code) {
+      console.log("Waiting for Meta authorization code...");
       return;
     }
 
-    // We have the code or token, proceed to backend exchange
-    // The backend will now handle fetching WABA and Phone IDs if they're missing
-    console.log("Authorization received. Completing signup...");
+    // We have the code, proceed to backend exchange
+    console.log("Authorization code received. Completing signup...");
     performExchange();
   };
 
   const performExchange = () => {
-    const { code, accessToken, wabaId, phoneNumberId, businessId } = signupRef.current;
+    const { code, wabaId, phoneNumberId, businessId } = signupRef.current;
     
     // Prevent multiple calls
     if (signupRef.current.exchanging) return;
     signupRef.current.exchanging = true;
 
-    console.log("Initiating backend exchange...");
+    console.log("Initiating backend exchange with code and IDs...");
     toast.success("WhatsApp account linked! Completing setup...");
-    exchangeCode({
+    exchangeCode({ 
       code,
-      accessToken,
       wabaId,
       phoneNumberId,
       businessId
@@ -257,7 +258,6 @@ const WhatsAppIntegration = () => {
         if (response.authResponse) {
           // Meta returns the code in response.authResponse.code when response_type: 'code' is used
           let code = response.authResponse.code;
-          const accessToken = response.authResponse.accessToken;
           const signedRequest = response.authResponse.signedRequest;
           
           // Try to extract code from signedRequest if missing (fallback)
@@ -269,16 +269,15 @@ const WhatsAppIntegration = () => {
             }
           }
           
-          if (!code && !accessToken) {
-            console.error("Auth response received but no 'code' or 'accessToken' found.");
+          if (!code) {
+            console.error("Auth response received but no 'code' found.");
             setSignupStatus('failed');
-            toast.error("Authorization succeeded but no token was returned.");
+            toast.error("Authorization succeeded but no code was returned.");
             return;
           }
 
-          console.log("Meta authorization successful. Code:", code ? "Yes" : "No", "Token:", accessToken ? "Yes" : "No");
+          console.log("Meta authorization successful. Code received.");
           signupRef.current.code = code;
-          signupRef.current.accessToken = accessToken;
           signupRef.current.authorizedAt = Date.now();
           setSignupStatus('authorized');
           
@@ -339,14 +338,25 @@ const WhatsAppIntegration = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.status) {
-        toast.success("WhatsApp account linked! Syncing templates...");
-        setSignupStatus('syncing');
-        
-        // Auto-trigger template sync
-        try {
-          await handleSyncTemplates();
-        } catch (e) {
-          console.error("Auto-sync failed:", e);
+        if (response.data.message === "ALREADY_CONNECTED") {
+          toast.info("This WhatsApp account is already connected.");
+          setSignupStatus('completed');
+          fetchConfig();
+          return;
+        }
+
+        if (response.data.message === "PIN_REQUIRED") {
+          setSignupStatus('pin_required');
+          setPendingPhoneId(response.data.phoneNumberId);
+          setShowPinModal(true);
+          toast.info("A 6-digit PIN is required for this number.");
+          return;
+        }
+
+        if (response.data.message === "BILLING_REQUIRED") {
+          toast.warning("WhatsApp authorized, but a payment method is required on Meta.");
+        } else {
+          toast.success("WhatsApp connected successfully!");
         }
 
         setSignupStatus('completed');
@@ -354,7 +364,6 @@ const WhatsAppIntegration = () => {
         // Clear signup data
         signupRef.current = { 
           code: null, 
-          accessToken: null, 
           wabaId: null, 
           phoneNumberId: null, 
           businessId: null,
@@ -415,6 +424,36 @@ const WhatsAppIntegration = () => {
     await saveConfig(manualConfig);
     setShowManualModal(false);
     setManualConfig({ accessToken: '', wabaId: '', phoneNumberId: '', businessId: '' });
+  };
+
+  const handlePinSubmit = async (e) => {
+    e.preventDefault();
+    if (pin.length !== 6) {
+      toast.error("PIN must be exactly 6 digits");
+      return;
+    }
+
+    setPinLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API_BASE_URL}/api/integrationManagement/whatsapp/verify-pin`, {
+        pin,
+        phoneNumberId: pendingPhoneId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.status) {
+        toast.success("PIN verified successfully!");
+        setShowPinModal(false);
+        setSignupStatus('completed');
+        fetchConfig();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to verify PIN");
+    } finally {
+      setPinLoading(false);
+    }
   };
 
   if (loading) return <div className="flex justify-center items-center h-64"><RefreshCw className="animate-spin text-[#313166]" /></div>;
@@ -708,9 +747,10 @@ const WhatsAppIntegration = () => {
                   <p className="text-xs text-gray-500 mb-4">Recommended. Easy flow through Meta&apos;s popup.</p>
                   <button
                     onClick={handleEmbeddedSignup}
-                    className="w-full bg-[#313166] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#25254d] transition-colors"
+                    disabled={config?.isUsingOwnWhatsapp}
+                    className="w-full bg-[#313166] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#25254d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Connect via Meta
+                    {config?.isUsingOwnWhatsapp ? 'Already Connected' : 'Connect via Meta'}
                   </button>
                 </div>
                 <div className="flex-1 p-4 border border-gray-100 rounded-lg bg-gray-50">
@@ -738,6 +778,61 @@ const WhatsAppIntegration = () => {
           )}
         </div>
       </div>
+
+      {showPinModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-blue-100">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-[#313166] flex items-center gap-2">
+                <LinkIcon className="text-blue-600" size={20} />
+                WhatsApp Verification
+              </h3>
+              <button onClick={() => setShowPinModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={24} />
+              </button>
+            </div>
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 mb-2">
+                This number was previously used with another provider or has 2-step verification enabled.
+              </p>
+              <p className="text-sm font-semibold text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                Enter the 6-digit PIN to complete the migration.
+              </p>
+            </div>
+            <form onSubmit={handlePinSubmit}>
+              <div className="mb-6">
+                <label className="block text-xs uppercase tracking-wider font-bold text-gray-400 mb-2">6-Digit PIN</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  placeholder="000000"
+                  required
+                  className="w-full text-center text-3xl tracking-[1rem] font-mono border-2 border-gray-200 rounded-xl py-4 focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                />
+              </div>
+              <div className="flex flex-col gap-3">
+                <button
+                  type="submit"
+                  disabled={pinLoading || pin.length !== 6}
+                  className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+                >
+                  {pinLoading ? <RefreshCw className="animate-spin" size={18} /> : <CheckCircle size={18} />}
+                  Verify & Connect
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPinModal(false)}
+                  className="w-full text-gray-500 text-sm font-medium hover:text-gray-700 py-1"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {showManualModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
