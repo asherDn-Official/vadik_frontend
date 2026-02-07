@@ -245,7 +245,7 @@ const WhatsAppIntegration = () => {
       setSignupStatus('initializing');
 
       const configId = import.meta.env.VITE_FACEBOOK_CONFIG_ID;
-      console.log("Starting FB login with Config ID:", configId);
+      console.log("Starting FB login with Config ID v2:", configId);
 
       window.FB.login((response) => {
         console.log("Full FB login response:", response);
