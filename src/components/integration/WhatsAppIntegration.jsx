@@ -333,7 +333,8 @@ const WhatsAppIntegration = () => {
         response_type: 'code',
         override_default_response_type: true,
         extras: {
-          setup: {}
+          setup: {},
+          scope: "business_management,whatsapp_business_management,whatsapp_business_messaging"
         }
       });
     } else {
