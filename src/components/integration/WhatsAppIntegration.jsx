@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 const WhatsAppIntegration = () => {
   const [config, setConfig] = useState(null);
   const [webhookInfo, setWebhookInfo] = useState(null);
+  const [tokenExpiry, setTokenExpiry] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [signupStatus, setSignupStatus] = useState(null); // 'initializing', 'authorized', 'exchanging', 'completed', 'failed', 'pin_required'
@@ -15,6 +16,7 @@ const WhatsAppIntegration = () => {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pin, setPin] = useState('');
   const [pinLoading, setPinLoading] = useState(false);
+  const [pingLoading, setPingLoading] = useState(false);
   const [pendingPhoneId, setPendingPhoneId] = useState('');
   const [manualConfig, setManualConfig] = useState({
     accessToken: '',
@@ -191,6 +193,7 @@ const WhatsAppIntegration = () => {
       if (response.data.status) {
         setConfig(response.data.data);
         setWebhookInfo(response.data.webhook);
+        setTokenExpiry(response.data.tokenExpiry);
         
         // If pin is required, ensure we have the phone ID ready for the modal
         if (response.data.data.whatsappOnboardingStatus === 'pin_required' && response.data.data.whatsappPhoneNumberId) {
@@ -378,6 +381,43 @@ const WhatsAppIntegration = () => {
     }
   };
 
+  const handleWebhookPing = async () => {
+    setPingLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_BASE_URL}/api/integrationManagement/whatsapp/webhook-ping`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.info("Test message sent! Please check your WhatsApp.");
+      
+      // Start polling for verification status
+      let attempts = 0;
+      const checkInterval = setInterval(async () => {
+        attempts++;
+        try {
+          const res = await axios.get(`${API_BASE_URL}/api/integrationManagement/whatsapp/config`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.data.status && res.data.data.isWebhookVerified) {
+            setConfig(res.data.data);
+            clearInterval(checkInterval);
+            setPingLoading(false);
+            toast.success("Webhook verified successfully!");
+          } else if (attempts > 15) {
+            clearInterval(checkInterval);
+            setPingLoading(false);
+          }
+        } catch (e) {
+          console.error("Error polling verification status:", e);
+        }
+      }, 3000);
+
+    } catch (error) {
+      setPingLoading(false);
+      toast.error(error.response?.data?.message || "Failed to send test message.");
+    }
+  };
+
   const exchangeCode = async (data) => {
     setSignupStatus('exchanging');
     try {
@@ -561,7 +601,7 @@ const WhatsAppIntegration = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <a 
-                  href="https://www.facebook.com/business/help/488291839463771" 
+                  href="https://business.facebook.com/billing_settings" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg"
@@ -579,116 +619,160 @@ const WhatsAppIntegration = () => {
           </div>
         )}
 
-        {config?.whatsappStatus === 'authorised' && config?.whatsappOnboardingStatus !== 'billing_required' && (
-          <div className="mb-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl shadow-sm overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-4 opacity-5">
-              <MessageSquare size={120} />
+        {tokenExpiry?.isExpiringSoon && (
+          <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-2xl shadow-sm relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 text-red-100/50">
+              <RefreshCw size={100} />
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-red-500 p-2 rounded-xl text-white shadow-lg shadow-red-100">
+                  <RefreshCw size={20} />
+                </div>
+                <h4 className="text-lg font-bold text-red-900">Connection Expiring Soon</h4>
+              </div>
+              <p className="text-red-800 text-sm mb-5 leading-relaxed">
+                Your WhatsApp connection will expire in <b>{tokenExpiry.daysRemaining} days</b>. 
+                Please re-authorize your account to prevent any interruption in service.
+              </p>
+              <button 
+                onClick={handleEmbeddedSignup}
+                className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg"
+              >
+                Re-authorize Now
+              </button>
+            </div>
+          </div>
+        )}
+
+        {tokenExpiry?.isExpired && (
+          <div className="mb-8 p-6 bg-red-100 border border-red-300 rounded-2xl shadow-sm relative overflow-hidden">
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-red-600 p-2 rounded-xl text-white shadow-lg shadow-red-200">
+                  <X size={20} />
+                </div>
+                <h4 className="text-lg font-bold text-red-900">Connection Expired</h4>
+              </div>
+              <p className="text-red-800 text-sm mb-5 leading-relaxed">
+                Your WhatsApp connection has expired. You must re-authorize to continue sending messages.
+              </p>
+              <button 
+                onClick={handleEmbeddedSignup}
+                className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg"
+              >
+                Connect Again
+              </button>
+            </div>
+          </div>
+        )}
+        {whatsappDetails?.business?.account_review_status !== 'APPROVED' && config?.whatsappStatus === 'connected' && (
+          <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-2xl shadow-sm relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 text-blue-100/50">
+              <Info size={100} />
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-blue-500 p-2 rounded-xl text-white shadow-lg shadow-blue-100">
+                  <Info size={20} />
+                </div>
+                <h4 className="text-lg font-bold text-blue-900">Limited Messaging Tier</h4>
+              </div>
+              <p className="text-blue-800 text-sm mb-5 leading-relaxed">
+                Your business is not yet fully verified by Meta. You are limited to 250 service-initiated conversations per day. 
+                Complete verification to increase your messaging limits.
+              </p>
+              <a 
+                href="https://business.facebook.com/settings/info" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-blue-700 font-bold text-sm underline hover:text-blue-800 transition-colors"
+              >
+                Start Business Verification <ExternalLink size={14} />
+              </a>
+            </div>
+          </div>
+        )}
+
+        {config?.isUsingOwnWhatsapp && config?.whatsappStatus !== 'disconnected' && (
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-8">
+              <h4 className="text-xl font-bold text-[#313166]">Onboarding Progress</h4>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Messaging Limit:</span>
+                <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold border border-indigo-100 italic">
+                  {config.whatsappMessagingLimit || "Tier 1 (250/day)"}
+                </span>
+              </div>
+            </div>
+
+            <div className="relative">
+              {/* Progress Line */}
+              <div className="absolute top-5 left-0 w-full h-0.5 bg-gray-100 -z-0"></div>
+              <div 
+                className="absolute top-5 left-0 h-0.5 bg-green-500 transition-all duration-1000 -z-0"
+                style={{ 
+                  width: `${
+                    config.whatsappOnboardingStatus === 'connected' ? '100%' : 
+                    config.whatsappOnboardingStatus === 'billing_required' ? '75%' :
+                    config.isWebhookVerified ? '50%' :
+                    config.whatsappPhoneNumberId ? '25%' : '0%'
+                  }` 
+                }}
+              ></div>
+
+              <div className="flex justify-between items-start relative z-10 text-center">
+                {/* Step 1: Account */}
+                <div className="flex flex-col items-center w-1/5">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md ${config.whatsappAccessToken ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                    <CheckCircle size={20} />
+                  </div>
+                  <p className={`mt-3 text-xs font-bold ${config.whatsappAccessToken ? 'text-green-600' : 'text-gray-400'}`}>Account Connected</p>
+                </div>
+
+                {/* Step 2: Phone */}
+                <div className="flex flex-col items-center w-1/5">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md ${config.whatsappPhoneNumberId ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                    {config.whatsappOnboardingStatus === 'provisioning' ? <RefreshCw size={20} className="animate-spin" /> : <MessageSquare size={20} />}
+                  </div>
+                  <p className={`mt-3 text-xs font-bold ${config.whatsappPhoneNumberId ? 'text-green-600' : 'text-gray-400'}`}>Phone Number</p>
+                </div>
+
+                {/* Step 3: Webhook */}
+                <div className="flex flex-col items-center w-1/5">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md ${config.isWebhookVerified ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                    <LinkIcon size={20} />
+                  </div>
+                  <p className={`mt-3 text-xs font-bold ${config.isWebhookVerified ? 'text-green-600' : 'text-gray-400'}`}>Webhook Linked</p>
+                </div>
+
+                {/* Step 4: Billing */}
+                <div className="flex flex-col items-center w-1/5">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md ${config.whatsappPaymentMethodAttached ? 'bg-green-500 text-white' : config.whatsappOnboardingStatus === 'billing_required' ? 'bg-amber-500 text-white animate-pulse' : 'bg-gray-200 text-gray-400'}`}>
+                    <ExternalLink size={20} />
+                  </div>
+                  <p className={`mt-3 text-xs font-bold ${config.whatsappPaymentMethodAttached ? 'text-green-600' : config.whatsappOnboardingStatus === 'billing_required' ? 'text-amber-600' : 'text-gray-400'}`}>Payment/Billing</p>
+                </div>
+
+                {/* Step 5: Verification */}
+                <div className="flex flex-col items-center w-1/5">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-md ${config.whatsappBusinessVerificationStatus === 'APPROVED' ? 'bg-green-500 text-white' : config.whatsappBusinessVerificationStatus === 'PENDING' ? 'bg-blue-500 text-white animate-pulse' : 'bg-gray-200 text-gray-400'}`}>
+                    <Info size={20} />
+                  </div>
+                  <p className={`mt-3 text-xs font-bold ${config.whatsappBusinessVerificationStatus === 'APPROVED' ? 'text-green-600' : 'text-gray-400'}`}>Business Verified</p>
+                </div>
+              </div>
             </div>
             
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-100">
-                  <CheckCircle size={22} />
+            {config.whatsappOnboardingStatus === 'billing_required' && (
+              <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Info className="text-amber-600" size={20} />
+                  <p className="text-sm text-amber-800 font-medium">Meta requires a payment method to fully activate your account.</p>
                 </div>
-                <div>
-                  <h4 className="text-lg font-bold text-blue-900">Account Authorization Successful!</h4>
-                  <p className="text-sm text-blue-600 leading-relaxed">Meta is now provisioning your WhatsApp integration. This usually takes 2-5 minutes.</p>
-                </div>
+                <a href="https://business.facebook.com/billing_settings" target="_blank" rel="noopener noreferrer" className="bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-bold">ADD PAYMENT</a>
               </div>
-
-              <div className="space-y-6">
-                <div className="relative">
-                  <div className="absolute left-[15px] top-0 bottom-0 w-0.5 bg-blue-200/50"></div>
-                  
-                  <div className="space-y-8">
-                    {/* Step 1: Meta Authorization */}
-                    <div className="flex items-center gap-4 relative">
-                      <div className="z-10 bg-green-500 text-white p-1 rounded-full border-4 border-white shadow-sm">
-                        <CheckCircle size={16} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-blue-900">Meta Account Authorization</p>
-                        <p className="text-xs text-green-600 font-bold uppercase tracking-wider">Completed</p>
-                      </div>
-                    </div>
-
-                    {/* Step 2: Provisioning */}
-                    <div className="flex items-center gap-4 relative">
-                      <div className={`z-10 p-1 rounded-full border-4 border-white shadow-sm ${
-                        ['pending', 'provisioning'].includes(config.whatsappOnboardingStatus) 
-                        ? 'bg-blue-600 text-white animate-pulse' 
-                        : config.whatsappOnboardingStatus === 'billing_required'
-                        ? 'bg-amber-500 text-white'
-                        : config.whatsappOnboardingStatus === 'pin_required'
-                        ? 'bg-blue-500 text-white'
-                        : config.whatsappOnboardingStatus === 'connected'
-                        ? 'bg-green-500 text-white'
-                        : 'bg-blue-200 text-blue-400'
-                      }`}>
-                        {config.whatsappOnboardingStatus === 'connected' ? (
-                          <CheckCircle size={16} />
-                        ) : config.whatsappOnboardingStatus === 'pin_required' ? (
-                          <LinkIcon size={16} />
-                        ) : (
-                          <RefreshCw size={16} className={['pending', 'provisioning'].includes(config.whatsappOnboardingStatus) ? 'animate-spin' : ''} />
-                        )}
-                      </div>
-                      <div className="flex-grow">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-bold text-blue-900">Registration & Billing</p>
-                          {config.whatsappOnboardingStatus === 'pin_required' && (
-                            <button 
-                              onClick={() => {
-                                setPendingPhoneId(config.whatsappPhoneNumberId);
-                                setShowPinModal(true);
-                              }}
-                              className="text-[10px] bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded font-bold transition-colors"
-                            >
-                              ENTER PIN
-                            </button>
-                          )}
-                        </div>
-                        <p className={`text-xs font-medium ${
-                          config.whatsappOnboardingStatus === 'billing_required' ? 'text-amber-600' : 
-                          config.whatsappOnboardingStatus === 'pin_required' ? 'text-blue-700 font-bold' :
-                          'text-blue-600 animate-pulse'
-                        }`}>
-                          {config.whatsappOnboardingStatus === 'pending' ? "Waiting for Meta account sync..." : 
-                           config.whatsappOnboardingStatus === 'provisioning' ? "Registering number with WhatsApp..." :
-                           config.whatsappOnboardingStatus === 'billing_required' ? "Action Required: Add Payment Method" :
-                           config.whatsappOnboardingStatus === 'pin_required' ? "Action Required: 6-Digit PIN Verification" :
-                           config.whatsappOnboardingStatus === 'connected' ? "Successfully registered!" : "Finalizing..."}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Step 3: Template Sync */}
-                    <div className="flex items-center gap-4 relative">
-                      <div className="z-10 bg-gray-200 text-gray-400 p-1 rounded-full border-4 border-white shadow-sm">
-                        <LinkIcon size={16} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-400">Syncing Standard Templates</p>
-                        <p className="text-xs text-gray-400 font-medium italic">Pending setup completion...</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 flex items-center justify-between border-t border-blue-100/50">
-                  <div className="flex items-center gap-2 text-[10px] text-blue-500 font-bold uppercase tracking-wider">
-                    <RefreshCw size={12} className="animate-spin" />
-                    Auto-refreshing status...
-                  </div>
-                  <button 
-                    onClick={fetchConfig}
-                    className="bg-white hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg text-xs font-bold border border-blue-200 shadow-sm transition-all hover:shadow-md"
-                  >
-                    REFRESH NOW
-                  </button>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -707,16 +791,16 @@ const WhatsAppIntegration = () => {
             </div>
           </div>
           <div className="flex items-center">
-            {config?.whatsappStatus === 'connected' || config?.isUsingOwnWhatsapp ? (
-              <span className="flex items-center text-green-600 bg-green-50 px-3 py-1 rounded-full text-sm font-medium">
-                <CheckCircle size={16} className="mr-1" /> Connected
+            {config?.whatsappOnboardingStatus === 'connected' ? (
+              <span className="flex items-center text-green-600 bg-green-50 px-3 py-1 rounded-full text-sm font-medium border border-green-100">
+                <CheckCircle size={16} className="mr-1" /> Fully Connected
               </span>
-            ) : config?.whatsappStatus === 'authorised' ? (
-              <span className="flex items-center text-blue-600 bg-blue-50 px-3 py-1 rounded-full text-sm font-medium">
-                <RefreshCw size={16} className="mr-1 animate-spin" /> Authorised (Setting up...)
+            ) : config?.whatsappStatus === 'authorised' || ['pending', 'provisioning'].includes(config?.whatsappOnboardingStatus) ? (
+              <span className="flex items-center text-blue-600 bg-blue-50 px-3 py-1 rounded-full text-sm font-medium border border-blue-100">
+                <RefreshCw size={16} className="mr-1 animate-spin" /> Setup in Progress
               </span>
             ) : (
-              <span className="flex items-center text-gray-600 bg-gray-50 px-3 py-1 rounded-full text-sm font-medium">
+              <span className="flex items-center text-gray-600 bg-gray-50 px-3 py-1 rounded-full text-sm font-medium border border-gray-100">
                 <XCircle size={16} className="mr-1" /> Not Connected
               </span>
             )}
@@ -734,179 +818,60 @@ const WhatsAppIntegration = () => {
                 <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Phone Number ID</p>
                 <p className="text-sm font-mono text-[#313166]">{config.whatsappPhoneNumberId}</p>
               </div>
-              {config.whatsappBusinessId && (
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Business ID</p>
-                  <p className="text-sm font-mono text-[#313166]">{config.whatsappBusinessId}</p>
-                </div>
-              )}
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Connection Status</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Verification Status</p>
+                <p className="text-sm font-semibold text-[#313166]">{config.whatsappBusinessVerificationStatus?.replace(/_/g, ' ') || 'None'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Webhook Link</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <div className={`w-2 h-2 rounded-full ${config.whatsappStatus === 'verified' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                  <p className="text-sm capitalize text-[#313166]">{config.whatsappStatus || 'Connected'}</p>
+                  <div className={`w-2 h-2 rounded-full ${config.isWebhookVerified ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <p className="text-sm capitalize text-[#313166]">{config.isWebhookVerified ? 'Automatic Active' : 'Not Linked'}</p>
                 </div>
               </div>
             </div>
 
-            {detailsLoading ? (
-              <div className="flex items-center space-x-2 text-sm text-gray-500 mb-6">
-                <RefreshCw size={14} className="animate-spin" />
-                <span>Fetching real-time business details...</span>
-              </div>
-            ) : (whatsappDetails?.business && whatsappDetails?.phone) && (
-              <div className="mb-6 space-y-6">
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                  <h4 className="text-sm font-bold text-[#313166] mb-3 flex items-center">
-                    <CheckCircle size={16} className="mr-2 text-blue-600" />
-                    Business Details
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Business Name</p>
-                      <p className="text-sm font-semibold text-[#313166]">{whatsappDetails.business.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Account Status</p>
-                      <p className="text-sm text-[#313166] capitalize">{whatsappDetails.business.status?.replace(/_/g, ' ')}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Currency</p>
-                      <p className="text-sm text-[#313166]">{whatsappDetails.business.currency}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Ownership</p>
-                      <p className="text-sm text-[#313166] capitalize">{whatsappDetails.business.owner_business_info?.name || 'Business Owned'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">WABA ID</p>
-                      <p className="text-sm text-[#313166]">{whatsappDetails.business.id}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-green-50 border border-green-100 rounded-lg p-4">
-                  <h4 className="text-sm font-bold text-[#313166] mb-3 flex items-center">
-                    <CheckCircle size={16} className="mr-2 text-green-600" />
-                    Phone Number Details
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Display Number</p>
-                      <p className="text-sm font-semibold text-[#313166]">{whatsappDetails.phone.display_phone_number}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Verified Name</p>
-                      <p className="text-sm text-[#313166]">{whatsappDetails.phone.verified_name}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Quality Rating</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <div className={`w-2 h-2 rounded-full ${
-                          whatsappDetails.phone.quality_rating === 'GREEN' ? 'bg-green-500' : 
-                          whatsappDetails.phone.quality_rating === 'YELLOW' ? 'bg-yellow-500' : 'bg-red-500'
-                        }`}></div>
-                        <p className="text-sm text-[#313166]">{whatsappDetails.phone.quality_rating}</p>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Name Status</p>
-                      <p className="text-sm text-[#313166] capitalize">{whatsappDetails.phone.name_status?.replace(/_/g, ' ')}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Verification</p>
-                      <p className="text-sm text-[#313166] capitalize">{whatsappDetails.phone.code_verification_status?.replace(/_/g, ' ')}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Webhook Configuration Section */}
+            {/* Webhook Configuration Section - Simplified for Embedded Signup */}
             <div className="mt-8 border-t border-gray-100 pt-6">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-lg font-bold text-[#313166] flex items-center">
                   <LinkIcon size={20} className="mr-2 text-[#db3b76]" />
-                  Webhook Configuration
+                  Real-time Connection
                 </h4>
-                <div className="flex items-center">
-                  {config.isWebhookVerified ? (
-                    <span className="flex items-center text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs font-medium border border-green-100">
-                      <CheckCircle size={14} className="mr-1" /> Webhook Connected
-                    </span>
-                  ) : (
-                    <span className="flex items-center text-amber-600 bg-amber-50 px-3 py-1 rounded-full text-xs font-medium border border-amber-100">
-                      <RefreshCw size={14} className="mr-1 animate-spin" /> Waiting for Setup
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
-                <p className="text-sm text-gray-600 mb-5">
-                  To receive incoming messages and status updates, you must configure the following webhook in your Meta App Dashboard.
-                </p>
-
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] uppercase tracking-wider text-gray-400 font-bold">Callback URL</label>
-                      <button 
-                        onClick={() => {
-                          navigator.clipboard.writeText(webhookInfo?.callbackUrl);
-                          toast.success("Callback URL copied!");
-                        }}
-                        className="text-[#db3b76] hover:text-[#c73369] flex items-center gap-1 text-[11px] font-bold"
-                      >
-                        <Copy size={12} /> COPY
-                      </button>
-                    </div>
-                    <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono text-gray-700 break-all">
-                      {webhookInfo?.callbackUrl}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] uppercase tracking-wider text-gray-400 font-bold">Verify Token</label>
-                      <button 
-                        onClick={() => {
-                          navigator.clipboard.writeText(webhookInfo?.verifyToken);
-                          toast.success("Verify Token copied!");
-                        }}
-                        className="text-[#db3b76] hover:text-[#c73369] flex items-center gap-1 text-[11px] font-bold"
-                      >
-                        <Copy size={12} /> COPY
-                      </button>
-                    </div>
-                    <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono text-gray-700">
-                      {webhookInfo?.verifyToken}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 bg-blue-50 rounded-lg p-4 border border-blue-100">
-                  <h5 className="text-xs font-bold text-blue-800 flex items-center mb-2">
-                    <Info size={14} className="mr-1.5" /> Setup Instructions
-                  </h5>
-                  <ol className="text-xs text-blue-700 space-y-2 list-decimal ml-4">
-                    <li>Go to your <b>Meta App Dashboard</b> and select your app.</li>
-                    <li>Navigate to <b>WhatsApp &gt; Configuration</b> in the left sidebar.</li>
-                    <li>Click <b>Edit</b> next to the Callback URL section.</li>
-                    <li>Paste the <b>Callback URL</b> and <b>Verify Token</b> provided above.</li>
-                    <li>Click <b>Verify and Save</b>.</li>
-                    <li>Under <b>Webhook fields</b>, click <b>Manage</b> and subscribe to <b>messages</b>.</li>
-                  </ol>
-                  <a 
-                    href="https://developers.facebook.com/apps/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center text-[11px] font-bold text-blue-600 hover:underline"
+                {config.isWebhookVerified && (
+                  <button 
+                    onClick={handleWebhookPing}
+                    disabled={pingLoading}
+                    className="bg-white border border-green-200 text-green-700 px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-green-50 transition-all flex items-center gap-2"
                   >
-                    Go to Meta Dashboard <ExternalLink size={12} className="ml-1" />
-                  </a>
-                </div>
+                    {pingLoading ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                    TEST CONNECTION
+                  </button>
+                )}
               </div>
+
+              {!config.isWebhookVerified ? (
+                <div className="bg-amber-50 rounded-xl p-5 border border-amber-100">
+                   <div className="flex items-center gap-3 text-amber-800">
+                     <RefreshCw size={20} className="animate-spin" />
+                     <p className="text-sm font-bold">Vadik AI is automatically syncing your webhook with Meta...</p>
+                   </div>
+                </div>
+              ) : (
+                <div className="bg-green-50 rounded-xl p-5 border border-green-100">
+                   <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-3">
+                       <div className="bg-green-500 p-2 rounded-lg text-white">
+                         <CheckCircle size={20} />
+                       </div>
+                       <div>
+                         <p className="text-sm font-bold text-green-900">Automatic Webhook Active</p>
+                         <p className="text-xs text-green-700 font-medium">Meta is sending all messages and status updates to your Vadik AI dashboard automatically.</p>
+                       </div>
+                     </div>
+                   </div>
+                </div>
+              )}
             </div>
           </>
         )}
