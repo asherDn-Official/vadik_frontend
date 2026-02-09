@@ -24,6 +24,7 @@ const CustomerList = () => {
   });
 
   const itemsPerPage = 10;
+  const totalSize = 10
   const navigate = useNavigate();
   const searchTerm = searchParams.get("search") || "";
   const [source, setSource] = useState("");
@@ -68,6 +69,19 @@ const CustomerList = () => {
       .then(setSoon)
       .catch(console.error);
   }, []);
+
+
+  let startPage = Math.max(
+    1,
+    pagination.currentPage - Math.floor(totalSize / 2)
+  );
+
+  let endPage = startPage + totalSize - 1;
+
+  if (endPage > pagination.totalPages) {
+    endPage = pagination.totalPages;
+    startPage = Math.max(1, endPage - totalSize + 1);
+  }
 
   // Debounced search to avoid too many API calls while typing
   const debouncedSearch = useCallback(
@@ -290,41 +304,52 @@ const CustomerList = () => {
                 <button
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={pagination.currentPage === 1}
-                  className={`px-3 py-1 text-sm border rounded-md ${
-                    pagination.currentPage === 1
-                      ? "bg-[#3131661A] cursor-not-allowed opacity-50"
-                      : "bg-[#3131661A] hover:bg-gray-100"
-                  }`}
+                  className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === 1
+                    ? "bg-[#3131661A] cursor-not-allowed opacity-50"
+                    : "bg-[#3131661A] hover:bg-gray-100"
+                    }`}
                 >
                   Previous
                 </button>
                 {Array.from(
-                  { length: pagination.totalPages },
-                  (_, i) => i + 1,
+                  { length: endPage - startPage + 1 },
+                  (_, i) => startPage + i
                 ).map((page) => (
                   <button
                     key={page}
                     onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1 text-sm border rounded-md ${
-                      pagination.currentPage === page
-                        ? "bg-[#313166] text-white border-[#313166]"
-                        : "bg-[#3131661A] text-[#313166] hover:bg-gray-100"
-                    }`}
+                    className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === page
+                      ? "bg-[#313166] text-white border-[#313166]"
+                      : "bg-[#3131661A] text-[#313166] hover:bg-gray-100"
+                      }`}
                   >
                     {page}
                   </button>
                 ))}
+
                 <button
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={pagination.currentPage === pagination.totalPages}
-                  className={`px-3 py-1 text-sm border rounded-md ${
-                    pagination.currentPage === pagination.totalPages
-                      ? "bg-[#3131661A] cursor-not-allowed opacity-50"
-                      : "bg-[#3131661A] hover:bg-gray-100"
-                  }`}
+                  className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === pagination.totalPages
+                    ? "bg-[#3131661A] cursor-not-allowed opacity-50"
+                    : "bg-[#3131661A] hover:bg-gray-100"
+                    }`}
                 >
                   Next
                 </button>
+                <select
+                  value={pagination.currentPage}
+                  onChange={(e) => handlePageChange(Number(e.target.value))}
+                  className="px-3 py-1 text-sm  rounded-md bg-white hover border border-[#313166] text-[#313166] hover:bg-gray-100 transition-all duration-300"
+                >
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <option key={page} value={page}>
+                        Page {page}
+                      </option>
+                    )
+                  )}
+                </select>
               </div>
             </div>
           </div>
