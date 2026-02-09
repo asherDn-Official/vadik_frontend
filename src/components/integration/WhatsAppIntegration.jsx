@@ -538,7 +538,42 @@ const WhatsAppIntegration = () => {
           </div>
         )}
 
-        {config?.whatsappStatus === 'authorised' && (
+        {config?.whatsappOnboardingStatus === 'billing_required' && (
+          <div className="mb-8 p-6 bg-amber-50 border border-amber-200 rounded-2xl shadow-sm relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 text-amber-100/50">
+              <Info size={100} />
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-amber-500 p-2 rounded-xl text-white shadow-lg shadow-amber-100">
+                  <ExternalLink size={20} />
+                </div>
+                <h4 className="text-lg font-bold text-amber-900">Payment Method Required</h4>
+              </div>
+              <p className="text-amber-800 text-sm mb-5 leading-relaxed">
+                Your WhatsApp account is authorized, but Meta requires a valid payment method to be attached to your Business Account before you can send messages.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <a 
+                  href="https://www.facebook.com/business/help/488291839463771" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg"
+                >
+                  Add Payment Method <ExternalLink size={16} />
+                </a>
+                <button 
+                  onClick={fetchConfig}
+                  className="inline-flex items-center justify-center gap-2 bg-white hover:bg-amber-100 text-amber-700 px-5 py-2.5 rounded-xl text-sm font-bold border border-amber-200 transition-all"
+                >
+                  <RefreshCw size={16} /> I've Added It
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {config?.whatsappStatus === 'authorised' && config?.whatsappOnboardingStatus !== 'billing_required' && (
           <div className="mb-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl shadow-sm overflow-hidden relative">
             <div className="absolute top-0 right-0 p-4 opacity-5">
               <MessageSquare size={120} />
@@ -576,14 +611,25 @@ const WhatsAppIntegration = () => {
                       <div className={`z-10 p-1 rounded-full border-4 border-white shadow-sm ${
                         ['pending', 'provisioning'].includes(config.whatsappOnboardingStatus) 
                         ? 'bg-blue-600 text-white animate-pulse' 
+                        : config.whatsappOnboardingStatus === 'billing_required'
+                        ? 'bg-amber-500 text-white'
+                        : config.whatsappOnboardingStatus === 'connected'
+                        ? 'bg-green-500 text-white'
                         : 'bg-blue-200 text-blue-400'
                       }`}>
-                        <RefreshCw size={16} className={['pending', 'provisioning'].includes(config.whatsappOnboardingStatus) ? 'animate-spin' : ''} />
+                        {config.whatsappOnboardingStatus === 'connected' ? (
+                          <CheckCircle size={16} />
+                        ) : (
+                          <RefreshCw size={16} className={['pending', 'provisioning'].includes(config.whatsappOnboardingStatus) ? 'animate-spin' : ''} />
+                        )}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-blue-900">Provisioning WABA & Phone</p>
-                        <p className="text-xs text-blue-600 font-medium animate-pulse">
-                          {config.whatsappOnboardingStatus === 'pending' ? "Waiting for Meta account sync..." : "Registering number with WhatsApp..."}
+                        <p className="text-sm font-bold text-blue-900">Registration & Billing</p>
+                        <p className={`text-xs font-medium ${config.whatsappOnboardingStatus === 'billing_required' ? 'text-amber-600' : 'text-blue-600 animate-pulse'}`}>
+                          {config.whatsappOnboardingStatus === 'pending' ? "Waiting for Meta account sync..." : 
+                           config.whatsappOnboardingStatus === 'provisioning' ? "Registering number with WhatsApp..." :
+                           config.whatsappOnboardingStatus === 'billing_required' ? "Action Required: Add Payment Method" :
+                           config.whatsappOnboardingStatus === 'connected' ? "Successfully registered!" : "Finalizing..."}
                         </p>
                       </div>
                     </div>
