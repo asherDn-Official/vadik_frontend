@@ -366,7 +366,11 @@ const WhatsAppIntegration = () => {
       isCritical: false,
       needsAction: !config?.whatsappPaymentMethodAttached && config?.whatsappStatus === 'connected' && config?.whatsappOnboardingStatus !== 'provisioning',
       actionLabel: 'Add Payment',
-      onAction: () => window.open('https://business.facebook.com/billing_settings', '_blank')
+      onAction: () => {
+        const indiaLink = `https://business.facebook.com/latest/whatsapp_manager/india/?business_id=${config?.whatsappBusinessId}&asset_id=${config?.whatsappWabaId}&nav_ref=whatsapp_manager&tab=india`;
+        const standardLink = `https://business.facebook.com/billing_settings?business_id=${config?.whatsappBusinessId}`;
+        window.open(config?.whatsappCurrency === 'INR' ? indiaLink : standardLink, '_blank');
+      }
     },
     {
       id: 5,
@@ -467,6 +471,55 @@ const WhatsAppIntegration = () => {
                })}
              </div>
            </div>
+
+           {/* India Payment Setup Alert Card */}
+           {!config?.whatsappPaymentMethodAttached && config?.whatsappCurrency === 'INR' && config?.whatsappStatus === 'connected' && (
+             <div className="mb-10 p-6 bg-amber-50 border border-amber-200 rounded-[24px] animate-in slide-in-from-top-4 duration-500">
+               <div className="flex items-start gap-5">
+                 <div className="bg-amber-500 p-3 rounded-[16px] text-white shadow-lg shadow-amber-200">
+                   <CreditCard size={24} />
+                 </div>
+                 <div className="flex-1">
+                   <h4 className="text-amber-900 font-[800] text-[18px]">India Payment Setup Required</h4>
+                   <p className="text-amber-800 text-[14px] mt-1.5 leading-relaxed">
+                     Meta requires India-based businesses to complete <strong>"Payment Configuration"</strong> directly. 
+                     Select your payment gateway (UPI/Card) on the Meta dashboard to enable messaging.
+                   </p>
+                   <div className="mt-5 flex flex-wrap gap-3">
+                     <button 
+                       onClick={() => window.open(`https://business.facebook.com/latest/whatsapp_manager/india/?business_id=${config?.whatsappBusinessId}&asset_id=${config?.whatsappWabaId}&nav_ref=whatsapp_manager&tab=india`, '_blank')}
+                       className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-[12px] text-[13px] font-[700] transition-all shadow-md shadow-amber-200 flex items-center gap-2"
+                     >
+                       CONFIGURE PAYMENT ON META
+                       <ExternalLink size={14} />
+                     </button>
+                     <button 
+                       onClick={async () => {
+                         setLoading(true); // Reuse loading state for the 3s delay
+                         toast.info("Syncing payment status with Meta...");
+                         await new Promise(resolve => setTimeout(resolve, 3000));
+                         fetchConfig();
+                       }}
+                       className="bg-white border border-amber-300 text-amber-700 px-5 py-2.5 rounded-[12px] text-[13px] font-[700] hover:bg-amber-50 transition-all font-[700]"
+                     >
+                       I'VE ADDED IT
+                     </button>
+                   </div>
+                   <div className="mt-4">
+                     <a 
+                       href="https://www.facebook.com/business/help/support" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       className="text-[12px] text-amber-600 hover:text-amber-700 font-[600] flex items-center gap-1.5 underline underline-offset-4"
+                     >
+                       <Info size={14} />
+                       Get Meta Help (Direct Support)
+                     </a>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           )}
 
            {/* Signup Status Alert Bar */}
            {signupStatus && signupStatus !== 'completed' && signupStatus !== 'pin_required' && (
