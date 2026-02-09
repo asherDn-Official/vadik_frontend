@@ -191,6 +191,12 @@ const WhatsAppIntegration = () => {
       if (response.data.status) {
         setConfig(response.data.data);
         setWebhookInfo(response.data.webhook);
+        
+        // If pin is required, ensure we have the phone ID ready for the modal
+        if (response.data.data.whatsappOnboardingStatus === 'pin_required' && response.data.data.whatsappPhoneNumberId) {
+          setPendingPhoneId(response.data.data.whatsappPhoneNumberId);
+        }
+
         if (response.data.data.isUsingOwnWhatsapp) {
           fetchDetails();
         }
@@ -613,22 +619,44 @@ const WhatsAppIntegration = () => {
                         ? 'bg-blue-600 text-white animate-pulse' 
                         : config.whatsappOnboardingStatus === 'billing_required'
                         ? 'bg-amber-500 text-white'
+                        : config.whatsappOnboardingStatus === 'pin_required'
+                        ? 'bg-blue-500 text-white'
                         : config.whatsappOnboardingStatus === 'connected'
                         ? 'bg-green-500 text-white'
                         : 'bg-blue-200 text-blue-400'
                       }`}>
                         {config.whatsappOnboardingStatus === 'connected' ? (
                           <CheckCircle size={16} />
+                        ) : config.whatsappOnboardingStatus === 'pin_required' ? (
+                          <LinkIcon size={16} />
                         ) : (
                           <RefreshCw size={16} className={['pending', 'provisioning'].includes(config.whatsappOnboardingStatus) ? 'animate-spin' : ''} />
                         )}
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-blue-900">Registration & Billing</p>
-                        <p className={`text-xs font-medium ${config.whatsappOnboardingStatus === 'billing_required' ? 'text-amber-600' : 'text-blue-600 animate-pulse'}`}>
+                      <div className="flex-grow">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-bold text-blue-900">Registration & Billing</p>
+                          {config.whatsappOnboardingStatus === 'pin_required' && (
+                            <button 
+                              onClick={() => {
+                                setPendingPhoneId(config.whatsappPhoneNumberId);
+                                setShowPinModal(true);
+                              }}
+                              className="text-[10px] bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded font-bold transition-colors"
+                            >
+                              ENTER PIN
+                            </button>
+                          )}
+                        </div>
+                        <p className={`text-xs font-medium ${
+                          config.whatsappOnboardingStatus === 'billing_required' ? 'text-amber-600' : 
+                          config.whatsappOnboardingStatus === 'pin_required' ? 'text-blue-700 font-bold' :
+                          'text-blue-600 animate-pulse'
+                        }`}>
                           {config.whatsappOnboardingStatus === 'pending' ? "Waiting for Meta account sync..." : 
                            config.whatsappOnboardingStatus === 'provisioning' ? "Registering number with WhatsApp..." :
                            config.whatsappOnboardingStatus === 'billing_required' ? "Action Required: Add Payment Method" :
+                           config.whatsappOnboardingStatus === 'pin_required' ? "Action Required: 6-Digit PIN Verification" :
                            config.whatsappOnboardingStatus === 'connected' ? "Successfully registered!" : "Finalizing..."}
                         </p>
                       </div>
@@ -943,9 +971,13 @@ const WhatsAppIntegration = () => {
               <p className="text-sm text-gray-600 mb-2">
                 This number was previously used with another provider or has 2-step verification enabled.
               </p>
-              <p className="text-sm font-semibold text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                Enter the 6-digit PIN to complete the migration.
-              </p>
+              <div className="text-xs space-y-2 text-blue-800 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <p className="font-bold">Important Tips:</p>
+                <ul className="list-disc ml-4 space-y-1">
+                  <li>If you don't know your PIN, <b>invent a new 6-digit code</b> (e.g., 123456). If 2FA is disabled in Meta Manager, Meta will accept this as your new PIN.</li>
+                  <li>If Meta says "Incorrect PIN" even though it's disabled, you must <b>wait 7 days</b> for Meta's cache to clear.</li>
+                </ul>
+              </div>
             </div>
             <form onSubmit={handlePinSubmit}>
               <div className="mb-6">
