@@ -367,9 +367,11 @@ const WhatsAppIntegration = () => {
       needsAction: !config?.whatsappPaymentMethodAttached && config?.whatsappStatus === 'connected' && config?.whatsappOnboardingStatus !== 'provisioning',
       actionLabel: 'Add Payment',
       onAction: () => {
+        // 2026 Update: Use the Hub-based links
+        const isIndia = config?.whatsappCurrency === 'INR' || config?.storeCountry?.toLowerCase() === 'india';
         const indiaLink = `https://business.facebook.com/latest/whatsapp_manager/india/?business_id=${config?.whatsappBusinessId}&asset_id=${config?.whatsappWabaId}&nav_ref=whatsapp_manager&tab=india`;
-        const standardLink = `https://business.facebook.com/billing_settings?business_id=${config?.whatsappBusinessId}`;
-        window.open(config?.whatsappCurrency === 'INR' ? indiaLink : standardLink, '_blank');
+        const globalLink = `https://business.facebook.com/billing_hub/payment_methods?business_id=${config?.whatsappBusinessId}`;
+        window.open(isIndia ? indiaLink : globalLink, '_blank', 'noopener,noreferrer');
       }
     },
     {
@@ -473,7 +475,7 @@ const WhatsAppIntegration = () => {
            </div>
 
            {/* India Payment Setup Alert Card */}
-           {!config?.whatsappPaymentMethodAttached && config?.whatsappCurrency === 'INR' && config?.whatsappStatus === 'connected' && (
+           {!config?.whatsappPaymentMethodAttached && (config?.whatsappCurrency === 'INR' || config?.storeCountry?.toLowerCase() === 'india') && config?.whatsappStatus === 'connected' && (
              <div className="mb-10 p-6 bg-amber-50 border border-amber-200 rounded-[24px] animate-in slide-in-from-top-4 duration-500">
                <div className="flex items-start gap-5">
                  <div className="bg-amber-500 p-3 rounded-[16px] text-white shadow-lg shadow-amber-200">
@@ -487,7 +489,10 @@ const WhatsAppIntegration = () => {
                    </p>
                    <div className="mt-5 flex flex-wrap gap-3">
                      <button 
-                       onClick={() => window.open(`https://business.facebook.com/latest/whatsapp_manager/india/?business_id=${config?.whatsappBusinessId}&asset_id=${config?.whatsappWabaId}&nav_ref=whatsapp_manager&tab=india`, '_blank')}
+                       onClick={() => {
+                         const indiaLink = `https://business.facebook.com/latest/whatsapp_manager/india/?business_id=${config?.whatsappBusinessId}&asset_id=${config?.whatsappWabaId}&nav_ref=whatsapp_manager&tab=india`;
+                         window.open(indiaLink, '_blank', 'noopener,noreferrer');
+                       }}
                        className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-[12px] text-[13px] font-[700] transition-all shadow-md shadow-amber-200 flex items-center gap-2"
                      >
                        CONFIGURE PAYMENT ON META
