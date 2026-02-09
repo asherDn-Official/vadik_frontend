@@ -490,7 +490,7 @@ const WhatsAppIntegration = () => {
                    <div className="mt-5 flex flex-wrap gap-3">
                      <button 
                        onClick={() => {
-                         const indiaLink = `https://business.facebook.com/latest/whatsapp_manager/india/?business_id=${config?.whatsappBusinessId}&asset_id=${config?.whatsappWabaId}&nav_ref=whatsapp_manager&tab=india`;
+                         const indiaLink = `https://business.facebook.com/wa/manage/home/`;
                          window.open(indiaLink, '_blank', 'noopener,noreferrer');
                        }}
                        className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-[12px] text-[13px] font-[700] transition-all shadow-md shadow-amber-200 flex items-center gap-2"
