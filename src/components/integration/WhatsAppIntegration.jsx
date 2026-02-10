@@ -31,11 +31,14 @@ const WhatsAppIntegration = () => {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [signupStatus, setSignupStatus] = useState(null); 
   const [whatsappDetails, setWhatsappDetails] = useState(null);
+  const [metaStatus, setMetaStatus] = useState(null);
   const [showManualModal, setShowManualModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [pin, setPin] = useState('');
   const [pinLoading, setPinLoading] = useState(false);
   const [pingLoading, setPingLoading] = useState(false);
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const [showPaymentInstructions, setShowPaymentInstructions] = useState(false);
   const [pendingPhoneId, setPendingPhoneId] = useState('');
   const [manualConfig, setManualConfig] = useState({
     accessToken: '',
@@ -172,12 +175,22 @@ const WhatsAppIntegration = () => {
     setDetailsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/api/integrationManagement/whatsapp/details`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.data.status) setWhatsappDetails(response.data.data);
-    } catch (error) { console.error("Error fetching details:", error); } 
-      finally { setDetailsLoading(false); }
+      const [detailsRes, statusRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/api/integrationManagement/whatsapp/details`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`${API_BASE_URL}/api/integrationManagement/whatsapp/meta-status`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      
+      if (detailsRes.data.status) setWhatsappDetails(detailsRes.data.data);
+      if (statusRes.data.status) setMetaStatus(statusRes.data.data);
+    } catch (error) { 
+      console.error("Error fetching details:", error); 
+    } finally { 
+      setDetailsLoading(false); 
+    }
   };
 
   const tryCompleteSignup = () => {
@@ -302,6 +315,22 @@ const WhatsAppIntegration = () => {
       finally { setPinLoading(false); }
   };
 
+  const handleRefreshStatus = async () => {
+    setRefreshingStatus(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_BASE_URL}/api/integrationManagement/whatsapp/refresh-status`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success("WhatsApp status refreshed!");
+      await Promise.all([fetchConfig(), fetchDetails()]);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Refresh failed");
+    } finally {
+      setRefreshingStatus(false);
+    }
+  };
+
   const handleWebhookPing = async () => {
     setPingLoading(true);
     try {
@@ -343,8 +372,9 @@ const WhatsAppIntegration = () => {
   };
 
   // --- Status Checks ---
-  const isBusinessVerified = ['verified', 'approved'].includes(config?.whatsappBusinessVerificationStatus?.toLowerCase());
-  const isPaymentDone = config?.whatsappPaymentMethodAttached;
+  const isBusinessVerified = metaStatus?.businessVerification?.status === 'verified';
+  const isAccountApproved = metaStatus?.wabaReviewStatus === 'APPROVED' || ['verified', 'approved'].includes(config?.whatsappBusinessVerificationStatus?.toLowerCase());
+  const isPaymentDone = metaStatus?.isBillingConfigured ?? config?.whatsappPaymentMethodAttached;
 
   const steps = [
     {
@@ -389,13 +419,13 @@ const WhatsAppIntegration = () => {
     },
     {
       id: 5,
-      name: 'Business Verified',
-      description: 'Meta verification status',
+      name: 'Account Approved',
+      description: 'WABA review status',
       icon: ShieldCheck,
-      isCompleted: isBusinessVerified,
+      isCompleted: isAccountApproved,
       isCritical: false,
       // Only show action if NOT verified AND we are connected
-      needsAction: !isBusinessVerified && config?.whatsappStatus === 'connected' && config?.whatsappOnboardingStatus !== 'provisioning',
+      needsAction: !isAccountApproved && config?.whatsappStatus === 'connected' && config?.whatsappOnboardingStatus !== 'provisioning',
       actionLabel: 'Verify Now',
       onAction: () => window.open(getVerificationUrl(), '_blank', 'noopener,noreferrer')
     }
@@ -516,14 +546,17 @@ const WhatsAppIntegration = () => {
                        <ExternalLink size={14} />
                      </button>
                      <button 
-                       onClick={async () => {
-                         setLoading(true);
-                         toast.info("Syncing payment status with Meta...");
-                         await new Promise(resolve => setTimeout(resolve, 3000));
-                         fetchConfig();
-                       }}
-                       className="bg-white border border-amber-300 text-amber-700 px-5 py-2.5 rounded-[12px] text-[13px] font-[700] hover:bg-amber-50 transition-all font-[700]"
+                       onClick={() => setShowPaymentInstructions(true)}
+                       className="bg-amber-100 text-amber-800 px-5 py-2.5 rounded-[12px] text-[13px] font-[700] hover:bg-amber-200 transition-all border border-amber-200"
                      >
+                       VIEW FIX STEPS
+                     </button>
+                     <button 
+                       onClick={handleRefreshStatus}
+                       disabled={refreshingStatus}
+                       className="bg-white border border-amber-300 text-amber-700 px-5 py-2.5 rounded-[12px] text-[13px] font-[700] hover:bg-amber-50 transition-all font-[700] flex items-center gap-2"
+                     >
+                       {refreshingStatus ? <RefreshCw size={14} className="animate-spin" /> : null}
                        I'VE ADDED IT
                      </button>
                    </div>
@@ -567,6 +600,75 @@ const WhatsAppIntegration = () => {
              </div>
            )}
 
+           {/* Business & Phone Details Row */}
+           {config?.whatsappStatus === 'connected' && (
+             <div className="mb-8 p-6 bg-gray-50/50 border border-gray-100 rounded-[24px] grid grid-cols-1 md:grid-cols-2 gap-8 relative overflow-hidden">
+               <div className="space-y-4">
+                 <div className="flex items-center gap-3">
+                   <div className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 text-[#313166]">
+                     <Globe size={20} />
+                   </div>
+                   <h4 className="font-bold text-gray-900">Business Details</h4>
+                 </div>
+                 <div className="space-y-2.5">
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-gray-500 font-medium">Display Name:</span>
+                     <span className="text-gray-900 font-bold">{metaStatus?.wabaName || 'N/A'}</span>
+                   </div>
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-gray-500 font-medium">Currency:</span>
+                     <span className="text-gray-900 font-bold">{metaStatus?.billingCurrency || config?.whatsappCurrency || 'N/A'}</span>
+                   </div>
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-gray-500 font-medium">Review Status:</span>
+                     <div className="flex items-center gap-1.5">
+                       {isAccountApproved ? (
+                         <span className="flex items-center gap-1 text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-md text-[11px]">
+                           <CheckCircle2 size={12} /> APPROVED
+                         </span>
+                       ) : (
+                         <span className="flex items-center gap-1 text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-md text-[11px]">
+                           <AlertCircle size={12} /> {metaStatus?.wabaReviewStatus || 'PENDING'}
+                         </span>
+                       )}
+                     </div>
+                   </div>
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-gray-500 font-medium">Business ID:</span>
+                     <span className="text-gray-900 font-bold">{metaStatus?.businessVerification?.id || config?.whatsappBusinessId || 'N/A'}</span>
+                   </div>
+                 </div>
+               </div>
+
+               <div className="space-y-4">
+                 <div className="flex items-center gap-3">
+                   <div className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 text-[#313166]">
+                     <Phone size={20} />
+                   </div>
+                   <h4 className="font-bold text-gray-900">Phone Details</h4>
+                 </div>
+                 <div className="space-y-2.5">
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-gray-500 font-medium">WhatsApp No:</span>
+                     <span className="text-gray-900 font-bold">{metaStatus?.phoneNumber || 'N/A'}</span>
+                   </div>
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-gray-500 font-medium">Phone Status:</span>
+                     <span className="text-gray-900 font-bold flex items-center gap-1.5">
+                       {metaStatus?.phoneStatus === 'verified' ? (
+                         <><div className="w-1.5 h-1.5 rounded-full bg-green-500" /> Connected</>
+                       ) : metaStatus?.phoneStatus || 'Unknown'}
+                     </span>
+                   </div>
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-gray-500 font-medium">WABA ID:</span>
+                     <span className="text-gray-900 font-bold">{config?.whatsappWabaId || 'N/A'}</span>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           )}
+
            {/* Actions / Info Grid */}
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8 border-t border-gray-50">
               <div className="p-5 bg-[#F9FAFB] rounded-[20px] border border-gray-100">
@@ -574,15 +676,27 @@ const WhatsAppIntegration = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center text-[14px]">
                     <span className="text-[#6B7280] font-[500]">Messaging Limit:</span>
-                    <span className="text-[#111827] font-[700]">{config?.whatsappMessagingLimit || 'Tier 1'}</span>
+                    <span className="text-[#111827] font-[700]">{metaStatus?.messagingLimit || config?.whatsappMessagingLimit || 'Tier 1'}</span>
                   </div>
                   <div className="flex justify-between items-center text-[14px]">
                     <span className="text-[#6B7280] font-[500]">Quality Rating:</span>
                     <div className="flex items-center gap-2 text-green-600 font-[700]">
-                       <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                       {config?.whatsappQualityRating || 'High'}
+                       <div className={`w-1.5 h-1.5 rounded-full ${(metaStatus?.qualityRating || config?.whatsappQualityRating)?.toLowerCase() === 'high' ? 'bg-green-500' : 'bg-amber-500'}`} />
+                       {metaStatus?.qualityRating || config?.whatsappQualityRating || 'High'}
                     </div>
                   </div>
+                  {config?.whatsappStatus === 'connected' && (
+                    <div className="pt-2">
+                       <button 
+                        onClick={handleWebhookPing}
+                        disabled={pingLoading}
+                        className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-[12px] font-bold hover:bg-blue-100 transition-all flex items-center justify-center gap-2"
+                      >
+                        {pingLoading ? <RefreshCw size={14} className="animate-spin" /> : <MessageSquare size={14} />}
+                        TEST WHATSAPP PING
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -726,6 +840,73 @@ const WhatsAppIntegration = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Instructions Modal */}
+      {showPaymentInstructions && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[24px] max-w-2xl w-full p-8 shadow-2xl animate-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-amber-100 p-2 rounded-xl text-amber-600">
+                  <CreditCard size={24} />
+                </div>
+                <h3 className="text-[20px] font-[800] text-[#111827]">Fix Payment Eligibility Issue</h3>
+              </div>
+              <button onClick={() => setShowPaymentInstructions(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <X size={24} className="text-gray-400" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-blue-800 text-sm">
+                <strong>Why is this happening?</strong> Even if you added a card to your Business Manager, Meta requires you to specifically link it to your WhatsApp Account.
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-bold text-[#111827] flex items-center gap-2">
+                  <span className="w-6 h-6 bg-[#313166] text-white rounded-full flex items-center justify-center text-xs">1</span>
+                  Main Fix (Card Already Added)
+                </h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 ml-8">
+                  <li>Go to <strong>WhatsApp Manager &gt; Account Settings</strong>.</li>
+                  <li>Click on <strong>Payment Settings</strong> in the left sidebar.</li>
+                  <li>In the "Payment Method" section, click <strong>Add Payment Method</strong>.</li>
+                  <li><strong>CRUCIAL:</strong> Do not enter new card details. Select <strong>"Import from Business Manager"</strong> or select the card you already added.</li>
+                  <li>Set it as <strong>Default</strong>.</li>
+                </ol>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-bold text-[#111827] flex items-center gap-2">
+                  <span className="w-6 h-6 bg-[#313166] text-white rounded-full flex items-center justify-center text-xs">2</span>
+                  Alternate Fix (Prepaid/Indian Accounts)
+                </h4>
+                <p className="text-sm text-gray-600 ml-8">If "Import" is missing or you have an Indian account:</p>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600 ml-8">
+                  <li>In <strong>Payment Settings</strong>, click <strong>Add Funds</strong>.</li>
+                  <li>Add a small amount (e.g., <strong>₹100</strong>) using UPI or Card.</li>
+                  <li>This creates a balance that instantly clears the eligibility error.</li>
+                </ol>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+                <button 
+                  onClick={() => window.open(getBillingUrl(), '_blank')}
+                  className="px-6 py-2.5 bg-[#313166] text-white rounded-xl text-sm font-bold hover:bg-[#25254d] transition-all"
+                >
+                  GO TO META PAYMENT SETTINGS
+                </button>
+                <button 
+                  onClick={() => setShowPaymentInstructions(false)}
+                  className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-200 transition-all"
+                >
+                  GOT IT
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
