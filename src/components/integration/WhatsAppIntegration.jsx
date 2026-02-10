@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../../api/apiconfig.js';
 import { 
@@ -29,7 +29,7 @@ const WhatsAppIntegration = () => {
   const [tokenExpiry, setTokenExpiry] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [signupStatus, setSignupStatus] = useState(null); // 'initializing', 'authorized', 'exchanging', 'completed', 'failed', 'pin_required'
+  const [signupStatus, setSignupStatus] = useState(null); 
   const [whatsappDetails, setWhatsappDetails] = useState(null);
   const [showManualModal, setShowManualModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
@@ -328,6 +328,24 @@ const WhatsAppIntegration = () => {
     } catch { toast.error("Failed disconnect"); }
   };
 
+  const getBillingUrl = () => {
+    const businessId = config?.whatsappBusinessId;
+    if (!businessId) return "https://business.facebook.com/settings/payment-methods";
+    // This is the stable link for Payment Methods (Billing Hub)
+    return `https://business.facebook.com/billing_hub/accounts?business_id=${businessId}&placement=business_settings&account_type=whatsapp-business-account`;
+  };
+
+  const getVerificationUrl = () => {
+    const businessId = config?.whatsappBusinessId;
+    if (!businessId) return "https://business.facebook.com/settings/security";
+    // Verified Link for Business Security Center (Where verification lives)
+    return `https://business.facebook.com/settings/security?business_id=${businessId}`;
+  };
+
+  // --- Status Checks ---
+  const isBusinessVerified = ['verified', 'approved'].includes(config?.whatsappBusinessVerificationStatus?.toLowerCase());
+  const isPaymentDone = config?.whatsappPaymentMethodAttached;
+
   const steps = [
     {
       id: 1,
@@ -362,25 +380,24 @@ const WhatsAppIntegration = () => {
       name: 'Payment & Billing',
       description: 'Meta conversation credits',
       icon: CreditCard,
-      isCompleted: config?.whatsappPaymentMethodAttached,
+      isCompleted: isPaymentDone,
       isCritical: false,
-      needsAction: !config?.whatsappPaymentMethodAttached && config?.whatsappStatus === 'connected' && config?.whatsappOnboardingStatus !== 'provisioning',
+      // Only show action if payment is NOT done AND we are connected
+      needsAction: !isPaymentDone && config?.whatsappStatus === 'connected' && config?.whatsappOnboardingStatus !== 'provisioning',
       actionLabel: 'Add Payment',
-      onAction: () => {
-        // 2026 Update: Use the Hub-based links
-        const isIndia = config?.whatsappCurrency === 'INR' || config?.storeCountry?.toLowerCase() === 'india';
-        const indiaLink = `https://business.facebook.com/latest/whatsapp_manager/india/?business_id=${config?.whatsappBusinessId}&asset_id=${config?.whatsappWabaId}&nav_ref=whatsapp_manager&tab=india`;
-        const globalLink = `https://business.facebook.com/billing_hub/payment_methods?business_id=${config?.whatsappBusinessId}`;
-        window.open(isIndia ? indiaLink : globalLink, '_blank', 'noopener,noreferrer');
-      }
+      onAction: () => window.open(getBillingUrl(), '_blank', 'noopener,noreferrer')
     },
     {
       id: 5,
       name: 'Business Verified',
       description: 'Meta verification status',
       icon: ShieldCheck,
-      isCompleted: ['verified', 'approved'].includes(config?.whatsappBusinessVerificationStatus?.toLowerCase()),
-      isCritical: false
+      isCompleted: isBusinessVerified,
+      isCritical: false,
+      // Only show action if NOT verified AND we are connected
+      needsAction: !isBusinessVerified && config?.whatsappStatus === 'connected' && config?.whatsappOnboardingStatus !== 'provisioning',
+      actionLabel: 'Verify Now',
+      onAction: () => window.open(getVerificationUrl(), '_blank', 'noopener,noreferrer')
     }
   ];
 
@@ -438,69 +455,69 @@ const WhatsAppIntegration = () => {
                         {isDone ? <CheckCircle2 size={24} /> : 
                          step.isProcessing ? <RefreshCw size={24} className="animate-spin" /> :
                          <Icon size={24} />}
-                     </div>
+                      </div>
 
-                     <div className="flex-1 pt-1.5">
-                       <div className="flex justify-between items-start">
-                         <div>
-                            <h4 className={`text-[16px] font-[700] mb-0.5 ${isActive ? 'text-blue-600' : 'text-gray-900'}`}>
-                              {step.name}
-                            </h4>
-                            <p className="text-[13px] text-[#6B7280] font-[500] leading-relaxed">{step.description}</p>
-                         </div>
-                         {step.needsAction && (
-                            <button 
-                              onClick={step.onAction}
-                              className="px-4 py-2 bg-amber-100 text-amber-800 rounded-[10px] text-[12px] font-[700] hover:bg-amber-200 transition-all border border-amber-200 shadow-sm flex items-center gap-2"
-                            >
-                              <AlertCircle size={14} />
-                              {step.actionLabel}
-                            </button>
-                         )}
-                         {idx === 2 && isDone && (
-                            <button 
-                              onClick={handleWebhookPing}
-                              disabled={pingLoading}
-                              className="text-[11px] font-[700] text-blue-600 hover:text-blue-700 underline underline-offset-4"
-                            >
-                              {pingLoading ? "Testing..." : "Test Ping"}
-                            </button>
-                         )}
-                       </div>
-                     </div>
-                   </div>
-                 );
+                      <div className="flex-1 pt-1.5">
+                        <div className="flex justify-between items-start">
+                          <div>
+                             <h4 className={`text-[16px] font-[700] mb-0.5 ${isActive ? 'text-blue-600' : 'text-gray-900'}`}>
+                               {step.name}
+                             </h4>
+                             <p className="text-[13px] text-[#6B7280] font-[500] leading-relaxed">{step.description}</p>
+                          </div>
+                          
+                          {/* ACTION BUTTON - Only show if Action is needed and NOT Done */}
+                          {step.needsAction && !isDone && (
+                             <button 
+                               onClick={step.onAction}
+                               className="px-4 py-2 bg-amber-100 text-amber-800 rounded-[10px] text-[12px] font-[700] hover:bg-amber-200 transition-all border border-amber-200 shadow-sm flex items-center gap-2"
+                             >
+                               <AlertCircle size={14} />
+                               {step.actionLabel}
+                             </button>
+                          )}
+                          
+                          {idx === 2 && isDone && (
+                             <button 
+                               onClick={handleWebhookPing}
+                               disabled={pingLoading}
+                               className="text-[11px] font-[700] text-blue-600 hover:text-blue-700 underline underline-offset-4"
+                             >
+                               {pingLoading ? "Testing..." : "Test Ping"}
+                             </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
                })}
              </div>
            </div>
 
-           {/* India Payment Setup Alert Card */}
-           {!config?.whatsappPaymentMethodAttached && (config?.whatsappCurrency === 'INR' || config?.storeCountry?.toLowerCase() === 'india') && config?.whatsappStatus === 'connected' && (
+           {/* Payment Setup Alert Card - Only show if NOT done */}
+           {!isPaymentDone && config?.whatsappStatus === 'connected' && config?.whatsappOnboardingStatus !== 'provisioning' && (
              <div className="mb-10 p-6 bg-amber-50 border border-amber-200 rounded-[24px] animate-in slide-in-from-top-4 duration-500">
                <div className="flex items-start gap-5">
                  <div className="bg-amber-500 p-3 rounded-[16px] text-white shadow-lg shadow-amber-200">
                    <CreditCard size={24} />
                  </div>
                  <div className="flex-1">
-                   <h4 className="text-amber-900 font-[800] text-[18px]">India Payment Setup Required</h4>
+                   <h4 className="text-amber-900 font-[800] text-[18px]">Payment Setup Required</h4>
                    <p className="text-amber-800 text-[14px] mt-1.5 leading-relaxed">
-                     Meta requires India-based businesses to complete <strong>"Payment Configuration"</strong> directly. 
-                     Select your payment gateway (UPI/Card) on the Meta dashboard to enable messaging.
+                     Meta requires you to add a valid payment method (Credit Card/UPI) for billing. 
+                     Please use the button below to open the Billing Hub.
                    </p>
                    <div className="mt-5 flex flex-wrap gap-3">
                      <button 
-                       onClick={() => {
-                         const indiaLink = `https://business.facebook.com/wa/manage/home/`;
-                         window.open(indiaLink, '_blank', 'noopener,noreferrer');
-                       }}
+                       onClick={() => window.open(getBillingUrl(), '_blank', 'noopener,noreferrer')}
                        className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-[12px] text-[13px] font-[700] transition-all shadow-md shadow-amber-200 flex items-center gap-2"
                      >
-                       CONFIGURE PAYMENT ON META
+                       OPEN BILLING HUB
                        <ExternalLink size={14} />
                      </button>
                      <button 
                        onClick={async () => {
-                         setLoading(true); // Reuse loading state for the 3s delay
+                         setLoading(true);
                          toast.info("Syncing payment status with Meta...");
                          await new Promise(resolve => setTimeout(resolve, 3000));
                          fetchConfig();
@@ -510,19 +527,32 @@ const WhatsAppIntegration = () => {
                        I'VE ADDED IT
                      </button>
                    </div>
-                   <div className="mt-4">
-                     <a 
-                       href="https://www.facebook.com/business/help/support" 
-                       target="_blank" 
-                       rel="noopener noreferrer"
-                       className="text-[12px] text-amber-600 hover:text-amber-700 font-[600] flex items-center gap-1.5 underline underline-offset-4"
-                     >
-                       <Info size={14} />
-                       Get Meta Help (Direct Support)
-                     </a>
-                   </div>
                  </div>
                </div>
+             </div>
+           )}
+
+           {/* Verification Alert - Only show if NOT Verified and Connected */}
+           {!isBusinessVerified && config?.whatsappStatus === 'connected' && (
+             <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-2xl shadow-sm relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-blue-500 p-2 rounded-xl text-white shadow-lg shadow-blue-100">
+                    <Info size={20} />
+                  </div>
+                  <h4 className="text-lg font-bold text-blue-900">Limited Messaging Tier</h4>
+                </div>
+                <p className="text-blue-800 text-sm mb-5 leading-relaxed">
+                  Your business is not yet fully verified by Meta. You are limited to 250 service-initiated conversations per day. 
+                  Complete verification to increase your messaging limits.
+                </p>
+                <a 
+                  href={getVerificationUrl()}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-blue-700 font-bold text-sm underline hover:text-blue-800 transition-colors"
+                >
+                  Start Business Verification <ExternalLink size={14} />
+                </a>
              </div>
            )}
 
