@@ -237,10 +237,15 @@ export default function CreditUsageHistoryModal({ isOpen, onClose }) {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-sm text-gray-700 font-medium">{item.description}</p>
+                          {item.status === "failed" && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
+                              Payment Issue / Failed
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-600">
-                            - ₹ {item.creditsUsed.toFixed(2)}
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${item.status === 'failed' ? 'bg-gray-100 text-gray-500' : 'bg-red-50 text-red-600'}`}>
+                            {item.status === 'failed' ? '₹ 0.00' : `- ₹ ${item.creditsUsed.toFixed(2)}`}
                           </span>
                         </td>
                       </tr>

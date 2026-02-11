@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { 
   RefreshCw, CheckCircle, Layout, Plus, 
   Send, AlertCircle, Check, Info,
   ChevronRight, ArrowLeft, Search, X,
-  FileText, ExternalLink, HelpCircle
+  FileText, ExternalLink, HelpCircle, AlertTriangle
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { API_BASE_URL } from "../../api/apiconfig.js";
@@ -158,6 +159,7 @@ TemplatePreview.propTypes = {
 };
 
 const Template = () => {
+  const location = useLocation();
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState([]);
@@ -165,12 +167,36 @@ const Template = () => {
   const [syncing, setSyncing] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [showQuickCreate, setShowQuickCreate] = useState(false);
-  const [quickCreateData, setQuickCreateData] = useState({ name: '', text: '', role: null });
+  const [quickCreateData, setQuickCreateData] = useState({ name: '', text: '', role: null, category: '' });
   const [syncTemplatesData, setSyncTemplatesData] = useState([]);
   const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0, status: 'idle', results: [] });
   const [selectedRole, setSelectedRole] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showRules, setShowRules] = useState(false);
+  const [categoryWarning, setCategoryWarning] = useState("");
+
+  useEffect(() => {
+    if (quickCreateData.text && (quickCreateData.category || quickCreateData.role?.category)) {
+      const consistency = checkCategoryConsistency(
+        quickCreateData.text, 
+        quickCreateData.category || quickCreateData.role.category
+      );
+      setCategoryWarning(consistency.valid ? "" : consistency.warning);
+    }
+  }, [quickCreateData.text, quickCreateData.category, quickCreateData.role]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('sync') === 'true' && !loading) {
+      if (templates.length === 0) {
+        handleOpenSyncModal();
+      } else {
+        toast.info("WhatsApp connected! Please map your templates to system roles.");
+      }
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [location.search, loading, templates.length]);
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -195,7 +221,7 @@ const Template = () => {
       });
       if (response.data.status) {
         setConfig(response.data.data);
-        fetchTemplates();
+        await fetchTemplates();
       }
     } catch (error) {
       console.error("Error fetching WhatsApp config:", error);
@@ -213,15 +239,65 @@ const Template = () => {
     return matches ? new Set(matches).size : 0;
   };
 
-  const validateVariableStructure = (text, expectedCount) => {
-    const actualCount = getVariableCount(text);
-    if (actualCount > expectedCount) return false;
+  const checkCategoryConsistency = (text, category) => {
+    const marketingKeywords = ['offer', 'sale', 'discount', 'promo', 'coupon', 'exclusive', 'shop', 'buy', 'win', 'gift'];
+    const utilityKeywords = ['verification', 'code', 'otp', 'update', 'confirmed', 'receipt', 'invoice', 'shipped', 'delivery'];
     
-    // Ensure sequential {{1}}, {{2}}...
-    for (let i = 1; i <= actualCount; i++) {
-      if (!text.includes(`{{${i}}}`)) return false;
+    const lowerText = text.toLowerCase();
+    
+    if (category === 'UTILITY') {
+      const containsMarketing = marketingKeywords.some(word => lowerText.includes(word));
+      if (containsMarketing) {
+        return { 
+          valid: false, 
+          warning: "Meta might reject this. You've selected 'UTILITY' but used marketing language (e.g., 'offer', 'discount')." 
+        };
+      }
     }
-    return true;
+
+    if (category === 'MARKETING') {
+      const isStrictlyOTP = lowerText.includes('verification code') || lowerText.includes('otp');
+      if (isStrictlyOTP) {
+        return { 
+          valid: false, 
+          warning: "This looks like an OTP. Meta prefers 'AUTHENTICATION' or 'UTILITY' for verification codes." 
+        };
+      }
+    }
+
+    return { valid: true };
+  };
+
+  const validateVariableStructure = (text, expectedCount) => {
+    const matches = text.match(/\{\{(\d+)\}\}/g);
+    const varIndices = matches ? matches.map(m => parseInt(m.match(/\d+/)[0])) : [];
+
+    if (varIndices.length === 0 && expectedCount > 0) {
+      return { valid: false, reason: `Role requires ${expectedCount} variables (e.g., {{1}})` };
+    }
+
+    // Ensure unique, sorted indices
+    const uniqueIndices = [...new Set(varIndices)].sort((a, b) => a - b);
+
+    // Rule 1: Must start at 1 and have no gaps
+    for (let i = 0; i < uniqueIndices.length; i++) {
+      if (uniqueIndices[i] !== i + 1) {
+        return { 
+          valid: false, 
+          reason: `Variables must be sequential. Missing {{${i + 1}}} before {{${uniqueIndices[i]}}}.` 
+        };
+      }
+    }
+
+    // Rule 2: Cannot exceed the variables provided by the role
+    if (uniqueIndices.length > expectedCount) {
+      return { 
+        valid: false, 
+        reason: `Too many variables. This role only provides ${expectedCount} values.` 
+      };
+    }
+
+    return { valid: true };
   };
 
   const checkEligibility = (template, role) => {
@@ -257,13 +333,20 @@ const Template = () => {
     // Pre-validation
     const existingNames = templates.map(t => t.name.toLowerCase());
     for (const t of selected) {
-      const sanitizedName = t.customName.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      const sanitizedName = t.customName
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9_]/g, '_')
+        .replace(/^(\d)/, 'v_$1') 
+        .replace(/_+$/, '');
+
       if (existingNames.includes(sanitizedName)) {
         toast.error(`Template name "${sanitizedName}" already exists. Please rename it.`);
         return;
       }
-      if (!validateVariableStructure(t.text, t.vars.length)) {
-        toast.error(`Template "${t.label}" has broken variable structure. Expected {{1}} to {{${t.vars.length}}}`);
+      const validation = validateVariableStructure(t.text, t.vars.length);
+      if (!validation.valid) {
+        toast.error(`Template "${t.label}": ${validation.reason}`);
         return;
       }
     }
@@ -280,19 +363,24 @@ const Template = () => {
       
       try {
         const varCount = getVariableCount(template.text);
-        const sanitizedName = template.customName.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+        const sanitizedName = template.customName
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9_]/g, '_')
+          .replace(/^(\d)/, 'v_$1') 
+          .replace(/_+$/, '');
 
         const payload = {
           templateData: {
             name: sanitizedName,
             category: template.category,
-            language: 'en',
+            language: 'en_US',
             components: [
               {
                 type: 'BODY',
-                text: template.text,
+                text: template.text.trim(),
                 example: varCount > 0 ? {
-                  body_text: [Array.from({ length: getVariableCount(template.text) }, (_, idx) => `Sample ${idx + 1}`)]
+                  body_text: [Array.from({ length: varCount }, (_, idx) => `Sample${idx + 1}`)]
                 } : undefined
               }
             ]
@@ -315,7 +403,7 @@ const Template = () => {
         }
 
       } catch (err) {
-        const errorMsg = err.response?.data?.message || err.message;
+        const errorMsg = err.response?.data?.message || err.response?.data?.error?.message || err.message;
         newResults.push({ name: template.label, status: 'error', message: errorMsg });
       }
       
@@ -328,42 +416,67 @@ const Template = () => {
   };
 
   const handleQuickCreate = async () => {
-    if (!quickCreateData.name || !quickCreateData.text) {
-      toast.error("Please fill all fields");
+    const { name, text, role, category } = quickCreateData;
+    const finalCategory = category || role.category;
+
+    if (!name || !text) {
+      toast.error("Template name and message are required.");
       return;
     }
 
-    const sanitizedName = quickCreateData.name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    // Strict Name Sanitization
+    const sanitizedName = name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9_]/g, '_')
+      .replace(/^(\d)/, 'v_$1') 
+      .replace(/_+$/, '');
+
     const existingNames = templates.map(t => t.name.toLowerCase());
     
     if (existingNames.includes(sanitizedName)) {
-      toast.error("Template name already exists");
+      toast.error("Template name already exists in your Meta account");
       return;
     }
 
-    const role = quickCreateData.role;
-    if (!validateVariableStructure(quickCreateData.text, role.vars.length)) {
-      toast.error(`Template must include sequential variables {{1}}, {{2}}, etc. (Max ${role.vars.length})`);
+    // Validation
+    const validation = validateVariableStructure(text, role.vars.length);
+    if (!validation.valid) {
+      toast.error(validation.reason);
       return;
+    }
+
+    // Category Consistency Check
+    const categoryCheck = checkCategoryConsistency(text, finalCategory);
+    if (!categoryCheck.valid) {
+      toast.warn("Category Suggestion: " + categoryCheck.warning);
     }
 
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
+      const varCount = getVariableCount(text);
+
+      const bodyComponent = {
+        type: 'BODY',
+        text: text.trim(),
+      };
+
+      // Meta requires Examples to be a 2D Array: [["sample1", "sample2"]]
+      if (varCount > 0) {
+        bodyComponent.example = {
+          body_text: [
+            Array.from({ length: varCount }, (_, i) => `SampleValue${i + 1}`)
+          ]
+        };
+      }
+
       const payload = {
         templateData: {
           name: sanitizedName,
-          category: role.category,
+          category: finalCategory,
           language: 'en_US',
-          components: [
-            {
-              type: 'BODY',
-              text: quickCreateData.text,
-              example: {
-                body_text: [Array.from({ length: getVariableCount(quickCreateData.text) }, (_, i) => `Sample ${i + 1}`)]
-              }
-            }
-          ]
+          components: [bodyComponent]
         },
         role: role.id
       };
@@ -373,14 +486,17 @@ const Template = () => {
       });
 
       if (res.data.status) {
-        toast.success("Template request sent to Meta!");
+        toast.success("Template submitted for Meta approval!");
         setShowQuickCreate(false);
         fetchTemplates();
       } else {
-        toast.error(res.data.message || "Failed to create template");
+        toast.error(res.data.message || "Meta rejected the parameters. Check variable sequence.");
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Internal Error");
+      const errorBody = err.response?.data;
+      const specificError = errorBody?.error?.error_user_msg || errorBody?.message || "Internal Error";
+      toast.error(`Meta Error: ${specificError}`);
+      console.error("Meta Rejection Detail:", errorBody);
     } finally {
       setLoading(false);
     }
@@ -518,22 +634,26 @@ const Template = () => {
                 </div>
 
                 {/* Eligible Custom Templates */}
-                {templates.map(t => {
-                  const eligibility = checkEligibility(t, role);
-                  const isSelected = mappings[role.id] === t.name;
-                  
-                  return (
-                    <div 
-                      key={t.id}
-                      onClick={() => eligibility.eligible && updateMapping(role.id, t.name, t.language)}
-                      className={`relative group p-6 rounded-2xl border-2 transition-all ${
-                        isSelected 
-                          ? 'border-[#db3b76] bg-pink-50/30' 
-                          : eligibility.eligible 
-                            ? 'border-gray-100 cursor-pointer hover:border-[#db3b76]/30 hover:bg-gray-50' 
-                            : 'border-gray-50 opacity-50 cursor-not-allowed bg-gray-50/50'
-                      }`}
-                    >
+                {templates
+                  .filter(t => {
+                    const eligibility = checkEligibility(t, role);
+                    // Only show templates that are actually eligible to be mapped
+                    return eligibility.eligible;
+                  })
+                  .map(t => {
+                    const eligibility = checkEligibility(t, role);
+                    const isSelected = mappings[role.id] === t.name;
+                    
+                    return (
+                      <div 
+                        key={t.id}
+                        onClick={() => eligibility.eligible && updateMapping(role.id, t.name, t.language)}
+                        className={`relative group p-6 rounded-2xl border-2 transition-all ${
+                          isSelected 
+                            ? 'border-[#db3b76] bg-pink-50/30' 
+                            : 'border-gray-100 cursor-pointer hover:border-[#db3b76]/30 hover:bg-gray-50' 
+                        }`}
+                      >
                       <div className="flex justify-between items-start mb-4">
                         <div className={`p-3 rounded-xl ${
                           t.status === 'APPROVED' ? 'bg-green-100 text-green-600' : 
@@ -556,25 +676,20 @@ const Template = () => {
                       <div className="bg-white border border-gray-100 p-4 rounded-xl text-xs text-gray-600 italic line-clamp-3 mb-4">
                         &quot;{t.components.find(c => c.type === 'BODY')?.text}&quot;
                       </div>
-
-                      {!eligibility.eligible && (
-                        <div className="flex items-center gap-2 text-red-500 text-[10px] font-bold bg-red-50 p-2 rounded-lg mt-2">
-                          <AlertCircle size={14} />
-                          {eligibility.reason}
-                        </div>
-                      )}
                     </div>
                   );
                 })}
               </div>
               
-              {templates.length === 0 && (
+              {templates.filter(t => checkEligibility(t, role).eligible).length === 0 && (
                 <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-3xl">
                   <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                     <FileText className="text-gray-300" size={32} />
                   </div>
-                  <h4 className="text-[#313166] font-bold">No custom templates yet</h4>
-                  <p className="text-gray-400 text-sm max-w-xs mx-auto mt-1">Create or sync templates to see them listed here for mapping.</p>
+                  <h4 className="text-[#313166] font-bold">No eligible templates found</h4>
+                  <p className="text-gray-400 text-sm max-w-xs mx-auto mt-1">
+                    Meta templates must match the role category ({role.category}) and use no more than {role.vars.length} variables.
+                  </p>
                 </div>
               )}
             </div>
@@ -967,7 +1082,7 @@ const Template = () => {
                              <div className="relative">
                               <textarea
                                 className={`w-full text-xs p-3 border rounded-lg outline-none bg-white min-h-[100px] transition-colors ${
-                                  !validateVariableStructure(template.text, template.vars.length) 
+                                  !validateVariableStructure(template.text, template.vars.length).valid 
                                     ? 'border-red-500 ring-2 ring-red-50' 
                                     : 'border-gray-200 focus:ring-2 focus:ring-[#db3b76]/10 focus:border-[#db3b76]'
                                 }`}
@@ -979,10 +1094,10 @@ const Template = () => {
                                 }}
                                 placeholder="Template content..."
                               />
-                              {!validateVariableStructure(template.text, template.vars.length) && (
+                              {!validateVariableStructure(template.text, template.vars.length).valid && (
                                 <p className="text-red-500 text-[9px] mt-1 font-bold flex items-center gap-1">
                                   <AlertCircle size={10} />
-                                  Missing variable: {"{{"}{template.vars.length}{"}}"}
+                                  {validateVariableStructure(template.text, template.vars.length).reason}
                                 </p>
                               )}
                             </div>
@@ -1038,7 +1153,10 @@ const Template = () => {
             <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <div>
                 <h3 className="text-2xl font-black text-[#313166] tracking-tight">Create Custom Replacement</h3>
-                <p className="text-xs text-gray-500 mt-1 font-medium italic">Building a specialized template for: <span className="text-[#db3b76] uppercase font-bold">{quickCreateData.role?.label}</span></p>
+                <p className="text-xs text-gray-500 mt-1 font-medium italic">
+                  Building a specialized <span className="text-[#313166] font-black underline decoration-[#db3b76]">{quickCreateData.role?.category}</span> template for: 
+                  <span className="text-[#db3b76] uppercase font-bold ml-1">{quickCreateData.role?.label}</span>
+                </p>
               </div>
               <button 
                 onClick={() => setShowQuickCreate(false)} 
@@ -1084,10 +1202,28 @@ const Template = () => {
                     </div>
 
                     <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Template Category</label>
+                      <select 
+                        className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3 text-sm outline-none focus:border-[#db3b76] focus:bg-white text-[#313166] appearance-none cursor-pointer"
+                        value={quickCreateData.category || quickCreateData.role?.category || 'MARKETING'}
+                        onChange={(e) => setQuickCreateData(prev => ({ ...prev, category: e.target.value }))}
+                      >
+                        <option value="MARKETING">MARKETING (Promotions, invitations)</option>
+                        <option value="UTILITY">UTILITY (Receipts, account updates)</option>
+                        <option value="AUTHENTICATION">AUTHENTICATION (OTP codes only)</option>
+                      </select>
+                      {quickCreateData.category && quickCreateData.category !== quickCreateData.role?.category && (
+                        <p className="text-[#db3b76] text-[9px] mt-1 font-bold italic">
+                          Override: Using {quickCreateData.category} instead of default {quickCreateData.role?.category}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Message Content</label>
                       <textarea 
                         className={`w-full bg-gray-50 border rounded-2xl px-5 py-4 text-sm outline-none transition-all min-h-[150px] ${
-                          !validateVariableStructure(quickCreateData.text, quickCreateData.role?.vars.length)
+                          !validateVariableStructure(quickCreateData.text, quickCreateData.role?.vars.length || 0).valid
                             ? 'border-red-500 bg-red-50'
                             : 'border-gray-200 focus:border-[#db3b76] focus:bg-white'
                         }`}
@@ -1095,10 +1231,19 @@ const Template = () => {
                         onChange={(e) => setQuickCreateData(prev => ({ ...prev, text: e.target.value }))}
                         placeholder="Type your message here..."
                       />
-                      {!validateVariableStructure(quickCreateData.text, quickCreateData.role?.vars.length) && (
+                      {!validateVariableStructure(quickCreateData.text, quickCreateData.role?.vars.length || 0).valid && (
                         <div className="mt-2 p-3 bg-red-100 text-red-700 rounded-xl text-xs font-bold flex items-center gap-2">
                           <AlertCircle size={14} />
-                          Variable Structure Invalid: Must use sequential variables {"{{1}}"}, {"{{2}}"}, etc.
+                          {validateVariableStructure(quickCreateData.text, quickCreateData.role?.vars.length || 0).reason}
+                        </div>
+                      )}
+
+                      {categoryWarning && (
+                        <div className="mt-4 p-4 bg-amber-50 border-2 border-amber-100 rounded-2xl flex items-start gap-3 animate-pulse">
+                          <AlertTriangle className="text-amber-600 shrink-0" size={20} />
+                          <p className="text-[11px] text-amber-800 font-bold leading-tight">
+                            {categoryWarning}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -1126,7 +1271,7 @@ const Template = () => {
                 Discard
               </button>
               <button
-                disabled={loading || templates.some(ex => ex.name.toLowerCase() === quickCreateData.name.toLowerCase().replace(/[^a-z0-9_]/g, '_')) || !validateVariableStructure(quickCreateData.text, quickCreateData.role?.vars.length)}
+                disabled={loading || templates.some(ex => ex.name.toLowerCase() === quickCreateData.name.toLowerCase().replace(/[^a-z0-9_]/g, '_')) || !validateVariableStructure(quickCreateData.text, quickCreateData.role?.vars.length || 0).valid}
                 onClick={handleQuickCreate}
                 className="flex-[2] py-4 px-6 bg-[#313166] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#25254d] transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
               >
