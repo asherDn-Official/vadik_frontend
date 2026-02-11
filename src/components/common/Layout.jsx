@@ -8,6 +8,7 @@ import api from "../../api/apiconfig.js";
 import { Subscript } from "lucide-react";
 import SubscriptionPopup from "../settings/subscription/SubscriptionPopup.jsx";
 import { usePlan } from "../../context/PlanContext.jsx";
+import WhatsAppAlertPopup from "./WhatsAppAlertPopup.jsx";
 
 function Layout() {
   const [activeTour, setActiveTour] = useState(null);
@@ -70,6 +71,7 @@ function Layout() {
   return (
     <SecurityPopupProvider>
       <div className="flex min-h-screen">
+        <WhatsAppAlertPopup />
         {currentTour && isDemo && !isTourComplete && (
           <TourModal
             tour={currentTour}

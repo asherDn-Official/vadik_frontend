@@ -217,6 +217,7 @@ const Notification = () => {
       case 'birthday': return <FiGift className="text-pink-500 text-xl" />;
       case 'anniversary': return <FiCalendar className="text-blue-500 text-xl" />;
       case 'campaign': return <FiMessageSquare className="text-green-500 text-xl" />;
+      case 'whatsapp_failure': return <FiAlertCircle className="text-red-500 text-xl" />;
       default: return <FiBell className="text-indigo-500 text-xl" />;
     }
   };
