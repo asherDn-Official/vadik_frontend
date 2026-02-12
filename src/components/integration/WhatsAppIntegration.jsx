@@ -552,6 +552,13 @@ const WhatsAppIntegration = () => {
                        VIEW FIX STEPS
                      </button>
                      <button 
+                       onClick={() => window.open(`https://business.facebook.com/billing_hub/payment_settings?asset_id=${config?.whatsappWabaId}&business_id=${config?.whatsappBusinessId}`, '_blank')}
+                       className="bg-white border border-blue-300 text-blue-700 px-5 py-2.5 rounded-[12px] text-[13px] font-[700] hover:bg-blue-50 transition-all flex items-center gap-2"
+                     >
+                       <Settings size={14} />
+                       DIRECT REPAIR LINK
+                     </button>
+                     <button 
                        onClick={handleRefreshStatus}
                        disabled={refreshingStatus}
                        className="bg-white border border-amber-300 text-amber-700 px-5 py-2.5 rounded-[12px] text-[13px] font-[700] hover:bg-amber-50 transition-all font-[700] flex items-center gap-2"
@@ -637,6 +644,26 @@ const WhatsAppIntegration = () => {
                      <span className="text-gray-500 font-medium">Business ID:</span>
                      <span className="text-gray-900 font-bold">{metaStatus?.businessVerification?.id || config?.whatsappBusinessId || 'N/A'}</span>
                    </div>
+                   {metaStatus?.businessDetails?.legal_entity_name && (
+                     <div className="flex justify-between items-center text-sm">
+                       <span className="text-gray-500 font-medium">Legal Name:</span>
+                       <span className="text-gray-900 font-bold">{metaStatus.businessDetails.legal_entity_name}</span>
+                     </div>
+                   )}
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-gray-500 font-medium">Payment Link:</span>
+                     <div className="flex items-center gap-1.5">
+                       {metaStatus?.businessDetails?.primary_funding_id ? (
+                         <span className="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-md text-[11px]">
+                           LINKED
+                         </span>
+                       ) : (
+                         <span className="text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-md text-[11px]">
+                           BROKEN / NULL
+                         </span>
+                       )}
+                     </div>
+                   </div>
                  </div>
                </div>
 
@@ -659,6 +686,10 @@ const WhatsAppIntegration = () => {
                          <><div className="w-1.5 h-1.5 rounded-full bg-green-500" /> Connected</>
                        ) : metaStatus?.phoneStatus || 'Unknown'}
                      </span>
+                   </div>
+                   <div className="flex justify-between items-center text-sm">
+                     <span className="text-gray-500 font-medium">Timezone:</span>
+                     <span className="text-gray-900 font-bold">{metaStatus?.wabaTimezone || 'N/A'}</span>
                    </div>
                    <div className="flex justify-between items-center text-sm">
                      <span className="text-gray-500 font-medium">WABA ID:</span>
