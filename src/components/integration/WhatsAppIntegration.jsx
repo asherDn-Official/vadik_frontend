@@ -376,6 +376,28 @@ const WhatsAppIntegration = () => {
   const isAccountApproved = metaStatus?.wabaReviewStatus === 'APPROVED' || ['verified', 'approved'].includes(config?.whatsappBusinessVerificationStatus?.toLowerCase());
   const isPaymentDone = metaStatus?.isBillingConfigured ?? config?.whatsappPaymentMethodAttached;
 
+  const getMessagingLimitLabel = (tier) => {
+    const tiers = {
+      'TIER_250': 'Tier 1 (250/day)',
+      'TIER_1K': 'Tier 2 (1,000/day)',
+      'TIER_10K': 'Tier 3 (10,000/day)',
+      'TIER_100K': 'Tier 4 (100,000/day)',
+      'TIER_UNLIMITED': 'Unlimited'
+    };
+    return tiers[tier] || tier || 'Tier 1 (250/day)';
+  };
+
+  const getQualityRatingDisplay = (rating) => {
+    const r = (rating || 'UNKNOWN').toUpperCase();
+    const styles = {
+      'GREEN': { label: 'High', color: 'text-green-600', dot: 'bg-green-500' },
+      'YELLOW': { label: 'Medium', color: 'text-amber-600', dot: 'bg-amber-500' },
+      'RED': { label: 'Low', color: 'text-red-600', dot: 'bg-red-500' },
+      'UNKNOWN': { label: 'UNKNOWN', color: 'text-gray-500', dot: 'bg-gray-400' }
+    };
+    return styles[r] || styles['UNKNOWN'];
+  };
+
   const steps = [
     {
       id: 1,
@@ -707,14 +729,29 @@ const WhatsAppIntegration = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center text-[14px]">
                     <span className="text-[#6B7280] font-[500]">Messaging Limit:</span>
-                    <span className="text-[#111827] font-[700]">{metaStatus?.messagingLimit || config?.whatsappMessagingLimit || 'Tier 1'}</span>
+                    <span className="text-[#111827] font-[700]">
+                      {getMessagingLimitLabel(
+                        whatsappDetails?.phone?.messaging_limit_tier || 
+                        metaStatus?.messagingLimit || 
+                        config?.whatsappMessagingLimit
+                      )}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center text-[14px]">
                     <span className="text-[#6B7280] font-[500]">Quality Rating:</span>
-                    <div className="flex items-center gap-2 text-green-600 font-[700]">
-                       <div className={`w-1.5 h-1.5 rounded-full ${(metaStatus?.qualityRating || config?.whatsappQualityRating)?.toLowerCase() === 'high' ? 'bg-green-500' : 'bg-amber-500'}`} />
-                       {metaStatus?.qualityRating || config?.whatsappQualityRating || 'High'}
-                    </div>
+                    {(() => {
+                      const display = getQualityRatingDisplay(
+                        whatsappDetails?.phone?.quality_rating || 
+                        metaStatus?.qualityRating || 
+                        config?.whatsappQualityRating
+                      );
+                      return (
+                        <div className={`flex items-center gap-2 ${display.color} font-[700]`}>
+                           <div className={`w-1.5 h-1.5 rounded-full ${display.dot}`} />
+                           {display.label}
+                        </div>
+                      );
+                    })()}
                   </div>
                   {config?.whatsappStatus === 'connected' && (
                     <div className="pt-2">
