@@ -594,6 +594,25 @@ const WhatsAppIntegration = () => {
              </div>
            )}
 
+           {/* Name Status Alert - Only show if PENDING_REVIEW and Connected */}
+           {whatsappDetails?.phone?.name_status === 'PENDING_REVIEW' && config?.whatsappStatus === 'connected' && (
+             <div className="mb-8 p-6 bg-amber-50 border border-amber-200 rounded-2xl shadow-sm relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-amber-500 p-2 rounded-xl text-white shadow-lg shadow-amber-100">
+                    <AlertCircle size={20} />
+                  </div>
+                  <h4 className="text-lg font-bold text-amber-900">Display Name Under Review</h4>
+                </div>
+                <p className="text-amber-800 text-sm mb-2 leading-relaxed">
+                  Meta is currently reviewing your WhatsApp display name. 
+                  <strong> Message sending will be disabled</strong> until the name is approved.
+                </p>
+                <p className="text-amber-700 text-[12px] italic">
+                  This typically takes 24-48 hours. No action is required from your side.
+                </p>
+             </div>
+           )}
+
            {/* Verification Alert - Only show if NOT Verified and Connected */}
            {!isBusinessVerified && config?.whatsappStatus === 'connected' && (
              <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-2xl shadow-sm relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
@@ -710,6 +729,22 @@ const WhatsAppIntegration = () => {
                      </span>
                    </div>
                    <div className="flex justify-between items-center text-sm">
+                     <span className="text-gray-500 font-medium">Name Status:</span>
+                     <div className="flex items-center gap-1.5">
+                       {whatsappDetails?.phone?.name_status === 'APPROVED' ? (
+                         <span className="flex items-center gap-1 text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-md text-[11px]">
+                           <CheckCircle2 size={12} /> APPROVED
+                         </span>
+                       ) : (
+                         <span className={`flex items-center gap-1 font-bold bg-amber-50 px-2 py-0.5 rounded-md text-[11px] ${
+                           whatsappDetails?.phone?.name_status === 'PENDING_REVIEW' ? 'text-amber-600' : 'text-red-600'
+                         }`}>
+                           <AlertCircle size={12} /> {whatsappDetails?.phone?.name_status || 'UNKNOWN'}
+                         </span>
+                       )}
+                     </div>
+                   </div>
+                   <div className="flex justify-between items-center text-sm">
                      <span className="text-gray-500 font-medium">Timezone:</span>
                      <span className="text-gray-900 font-bold">{metaStatus?.wabaTimezone || 'N/A'}</span>
                    </div>
@@ -728,14 +763,14 @@ const WhatsAppIntegration = () => {
                 <p className="text-[11px] font-[700] text-[#9CA3AF] uppercase tracking-widest mb-3">Messaging Vital Signs</p>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center text-[14px]">
-                    <span className="text-[#6B7280] font-[500]">Messaging Limit:</span>
+                    {/* <span className="text-[#6B7280] font-[500]">Messaging Limit:</span>
                     <span className="text-[#111827] font-[700]">
                       {getMessagingLimitLabel(
                         whatsappDetails?.phone?.messaging_limit_tier || 
                         metaStatus?.messagingLimit || 
                         config?.whatsappMessagingLimit
                       )}
-                    </span>
+                    </span> */}
                   </div>
                   <div className="flex justify-between items-center text-[14px]">
                     <span className="text-[#6B7280] font-[500]">Quality Rating:</span>

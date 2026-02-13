@@ -47,6 +47,7 @@ const CouponManagement = () => {
   const [expiryDate, setExpiryDate] = useState(null);
   const [isOpen, setIsOpen] = useState(false)
   const [soon, setSoon] = useState()
+  const [couponUsagePopup, setCouponUsagePopup] = useState({ open: false, names: [] });
 
   const [filters, setFilters] = useState({
     isActive: "",
@@ -319,7 +320,21 @@ const CouponManagement = () => {
       const errorMsg =
         err.response?.data?.message ||
         "Failed to save coupon. Please try again.";
-      showToast(errorMsg, "error");
+      const usageMarker = "This coupon is currently being used in:";
+      if (typeof errorMsg === "string" && errorMsg.includes(usageMarker)) {
+        let listPart = errorMsg.split(usageMarker)[1] || "";
+        if (listPart.includes("Please remove")) {
+          listPart = listPart.split("Please remove")[0];
+        }
+        listPart = listPart.replace(/\.$/, "");
+        const names = listPart
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+        setCouponUsagePopup({ open: true, names });
+      } else {
+        showToast(errorMsg, "error");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -470,6 +485,47 @@ const CouponManagement = () => {
             )}
           </div>
           <CouponPopup isOpen = {isOpen} onClose = {() => setIsOpen(false)} />
+          {couponUsagePopup.open && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+              onClick={() => setCouponUsagePopup({ open: false, names: [] })}
+            >
+              <div
+                className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h4 className="text-lg font-semibold text-[#313166]">
+                  Coupon In Use
+                </h4>
+                <p className="mt-2 text-sm text-gray-600">
+                  This coupon is currently used in the following activities:
+                </p>
+                <div className="mt-4 max-h-60 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  {couponUsagePopup.names.length > 0 ? (
+                    <ul className="list-disc pl-5 text-sm text-gray-700">
+                      {couponUsagePopup.names.map((name, idx) => (
+                        <li key={`${name}-${idx}`} className="py-1">
+                          {name}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-600">
+                      Spin Wheel or Scratch Card
+                    </p>
+                  )}
+                </div>
+                <div className="mt-5 flex justify-end">
+                  <button
+                    className="px-4 py-2 rounded-lg bg-[#313166] text-white hover:bg-gray-800 transition-colors"
+                    onClick={() => setCouponUsagePopup({ open: false, names: [] })}
+                  >
+                    OK
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {isAddingCoupon && (
             <form
