@@ -207,8 +207,8 @@ export default function SubscriptionCard({
                   </button>
                 )}
                 
-                {/* Cancel Subscription text for current plan (non-free trial) */}
-                {isCurrentPlan && !isAddon && !plan?.isFreeTrial && (
+                {/* Cancel Subscription text for current plan */}
+                {isCurrentPlan && !isAddon && (
                   <div className="text-center mt-2">
                     <button
                       onClick={handleCancelClick}
@@ -371,8 +371,8 @@ export default function SubscriptionCard({
               </button>
             )}
             
-            {/* Cancel Subscription text for current plan (non-free trial) - Primary variant */}
-            {isCurrentPlan && !isAddon  && (
+            {/* Cancel Subscription text for current plan - Primary variant */}
+            {isCurrentPlan && !isAddon && (
               <div className="text-center mt-2">
                 <button
                   onClick={handleCancelClick}
