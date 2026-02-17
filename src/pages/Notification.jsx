@@ -3,7 +3,7 @@ import {
   FiBell, FiCalendar, FiGift, FiMessageSquare, 
   FiX, FiClock, FiArchive, FiCheck,
   FiUser, FiDollarSign,
-  FiSend, FiEye
+  FiSend, FiEye, FiAlertCircle, FiSettings
 } from 'react-icons/fi';
 import moment from 'moment';
 import Calendar from 'react-calendar';
@@ -29,6 +29,9 @@ const Notification = () => {
   });
   
   const [viewedNotifications, setViewedNotifications] = useState(new Set());
+  const [notificationSettings, setNotificationSettings] = useState({ automatedGreeting: true, leadDays: 5 });
+  const [isSettingsLoading, setIsSettingsLoading] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
   const notificationRefs = useRef({});
   const [viewModal, setViewModal] = useState({ open: false, item: null });
 
@@ -64,6 +67,7 @@ const Notification = () => {
     fetchCalendarEvents();
     fetchLoyalCustomers();
     fetchHighCLVCustomersAtRisk();
+    fetchNotificationSettings();
   }, []);
 
   // Fetch data when date changes
@@ -74,6 +78,32 @@ const Notification = () => {
   }, [selectedDate]);
 
   // API functions
+  const fetchNotificationSettings = async () => {
+    try {
+      const response = await api.get('/api/notifications/settings');
+      if (response.data) {
+        setNotificationSettings(response.data);
+      }
+      setIsSettingsLoading(false);
+    } catch (error) {
+      console.error('Error fetching notification settings:', error);
+      setIsSettingsLoading(false);
+    }
+  };
+
+  const updateSettings = async (newSettings) => {
+    try {
+      const response = await api.put('/api/notifications/settings', newSettings);
+      if (response.data && response.data.settings) {
+        setNotificationSettings(response.data.settings);
+      }
+      showToast('Settings updated successfully', 'success');
+    } catch (error) {
+      showToast('Failed to update settings', 'error');
+      console.error('Error updating settings:', error);
+    }
+  };
+
   const fetchNotifications = async () => {
     try {
       const response = await api.get('/api/notifications');
@@ -212,12 +242,21 @@ const Notification = () => {
   };
 
   // Helper functions
-  const getNotificationIcon = (type) => {
+  const getNotificationIcon = (notification) => {
+    const type = notification.notificationType;
+    const eventType = notification.eventType;
+
+    if (type === 'event_reminder') {
+      if (eventType === 'birthday') return <FiGift className="text-pink-500 text-xl" />;
+      if (eventType === 'anniversary') return <FiCalendar className="text-blue-500 text-xl" />;
+      return <FiBell className="text-indigo-500 text-xl" />;
+    }
+
     switch (type) {
-      case 'birthday': return <FiGift className="text-pink-500 text-xl" />;
-      case 'anniversary': return <FiCalendar className="text-blue-500 text-xl" />;
+      case 'loyal_customer_alert': return <FiUser className="text-orange-500 text-xl" />;
+      case 'clv_drop_alert': return <FiDollarSign className="text-red-500 text-xl" />;
       case 'campaign': return <FiMessageSquare className="text-green-500 text-xl" />;
-      case 'whatsapp_failure': return <FiAlertCircle className="text-red-500 text-xl" />;
+      case 'whatsapp_failure': return <FiAlertCircle className="text-red-600 text-xl" />;
       default: return <FiBell className="text-indigo-500 text-xl" />;
     }
   };
@@ -265,7 +304,70 @@ const Notification = () => {
       <div className="flex-1 p-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Notification</h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-900">Notification</h1>
+            <button 
+              onClick={() => setShowSettings(!showSettings)}
+              className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <FiSettings className={`mr-2 ${showSettings ? 'animate-spin' : ''}`} />
+              Settings
+            </button>
+          </div>
+          
+          {showSettings && (
+            <div className="mt-4 p-6 bg-white rounded-lg shadow-sm border border-indigo-100 animate-in slide-in-from-top-4 duration-300">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <FiSettings className="mr-2 text-indigo-500" />
+                Notification Preferences
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <h3 className="font-medium text-gray-900">Automated Greetings</h3>
+                      <p className="text-sm text-gray-500">Automatically send WhatsApp messages on event dates</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={notificationSettings.automatedGreeting}
+                        onChange={(e) => updateSettings({ automatedGreeting: e.target.checked })}
+                        className="sr-only peer" 
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h3 className="font-medium text-gray-900 mb-1">Prior Notification Days</h3>
+                    <p className="text-sm text-gray-500 mb-4">How many days before the event to show notification</p>
+                    <div className="flex items-center space-x-4">
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="30" 
+                        value={notificationSettings.leadDays}
+                        onChange={(e) => setNotificationSettings({...notificationSettings, leadDays: parseInt(e.target.value)})}
+                        onMouseUp={() => updateSettings({ leadDays: notificationSettings.leadDays })}
+                        onTouchEnd={() => updateSettings({ leadDays: notificationSettings.leadDays })}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                      />
+                      <span className="font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full text-sm min-w-[3rem] text-center">
+                        {notificationSettings.leadDays}d
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-2">
+                      <span>Today</span>
+                      <span>30 Days Before</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Tabs */}
           <div className="flex mt-4 border-b">
@@ -313,11 +415,11 @@ const Notification = () => {
               >
                 <div className="flex items-start">
                   <div className="flex-shrink-0 mt-1">
-                    {getNotificationIcon(notification.notificationType)}
+                    {getNotificationIcon(notification)}
                   </div>
                   <div className="ml-4 flex-1">
                     <div className="flex justify-between">
-                      <h3 className="font-medium text-gray-900">{notification.message}</h3>
+                      <h3 className="font-medium text-gray-900">{notification.title}</h3>
                       <div className="flex items-center">
                         <span className="text-sm text-gray-500 mr-2">
                           {moment(notification.createdAt).fromNow()}
@@ -332,49 +434,49 @@ const Notification = () => {
                         )}
                       </div>
                     </div>
-                    <p className="mt-2 text-gray-600">{notification.description}</p>
+                    <p className="mt-2 text-gray-600 whitespace-pre-line">{notification.message}</p>
                     
                     {/* Action Buttons */}
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {notification.notificationType === 'birthday' || notification.notificationType === 'anniversary' ? (
+                      {notification.notificationType === 'event_reminder' && (
                         <button
-                          onClick={() => handleSendGreeting(notification._id, notification.customerIds, notification.notificationType)}
-                          className="flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md text-sm"
+                          onClick={() => handleSendGreeting(notification._id, notification.customerIds, notification.eventType)}
+                          disabled={notification.status === 'sent'}
+                          className={`flex items-center px-3 py-2 rounded-md text-sm ${
+                            notification.status === 'sent'
+                              ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                              : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                          }`}
                         >
-                          <FiGift className="mr-1" /> Send Greeting
+                          <FiGift className="mr-1" /> 
+                          {notification.status === 'sent' ? 'Sent' : 'Send Greeting'}
                         </button>
-                      ) : null}
+                      )}
+                      
+                      {notification.notificationType === 'whatsapp_failure' && notification.alertData?.actionLink && (
+                        <a
+                          href={notification.alertData.actionLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
+                        >
+                          <FiAlertCircle className="mr-1" /> Fix Issue
+                        </a>
+                      )}
                       
                       <button
                         onClick={() => handleSetReminder(notification._id, moment().add(1, 'day').toDate())}
-                        className="flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm"
+                        className="flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50"
                       >
                         <FiClock className="mr-1" /> Remind Later
                       </button>
                       
                       <button
-                        onClick={() => handleSendNotification(
-                          notification._id, 
-                          notification.customerIds, 
-                          notification.notificationType
-                        )}
-                        disabled={notification.status === 'sent'}
-                        className={`flex items-center px-3 py-2 rounded-md text-sm ${
-                          notification.status === 'sent'
-                            ? 'bg-green-100 text-green-700 cursor-not-allowed'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        }`}
-                      >
-                        <FiSend className="mr-1" /> 
-                        {notification.status === 'sent' ? 'Sent' : 'Send Now'}
-                      </button>
-                      
-                      {/* <button
                         onClick={() => handleArchive(notification._id)}
-                        className="flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm"
+                        className="flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50"
                       >
                         <FiArchive className="mr-1" /> Archive
-                      </button> */}
+                      </button>
                     </div>
                   </div>
                 </div>
