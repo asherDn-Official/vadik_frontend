@@ -23,6 +23,7 @@ function Sidebar() {
   const location = useLocation();
   const { auth, setAuth } = useAuth();
   const userRole = auth?.data?.role;
+  const isUsingOwnWhatsapp = auth?.data?.isUsingOwnWhatsapp;
   const navigate = useNavigate();
 
   const isActive = (path) => {
@@ -33,6 +34,11 @@ function Sidebar() {
 
   // Check if user has read permission for a module or is retailer
   const canAccess = (moduleName) => {
+    // Special check for Customer Rhythm
+    if (moduleName === "Customer Rhythm" && !isUsingOwnWhatsapp) {
+      return false;
+    }
+
     // Retailers get full access
     if (userRole === "retailer") return true;
 

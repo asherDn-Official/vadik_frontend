@@ -107,7 +107,7 @@ function App() {
             />
             <Route
               path="customerrhythm"
-              element={onboardingDone ? <CustomerRhythm /> : <Navigate to="/register" replace />}
+              element={onboardingDone && auth?.data?.isUsingOwnWhatsapp ? <CustomerRhythm /> : <Navigate to="/dashboard" replace />}
             />
             <Route
               path="customeropportunities"

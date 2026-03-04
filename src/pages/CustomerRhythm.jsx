@@ -5,10 +5,17 @@ import TemplateBuilder from "../components/customerRhythm/TemplateBuilder";
 import CampaignManager from "../components/customerRhythm/CampaignManager";
 import SendCampaign from "../components/customerRhythm/SendCampaign";
 import EngagementDashboard from "../components/customerRhythm/EngagementDashboard";
+import { useAuth } from "../context/AuthContext";
+import { Navigate } from "react-router-dom";
 
 const CustomerRhythm = () => {
+  const { auth } = useAuth();
   const [activeSection, setActiveSection] = useState("templates");
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
+
+  if (!auth?.data?.isUsingOwnWhatsapp) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <div className="flex flex-col h-full bg-[#F4F5F9]">

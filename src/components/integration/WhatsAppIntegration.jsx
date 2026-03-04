@@ -22,8 +22,10 @@ import {
   Globe
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useAuth } from '../../context/AuthContext';
 
 const WhatsAppIntegration = () => {
+  const { checkAuth } = useAuth();
   const [config, setConfig] = useState(null);
   const [webhookInfo, setWebhookInfo] = useState(null);
   const [tokenExpiry, setTokenExpiry] = useState(null);
@@ -236,6 +238,7 @@ const WhatsAppIntegration = () => {
         else toast.success("WhatsApp connected successfully!");
         setSignupStatus('completed');
         fetchConfig();
+        checkAuth(); // Refresh global auth state to update sidebar/access
         signupRef.current = { code: null, wabaId: null, phoneNumberId: null, businessId: null, authorizedAt: null, exchanging: false };
       }
     } catch (error) {
@@ -290,6 +293,7 @@ const WhatsAppIntegration = () => {
       if (response.data.status) {
         toast.success("WhatsApp connected manually");
         fetchConfig();
+        checkAuth(); // Refresh global auth state
         setShowManualModal(false);
         setManualConfig({ accessToken: '', wabaId: '', phoneNumberId: '', businessId: '' });
       }
@@ -353,6 +357,7 @@ const WhatsAppIntegration = () => {
       if (response.data.status) {
         toast.success("WhatsApp disconnected");
         fetchConfig();
+        checkAuth(); // Refresh global auth state
       }
     } catch { toast.error("Failed disconnect"); }
   };
