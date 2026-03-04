@@ -92,6 +92,12 @@ function Sidebar() {
       label: "Quick Search",
     },
     {
+      path: "/customerrhythm",
+      module: "Customer Rhythm",
+      icon: personalisationIcon,
+      label: "Retention Rhythm",
+    },
+    {
       path: "/settings",
       module: "Settings",
       icon: settingsIcon,

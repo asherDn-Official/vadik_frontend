@@ -12,6 +12,7 @@ import KYCPage from "./pages/kyc";
 import SettingsPage from "./pages/SettingsPage";
 import PerformanceTracking from "./pages/PerformanceTracking";
 import CustomerPersonalisation from "./pages/CustomerPersonalisation";
+import CustomerRhythm from "./pages/CustomerRhythm";
 import CustomerOpportunities from "./pages/CustomerOpportunities";
 import { useAuth } from "./context/AuthContext";
 import CustomerAdd from "./pages/CustomerAdd";
@@ -103,6 +104,10 @@ function App() {
             <Route
               path="personalisation"
               element={onboardingDone ? <CustomerPersonalisation /> : <Navigate to="/register" replace />}
+            />
+            <Route
+              path="customerrhythm"
+              element={onboardingDone ? <CustomerRhythm /> : <Navigate to="/register" replace />}
             />
             <Route
               path="customeropportunities"
