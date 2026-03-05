@@ -466,10 +466,13 @@ const TemplateBuilder = ({ onCancel, onSuccess }) => {
                                     const file = e.target.files[0];
                                     if (!file) return;
 
-                                    // Check size limits
-                                    const maxSize = comp.format === "VIDEO" ? 64 * 1024 * 1024 : 5 * 1024 * 1024;
+                                    // Check Meta-compliant size limits for template headers
+                                    let maxSize = 5 * 1024 * 1024; // Default 5MB (Image/Document fallback)
+                                    if (comp.format === "VIDEO") maxSize = 16 * 1024 * 1024; // Meta Template Video Limit: 16MB
+                                    else if (comp.format === "DOCUMENT") maxSize = 100 * 1024 * 1024; // Meta Template Document Limit: 100MB
+
                                     if (file.size > maxSize) {
-                                      return alert(`File too large. Max ${maxSize / (1024 * 1024)}MB allowed.`);
+                                      return alert(`File too large. Max ${maxSize / (1024 * 1024)}MB allowed for ${comp.format.toLowerCase()} headers.`);
                                     }
 
                                     const formData = new FormData();
@@ -513,8 +516,8 @@ const TemplateBuilder = ({ onCancel, onSuccess }) => {
                                <div className="text-[10px] text-blue-700">
                                   <p className="font-bold">File Limits:</p>
                                   {comp.format === "IMAGE" && <p>• Types: JPG, PNG, WEBP. Max 5MB.</p>}
-                                  {comp.format === "VIDEO" && <p>• Types: MP4, 3GP. Max 64MB.</p>}
-                                  {comp.format === "DOCUMENT" && <p>• Types: PDF. Max 5MB.</p>}
+                                  {comp.format === "VIDEO" && <p>• Types: MP4, 3GP. Max 16MB.</p>}
+                                  {comp.format === "DOCUMENT" && <p>• Types: PDF. Max 100MB.</p>}
                                   <p className="mt-1">Meta requires a sample file to approve your template.</p>
                                </div>
                             </div>
