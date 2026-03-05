@@ -472,7 +472,7 @@ const TemplateBuilder = ({ onCancel, onSuccess }) => {
                                     else if (comp.format === "DOCUMENT") maxSize = 100 * 1024 * 1024; // Meta Template Document Limit: 100MB
 
                                     if (file.size > maxSize) {
-                                      return alert(`File too large. Max ${maxSize / (1024 * 1024)}MB allowed for ${comp.format.toLowerCase()} headers.`);
+                                      return toast.error(`File too large. Max ${maxSize / (1024 * 1024)}MB allowed for ${comp.format.toLowerCase()} headers.`);
                                     }
 
                                     const formData = new FormData();
@@ -485,7 +485,7 @@ const TemplateBuilder = ({ onCancel, onSuccess }) => {
                                         updateComponent(idx, { mediaUrl: res.data.url });
                                       }
                                     } catch (err) {
-                                      alert("Upload failed: " + (err.response?.data?.message || err.message));
+                                      toast.error("Upload failed: " + (err.response?.data?.message || err.message));
                                     } finally {
                                       setMediaLoading(false);
                                     }
