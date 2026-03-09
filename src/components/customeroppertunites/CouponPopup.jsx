@@ -144,6 +144,10 @@ const CouponPopup = ({ onClose }) => {
             return "Coupon name is required";
         }
 
+        if (couponData.name.trim().split(/\s+/).length > 3) {
+            return "Coupon name cannot exceed 3 words";
+        }
+
         if (!couponData.code.trim()) {
             return "Coupon code is required";
         }

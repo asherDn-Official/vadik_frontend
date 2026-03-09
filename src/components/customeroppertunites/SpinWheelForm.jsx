@@ -220,6 +220,10 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   };
 
   const addSegment = () => {
+    if (formData.segments?.length >= 5) {
+      showToast("Maximum 5 coupons allowed in the spin wheel", "error");
+      return;
+    }
     const newSegment = {
       id: Date.now(),
       productName: "",
@@ -337,10 +341,10 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       .map((s) => s.couponId)
       .filter((id) => id && String(id).trim().length > 0);
 
-    if (validCouponIds.length < 3) {
+    if (validCouponIds.length < 3 || validCouponIds.length > 5) {
       setError("segments", {
         type: "manual",
-        message: "Minimum 3 coupons in the table",
+        message: "Between 3 and 5 coupons required in the table",
       });
       return;
     }
@@ -670,7 +674,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
             <button
               type="button"
               onClick={addSegment}
-              className="inline-flex items-center px-4 py-2 text-pink-600 hover:text-pink-700 transition-colors"
+              disabled={formData.segments?.length >= 5}
+              className={`inline-flex items-center px-4 py-2 text-pink-600 hover:text-pink-700 transition-colors ${formData.segments?.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Add first Spin <Plus className="w-4 h-4 ml-1" />
             </button>
@@ -681,7 +686,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
           <button
             type="button"
             onClick={addSegment}
-            className="flex items-center px-4 py-2 text-pink-600 hover:text-pink-700 transition-colors"
+            disabled={formData.segments?.length >= 5}
+            className={`flex items-center px-4 py-2 text-pink-600 hover:text-pink-700 transition-colors ${formData.segments?.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Add Spin <Plus className="w-4 h-4 ml-1" />
           </button>

@@ -124,7 +124,11 @@ const CouponManagement = () => {
         .trim()
         .required("Name is required")
         .min(3, "Name should have at least 3 characters")
-        .max(50, "Name can't exceed 50 characters"),
+        .max(50, "Name can't exceed 50 characters")
+        .test("word-count", "Name cannot exceed 3 words", (value) => {
+          if (!value) return true;
+          return value.trim().split(/\s+/).length <= 3;
+        }),
       code: yup
         .string()
         .trim()
