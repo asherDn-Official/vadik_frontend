@@ -642,6 +642,34 @@ const WhatsAppIntegration = () => {
              </div>
            )}
 
+           {/* Phone Status Expired Alert - Only show if EXPIRED and Connected */}
+           {metaStatus?.phoneStatus === 'EXPIRED' && config?.whatsappStatus === 'connected' && (
+             <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-2xl shadow-sm relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="bg-red-500 p-2 rounded-xl text-white shadow-lg shadow-red-100">
+                    <XCircle size={20} />
+                  </div>
+                  <h4 className="text-lg font-bold text-red-900">Phone Number Expired</h4>
+                </div>
+                <p className="text-red-800 text-sm mb-2 leading-relaxed">
+                  Your WhatsApp phone number status is <strong>EXPIRED</strong>. Message sending and receiving will not work in this state.
+                </p>
+                <p className="text-red-700 text-[12px] italic">
+                  This usually requires refreshing your connection or checking your Meta Business Account settings.
+                </p>
+                <div className="mt-4">
+                   <button 
+                     onClick={handleRefreshStatus}
+                     disabled={refreshingStatus}
+                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2"
+                   >
+                     {refreshingStatus ? <RefreshCw size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                     REFRESH STATUS
+                   </button>
+                </div>
+             </div>
+           )}
+
            {/* Signup Status Alert Bar */}
            {signupStatus && signupStatus !== 'completed' && signupStatus !== 'pin_required' && (
              <div className="mb-10 p-4 bg-[#313166] rounded-[16px] flex items-center gap-4 text-white shadow-lg shadow-[#313166]/20 border border-[#4a4a8a]">
@@ -730,6 +758,10 @@ const WhatsAppIntegration = () => {
                      <span className="text-gray-900 font-bold flex items-center gap-1.5">
                        {metaStatus?.phoneStatus === 'verified' ? (
                          <><div className="w-1.5 h-1.5 rounded-full bg-green-500" /> Connected</>
+                       ) : metaStatus?.phoneStatus === 'EXPIRED' ? (
+                         <span className="text-red-600 flex items-center gap-1.5">
+                           <div className="w-1.5 h-1.5 rounded-full bg-red-500" /> EXPIRED
+                         </span>
                        ) : metaStatus?.phoneStatus || 'Unknown'}
                      </span>
                    </div>
