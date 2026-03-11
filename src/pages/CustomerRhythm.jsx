@@ -92,7 +92,7 @@ const CustomerRhythm = () => {
               }`}
             >
               <Target size={18} />
-              Engagement
+              Campaign Report
             </button>
           </div>
         </div>

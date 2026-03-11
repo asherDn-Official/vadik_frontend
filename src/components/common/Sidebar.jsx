@@ -101,7 +101,7 @@ function Sidebar() {
       path: "/customerrhythm",
       module: "Customer Rhythm",
       icon: personalisationIcon,
-      label: "Retention Rhythm",
+      label: "Customer Rhythm",
     },
     {
       path: "/settings",

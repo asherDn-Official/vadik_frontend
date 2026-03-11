@@ -70,7 +70,7 @@ const CustomerOpportunities = () => {
                 </div>
                 <div className=" flex items-center justify-between">
                   <span className="text-xs text-gray-500 text-start  ">
-                    Birthday and anniversary-based personalized offers.
+                    Create engaging customer activities like Quiz, Spin Wheel, and Scratch Cards to collect insights and boost interaction.
                     <span className=" float-right">
                       <VideoPopupWithShare
                         video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
@@ -101,7 +101,7 @@ const CustomerOpportunities = () => {
                 </div>
                 <div className=" flex items-center justify-between">
                   <span className="text-xs text-gray-500 text-start">
-                    Festival and region-specific campaign suggestions.
+                   Easily send campaigns and activities to your customers via WhatsApp to drive engagement and repeat visits.
                     <span className=" float-right">
                       <VideoPopupWithShare
                         video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
@@ -131,7 +131,7 @@ const CustomerOpportunities = () => {
                   Chats
                 </div>
                 <div className="text-xs text-gray-500 text-start">
-                  Product suggestions based on behavior and stock.
+                 Automatically suggest the right products and offers during customer conversations based on behavior and preferences.
                 </div>
               </div>
             </button>
@@ -154,7 +154,7 @@ const CustomerOpportunities = () => {
                  Vadik Assistant 
                 </div>
                 <div className="text-xs text-gray-500 text-start">
-                   Stock Management Suggestion
+                  An AI-powered assistant that recommends smart campaigns, customer engagement ideas, and personalised  promotions.
                 </div>
               </div>
             </button>
