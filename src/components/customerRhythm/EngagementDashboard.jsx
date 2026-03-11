@@ -11,6 +11,7 @@ import {
 import api from "../../api/apiconfig";
 import { toast } from "react-toastify";
 import moment from "moment";
+import { getWhatsappErrorDescription } from "../../utils/whatsappErrorCodes";
 
 const EngagementDashboard = () => {
   const [logs, setLogs] = useState([]);
@@ -370,9 +371,18 @@ const EngagementDashboard = () => {
                     logs.map((log) => (
                       <tr key={log._id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-2" title={log.status}>
-                            {getStatusIcon(log.status)}
-                            <span className="text-xs font-bold uppercase tracking-wider text-gray-400">{log.status}</span>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2" title={log.status}>
+                              {getStatusIcon(log.status)}
+                              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">{log.status}</span>
+                            </div>
+                            {log.status === 'failed' && (
+                              <div className="text-[10px] text-red-500 max-w-[180px] leading-tight mt-1 bg-red-50 p-1.5 rounded-lg border border-red-100 shadow-sm">
+                                <span className="font-bold block mb-0.5">Failure Details:</span>
+                                {getWhatsappErrorDescription(log.failureCode) || log.failureReason || "Message delivery failed"}
+                                {log.failureCode && <span className="block mt-0.5 text-gray-400">Code: {log.failureCode}</span>}
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4">

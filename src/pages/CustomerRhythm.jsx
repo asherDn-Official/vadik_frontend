@@ -81,7 +81,7 @@ const CustomerRhythm = () => {
               }`}
             >
               <Zap size={18} />
-              Automation
+             Retention Flow
             </button>
             <button
               onClick={() => setActiveSection("engagement")}
