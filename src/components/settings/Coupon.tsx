@@ -67,7 +67,7 @@ const CouponManagement = () => {
   }
 
    useEffect(() => {
-        fetch("/assets/Comingsoon.json")
+        fetch("/assets/comingSoon.json")
             .then((res) => res.json())
             .then(setSoon)
             .catch(console.error)
@@ -466,17 +466,18 @@ const CouponManagement = () => {
             </div>
             {!isAddingCoupon && (
               <div className=" flex items-center gap-2">
-                 <button className="flex items-center text-sm text-white px-4 py-3 bg-[#313166] rounded-lg  hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md" 
-                onClick={() => setIsOpen(true)}
-                >
-                  coupon Tutorial
-                </button>
+                
 
                 <VideoPopupWithShare
                   // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
                   animationData={soon}
                   buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
                 />
+                 <button className="flex items-center text-sm text-[#313166] px-4 py-3 bg-white border border-[#313166] rounded-lg" 
+                onClick={() => setIsOpen(true)}
+                >
+                  coupon Tutorial
+                </button>
                 <button
                   onClick={startAddingCoupon}
                   className="flex items-center px-6 py-3 bg-[#313166] text-white rounded-lg hover:bg-gray-800 transition-all duration-200 shadow-sm hover:shadow-md"

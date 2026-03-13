@@ -22,15 +22,15 @@ const CustomerRhythm = () => {
       {/* Top Header with Section Options */}
       {!isCreatingTemplate && (
         <div className="bg-white px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ">
             <Zap className="text-[#313166] w-6 h-6" />
-            <h1 className="text-xl font-bold text-[#313166]">Customer Rhythm</h1>
+            <h1 className="text-xl  font-semibold text-[#313166]">Customer Rhythm</h1>
           </div>
           
-          <div className="flex bg-gray-100 p-1 rounded-xl shadow-inner overflow-x-auto">
+          <div className="flex bg-gray-100 p-1  rounded-xl shadow-inner overflow-x-auto">
             <button
               onClick={() => setActiveSection("templates")}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                 activeSection === "templates"
                   ? "bg-white text-[#313166] shadow-md"
                   : "text-gray-500 hover:text-gray-700"
@@ -41,7 +41,7 @@ const CustomerRhythm = () => {
             </button>
             <button
               onClick={() => setActiveSection("campaign")}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                 activeSection === "campaign"
                   ? "bg-white text-[#313166] shadow-md"
                   : "text-gray-500 hover:text-gray-700"
@@ -52,7 +52,7 @@ const CustomerRhythm = () => {
             </button>
             <button
               onClick={() => setActiveSection("send_template")}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                 activeSection === "send_template"
                   ? "bg-white text-[#313166] shadow-md"
                   : "text-gray-500 hover:text-gray-700"
@@ -63,7 +63,7 @@ const CustomerRhythm = () => {
             </button>
             <button
               onClick={() => setActiveSection("send_campaign")}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                 activeSection === "send_campaign"
                   ? "bg-white text-[#313166] shadow-md"
                   : "text-gray-500 hover:text-gray-700"
@@ -74,7 +74,7 @@ const CustomerRhythm = () => {
             </button>
             <button
               onClick={() => setActiveSection("automation")}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                 activeSection === "automation"
                   ? "bg-white text-[#313166] shadow-md"
                   : "text-gray-500 hover:text-gray-700"
@@ -85,7 +85,7 @@ const CustomerRhythm = () => {
             </button>
             <button
               onClick={() => setActiveSection("engagement")}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs  font-medium transition-all whitespace-nowrap ${
                 activeSection === "engagement"
                   ? "bg-white text-[#313166] shadow-md"
                   : "text-gray-500 hover:text-gray-700"

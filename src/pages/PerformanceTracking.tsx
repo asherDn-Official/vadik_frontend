@@ -98,7 +98,7 @@ useEffect(() => {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-xl font-semibold text-[#313166]">
             Performance Tracking
           </h1>
         </div>

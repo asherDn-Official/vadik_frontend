@@ -95,7 +95,7 @@ const TemplateDashboard = ({ onCreateNew }) => {
             />
           </div>
           <select
-            className="px-4 py-2 border border-gray-200 rounded-xl focus:outline-none bg-white"
+            className="px-4 py-2 border border-gray-200 rounded-xl text-[#313166] focus:outline-none bg-white"
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
           >
@@ -128,7 +128,7 @@ const TemplateDashboard = ({ onCreateNew }) => {
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 text-sm font-medium">
+            <thead className="bg-gray-50 border-b border-gray-200 text-[#313166] text-sm font-medium">
               <tr>
                 <th className="px-6 py-4">Template Name</th>
                 <th className="px-6 py-4">Category</th>
@@ -153,14 +153,14 @@ const TemplateDashboard = ({ onCreateNew }) => {
                 filteredTemplates.map((template) => (
                   <tr key={template._id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-gray-900">{template.name}</div>
+                      <div className="font-semibold text-[#313166]">{template.name}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">
+                      <span className="text-xs font-medium text-[#313166] bg-gray-100 px-2 py-1 rounded-lg">
                         {template.category}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">{template.language}</td>
+                    <td className="px-6 py-4 text-[#313166]">{template.language}</td>
                     <td className="px-6 py-4">{getStatusBadge(template.status)}</td>
                     <td className="px-6 py-4">
                       <span className={`text-xs font-bold ${

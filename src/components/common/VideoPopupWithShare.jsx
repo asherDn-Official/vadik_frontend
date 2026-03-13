@@ -107,7 +107,7 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div
             ref={popupRef}
-            className="relative bg-gray-900 rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden"
+            className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden"
           >
             {/* Header with Close and Share Buttons */}
             <div className="absolute top-4 right-4 flex gap-2 z-10">
@@ -122,7 +122,7 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
               {/* Close Button */}
               <button
                 onClick={closePopup}
-                className="bg-white bg-opacity-20 backdrop-blur-md rounded-full p-2 hover:bg-opacity-30 transition-all duration-200 text-white border border-white border-opacity-30"
+                className="bg-black bg-opacity-20 backdrop-blur-md rounded-full p-2 hover:bg-opacity-30 transition-all duration-200 text-white border border-white border-opacity-30"
               >
                 <X size={20} />
               </button>

@@ -132,7 +132,7 @@ const CustomerList = () => {
       <div className="flex-1 flex flex-col overflow-hidden m-2 rounded-[20px]">
         <div className="bg-white shadow-sm p-4 sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-xl font-semibold text-gray-900">
+            <h1 className="text-xl font-semibold text-[#313166]">
               Customer List{" "}
               <span className="text-gray-500 font-normal">
                 ({pagination.totalItems})

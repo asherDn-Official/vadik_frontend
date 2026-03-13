@@ -56,7 +56,7 @@ const CustomerOpportunities = () => {
               onClick={() => setActiveTab("engagement")}
               className={`flex w-full max-w-xs sm:w-auto items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
                 activeTab === "engagement"
-                  ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
+                  ? " border-[#EC396F] rounded-[12px]"
                   : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
               }`}
             >
@@ -88,7 +88,7 @@ const CustomerOpportunities = () => {
               onClick={() => setActiveTab("campaign")}
               className={`flex w-full max-w-xs sm:w-auto items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
                 activeTab === "campaign"
-                  ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
+                  ? " border-[#EC396F] rounded-[12px]"
                   : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
               }`}
             >
@@ -119,7 +119,7 @@ const CustomerOpportunities = () => {
               onClick={() => setActiveTab("customer-recommendation")}
               className={`flex w-full max-w-xs sm:w-auto items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
                 activeTab === "customer-recommendation"
-                  ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
+                  ? "border-[#EC396F] rounded-[12px]"
                   : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
               }`}
             >
@@ -142,7 +142,7 @@ const CustomerOpportunities = () => {
               onClick={() => setActiveTab("store-recommendation")}
               className={`flex w-full max-w-xs sm:w-auto items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
                 activeTab === "store-recommendation"
-                  ? "bg-[#3131661A] border-pink-200 rounded-[12px]"
+                  ? "border-[#EC396F] rounded-[12px]"
                   : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
               }`}
             >

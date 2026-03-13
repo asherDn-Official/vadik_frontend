@@ -190,7 +190,7 @@ const CustomerPersonalisation = () => {
         <div className="col-span-12 md:col-span-8 lg:col-span-9 p-5">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-4">
-              <h1 className="text-xl font-semibold">
+              <h1 className="text-xl text-[#313166] font-semibold">
                 Customer List ({pagination.total})
               </h1>
             </div>

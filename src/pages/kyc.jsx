@@ -754,18 +754,18 @@ const KYCPage = () => {
           {/* Filters Section */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <div className="flex justify-between items-center mb-4">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+              <div
+                // onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center px-4 py-2 bg-gray-100 rounded-lg cursor-default "
               >
                 <FiFilter className="mr-2" />
                 Filters
-                {showFilters ? (
+                {/* {showFilters ? (
                   <FiChevronUp className="ml-1" />
                 ) : (
                   <FiChevronDown className="ml-1" />
-                )}
-              </button>
+                )} */}
+              </div>
 
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Items per page:</span>
@@ -785,7 +785,7 @@ const KYCPage = () => {
               </div>
             </div>
 
-            {showFilters && (
+            {/* {showFilters && ( */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4 pt-4 border-t border-gray-200">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -884,7 +884,7 @@ const KYCPage = () => {
                   </button>
                 </div>
               </div>
-            )}
+            {/* )} */}
           </div>
 
           {/* Order History Section */}

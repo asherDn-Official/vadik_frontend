@@ -12,8 +12,9 @@ import personalisationIcon from "/assets/fluent-insights.png";
 import customerOpportunitiesIcon from "/assets/user-check-icon.png";
 import performanceIcon from "/assets/mdi_performance-icon.png";
 import integrationIcon from "/assets/integration-icon.png";
-import kycIcon from "/assets/kyc-icon.png";
+import kycIcon from "/assets/iconamoon_search-bold.png";
 import settingsIcon from "/assets/settings-icon.png";
+import rhytmIcon from "/assets/ix_customer.png";
 
 function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -100,7 +101,7 @@ function Sidebar() {
     {
       path: "/customerrhythm",
       module: "Customer Rhythm",
-      icon: personalisationIcon,
+      icon: rhytmIcon,
       label: "Customer Rhythm",
     },
     {
@@ -206,7 +207,7 @@ function Sidebar() {
        
         <button
           onClick={(e) => handleLogout(e)}
-          className="flex w-full items-center px-4 md:px-6 py-3 md:py-4 text-white no-underline transition-colors hover:bg-[#3d3b83] mt-auto"
+          className="flex w-full items-center px-4 md:px-7 py-3 md:py-4 text-white no-underline transition-colors hover:bg-[#3d3b83] mt-auto"
         >
           <LogOut
             size={16}
