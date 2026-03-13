@@ -136,7 +136,7 @@ useEffect(() => {
         </div>
 
         {/* Second Row - Activities Table & Conversion Chart */}
-        <div className="grid grid-cols-2 lg:grid-cols-10 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-10 gap-6 text-[#313166]">
           {/* <div className="lg:col-span-7"> */}
           <CampaignTable />
           {/* </div> */}
@@ -150,7 +150,7 @@ useEffect(() => {
           {/* Left Column */}
           <div className="space-y-6">
              <div className="bg-white p-6 rounded-[10px]">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-[#313166] mb-4">
                 Customer Lifetime Value (CLV)
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

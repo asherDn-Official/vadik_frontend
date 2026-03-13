@@ -133,7 +133,7 @@ const CartValueCards = () => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-        <h3 className="text-lg font-semibold text-gray-900">Cart Value</h3>
+        <h3 className="text-lg font-semibold text-[#313166]">Cart Value</h3>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 gap-2 text-sm text-gray-600">
           <div className="flex items-center space-x-2">
@@ -179,7 +179,7 @@ const CartValueCards = () => {
               <div className="flex items-center space-x-3">
                 <Icon className={`w-5 h-5 ${card.iconColor}`} />
                 <div>
-                  <div className="text-xl font-bold text-gray-900">
+                  <div className="text-xl font-bold text-[#313166]">
                     {card.value}
                   </div>
                   <div className="text-xs text-gray-600 mt-1">{card.label}</div>

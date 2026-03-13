@@ -45,8 +45,8 @@ const MetricCard = ({
           <img src={icon} alt="Metric icon" className="w-12 h-12" />
         </div>
         <div>
-          <div className="text-2xl font-bold text-gray-900">{value}</div>
-          <div className="text-sm text-gray-600">{label}</div>
+          <div className="text-2xl font-bold text-[#313166]">{value}</div>
+          <div className="text-sm text-[#313166]">{label}</div>
         </div>
       </div>
     </div>

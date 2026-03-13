@@ -109,11 +109,11 @@ const CampaignTable = () => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-        <h3 className="text-lg font-semibold text-gray-900">Activities</h3>
+        <h3 className="text-lg font-semibold text-[#313166]">Activities</h3>
         
-        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 gap-2 text-sm text-gray-600">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 gap-2 text-sm text-[#313166]">
           <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4 text-gray-500" />
+            <Calendar className="w-4 h-4 text-[#313166]" />
             <DatePicker
               selectsRange={true}
               startDate={startDate}
@@ -142,60 +142,60 @@ const CampaignTable = () => {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-4 font-medium text-gray-600">
+              <th className="text-left py-3 px-4 font-medium text-[#313166]">
                 Activities
               </th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">
+              <th className="text-left py-3 px-4 font-medium text-[#313166]">
                 No. of Customers
               </th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">
+              <th className="text-left py-3 px-4 font-medium text-[#313166]">
                 Open Rate
               </th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">
+              <th className="text-left py-3 px-4 font-medium text-[#313166]">
                 Click Rate
               </th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">
+              <th className="text-left py-3 px-4 font-medium text-[#313166]">
                 Responded
               </th>
             </tr>
           </thead>
           <tbody>
             <tr className="border-b border-gray-100">
-              <td className="py-4 px-4 text-gray-900">{"Spin the Wheel"}</td>
-              <td className="py-4 px-4 text-gray-700">
+              <td className="py-4 px-4 text-[#313166]">{"Spin the Wheel"}</td>
+              <td className="py-4 px-4 text-[#313166]">
                 {spinWheel.totalSent}
               </td>
-              <td className="py-4 px-4 text-gray-700">{spinWheel.openRate}</td>
-              <td className="py-4 px-4 text-gray-700">
+              <td className="py-4 px-4 text-[#313166]">{spinWheel.openRate}</td>
+              <td className="py-4 px-4 text-[#313166]">
                 {spinWheel.clickRate}
               </td>
-              <td className="py-4 px-4 text-gray-700">
+              <td className="py-4 px-4 text-[#313166]">
                 {spinWheel.responded}
               </td>
             </tr>
             <tr className="border-b border-gray-100">
-              <td className="py-4 px-4 text-gray-900">{"Quiz"}</td>
-              <td className="py-4 px-4 text-gray-700">
+              <td className="py-4 px-4 text-[#313166]">{"Quiz"}</td>
+              <td className="py-4 px-4 text-[#313166]">
                 {quize.totalSent}
               </td>
-              <td className="py-4 px-4 text-gray-700">{quize.openRate}</td>
-              <td className="py-4 px-4 text-gray-700">
+              <td className="py-4 px-4 text-[#313166]">{quize.openRate}</td>
+              <td className="py-4 px-4 text-[#313166]">
                 {quize.clickRate}
               </td>
-              <td className="py-4 px-4 text-gray-700">
+              <td className="py-4 px-4 text-[#313166]">
                 {quize.responded}
               </td>
             </tr>
             <tr className="border-b border-gray-100">
-              <td className="py-4 px-4 text-gray-900">{"Scratch Card"}</td>
-              <td className="py-4 px-4 text-gray-700">
+              <td className="py-4 px-4 text-[#313166]">{"Scratch Card"}</td>
+              <td className="py-4 px-4 text-[#313166]">
                 {scratchCard.totalSent}
               </td>
-              <td className="py-4 px-4 text-gray-700">{scratchCard.openRate}</td>
-              <td className="py-4 px-4 text-gray-700">
+              <td className="py-4 px-4 text-[#313166]">{scratchCard.openRate}</td>
+              <td className="py-4 px-4 text-[#313166]">
                 {scratchCard.clickRate}
               </td>
-              <td className="py-4 px-4 text-gray-700">
+              <td className="py-4 px-4 text-[#313166]">
                 {scratchCard.responded}
               </td>
             </tr>
