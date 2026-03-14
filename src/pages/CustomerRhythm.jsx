@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Zap, LayoutTemplate, Target, Megaphone, Send } from "lucide-react";
 import TemplateDashboard from "../components/customerRhythm/TemplateDashboard";
 import TemplateBuilder from "../components/customerRhythm/TemplateBuilder";
-import CampaignManager from "../components/customerRhythm/CampaignManager";
 import SendCampaign from "../components/customerRhythm/SendCampaign";
 import EngagementDashboard from "../components/customerRhythm/EngagementDashboard";
 import { useAuth } from "../context/AuthContext";
@@ -38,28 +37,6 @@ const CustomerRhythm = () => {
             >
               <LayoutTemplate size={18} />
               Templates
-            </button>
-            <button
-              onClick={() => setActiveSection("campaign")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                activeSection === "campaign"
-                  ? "bg-white text-[#313166] shadow-md"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Megaphone size={18} />
-              Campaigns
-            </button>
-            <button
-              onClick={() => setActiveSection("send_template")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                activeSection === "send_template"
-                  ? "bg-white text-[#313166] shadow-md"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Send size={18} />
-              Send Template
             </button>
             <button
               onClick={() => setActiveSection("send_campaign")}
@@ -111,16 +88,8 @@ const CustomerRhythm = () => {
           )
         )}
 
-        {activeSection === "campaign" && (
-          <CampaignManager />
-        )}
-
-        {activeSection === "send_template" && (
-          <SendCampaign initialMode="direct" />
-        )}
-
         {activeSection === "send_campaign" && (
-          <SendCampaign initialMode="saved" />
+          <SendCampaign />
         )}
 
         {activeSection === "automation" && (
