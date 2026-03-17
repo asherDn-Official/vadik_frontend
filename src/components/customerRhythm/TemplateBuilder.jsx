@@ -18,17 +18,79 @@ import {
 import api from "../../api/apiconfig";
 import { toast } from "react-toastify";
 
-const TemplateBuilder = ({ onCancel, onSuccess }) => {
-  const [template, setTemplate] = useState({
-    name: "",
-    category: "MARKETING",
-    language: "en_US",
-    components: [
-      { type: "BODY", text: "" }
-    ]
+const buildCopyName = (name) => {
+  if (!name) return "";
+  const base = `${name}_copy`;
+  return base.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+};
+
+const normalizeTemplateForBuilder = (source) => {
+  if (!source) {
+    return {
+      name: "",
+      category: "MARKETING",
+      language: "en_US",
+      components: [{ type: "BODY", text: "" }]
+    };
+  }
+
+  const normalizedComponents = (source.components || []).map((comp) => {
+    const next = { type: comp.type };
+    if (comp.type === "HEADER") {
+      next.format = comp.format || "TEXT";
+      if (next.format === "TEXT") {
+        next.text = comp.text || "";
+      } else {
+        next.mediaUrl = comp.mediaUrl || comp.example?.header_handle?.[0] || "";
+      }
+    } else if (comp.type === "BODY") {
+      next.text = comp.text || "";
+    } else if (comp.type === "FOOTER") {
+      next.text = comp.text || "";
+    } else if (comp.type === "BUTTONS") {
+      next.buttons = (comp.buttons || []).map((btn) => ({
+        type: btn.type || "QUICK_REPLY",
+        text: btn.text || "",
+        url: btn.url,
+        phoneNumber: btn.phoneNumber
+      }));
+    }
+    return next;
   });
 
-  const [samples, setSamples] = useState({});
+  const hasBody = normalizedComponents.some((c) => c.type === "BODY");
+  if (!hasBody) normalizedComponents.push({ type: "BODY", text: "" });
+
+  return {
+    name: buildCopyName(source.name),
+    category: source.category || "MARKETING",
+    language: source.language || "en_US",
+    components: normalizedComponents
+  };
+};
+
+const buildSampleValuesFromTemplate = (source) => {
+  if (!source?.components) return {};
+
+  const samplesMap = {};
+  source.components.forEach((comp) => {
+    if (comp.type === "BODY" || (comp.type === "HEADER" && comp.format === "TEXT")) {
+      const vars = (comp.text || "").match(/\{\{\d+\}\}/g) || [];
+      const exampleRow = comp.example?.body_text?.[0] || [];
+      vars.forEach((v, i) => {
+        if (exampleRow[i] && !samplesMap[v]) {
+          samplesMap[v] = exampleRow[i];
+        }
+      });
+    }
+  });
+  return samplesMap;
+};
+
+const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
+  const [template, setTemplate] = useState(() => normalizeTemplateForBuilder(initialTemplate));
+
+  const [samples, setSamples] = useState(() => buildSampleValuesFromTemplate(initialTemplate));
   const [loading, setLoading] = useState(false);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [nameAvailable, setNameAvailable] = useState(null);
@@ -41,6 +103,12 @@ const TemplateBuilder = ({ onCancel, onSuccess }) => {
     FOOTER: 60,
     BUTTON: 25
   };
+
+  useEffect(() => {
+    setTemplate(normalizeTemplateForBuilder(initialTemplate));
+    setSamples(buildSampleValuesFromTemplate(initialTemplate));
+    setNameAvailable(null);
+  }, [initialTemplate]);
 
   useEffect(() => {
     if (template.name.length > 2) {

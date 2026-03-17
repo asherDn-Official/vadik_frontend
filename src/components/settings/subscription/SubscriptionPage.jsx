@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Info } from "lucide-react";
 import SubscriptionCard from "./components/SubscriptionCard";
 import UsageTable from "./components/UsageTable";
 import ConfirmationModal from "./components/ConfirmationModal";
@@ -587,6 +588,23 @@ export default function SubscriptionPage() {
             </div>
           )}
         </div>
+
+        {/* {auth?.data?.isUsingOwnWhatsapp && (
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 rounded-r-xl">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <Info className="h-5 w-5 text-blue-400" aria-hidden="true" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-blue-700 font-medium">
+                  Note: You've integrated your own Meta WhatsApp account. 
+                  Plans and Add-ons include Vadik WhatsApp credits, which are only for the default Vadik account. 
+                  Since you're using your own account, these credits won't be applied and you'll be billed directly by Meta.
+                </p>
+              </div>
+            </div>
+          </div>
+        )} */}
 
         {/* Tabs */}
         <div className="mb-6">

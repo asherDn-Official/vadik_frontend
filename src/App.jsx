@@ -19,6 +19,7 @@ import CustomerAdd from "./pages/CustomerAdd";
 import api from "./api/apiconfig";
 import Notification from "./pages/Notification";
 import ForgotPassword from "./pages/ForgotPassword";
+import Subscription from "./pages/Subscription";
 
 function App() {
   const { auth, loading, checkAuth } = useAuth();
@@ -132,6 +133,10 @@ function App() {
             <Route
               path="settings/:tab"
               element={onboardingDone ? <SettingsPage /> : <Navigate to="/register" replace />}
+            />
+            <Route
+              path="subscription"
+              element={onboardingDone ? <Subscription /> : <Navigate to="/register" replace />}
             />
             <Route
               path="notifications"

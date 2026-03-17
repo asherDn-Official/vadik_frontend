@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Plus, RefreshCw, Search, Trash2, ExternalLink, AlertCircle, CheckCircle2, Clock, PauseCircle } from "lucide-react";
+import { Plus, RefreshCw, Search, Trash2, AlertCircle, CheckCircle2, Clock, PauseCircle, Copy } from "lucide-react";
 import api from "../../api/apiconfig";
 import { toast } from "react-toastify";
 
-const TemplateDashboard = ({ onCreateNew }) => {
+const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("ALL");
+  const [filterStatus, setFilterStatus] = useState("ALL");
 
   const fetchTemplates = async () => {
     try {
@@ -77,7 +78,8 @@ const TemplateDashboard = ({ onCreateNew }) => {
   const filteredTemplates = templates.filter(t => {
     const matchesSearch = t.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === "ALL" || t.category === filterCategory;
-    return matchesSearch && matchesCategory;
+    const matchesStatus = filterStatus === "ALL" || t.status === filterStatus;
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   return (
@@ -103,6 +105,17 @@ const TemplateDashboard = ({ onCreateNew }) => {
             <option value="MARKETING">Marketing</option>
             <option value="UTILITY">Utility</option>
             <option value="AUTHENTICATION">Authentication</option>
+          </select>
+          <select
+            className="px-4 py-2 border border-gray-200 rounded-xl text-[#313166] focus:outline-none bg-white"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="APPROVED">Approved</option>
+            <option value="PENDING">Pending</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="PAUSED">Paused</option>
           </select>
         </div>
         
@@ -173,6 +186,13 @@ const TemplateDashboard = ({ onCreateNew }) => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => onCopyTemplate?.(template)}
+                          className="p-2 text-[#313166] hover:bg-[#313166]/10 rounded-lg transition-colors"
+                          title="Copy Template"
+                        >
+                          <Copy size={16} />
+                        </button>
                         <button 
                           onClick={() => deleteTemplate(template._id)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

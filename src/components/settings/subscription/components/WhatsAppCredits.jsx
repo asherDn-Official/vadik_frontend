@@ -271,6 +271,24 @@ const handleConfirmTopup = async () => {
         loading={isTopupLoading}
       />
 
+      {auth?.data?.isUsingOwnWhatsapp && (
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 rounded-r-xl">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <Info className="h-5 w-5 text-blue-400" aria-hidden="true" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-blue-700">
+                <strong>WhatsApp Account Integrated!</strong> You have integrated your own Meta WhatsApp account. 
+                Vadik default WhatsApp credits will not be used for your communications. 
+                You will be billed directly by Meta according to your Meta WhatsApp account billing settings.
+                Please check your <a href="https://business.facebook.com/billing_hub" target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:text-blue-800">Meta Business Suite</a> for billing details.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Credits Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
@@ -303,7 +321,11 @@ const handleConfirmTopup = async () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div
+          className={`bg-white p-6 rounded-2xl shadow-sm border border-gray-100 ${
+            auth?.data?.isUsingOwnWhatsapp ? "opacity-60" : ""
+          }`}
+        >
           <div className="flex items-center justify-between mb-4">
             <span className="text-gray-500 text-sm font-medium">Quick Top-up</span>
             <div className="p-2 bg-pink-50 rounded-lg">
@@ -315,17 +337,23 @@ const handleConfirmTopup = async () => {
               type="number"
               value={topupAmount}
               onChange={(e) => setTopupAmount(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-sm"
+              disabled={auth?.data?.isUsingOwnWhatsapp}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-sm disabled:bg-gray-50 disabled:text-gray-400"
               placeholder="Amount"
             />
             <button
               onClick={handleTopup}
-              disabled={isTopupLoading}
-              className="bg-pink-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-pink-700 transition-colors disabled:opacity-50 whitespace-nowrap"
+              disabled={isTopupLoading || auth?.data?.isUsingOwnWhatsapp}
+              className="bg-pink-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-pink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
               {isTopupLoading ? "..." : "Top-up"}
             </button>
           </div>
+          {auth?.data?.isUsingOwnWhatsapp && (
+            <p className="text-[10px] text-gray-500 mt-2">
+              Top-up is disabled because you are using your own Meta WhatsApp account.
+            </p>
+          )}
           {/* <p className="text-[10px] text-gray-400 mt-2 flex items-center gap-1">
             <Info className="w-3 h-3 cursor-help" data-tooltip-id="pricing-tooltip" />
             Pricing per template message varies

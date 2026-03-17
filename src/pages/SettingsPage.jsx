@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FiUser,
@@ -7,10 +7,6 @@ import {
   FiUsers,
   FiSettings, 
 } from "react-icons/fi";
-import { LayoutTemplate } from 'lucide-react';
-import { BadgeIndianRupee } from 'lucide-react';
-
-
 
 import { FaCoins } from "react-icons/fa";
 
@@ -23,8 +19,6 @@ import RolesAndPermissions from "../components/settings/RolesAndPermissions";
 import AddProduct from "../components/settings/AddProduct";
 import Coupon from "../components/settings/Coupon";
 import LoyaltyPoint from "../components/settings/LoyaltyPoint";
-import Template from "../components/settings/Template";
-import SubscriptionPage from "../components/settings/subscription/SubscriptionPage";
 
 import UnsavedChangesModal from "../components/common/UnsavedChangesModal";
 import { useUnsavedChanges } from "../context/UnsavedChangesContext";
@@ -38,6 +32,15 @@ const SettingsPage = () => {
   const [showModal, setShowModal] = useState(false);
 
   const activeTab = tab || "my-profile";
+
+  useEffect(() => {
+    if (tab === "subscription") {
+      navigate("/subscription", { replace: true });
+    }
+    if (tab === "template") {
+      navigate("/customerrhythm?section=automation", { replace: true });
+    }
+  }, [tab, navigate]);
 
   const handleTabChange = (tabName) => {
     if (tabName === activeTab) return;
@@ -110,18 +113,6 @@ const SettingsPage = () => {
             isActive={activeTab === "loyalty"}
             onClick={() => handleTabChange("loyalty")}
           />
-          <SettingsTab
-            icon={<LayoutTemplate />}
-            text="Template"
-            isActive={activeTab === "template"}
-            onClick={() => handleTabChange("template")}
-          />
-          <SettingsTab
-            icon={<BadgeIndianRupee  />}
-            text="Subscription"
-            isActive={activeTab === "subscription"}
-            onClick={() => handleTabChange("subscription")}
-          />
         </div>
       </div>
 
@@ -141,8 +132,6 @@ const SettingsPage = () => {
         {activeTab === "roles-permissions" && <RolesAndPermissions />}
         {activeTab === "coupon" && <Coupon />}
         {activeTab === "loyalty" && <LoyaltyPoint />}
-        {activeTab === "template" && <Template />}
-        {activeTab === "subscription" && <SubscriptionPage />}
       </div>
     </div>
   );

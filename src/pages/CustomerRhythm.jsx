@@ -1,16 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Zap, LayoutTemplate, Target, Megaphone, Send } from "lucide-react";
 import TemplateDashboard from "../components/customerRhythm/TemplateDashboard";
 import TemplateBuilder from "../components/customerRhythm/TemplateBuilder";
 import SendCampaign from "../components/customerRhythm/SendCampaign";
 import EngagementDashboard from "../components/customerRhythm/EngagementDashboard";
 import { useAuth } from "../context/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
+import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
+import Template from "../components/settings/Template";
 
-const CustomerRhythm = () => {
+  const CustomerRhythm = () => {
   const { auth } = useAuth();
+  const location = useLocation();
+  const [soon, setSoon] = useState();
   const [activeSection, setActiveSection] = useState("templates");
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
+  const [templateToCopy, setTemplateToCopy] = useState(null);
+
+  useEffect(() => {
+    fetch("/assets/comingSoon.json")
+      .then((res) => res.json())
+      .then(setSoon)
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const section = params.get("section");
+    if (section && ["templates", "send_campaign", "automation", "engagement"].includes(section)) {
+      setActiveSection(section);
+    }
+  }, [location.search]);
 
   if (!auth?.data?.isUsingOwnWhatsapp) {
     return <Navigate to="/dashboard" replace />;
@@ -21,56 +41,64 @@ const CustomerRhythm = () => {
       {/* Top Header with Section Options */}
       {!isCreatingTemplate && (
         <div className="bg-white px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 z-10">
+          
           <div className="flex items-center gap-2 ">
             <Zap className="text-[#313166] w-6 h-6" />
             <h1 className="text-xl  font-semibold text-[#313166]">Customer Rhythm</h1>
           </div>
           
-          <div className="flex bg-gray-100 p-1  rounded-xl shadow-inner overflow-x-auto">
-            <button
-              onClick={() => setActiveSection("templates")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                activeSection === "templates"
-                  ? "bg-white text-[#313166] shadow-md"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <LayoutTemplate size={18} />
-              Templates
-            </button>
-            <button
-              onClick={() => setActiveSection("send_campaign")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                activeSection === "send_campaign"
-                  ? "bg-white text-[#313166] shadow-md"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Megaphone size={18} />
-              Send Campaign
-            </button>
-            <button
-              onClick={() => setActiveSection("automation")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                activeSection === "automation"
-                  ? "bg-white text-[#313166] shadow-md"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Zap size={18} />
-             Retention Flow
-            </button>
-            <button
-              onClick={() => setActiveSection("engagement")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs  font-medium transition-all whitespace-nowrap ${
-                activeSection === "engagement"
-                  ? "bg-white text-[#313166] shadow-md"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Target size={18} />
-              Campaign Report
-            </button>
+          <div className="flex items-center gap-3">
+            <div className="flex bg-gray-100 p-1  rounded-xl shadow-inner overflow-x-auto">
+              <button
+                onClick={() => setActiveSection("templates")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  activeSection === "templates"
+                    ? "bg-white text-[#313166] shadow-md"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <LayoutTemplate size={18} />
+                Templates
+              </button>
+              <button
+                onClick={() => setActiveSection("send_campaign")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  activeSection === "send_campaign"
+                    ? "bg-white text-[#313166] shadow-md"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Megaphone size={18} />
+                Send Campaign
+              </button>
+              <button
+                onClick={() => setActiveSection("automation")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  activeSection === "automation"
+                    ? "bg-white text-[#313166] shadow-md"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Zap size={18} />
+                Automation
+              </button>
+              <button
+                onClick={() => setActiveSection("engagement")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs  font-medium transition-all whitespace-nowrap ${
+                  activeSection === "engagement"
+                    ? "bg-white text-[#313166] shadow-md"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Target size={18} />
+                Rhythm Report
+              </button>
+            </div>
+            <VideoPopupWithShare
+              // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
+              animationData={soon}
+              buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
+            />
           </div>
         </div>
       )}
@@ -80,11 +108,27 @@ const CustomerRhythm = () => {
         {activeSection === "templates" && (
           isCreatingTemplate ? (
             <TemplateBuilder 
-              onCancel={() => setIsCreatingTemplate(false)} 
-              onSuccess={() => setIsCreatingTemplate(false)}
+              initialTemplate={templateToCopy}
+              onCancel={() => {
+                setIsCreatingTemplate(false);
+                setTemplateToCopy(null);
+              }} 
+              onSuccess={() => {
+                setIsCreatingTemplate(false);
+                setTemplateToCopy(null);
+              }}
             />
           ) : (
-            <TemplateDashboard onCreateNew={() => setIsCreatingTemplate(true)} />
+            <TemplateDashboard 
+              onCreateNew={() => {
+                setTemplateToCopy(null);
+                setIsCreatingTemplate(true);
+              }}
+              onCopyTemplate={(template) => {
+                setTemplateToCopy(template);
+                setIsCreatingTemplate(true);
+              }}
+            />
           )
         )}
 
@@ -93,16 +137,7 @@ const CustomerRhythm = () => {
         )}
 
         {activeSection === "automation" && (
-          <div className="flex flex-col items-center justify-center h-full p-12 bg-white rounded-2xl border border-gray-100 shadow-sm text-center">
-            <div className="p-4 bg-gray-50 rounded-full mb-6">
-              <Zap size={48} className="text-gray-300" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Workflow Automation</h2>
-            <p className="text-gray-500 max-w-md mx-auto mb-8">
-              Design intelligent message sequences that trigger based on customer behavior.
-            </p>
-            <span className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-full text-sm font-bold">Coming Soon</span>
-          </div>
+          <Template />
         )}
 
         {activeSection === "engagement" && (

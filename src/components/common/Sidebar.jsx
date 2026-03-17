@@ -15,6 +15,7 @@ import integrationIcon from "/assets/integration-icon.png";
 import kycIcon from "/assets/iconamoon_search-bold.png";
 import settingsIcon from "/assets/settings-icon.png";
 import rhytmIcon from "/assets/ix_customer.png";
+import subscriptionIcon from "/assets/crown-icon.png";
 
 function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -103,6 +104,12 @@ function Sidebar() {
       module: "Customer Rhythm",
       icon: rhytmIcon,
       label: "Customer Rhythm",
+    },
+    {
+      path: "/subscription",
+      module: "Settings",
+      icon: subscriptionIcon,
+      label: "Subscription",
     },
     {
       path: "/settings",
