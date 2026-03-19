@@ -32,6 +32,8 @@ const LiveChat = () => {
   const [newMessage, setNewMessage] = useState("");
   const [isWindowOpen, setIsWindowOpen] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("requesting");
+  const [isIntervening, setIsIntervening] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -50,6 +52,21 @@ const LiveChat = () => {
   }, [selectedCustomer]);
 
   useEffect(() => {
+    // When selected customer changes, update isWindowOpen
+    if (selectedCustomer && messages.length > 0) {
+      const lastInbound = [...messages].reverse().find(m => m.status === 'received');
+      if (lastInbound) {
+        const lastInboundTime = new Date(lastInbound.timestamp);
+        const now = new Date();
+        const diffInHours = (now - lastInboundTime) / (1000 * 60 * 60);
+        setIsWindowOpen(diffInHours < 24);
+      } else {
+        setIsWindowOpen(false);
+      }
+    }
+  }, [selectedCustomer, messages]);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
@@ -61,56 +78,25 @@ const LiveChat = () => {
     try {
       if (showLoading) setLoading(true);
       const retailerId = localStorage.getItem('retailerId');
-      // Fetch customers and also recent message logs to identify who to chat with
-      const [customerRes, logRes] = await Promise.all([
-        api.get(`/api/customers/all?retailerId=${retailerId}&limit=100`),
-        api.get(`/api/integrationManagement/whatsapp/logs?limit=100`)
-      ]);
+      
+      const res = await api.get(`/api/customers/all?retailerId=${retailerId}&limit=500`);
 
-      if (customerRes.data && logRes.data.status) {
-        const allCustomers = customerRes.data.customers || [];
-        const logs = logRes.data.data || [];
+      if (res.data) {
+        const allCustomers = res.data.customers || [];
 
-        // Identify customers who have messages
-        const customerMap = new Map();
-        
-        // Initialize with all customers
-        allCustomers.forEach(c => {
-          customerMap.set(c.mobileNumber, {
-            ...c,
-            lastMessage: null,
-            unreadCount: 0
-          });
-        });
-
-        // Add info from logs
-        logs.forEach(log => {
-          const mobile = log.mobileNumber.replace(/^\+/, '');
-          const existing = customerMap.get(mobile) || customerMap.get(log.mobileNumber);
-          
-          if (existing) {
-            if (!existing.lastMessage || new Date(log.timestamp) > new Date(existing.lastMessage.timestamp)) {
-              existing.lastMessage = log;
-            }
-          } else {
-            // Log from unknown customer
-            customerMap.set(log.mobileNumber, {
-              mobileNumber: log.mobileNumber,
-              firstname: log.firstname || "Unknown",
-              lastname: log.lastname || "",
-              lastMessage: log,
-              unreadCount: 0,
-              _id: log.customerId || log.mobileNumber
-            });
-          }
-        });
-
-        const sortedCustomers = Array.from(customerMap.values())
-          .filter(c => c.lastMessage) // Only show customers with message history
+        // Sort by last activity
+        const sortedCustomers = allCustomers
+          .filter(c => c.lastInboundMessageAt || c.lastOutboundMessageAt)
           .sort((a, b) => {
-            const dateA = a.lastMessage ? new Date(a.lastMessage.timestamp) : 0;
-            const dateB = b.lastMessage ? new Date(b.lastMessage.timestamp) : 0;
-            return dateB - dateA;
+            const timeA = Math.max(
+              new Date(a.lastInboundMessageAt || 0).getTime(), 
+              new Date(a.lastOutboundMessageAt || 0).getTime()
+            );
+            const timeB = Math.max(
+              new Date(b.lastInboundMessageAt || 0).getTime(), 
+              new Date(b.lastOutboundMessageAt || 0).getTime()
+            );
+            return timeB - timeA;
           });
 
         setCustomers(sortedCustomers);
@@ -136,26 +122,55 @@ const LiveChat = () => {
   const syncMessages = async (mobileNumber, showLoading = true) => {
     try {
       if (showLoading) setLoadingMessages(true);
-      const res = await api.get(`/api/integrationManagement/whatsapp/logs?search=${mobileNumber}&limit=50`);
+      const res = await api.get(`/api/whatsappMessage/logs?search=${mobileNumber}&limit=50`);
       if (res.data.status) {
         const sortedMessages = res.data.data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setMessages(sortedMessages);
-        
-        // Check 24-hour window
-        const lastInbound = [...sortedMessages].reverse().find(m => m.status === 'received');
-        if (lastInbound) {
-          const lastInboundTime = new Date(lastInbound.timestamp);
-          const now = new Date();
-          const diffInHours = (now - lastInboundTime) / (1000 * 60 * 60);
-          setIsWindowOpen(diffInHours < 24);
-        } else {
-          setIsWindowOpen(false);
-        }
       }
     } catch (error) {
       console.error("Error syncing messages:", error);
     } finally {
       if (showLoading) setLoadingMessages(false);
+    }
+  };
+
+  const handleIntervene = async () => {
+    if (!selectedCustomer) return;
+    try {
+      setIsIntervening(true);
+      const res = await api.post("/api/whatsappMessage/intervene", { 
+        customerId: selectedCustomer._id 
+      });
+      if (res.data.status) {
+        toast.success("Joined conversation");
+        setSelectedCustomer(res.data.data);
+        fetchCustomers(false);
+      }
+    } catch (error) {
+      console.error("Error intervening:", error);
+      toast.error("Failed to join conversation");
+    } finally {
+      setIsIntervening(false);
+    }
+  };
+
+  const handleResolve = async () => {
+    if (!selectedCustomer) return;
+    try {
+      setIsIntervening(true);
+      const res = await api.post("/api/whatsappMessage/resolve", { 
+        customerId: selectedCustomer._id 
+      });
+      if (res.data.status) {
+        toast.success("Conversation resolved");
+        setSelectedCustomer(null);
+        fetchCustomers(false);
+      }
+    } catch (error) {
+      console.error("Error resolving:", error);
+      toast.error("Failed to resolve conversation");
+    } finally {
+      setIsIntervening(false);
     }
   };
 
@@ -173,7 +188,7 @@ const LiveChat = () => {
         message: newMessage
       };
 
-      const res = await api.post("/api/integrationManagement/whatsapp/text", payload);
+      const res = await api.post("/api/whatsappMessage/text", payload);
       if (res.data) {
         setNewMessage("");
         syncMessages(selectedCustomer.mobileNumber, false);
@@ -191,7 +206,7 @@ const LiveChat = () => {
         templateName: template.name
       };
 
-      const res = await api.post("/api/integrationManagement/whatsapp/template", payload);
+      const res = await api.post("/api/whatsappMessage/template", payload);
       if (res.data) {
         toast.success("Template sent successfully");
         setShowTemplateModal(false);
@@ -203,7 +218,13 @@ const LiveChat = () => {
     }
   };
 
-  const filteredCustomers = customers.filter(c => 
+  const filteredCustomersByTab = customers.filter(c => {
+    if (activeTab === "requesting") return c.chatStatus === "requesting";
+    if (activeTab === "intervened") return c.chatStatus === "intervened";
+    return true; // "all"
+  });
+
+  const filteredCustomers = filteredCustomersByTab.filter(c => 
     `${c.firstname} ${c.lastname}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.mobileNumber.includes(searchTerm)
   );
@@ -223,6 +244,17 @@ const LiveChat = () => {
       {/* Left Sidebar - Customer List */}
       <div className={`w-full md:w-80 border-r border-gray-100 flex flex-col bg-gray-50/30 ${selectedCustomer ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-gray-100 bg-white">
+          <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-xl">
+             {["requesting", "intervened", "all"].map(tab => (
+               <button 
+                 key={tab}
+                 onClick={() => setActiveTab(tab)}
+                 className={`flex-1 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-all ${activeTab === tab ? 'bg-white text-[#313166] shadow-sm' : 'text-gray-400'}`}
+               >
+                 {tab}
+               </button>
+             ))}
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input 
@@ -239,7 +271,7 @@ const LiveChat = () => {
           {loading && customers.length === 0 ? (
             <div className="p-8 text-center text-gray-400 text-sm">Loading chats...</div>
           ) : filteredCustomers.length === 0 ? (
-            <div className="p-8 text-center text-gray-400 text-sm">No chats found</div>
+            <div className="p-8 text-center text-gray-400 text-sm">No chats in {activeTab}</div>
           ) : (
             filteredCustomers.map((customer) => (
               <div 
@@ -247,8 +279,11 @@ const LiveChat = () => {
                 onClick={() => handleSelectCustomer(customer)}
                 className={`p-4 flex items-center gap-3 cursor-pointer hover:bg-white transition-colors border-b border-gray-50 ${selectedCustomer?._id === customer._id ? 'bg-white border-l-4 border-l-[#313166]' : ''}`}
               >
-                <div className="w-12 h-12 rounded-full bg-[#313166]/10 flex items-center justify-center text-[#313166] font-bold shrink-0">
+                <div className="w-12 h-12 rounded-full bg-[#313166]/10 flex items-center justify-center text-[#313166] font-bold shrink-0 relative">
                   {customer.firstname?.charAt(0) || <User size={20} />}
+                  {customer.chatStatus === 'requesting' && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full"></span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start mb-0.5">
@@ -256,12 +291,11 @@ const LiveChat = () => {
                       {customer.firstname} {customer.lastname}
                     </h4>
                     <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                      {customer.lastMessage && format(new Date(customer.lastMessage.timestamp), 'HH:mm')}
+                      {customer.lastInboundMessageAt ? format(new Date(customer.lastInboundMessageAt), 'HH:mm') : customer.lastOutboundMessageAt ? format(new Date(customer.lastOutboundMessageAt), 'HH:mm') : ''}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 truncate flex items-center gap-1">
-                    {customer.lastMessage?.status !== 'received' && getStatusIcon(customer.lastMessage?.status)}
-                    {customer.lastMessage?.messageContent || "No messages yet"}
+                    {customer.lastMessageContent || "No messages yet"}
                   </p>
                 </div>
               </div>
@@ -286,13 +320,37 @@ const LiveChat = () => {
                 {selectedCustomer.firstname?.charAt(0)}
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 text-sm">{selectedCustomer.firstname} {selectedCustomer.lastname}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-gray-900 text-sm">{selectedCustomer.firstname} {selectedCustomer.lastname}</h3>
+                  <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase ${selectedCustomer.chatStatus === 'intervened' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
+                    {selectedCustomer.chatStatus === 'intervened' ? 'Live' : 'Bot'}
+                  </span>
+                </div>
                 <p className="text-[10px] text-gray-500 flex items-center gap-1">
                   <Phone size={10} /> {selectedCustomer.mobileNumber}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {selectedCustomer.chatStatus === 'requesting' ? (
+                <button 
+                  onClick={handleIntervene}
+                  disabled={isIntervening}
+                  className="flex items-center gap-1.5 px-4 py-1.5 bg-[#313166] text-white rounded-lg text-xs font-bold hover:bg-[#3d3b83] transition-all disabled:opacity-50"
+                >
+                  <MessageCircle size={14} />
+                  Intervene
+                </button>
+              ) : selectedCustomer.chatStatus === 'intervened' && (
+                <button 
+                  onClick={handleResolve}
+                  disabled={isIntervening}
+                  className="flex items-center gap-1.5 px-4 py-1.5 bg-green-500 text-white rounded-lg text-xs font-bold hover:bg-green-600 transition-all disabled:opacity-50"
+                >
+                  <Check size={14} />
+                  Resolve
+                </button>
+              )}
               <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase ${isWindowOpen ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                 <Clock size={12} />
                 {isWindowOpen ? '24h Window Open' : '24h Window Closed'}
@@ -333,7 +391,19 @@ const LiveChat = () => {
 
           {/* Input Area */}
           <div className="p-4 border-t border-gray-100 bg-white">
-            {!isWindowOpen ? (
+            {selectedCustomer.chatStatus === 'requesting' ? (
+              <div className="flex flex-col items-center justify-center p-6 bg-[#313166]/5 rounded-2xl border border-dashed border-[#313166]/20">
+                <p className="text-sm text-[#313166] font-medium mb-3">Customer is waiting for a response</p>
+                <button 
+                  onClick={handleIntervene}
+                  disabled={isIntervening}
+                  className="flex items-center gap-2 px-8 py-2.5 bg-[#313166] text-white rounded-xl text-sm font-bold hover:bg-[#3d3b83] transition-all shadow-lg shadow-[#313166]/20 disabled:opacity-50"
+                >
+                  <MessageCircle size={18} />
+                  Intervene to Chat
+                </button>
+              </div>
+            ) : !isWindowOpen ? (
               <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                 <AlertCircle size={24} className="text-amber-500 mb-2" />
                 <p className="text-sm text-gray-600 text-center mb-4">

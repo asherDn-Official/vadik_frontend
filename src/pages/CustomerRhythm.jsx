@@ -118,13 +118,9 @@ import Template from "../components/settings/Template";
       )}
 
       {/* Main Content Area */}
-      <div className={`flex-1 overflow-auto ${isCreatingTemplate || (activeSection === "live_chat" && userEmail === "anbumanickam1972@gmail.com") ? '' : 'p-6'}`}>
+      <div className={`flex-1 overflow-auto ${isCreatingTemplate || activeSection === "live_chat" ? '' : 'p-6'}`}>
         {activeSection === "live_chat" && (
-          userEmail === "anbumanickam1972@gmail.com" ? (
-            <LiveChat />
-          ) : (
-            <ComingSoon />
-          )
+          <LiveChat />
         )}
         {activeSection === "templates" && (
           isCreatingTemplate ? (
