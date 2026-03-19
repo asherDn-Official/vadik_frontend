@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Zap, LayoutTemplate, Target, Megaphone, Send } from "lucide-react";
+import { Zap, LayoutTemplate, Target, Megaphone, Send, MessageCircle } from "lucide-react";
 import TemplateDashboard from "../components/customerRhythm/TemplateDashboard";
 import TemplateBuilder from "../components/customerRhythm/TemplateBuilder";
 import SendCampaign from "../components/customerRhythm/SendCampaign";
 import EngagementDashboard from "../components/customerRhythm/EngagementDashboard";
+import LiveChat from "../components/customerRhythm/LiveChat";
+import ComingSoon from "../components/common/ComingSoon";
 import { useAuth } from "../context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
@@ -11,6 +13,7 @@ import Template from "../components/settings/Template";
 
   const CustomerRhythm = () => {
   const { auth } = useAuth();
+  const userEmail = auth?.user?.email || auth?.data?.email || localStorage.getItem("email");
   const location = useLocation();
   const [soon, setSoon] = useState();
   const [activeSection, setActiveSection] = useState("templates");
@@ -27,7 +30,7 @@ import Template from "../components/settings/Template";
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
-    if (section && ["templates", "send_campaign", "automation", "engagement"].includes(section)) {
+    if (section && ["templates", "send_campaign", "automation", "engagement", "live_chat"].includes(section)) {
       setActiveSection(section);
     }
   }, [location.search]);
@@ -49,6 +52,17 @@ import Template from "../components/settings/Template";
           
           <div className="flex items-center gap-3">
             <div className="flex bg-gray-100 p-1  rounded-xl shadow-inner overflow-x-auto">
+              <button
+                onClick={() => setActiveSection("live_chat")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  activeSection === "live_chat"
+                    ? "bg-white text-[#313166] shadow-md"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <MessageCircle size={18} />
+                Live Chat
+              </button>
               <button
                 onClick={() => setActiveSection("templates")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
@@ -104,7 +118,14 @@ import Template from "../components/settings/Template";
       )}
 
       {/* Main Content Area */}
-      <div className={`flex-1 overflow-auto ${isCreatingTemplate ? '' : 'p-6'}`}>
+      <div className={`flex-1 overflow-auto ${isCreatingTemplate || (activeSection === "live_chat" && userEmail === "anbumanickam1972@gmail.com") ? '' : 'p-6'}`}>
+        {activeSection === "live_chat" && (
+          userEmail === "anbumanickam1972@gmail.com" ? (
+            <LiveChat />
+          ) : (
+            <ComingSoon />
+          )
+        )}
         {activeSection === "templates" && (
           isCreatingTemplate ? (
             <TemplateBuilder 
