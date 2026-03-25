@@ -35,6 +35,17 @@ const LiveChat = () => {
   const [activeTab, setActiveTab] = useState("requesting");
   const [isIntervening, setIsIntervening] = useState(false);
   const messagesEndRef = useRef(null);
+  const customersAbortRef = useRef(null);
+  const customersFetchInFlightRef = useRef(false);
+  const lastCustomersFetchRef = useRef(0);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      customersAbortRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     fetchCustomers();
@@ -75,11 +86,27 @@ const LiveChat = () => {
   };
 
   const fetchCustomers = async (showLoading = true) => {
+    if (customersFetchInFlightRef.current) return;
+    const now = Date.now();
+    if (!showLoading && now - lastCustomersFetchRef.current < 4000) return;
+
+    customersFetchInFlightRef.current = true;
+    lastCustomersFetchRef.current = now;
+
+    if (customersAbortRef.current) {
+      customersAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    customersAbortRef.current = controller;
+
     try {
-      if (showLoading) setLoading(true);
+      if (showLoading && isMountedRef.current) setLoading(true);
       const retailerId = localStorage.getItem('retailerId');
       
-      const res = await api.get(`/api/customers/all?retailerId=${retailerId}&limit=500`);
+      const res = await api.get(
+        `/api/customers/all?retailerId=${retailerId}&limit=200&fields=chat&chatOnly=true&skipCount=true`,
+        { signal: controller.signal }
+      );
 
       if (res.data) {
         const allCustomers = res.data.customers || [];
@@ -99,12 +126,16 @@ const LiveChat = () => {
             return timeB - timeA;
           });
 
-        setCustomers(sortedCustomers);
+        if (isMountedRef.current) setCustomers(sortedCustomers);
       }
     } catch (error) {
+      if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") {
+        return;
+      }
       console.error("Error fetching customers for chat:", error);
     } finally {
-      if (showLoading) setLoading(false);
+      if (showLoading && isMountedRef.current) setLoading(false);
+      customersFetchInFlightRef.current = false;
     }
   };
 
