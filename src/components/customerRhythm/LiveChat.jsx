@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import api from "../../api/apiconfig";
 import { toast } from "react-toastify";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 
 const LiveChat = () => {
   const [customers, setCustomers] = useState([]);
@@ -322,7 +322,14 @@ const LiveChat = () => {
                       {customer.firstname} {customer.lastname}
                     </h4>
                     <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                      {customer.lastInboundMessageAt ? format(new Date(customer.lastInboundMessageAt), 'HH:mm') : customer.lastOutboundMessageAt ? format(new Date(customer.lastOutboundMessageAt), 'HH:mm') : ''}
+                      {(() => {
+                        const lastTime = customer.lastInboundMessageAt || customer.lastOutboundMessageAt;
+                        if (!lastTime) return "";
+                        const lastDate = new Date(lastTime);
+                        return isToday(lastDate)
+                          ? format(lastDate, "HH:mm")
+                          : format(lastDate, "dd MMM, HH:mm");
+                      })()}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 truncate flex items-center gap-1">
@@ -409,7 +416,12 @@ const LiveChat = () => {
                     <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm relative ${isMine ? 'bg-[#313166] text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'}`}>
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.messageContent}</p>
                       <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? 'text-[#ffffff90]' : 'text-gray-400'}`}>
-                        {format(new Date(msg.timestamp), 'HH:mm')}
+                        {(() => {
+                          const msgDate = new Date(msg.timestamp);
+                          return isToday(msgDate)
+                            ? format(msgDate, "HH:mm")
+                            : format(msgDate, "dd MMM, HH:mm");
+                        })()}
                         {isMine && getStatusIcon(msg.status)}
                       </div>
                     </div>
