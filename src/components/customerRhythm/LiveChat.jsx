@@ -44,6 +44,10 @@ const LiveChat = () => {
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [mediaCaption, setMediaCaption] = useState("");
   const [mediaUsage, setMediaUsage] = useState(null);
+  const [mediaSearch, setMediaSearch] = useState("");
+  const [mediaTypeFilter, setMediaTypeFilter] = useState("all");
+  const [mediaDateFrom, setMediaDateFrom] = useState("");
+  const [mediaDateTo, setMediaDateTo] = useState("");
   const [pendingMediaMessages, setPendingMediaMessages] = useState([]);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -78,11 +82,20 @@ const LiveChat = () => {
   const fetchMediaUsage = async () => {
     try {
       const res = await api.get("/api/subscriptions/credit/usage");
-      if (res.data?.usage?.mediaStorage) {
-        setMediaUsage(res.data.usage.mediaStorage);
+      const mediaStorage =
+        res.data?.data?.mediaStorage || res.data?.usage?.mediaStorage;
+      if (mediaStorage && (mediaStorage.used !== undefined || mediaStorage.allowed !== undefined)) {
+        setMediaUsage({
+          used: Number(mediaStorage.used || 0),
+          allowed: Number(mediaStorage.allowed || 0)
+        });
+      } else {
+        // Fallback to avoid infinite "loading" state if API shape changes
+        setMediaUsage({ used: 0, allowed: 0 });
       }
     } catch (error) {
       console.error("Error fetching media usage:", error);
+      setMediaUsage({ used: 0, allowed: 0 });
     }
   };
 
@@ -274,6 +287,10 @@ const LiveChat = () => {
     setShowMediaModal(true);
     setSelectedMedia(null);
     setMediaCaption("");
+    setMediaSearch("");
+    setMediaTypeFilter("all");
+    setMediaDateFrom("");
+    setMediaDateTo("");
     await fetchMediaLibrary();
     await fetchMediaUsage();
   };
@@ -409,6 +426,48 @@ const LiveChat = () => {
   const mediaUsed = mediaUsage?.used || 0;
   const mediaRemaining = Math.max(0, mediaLimit - mediaUsed);
   const isNearMediaLimit = mediaLimit > 0 && mediaRemaining / mediaLimit <= 0.1;
+
+  const matchesMediaType = (media) => {
+    if (mediaTypeFilter === "all") return true;
+    const mime = String(media?.mimeType || "").toLowerCase();
+    if (mediaTypeFilter === "image") return mime.startsWith("image/");
+    if (mediaTypeFilter === "video") return mime.startsWith("video/");
+    if (mediaTypeFilter === "audio") return mime.startsWith("audio/");
+    if (mediaTypeFilter === "document") {
+      return (
+        mime.includes("pdf") ||
+        mime.includes("msword") ||
+        mime.includes("officedocument") ||
+        mime.startsWith("application/")
+      );
+    }
+    return true;
+  };
+
+  const matchesMediaDate = (media) => {
+    if (!mediaDateFrom && !mediaDateTo) return true;
+    const rawDate = media?.createdAt || media?.uploadedAt || media?.updatedAt;
+    if (!rawDate) return false;
+    const mediaTime = new Date(rawDate).getTime();
+    if (Number.isNaN(mediaTime)) return false;
+
+    if (mediaDateFrom) {
+      const fromTime = new Date(`${mediaDateFrom}T00:00:00`).getTime();
+      if (mediaTime < fromTime) return false;
+    }
+    if (mediaDateTo) {
+      const toTime = new Date(`${mediaDateTo}T23:59:59`).getTime();
+      if (mediaTime > toTime) return false;
+    }
+    return true;
+  };
+
+  const filteredMediaLibrary = mediaLibrary.filter((media) => {
+    const name = String(media?.fileName || "").toLowerCase();
+    const q = mediaSearch.trim().toLowerCase();
+    const matchesName = q ? name.includes(q) : true;
+    return matchesName && matchesMediaType(media) && matchesMediaDate(media);
+  });
 
   return (
     <div className="flex h-[calc(100vh-140px)] bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
@@ -792,14 +851,49 @@ const LiveChat = () => {
               </div>
             </div>
 
+            <div className="p-4 border-b border-gray-100 bg-gray-50/40">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <input
+                  type="text"
+                  placeholder="Search by file name..."
+                  className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#313166]/20"
+                  value={mediaSearch}
+                  onChange={(e) => setMediaSearch(e.target.value)}
+                />
+                <select
+                  className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#313166]/20"
+                  value={mediaTypeFilter}
+                  onChange={(e) => setMediaTypeFilter(e.target.value)}
+                >
+                  <option value="all">All file types</option>
+                  <option value="image">Images</option>
+                  <option value="video">Videos</option>
+                  <option value="audio">Audio</option>
+                  <option value="document">Documents</option>
+                </select>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#313166]/20"
+                  value={mediaDateFrom}
+                  onChange={(e) => setMediaDateFrom(e.target.value)}
+                />
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#313166]/20"
+                  value={mediaDateTo}
+                  onChange={(e) => setMediaDateTo(e.target.value)}
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 max-h-[65vh] overflow-y-auto">
               <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {mediaLibraryLoading ? (
                   <div className="text-sm text-gray-400">Loading media...</div>
-                ) : mediaLibrary.length === 0 ? (
-                  <div className="text-sm text-gray-400">No media uploaded yet.</div>
+                ) : filteredMediaLibrary.length === 0 ? (
+                  <div className="text-sm text-gray-400">No media matches the current filters.</div>
                 ) : (
-                  mediaLibrary.map((media) => {
+                  filteredMediaLibrary.map((media) => {
                     const isSelected = selectedMedia?._id === media._id;
                     const isImage = media.mimeType?.startsWith("image/");
                     return (
