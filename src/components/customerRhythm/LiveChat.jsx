@@ -15,7 +15,10 @@ import {
   MoreVertical,
   Paperclip,
   Smile,
-  Info
+  Info,
+  UploadCloud,
+  Trash2,
+  X
 } from "lucide-react";
 import api from "../../api/apiconfig";
 import { toast } from "react-toastify";
@@ -32,9 +35,18 @@ const LiveChat = () => {
   const [newMessage, setNewMessage] = useState("");
   const [isWindowOpen, setIsWindowOpen] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showMediaModal, setShowMediaModal] = useState(false);
   const [activeTab, setActiveTab] = useState("requesting");
   const [isIntervening, setIsIntervening] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [mediaLibrary, setMediaLibrary] = useState([]);
+  const [mediaLibraryLoading, setMediaLibraryLoading] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState(null);
+  const [mediaCaption, setMediaCaption] = useState("");
+  const [mediaUsage, setMediaUsage] = useState(null);
+  const [pendingMediaMessages, setPendingMediaMessages] = useState([]);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
   const customersAbortRef = useRef(null);
   const customersFetchInFlightRef = useRef(false);
   const lastCustomersFetchRef = useRef(0);
@@ -50,6 +62,7 @@ const LiveChat = () => {
   useEffect(() => {
     fetchCustomers();
     fetchTemplates();
+    fetchMediaUsage();
     
     // Set up polling for new messages
     const interval = setInterval(() => {
@@ -61,6 +74,32 @@ const LiveChat = () => {
 
     return () => clearInterval(interval);
   }, [selectedCustomer]);
+
+  const fetchMediaUsage = async () => {
+    try {
+      const res = await api.get("/api/subscriptions/credit/usage");
+      if (res.data?.usage?.mediaStorage) {
+        setMediaUsage(res.data.usage.mediaStorage);
+      }
+    } catch (error) {
+      console.error("Error fetching media usage:", error);
+    }
+  };
+
+  const fetchMediaLibrary = async () => {
+    try {
+      setMediaLibraryLoading(true);
+      const res = await api.get("/api/integrationManagement/whatsapp/media?limit=200");
+      if (res.data?.status) {
+        setMediaLibrary(res.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching media library:", error);
+      toast.error("Failed to load media library");
+    } finally {
+      setMediaLibraryLoading(false);
+    }
+  };
 
   useEffect(() => {
     // When selected customer changes, update isWindowOpen
@@ -211,7 +250,7 @@ const LiveChat = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedCustomer) return;
+    if (!newMessage.trim() || !selectedCustomer || isUploading) return;
 
     try {
       const payload = {
@@ -227,6 +266,102 @@ const LiveChat = () => {
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error(error.response?.data?.error || "Failed to send message");
+    }
+  };
+
+
+  const openMediaLibrary = async () => {
+    setShowMediaModal(true);
+    setSelectedMedia(null);
+    setMediaCaption("");
+    await fetchMediaLibrary();
+    await fetchMediaUsage();
+  };
+
+  const handleMediaLibraryUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setMediaLibraryLoading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await api.post("/api/integrationManagement/whatsapp/media/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      if (res.data?.status) {
+        toast.success("Media uploaded");
+        await fetchMediaLibrary();
+        await fetchMediaUsage();
+      } else {
+        toast.error(res.data?.message || "Upload failed");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Upload failed");
+    } finally {
+      setMediaLibraryLoading(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleDeleteMedia = async (mediaId) => {
+    try {
+      await api.delete(`/api/integrationManagement/whatsapp/media/${mediaId}`);
+      toast.success("Media deleted");
+      await fetchMediaLibrary();
+      await fetchMediaUsage();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete media");
+    }
+  };
+
+  const handleSendSelectedMedia = async () => {
+    if (!selectedMedia || !selectedCustomer) return;
+
+    const toNumber = selectedCustomer.mobileNumber.startsWith('+')
+      ? selectedCustomer.mobileNumber
+      : `+${selectedCustomer.countryCode || ''}${selectedCustomer.mobileNumber}`.replace('++', '+');
+
+    const tempId = `pending-${Date.now()}`;
+    const pendingItem = {
+      id: tempId,
+      mediaUrl: selectedMedia.s3Url,
+      messageType: selectedMedia.mimeType?.startsWith("image/")
+        ? "image"
+        : selectedMedia.mimeType?.startsWith("video/")
+        ? "video"
+        : selectedMedia.mimeType?.startsWith("audio/")
+        ? "audio"
+        : "document",
+      messageContent: mediaCaption.trim(),
+      status: "sending",
+      timestamp: new Date()
+    };
+
+    setPendingMediaMessages((prev) => [...prev, pendingItem]);
+    setShowMediaModal(false);
+    setSelectedMedia(null);
+    setMediaCaption("");
+
+    try {
+      setIsUploading(true);
+      await api.post("/api/whatsappMessage/media-url", {
+        to: toNumber,
+        caption: pendingItem.messageContent,
+        mediaUrl: selectedMedia.s3Url,
+        mimeType: selectedMedia.mimeType,
+        fileName: selectedMedia.fileName,
+        mediaSizeBytes: selectedMedia.sizeBytes || 0
+      });
+      setPendingMediaMessages((prev) => prev.filter((p) => p.id !== tempId));
+      syncMessages(selectedCustomer.mobileNumber, false);
+    } catch (error) {
+      setPendingMediaMessages((prev) =>
+        prev.map((p) => (p.id === tempId ? { ...p, status: "failed" } : p))
+      );
+      toast.error(error.response?.data?.error || "Failed to send media");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -269,6 +404,11 @@ const LiveChat = () => {
       default: return null;
     }
   };
+
+  const mediaLimit = mediaUsage?.allowed || 0;
+  const mediaUsed = mediaUsage?.used || 0;
+  const mediaRemaining = Math.max(0, mediaLimit - mediaUsed);
+  const isNearMediaLimit = mediaLimit > 0 && mediaRemaining / mediaLimit <= 0.1;
 
   return (
     <div className="flex h-[calc(100vh-140px)] bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
@@ -402,6 +542,20 @@ const LiveChat = () => {
             </div>
           </div>
 
+          {isNearMediaLimit && (
+            <div className="mx-4 mt-3 mb-2 flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2">
+              <div className="text-xs text-amber-700">
+                Media storage is almost full. {mediaUsed.toFixed(2)}MB used of {mediaLimit.toFixed(2)}MB.
+              </div>
+              <button
+                className="text-xs font-bold text-amber-700 underline"
+                onClick={openMediaLibrary}
+              >
+                Manage Media
+              </button>
+            </div>
+          )}
+
           {/* Messages Window */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F4F5F9]/30">
             {loadingMessages ? (
@@ -409,14 +563,34 @@ const LiveChat = () => {
                 <RefreshCcw size={24} className="animate-spin text-gray-300" />
               </div>
             ) : (
-              messages.map((msg, idx) => {
+              [...messages, ...pendingMediaMessages].map((msg, idx) => {
                 const isMine = msg.status !== 'received';
                 return (
-                  <div key={msg._id || idx} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                  <div key={msg._id || msg.id || idx} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm relative ${isMine ? 'bg-[#313166] text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'}`}>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.messageContent}</p>
+                      {msg.mediaUrl && String(msg.mediaUrl).startsWith("http") && (
+                        <div className="mb-2">
+                          {msg.messageType === "image" && (
+                            <img src={msg.mediaUrl} alt="media" className="max-w-full rounded-xl" />
+                          )}
+                          {msg.messageType === "video" && (
+                            <video src={msg.mediaUrl} controls className="max-w-full rounded-xl" />
+                          )}
+                          {msg.messageType === "audio" && (
+                            <audio src={msg.mediaUrl} controls className="w-full" />
+                          )}
+                          {msg.messageType === "document" && (
+                            <a href={msg.mediaUrl} target="_blank" rel="noreferrer" className={`text-xs underline ${isMine ? 'text-white' : 'text-[#313166]'}`}>
+                              View document
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {msg.messageContent && (
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.messageContent}</p>
+                      )}
                       <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? 'text-[#ffffff90]' : 'text-gray-400'}`}>
-                        {(() => {
+                        {msg.status === "sending" ? "Sending..." : (() => {
                           const msgDate = new Date(msg.timestamp);
                           return isToday(msgDate)
                             ? format(msgDate, "HH:mm")
@@ -424,6 +598,11 @@ const LiveChat = () => {
                         })()}
                         {isMine && getStatusIcon(msg.status)}
                       </div>
+                      {msg.status === "failed" && (
+                        <div className="mt-1 text-[10px] text-red-200">
+                          Failed to send
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -463,7 +642,12 @@ const LiveChat = () => {
             ) : (
               <div className="flex items-end gap-3">
                 <div className="flex gap-2 mb-2">
-                   <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                   <button 
+                     className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                     onClick={openMediaLibrary}
+                     disabled={isUploading}
+                     title="Attach media"
+                   >
                      <Paperclip size={20} />
                    </button>
                    <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
@@ -483,10 +667,11 @@ const LiveChat = () => {
                         handleSendMessage();
                       }
                     }}
+                    disabled={isUploading}
                   />
                   <button 
                     onClick={handleSendMessage}
-                    disabled={!newMessage.trim()}
+                    disabled={!newMessage.trim() || isUploading}
                     className="p-2 bg-[#313166] text-white rounded-xl hover:bg-[#3d3b83] transition-all disabled:opacity-50 mb-1 mr-1"
                   >
                     <Send size={18} />
@@ -561,6 +746,155 @@ const LiveChat = () => {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Media Library Modal */}
+      {showMediaModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-200">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Media Library</h3>
+                <p className="text-xs text-gray-500">Upload once and reuse in chat</p>
+              </div>
+              <button
+                onClick={() => setShowMediaModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-4">
+              <div className="text-xs text-gray-500">
+                {mediaUsage
+                  ? `Storage: ${mediaUsed.toFixed(2)}MB / ${mediaLimit.toFixed(2)}MB`
+                  : "Storage usage loading..."}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#313166] text-white rounded-xl text-xs font-bold hover:bg-[#3d3b83] transition-all"
+                >
+                  <UploadCloud size={16} />
+                  Upload Media
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={handleMediaLibraryUpload}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 max-h-[65vh] overflow-y-auto">
+              <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {mediaLibraryLoading ? (
+                  <div className="text-sm text-gray-400">Loading media...</div>
+                ) : mediaLibrary.length === 0 ? (
+                  <div className="text-sm text-gray-400">No media uploaded yet.</div>
+                ) : (
+                  mediaLibrary.map((media) => {
+                    const isSelected = selectedMedia?._id === media._id;
+                    const isImage = media.mimeType?.startsWith("image/");
+                    return (
+                      <div
+                        key={media._id}
+                        onClick={() => setSelectedMedia(media)}
+                        className={`border rounded-2xl p-3 cursor-pointer transition-all ${isSelected ? "border-[#313166] bg-[#313166]/5" : "border-gray-100 hover:border-[#313166]/40"}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="text-[10px] font-bold text-[#313166] uppercase">
+                            {media.mimeType?.split("/")[0] || "file"}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteMedia(media._id);
+                            }}
+                            className="text-gray-400 hover:text-red-500"
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                        <div className="mt-2 h-28 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden">
+                          {isImage ? (
+                            <img src={media.s3Url} alt="media" className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="text-xs text-gray-400">{media.fileName || "Media file"}</span>
+                          )}
+                        </div>
+                        <div className="mt-2 text-xs text-gray-600 truncate">
+                          {media.fileName || "Untitled"}
+                        </div>
+                        <div className="text-[10px] text-gray-400">
+                          {media.sizeBytes ? `${(media.sizeBytes / (1024 * 1024)).toFixed(2)}MB` : "—"}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="border border-gray-100 rounded-2xl p-4 h-fit">
+                <h4 className="text-sm font-bold text-gray-900 mb-2">Selected Media</h4>
+                {!selectedMedia ? (
+                  <div className="text-xs text-gray-400">Select a media file to preview and send.</div>
+                ) : (
+                  <>
+                    <div className="rounded-xl bg-gray-50 p-3 mb-3">
+                      {selectedMedia.mimeType?.startsWith("image/") && (
+                        <img src={selectedMedia.s3Url} alt="selected" className="rounded-lg w-full object-cover" />
+                      )}
+                      {selectedMedia.mimeType?.startsWith("video/") && (
+                        <video src={selectedMedia.s3Url} controls className="w-full rounded-lg" />
+                      )}
+                      {selectedMedia.mimeType?.startsWith("audio/") && (
+                        <audio src={selectedMedia.s3Url} controls className="w-full" />
+                      )}
+                      {!selectedMedia.mimeType?.startsWith("image/") &&
+                        !selectedMedia.mimeType?.startsWith("video/") &&
+                        !selectedMedia.mimeType?.startsWith("audio/") && (
+                          <a href={selectedMedia.s3Url} target="_blank" rel="noreferrer" className="text-xs underline text-[#313166]">
+                            View document
+                          </a>
+                        )}
+                    </div>
+                    <label className="text-xs text-gray-500">Caption (optional)</label>
+                    <textarea
+                      rows="3"
+                      className="w-full mt-1 text-sm p-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#313166]/20"
+                      value={mediaCaption}
+                      onChange={(e) => setMediaCaption(e.target.value)}
+                      placeholder="Type a caption..."
+                    />
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        onClick={handleSendSelectedMedia}
+                        disabled={!selectedCustomer || isUploading}
+                        className="flex-1 px-4 py-2 bg-[#313166] text-white rounded-xl text-xs font-bold hover:bg-[#3d3b83] transition-all disabled:opacity-50"
+                      >
+                        Send Media
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedMedia(null);
+                          setMediaCaption("");
+                        }}
+                        className="px-3 py-2 text-xs font-bold text-gray-500 hover:text-gray-700"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
