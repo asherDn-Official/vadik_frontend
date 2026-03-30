@@ -16,7 +16,8 @@ const PersonalizationCampaign = () => {
   const [quizActivities, setQuizActivities] = useState([]);
   const [spinWheelActivities, setSpinWheelActivities] = useState([]);
   const [scratchCardActivities, setScratchCardActivities] = useState([]);
-  const { refreshPlans } = usePlan();
+  const { refreshPlans, currentPlans } = usePlan();
+  const [whatsappConfig, setWhatsappConfig] = useState(null);
 
   // Sending options
   const [sendByWhatsapp, setSendByWhatsapp] = useState(false);
@@ -81,6 +82,22 @@ const PersonalizationCampaign = () => {
     };
 
     fetchActivities();
+  }, []);
+
+  // Fetch WhatsApp configuration
+  useEffect(() => {
+    const fetchWhatsappConfig = async () => {
+      try {
+        const response = await api.get("/api/integrationManagement/whatsapp/config");
+        if (response.data.status) {
+          setWhatsappConfig(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching WhatsApp config:", error);
+      }
+    };
+    fetchWhatsappConfig();
+    refreshPlans();
   }, []);
 
   // Fetch customer data with filters and pagination
@@ -520,6 +537,8 @@ const PersonalizationCampaign = () => {
     }
   };
 
+  const isLowCredits = whatsappConfig && !whatsappConfig.isUsingOwnWhatsapp && currentPlans?.data?.whatsapp?.remaining <= 0;
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Activities selectors */}
@@ -931,11 +950,16 @@ const PersonalizationCampaign = () => {
       )}
 
       {/* Send Button */}
-      <div className="flex justify-start">
+      <div className="flex flex-col items-start gap-2">
+        {isLowCredits && (
+          <p className="text-red-600 font-semibold text-sm">
+            ⚠️ You have low WhatsApp credits. Please top up your credits in the subscription page to continue using Vadik's default WhatsApp account.
+          </p>
+        )}
         <button
           onClick={handlePreCheckAndOpenModal}
           className="px-8 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors disabled:opacity-60"
-          disabled={checking}
+          disabled={checking || isLowCredits}
         >
           {checking ? "Checking..." : "Check & Send"}
         </button>
