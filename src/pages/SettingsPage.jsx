@@ -5,7 +5,8 @@ import {
   FiPackage,
   FiFileText,
   FiUsers,
-  FiSettings, 
+  FiSettings,
+  FiRepeat,
 } from "react-icons/fi";
 
 import { FaCoins } from "react-icons/fa";
@@ -19,6 +20,7 @@ import RolesAndPermissions from "../components/settings/RolesAndPermissions";
 import AddProduct from "../components/settings/AddProduct";
 import Coupon from "../components/settings/Coupon";
 import LoyaltyPoint from "../components/settings/LoyaltyPoint";
+import RetryAutomationSettings from "../components/settings/RetryAutomationSettings";
 
 import UnsavedChangesModal from "../components/common/UnsavedChangesModal";
 import { useUnsavedChanges } from "../context/UnsavedChangesContext";
@@ -113,6 +115,12 @@ const SettingsPage = () => {
             isActive={activeTab === "loyalty"}
             onClick={() => handleTabChange("loyalty")}
           />
+          <SettingsTab
+            icon={<FiRepeat />}
+            text="Retry Automation"
+            isActive={activeTab === "retry-automation"}
+            onClick={() => handleTabChange("retry-automation")}
+          />
         </div>
       </div>
 
@@ -132,6 +140,7 @@ const SettingsPage = () => {
         {activeTab === "roles-permissions" && <RolesAndPermissions />}
         {activeTab === "coupon" && <Coupon />}
         {activeTab === "loyalty" && <LoyaltyPoint />}
+        {activeTab === "retry-automation" && <RetryAutomationSettings />}
       </div>
     </div>
   );

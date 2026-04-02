@@ -26,6 +26,9 @@ import {
 } from "lucide-react";
 import api from "../../api/apiconfig";
 import { toast } from "react-toastify";
+import FilterPanel from "../customerInsigth/FilterPanel";
+import CustomerList from "../customerInsigth/CustomerList";
+import * as XLSX from "xlsx";
 
 const SendCampaign = () => {
   // Main View State
@@ -55,14 +58,26 @@ const SendCampaign = () => {
   const [fetchingData, setFetchingData] = useState(true);
   const [fetchingCustomers, setFetchingCustomers] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
-  // Pagination & Search
-  const [customerSearch, setCustomerSearch] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all");
+  // Pagination & Filter
+  const [filters, setFilters] = useState({});
+  const [selectedPeriod, setSelectedPeriod] = useState("Yearly");
+  const [appliedFiltersCount, setAppliedFiltersCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCustomers, setTotalCustomers] = useState(0);
-  const customersPerPage = 10;
+  const [pageSize, setPageSize] = useState(15);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 15,
+    total: 0,
+    totalPages: 1,
+  });
+  
+  // Backwards compatibility for wizard steps
+  const customerSearch = filters.mobileNumber || filters.firstname || ""; 
+  const setCustomerSearch = (val) => setFilters(prev => ({ ...prev, firstname: val }));
 
   useEffect(() => {
     fetchInitialData();
@@ -72,7 +87,33 @@ const SendCampaign = () => {
     if (view === "wizard" && currentStep === 3) {
       fetchCustomers();
     }
-  }, [currentPage, customerSearch, selectedFilter, currentStep, view]);
+  }, [currentPage, filters, pageSize, currentStep, view]);
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => {
+      const newFilters = { ...prev, [key]: value };
+      // Calculate applied filters count
+      const count = Object.values(newFilters).filter(
+        (v) => v !== undefined && v !== ""
+      ).length;
+      setAppliedFiltersCount(count);
+      return newFilters;
+    });
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const clearAllFilters = () => {
+    setFilters({});
+    setAppliedFiltersCount(0);
+    setCurrentPage(1);
+  };
+
+  const toggleCustomerSelection = (customerId) => {
+    const customer = customers.find(c => c._id === customerId);
+    if (customer) {
+      toggleCustomer(customer);
+    }
+  };
 
   const fetchInitialData = async () => {
     try {
@@ -99,18 +140,49 @@ const SendCampaign = () => {
   const fetchCustomers = async () => {
     try {
       setFetchingCustomers(true);
-      const retailerId = localStorage.getItem('retailerId');
-      let url = `/api/customers/all?retailerId=${retailerId}&search=${customerSearch}&page=${currentPage}&limit=${customersPerPage}`;
-      if (selectedFilter !== "all") {
-        url += `&source=${selectedFilter}`;
-      }
+      // Prepare filters array - exclude period-related filters
+      const filtersArray = Object.entries(filters)
+        .filter(([name, value]) => {
+          return (
+            value !== "" &&
+            value !== null &&
+            value !== undefined &&
+            name !== "periodValue"
+          );
+        })
+        .map(([name, value]) => ({ name, value }));
 
-      const res = await api.get(url);
-      if (res.data) {
-        setCustomers(res.data.customers || []);
-        setTotalPages(res.data.pagination?.totalPages || 1);
-        setTotalCustomers(res.data.pagination?.totalItems || 0);
-      }
+      const payload = {
+        page: currentPage,
+        limit: pageSize,
+        filters: filtersArray.length > 0 ? filtersArray : undefined,
+        ...(selectedPeriod === "Yearly" &&
+          filters.periodValue && {
+            year: parseInt(filters.periodValue),
+          }),
+        ...(selectedPeriod === "Monthly" &&
+          filters.periodValue && {
+            year: new Date().getFullYear(),
+            month: parseInt(filters.periodValue),
+          }),
+        ...(selectedPeriod === "Quarterly" &&
+          filters.periodValue && {
+            year: new Date().getFullYear(),
+            quarter: filters.periodValue,
+          }),
+      };
+
+      Object.keys(payload).forEach((key) => {
+        if (payload[key] === undefined) {
+          delete payload[key];
+        }
+      });
+
+      const response = await api.post("/api/personilizationInsights", payload);
+      setCustomers(response.data.data);
+      setPagination(response.data.pagination);
+      setTotalPages(response.data.pagination?.totalPages || 1);
+      setTotalCustomers(response.data.pagination?.total || 0);
     } catch (error) {
       console.error("Error fetching customers:", error);
     } finally {
@@ -614,89 +686,49 @@ const SendCampaign = () => {
                       <h3 className="text-xl font-bold text-gray-900">Select Audience</h3>
                       <p className="text-sm text-gray-500">Choose who should receive this campaign.</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                       <span className="text-xs font-bold text-[#313166] bg-[#313166]/5 px-3 py-1.5 rounded-full">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 mr-4">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Page Size:</label>
+                        <select
+                          value={pageSize}
+                          onChange={(e) => {
+                            setPageSize(parseInt(e.target.value, 10));
+                            setCurrentPage(1);
+                          }}
+                          className="px-2 py-1 bg-gray-50 border-none rounded-lg text-xs font-bold text-[#313166] focus:ring-1 focus:ring-[#313166]/20"
+                        >
+                          <option value={15}>15</option>
+                          <option value={20}>20</option>
+                          <option value={25}>25</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                        </select>
+                      </div>
+                      <button 
+                        onClick={() => setShowFilterModal(true)}
+                        className={`px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${appliedFiltersCount > 0 ? "bg-indigo-50 text-indigo-600 border border-indigo-100" : "bg-gray-50 text-gray-600 hover:bg-gray-100"}`}
+                      >
+                        <Filter size={18} />
+                        Advanced Filters
+                        {appliedFiltersCount > 0 && <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] flex items-center justify-center animate-in zoom-in">{appliedFiltersCount}</span>}
+                      </button>
+                      <span className="text-xs font-bold text-[#313166] bg-[#313166]/5 px-3 py-1.5 rounded-full">
                          {campaignData.audience.length} Selected
-                       </span>
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 bg-gray-50 p-2 rounded-2xl">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                      <input 
-                        type="text"
-                        placeholder="Search by name or phone..."
-                        className="w-full pl-10 pr-4 py-2 bg-white border-none rounded-xl text-sm focus:ring-1 focus:ring-[#313166]/20"
-                        value={customerSearch}
-                        onChange={(e) => setCustomerSearch(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex-1 overflow-auto bg-gray-50/50 rounded-2xl border border-gray-100">
-                    <table className="w-full text-left">
-                      <thead className="sticky top-0 bg-white border-b border-gray-100">
-                        <tr>
-                          <th className="px-6 py-3 w-10">
-                            <input 
-                              type="checkbox"
-                              className="rounded text-[#313166] focus:ring-[#313166]"
-                              onChange={selectAllLoaded}
-                            />
-                          </th>
-                          <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase">Customer</th>
-                          <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase">Mobile</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {fetchingCustomers ? (
-                           <tr><td colSpan="3" className="text-center py-20"><div className="w-8 h-8 border-4 border-[#313166] border-t-transparent animate-spin rounded-full mx-auto"></div></td></tr>
-                        ) : customers.map(customer => (
-                          <tr 
-                            key={customer._id}
-                            className={`hover:bg-white transition-colors cursor-pointer ${campaignData.audience.find(c => c._id === customer._id) ? "bg-white" : ""}`}
-                            onClick={() => toggleCustomer(customer)}
-                          >
-                            <td className="px-6 py-4">
-                              <input 
-                                type="checkbox"
-                                checked={!!campaignData.audience.find(c => c._id === customer._id)}
-                                readOnly
-                                className="rounded text-[#313166] focus:ring-[#313166]"
-                              />
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-sm font-bold text-gray-700">{customer.firstname} {customer.lastname}</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-xs text-gray-500">+{customer.countryCode}{customer.mobileNumber}</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <p className="text-xs text-gray-500 font-medium">Showing {customers.length} of {totalCustomers} customers</p>
-                    <div className="flex items-center gap-2">
-                       <button 
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
-                        className="p-1.5 hover:bg-gray-100 rounded-lg disabled:opacity-30"
-                       >
-                         <ChevronLeft size={18} />
-                       </button>
-                       <span className="text-xs font-bold text-gray-700">{currentPage} / {totalPages}</span>
-                       <button 
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
-                        className="p-1.5 hover:bg-gray-100 rounded-lg disabled:opacity-30"
-                       >
-                         <ChevronRight size={18} />
-                       </button>
-                    </div>
+                  <div className="flex-1 overflow-hidden flex flex-col gap-4">
+                    <CustomerList
+                      customers={customers}
+                      loading={fetchingCustomers}
+                      selectedCustomers={campaignData.audience.map(c => c._id)}
+                      toggleCustomerSelection={toggleCustomerSelection}
+                      toggleAllCustomers={selectAllLoaded}
+                      pagination={pagination}
+                      currentPage={currentPage}
+                      onPageChange={setCurrentPage}
+                    />
                   </div>
                 </div>
               )}
@@ -988,6 +1020,52 @@ const SendCampaign = () => {
             </div>
           </div>
         </div>
+
+        {/* Filter Modal */}
+        {showFilterModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+              <div className="p-6 border-b flex items-center justify-between bg-gray-50">
+                <div className="flex items-center gap-2">
+                  <Filter className="text-indigo-600" size={20} />
+                  <h3 className="text-lg font-bold text-gray-900">Advanced Filters</h3>
+                </div>
+                <button
+                  onClick={() => setShowFilterModal(false)}
+                  className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar text-left">
+                <FilterPanel
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  selectedPeriod={selectedPeriod}
+                  onPeriodChange={setSelectedPeriod}
+                  appliedFiltersCount={appliedFiltersCount}
+                  clearAllFilters={clearAllFilters}
+                />
+              </div>
+              
+              <div className="p-6 border-t bg-gray-50 flex items-center justify-between gap-4">
+                <button
+                  onClick={clearAllFilters}
+                  className="px-6 py-2.5 text-sm font-bold text-gray-600 hover:text-red-600 transition-colors"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={() => setShowFilterModal(false)}
+                  className="px-8 py-2.5 bg-[#313166] text-white rounded-xl text-sm font-bold shadow-lg shadow-[#313166]/20 hover:bg-[#3d3b83] transition-all"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };

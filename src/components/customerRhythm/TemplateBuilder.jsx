@@ -443,17 +443,29 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
               </h3>
               <div className="flex gap-2">
                 {!template.components.some(c => c.type === "HEADER") && (
-                  <button onClick={() => addComponent("HEADER")} className="text-xs px-3 py-1.5 border border-dashed border-[#313166] text-[#313166] rounded-lg hover:bg-[#313166]/5 transition-all flex items-center gap-1">
+                  <button 
+                    onClick={() => addComponent("HEADER")} 
+                    title="Add a header component (Text, Image, Video, or Document) to the top of your template"
+                    className="text-xs px-3 py-1.5 border border-dashed border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition-all flex items-center gap-1"
+                  >
                     <Plus size={12} /> Add Header
                   </button>
                 )}
                 {!template.components.some(c => c.type === "FOOTER") && (
-                  <button onClick={() => addComponent("FOOTER")} className="text-xs px-3 py-1.5 border border-dashed border-[#313166] text-[#313166] rounded-lg hover:bg-[#313166]/5 transition-all flex items-center gap-1">
+                  <button 
+                    onClick={() => addComponent("FOOTER")} 
+                    title="Add a footer component with small text at the bottom of your template"
+                    className="text-xs px-3 py-1.5 border border-dashed border-green-500 text-green-600 rounded-lg hover:bg-green-50 transition-all flex items-center gap-1"
+                  >
                     <Plus size={12} /> Add Footer
                   </button>
                 )}
                 {!template.components.some(c => c.type === "BUTTONS") && (
-                  <button onClick={() => addComponent("BUTTONS")} className="text-xs px-3 py-1.5 border border-dashed border-[#313166] text-[#313166] rounded-lg hover:bg-[#313166]/5 transition-all flex items-center gap-1">
+                  <button 
+                    onClick={() => addComponent("BUTTONS")} 
+                    title="Add interactive buttons (Quick Replies, Website Links, or Call Buttons) to your template"
+                    className="text-xs px-3 py-1.5 border border-dashed border-purple-500 text-purple-600 rounded-lg hover:bg-purple-50 transition-all flex items-center gap-1"
+                  >
                     <Plus size={12} /> Add Buttons
                   </button>
                 )}
@@ -675,7 +687,11 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
                         ))}
                       </div>
                       {comp.buttons.length < 3 && (
-                        <button onClick={addButton} className="w-full py-3 border border-dashed border-gray-300 rounded-xl text-gray-400 hover:text-[#313166] hover:border-[#313166] hover:bg-[#313166]/5 transition-all flex items-center justify-center gap-2">
+                        <button 
+                          onClick={addButton} 
+                          title="Add another button to this template (max 3 buttons allowed)"
+                          className="w-full py-3 border border-dashed border-purple-300 rounded-xl text-purple-400 hover:text-purple-600 hover:border-purple-600 hover:bg-purple-50 transition-all flex items-center justify-center gap-2"
+                        >
                           <Plus size={16} /> Add Another Button
                         </button>
                       )}
