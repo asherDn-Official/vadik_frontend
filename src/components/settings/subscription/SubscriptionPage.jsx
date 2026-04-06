@@ -22,7 +22,8 @@ export default function SubscriptionPage() {
   const [loading, setLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
-  const [autoplay, setAutoplay] = useState(true);
+  const [autoPayEnabled, setAutoPayEnabled] = useState(true);
+  const [autoPayLoading, setAutoPayLoading] = useState(false);
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const retailerid = localStorage.getItem("retailerId");
   const { auth } = useAuth();
@@ -62,15 +63,19 @@ export default function SubscriptionPage() {
         if (subscriptionWithPlan) {
           setActiveSubscriptionId(subscriptionWithPlan._id);
           setSubscriptionDetails(subscriptionWithPlan);
+          setAutoPayEnabled(!!subscriptionWithPlan.autoPay?.enabled);
         } else {
           setSubscriptionDetails(null);
+          setAutoPayEnabled(true);
         }
       } else {
         setSubscriptionDetails(null);
+        setAutoPayEnabled(true);
       }
     } catch (error) {
       console.error("Error fetching active subscription:", error);
       setSubscriptionDetails(null);
+      setAutoPayEnabled(true);
     }
   };
 
@@ -244,12 +249,28 @@ export default function SubscriptionPage() {
       return;
     }
 
+    if (
+      selectedPlan &&
+      subscriptionDetails?.plan?._id &&
+      selectedPlan._id === subscriptionDetails.plan._id
+    ) {
+      showToast("You are already on this plan.", "info");
+      return;
+    }
+
     setLoading(true);
 
     const isAddonsOnly = !selectedPlan && selectedAddons.length > 0;
     const hasActiveSubscription = activeSubscriptionId !== null;
+    const isChangingPlan =
+      !!selectedPlan &&
+      hasActiveSubscription &&
+      subscriptionDetails?.plan?._id &&
+      selectedPlan._id !== subscriptionDetails.plan._id;
 
-    if (isAddonsOnly && hasActiveSubscription) {
+    if (isChangingPlan) {
+      await handlePlanChangeFlow();
+    } else if (isAddonsOnly && hasActiveSubscription) {
       await handleAddCreditsFlow();
     } else {
       await handleRegularSubscriptionFlow();
@@ -272,8 +293,7 @@ export default function SubscriptionPage() {
           planId: selectedPlan._id,
           addOnIds: addonsWithQuantities, // Updated to include quantities
           isTrial: false,
-          enableAutoPay: true,
-          autoplay: autoplay,
+          enableAutoPay: autoPayEnabled,
         };
 
         const subscriptionResponse = await api.post(
@@ -302,9 +322,8 @@ export default function SubscriptionPage() {
           ).toISOString(),
           isActive: false,
           isTrial: selectedPlan?.isFreeTrial || false,
-          autoplay: autoplay,
           autoPay: {
-            enabled: true,
+            enabled: autoPayEnabled,
             razorpayCustomerId: null,
             razorpayTokenId: null,
           },
@@ -378,6 +397,95 @@ export default function SubscriptionPage() {
     }
   };
 
+  const verifyPlanChangePayment = async (response, subscriptionId, newPlanId) => {
+    try {
+      const verificationPayload = {
+        subscriptionId,
+        newPlanId,
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
+      };
+
+      const verificationResponse = await api.post(
+        "/api/subscriptions/plan-change/verify",
+        verificationPayload
+      );
+
+      if (!verificationResponse.data?.status) {
+        throw new Error("Plan change verification failed");
+      }
+
+      showToast("Plan updated successfully", "success");
+      setShowConfirmation(false);
+      setSelectedPlan(null);
+      getCurrentPlanDetails();
+      getActiveSubscription();
+    } catch (error) {
+      console.error("Plan change verification failed:", error);
+      showToast("Plan change verification failed. Please contact support.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePlanChangeFlow = async () => {
+    try {
+      const response = await api.post("/api/subscriptions/plan-change/create-order", {
+        subscriptionId: activeSubscriptionId,
+        newPlanId: selectedPlan._id,
+      });
+
+      if (response.data.order) {
+        const { order, subscriptionId, newPlanId } = response.data;
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: order.amount,
+          currency: order.currency || "INR",
+          name: "Vadik AI Subscription",
+          description: `Change plan to ${selectedPlan.name}`,
+          order_id: order.id,
+          handler: async function (razorpayResponse) {
+            await verifyPlanChangePayment(razorpayResponse, subscriptionId, newPlanId);
+          },
+          prefill: {
+            name: auth?.user?.fullName,
+            email: auth?.user?.email,
+            contact: auth?.user?.phone,
+          },
+          theme: {
+            color: "#D3285B",
+          },
+        };
+
+        const razorpay = new window.Razorpay(options);
+        razorpay.on("payment.failed", function (error) {
+          console.error("Razorpay plan change failed:", error.error);
+          alert(`Payment failed: ${error.error.description}`);
+          setLoading(false);
+        });
+        razorpay.open();
+      } else if (response.data.status) {
+        showToast(response.data.message || "Plan updated successfully", "success");
+        setShowConfirmation(false);
+        setSelectedPlan(null);
+        getCurrentPlanDetails();
+        getActiveSubscription();
+      } else {
+        throw new Error(response.data.message || "Plan change failed");
+      }
+    } catch (error) {
+      console.error("Plan change failed:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to change plan. Please try again.";
+      alert(`Error: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Add-credits flow with quantities
   const handleAddCreditsFlow = async () => {
     try {
@@ -390,7 +498,6 @@ export default function SubscriptionPage() {
       const preparePayload = {
         subscriptionId: activeSubscriptionId,
         addOnIds: addonsWithQuantities, // Updated to include quantities
-        autoplay: autoplay,
       };
 
       const prepareResponse = await api.post(
@@ -472,7 +579,6 @@ export default function SubscriptionPage() {
         addOnIds: [],
         isTrial: true,
         enableAutoPay: false,
-        autoplay: autoplay,
       };
 
       const trialResponse = await api.post("/api/subscriptions", trialPayload);
@@ -532,6 +638,34 @@ export default function SubscriptionPage() {
     }
   };
 
+  const handleToggleAutoPay = async () => {
+    if (!activeSubscriptionId || isCurrentPlanFreeTrial) return;
+    setAutoPayLoading(true);
+    try {
+      const response = await api.put(
+        `/api/subscriptions/${activeSubscriptionId}/autopay`,
+        { enabled: !autoPayEnabled }
+      );
+      const updatedAutoPay = response.data?.autoPay || null;
+      setAutoPayEnabled(!!updatedAutoPay?.enabled);
+      setSubscriptionDetails((prev) =>
+        prev ? { ...prev, autoPay: updatedAutoPay } : prev
+      );
+      showToast(
+        `AutoPay ${updatedAutoPay?.enabled ? "enabled" : "disabled"} successfully`,
+        "success"
+      );
+    } catch (error) {
+      console.error("Failed to toggle AutoPay:", error);
+      showToast(
+        error.response?.data?.message || "Failed to update AutoPay",
+        "error"
+      );
+    } finally {
+      setAutoPayLoading(false);
+    }
+  };
+
   // Open cancel confirmation
   const openCancelConfirmation = () => {
     setShowCancelConfirmation(true);
@@ -546,6 +680,11 @@ export default function SubscriptionPage() {
     getAddons();
     getActiveSubscription();
   }, []);
+
+  const isPlanChange =
+    !!selectedPlan &&
+    subscriptionDetails?.plan?._id &&
+    selectedPlan._id !== subscriptionDetails.plan._id;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 relative">
@@ -577,6 +716,47 @@ export default function SubscriptionPage() {
                   Expiry : {formatDate(currentPlans.subscription?.endDate)}
                 </div>
               </div>
+
+              {subscriptionDetails && (
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-700 text-sm font-medium">
+                      AutoPay:
+                    </span>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        autoPayEnabled ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {autoPayEnabled ? "Enabled" : "Disabled"}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      Mandate: {subscriptionDetails.autoPay?.mandateStatus || "n/a"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-600 text-sm">
+                      Next Billing:{" "}
+                      {autoPayEnabled ? formatDate(subscriptionDetails.endDate) : "-"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleToggleAutoPay}
+                      disabled={autoPayLoading || isCurrentPlanFreeTrial}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        autoPayEnabled ? "bg-green-500" : "bg-gray-300"
+                      } ${autoPayLoading || isCurrentPlanFreeTrial ? "opacity-60 cursor-not-allowed" : ""}`}
+                      aria-pressed={autoPayEnabled}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          autoPayEnabled ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <UsageTable data={currentPlans?.data} />
             </>
@@ -652,11 +832,14 @@ export default function SubscriptionPage() {
         {activeTab === "subscription" ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {subscription.map((plan) => {
+              const currentPlanId = subscriptionDetails?.plan?._id;
               const currentPlanName = currentPlans?.subscription?.plan;
-              const isCurrentPlan =
-                currentPlanName &&
-                currentPlanName.toLowerCase() === plan.name.toLowerCase();
-              const hasActiveSubscription = currentPlanName ? true : false;
+              const isCurrentPlan = currentPlanId
+                ? currentPlanId === plan._id
+                : currentPlanName &&
+                  currentPlanName.toLowerCase() === plan.name.toLowerCase();
+              const hasActiveSubscription = !!subscriptionDetails;
+              const canChangePlan = hasActiveSubscription && !isCurrentPlanFreeTrial;
 
               const features = [
                 plan.customerLimit > 0 && `${plan.customerLimit} Customers`,
@@ -698,6 +881,7 @@ export default function SubscriptionPage() {
                   onCancel={openCancelConfirmation}
                   activeSubscriptionId={activeSubscriptionId}
                   loading={loading}
+                  canChangePlan={canChangePlan}
                 />
               );
             })}
@@ -754,9 +938,13 @@ export default function SubscriptionPage() {
         )}
 
         {/* Proceed Button */}
-        {activeTab !== "whatsapp" && ((selectedPlan && !selectedPlan.isFreeTrial) ||
-          (selectedAddons.length > 0 &&
-            (currentPlans?.subscription || selectedPlan))) && (
+        {activeTab !== "whatsapp" &&
+          ((selectedPlan &&
+            !selectedPlan.isFreeTrial &&
+            (!subscriptionDetails ||
+              selectedPlan._id !== subscriptionDetails?.plan?._id)) ||
+            (selectedAddons.length > 0 &&
+              (currentPlans?.subscription || selectedPlan))) && (
           <div className="fixed bottom-6 left-2/3 transform -translate-x-1/2">
             <button
               onClick={() => setShowConfirmation(true)}
@@ -778,6 +966,10 @@ export default function SubscriptionPage() {
           totalPrice={calculateTotalPrice()}
           onConfirm={handleProceedToPayment}
           loading={loading}
+          autoPayEnabled={autoPayEnabled}
+          onAutoPayChange={setAutoPayEnabled}
+          showAutoPayToggle={!!selectedPlan && !selectedPlan.isFreeTrial && !subscriptionDetails}
+          showPriceBreakdown={!isPlanChange}
         />
 
         {/* Cancel Confirmation Modal */}

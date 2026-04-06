@@ -18,6 +18,7 @@ export default function SubscriptionCard({
   loading = false,
   isCurrentPlanFreeTrial = false,
   activeSubscriptionId = null,
+  canChangePlan = false,
 }) {
   const cardStyles = variant === 'primary'
     ? 'bg-gradient-to-b from-pink-700 to-purple-800'
@@ -30,7 +31,12 @@ export default function SubscriptionCard({
       return 'bg-gray-400 text-white cursor-not-allowed opacity-60';
     }
     if (hasActiveSubscription && !isAddon && !isCurrentPlan) {
-      return 'bg-gray-400 text-white cursor-not-allowed opacity-60';
+      if (plan?.isFreeTrial || !canChangePlan) {
+        return 'bg-gray-400 text-white cursor-not-allowed opacity-60';
+      }
+      return variant === 'primary'
+        ? 'bg-white text-pink-700 hover:bg-gray-100'
+        : 'bg-pink-700 text-white hover:bg-pink-800';
     }
     if (isAddon && isCurrentPlanFreeTrial) {
       return 'bg-gray-400 text-white cursor-not-allowed opacity-60';
@@ -50,7 +56,10 @@ export default function SubscriptionCard({
       return 'Subscribed';
     }
     if (hasActiveSubscription && !isAddon && !isCurrentPlan) {
-      return 'Select Plan';
+      if (plan?.isFreeTrial || !canChangePlan) {
+        return 'Not Available';
+      }
+      return 'Change Plan';
     }
     if (isAddon && hasActiveSubscription) {
       if (isCurrentPlanFreeTrial) {
@@ -62,7 +71,7 @@ export default function SubscriptionCard({
   };
 
   const handleCardClick = (e) => {
-    if (!isAddon && (isCurrentPlan || (hasActiveSubscription && !isCurrentPlan))) {
+    if (!isAddon && (isCurrentPlan || (hasActiveSubscription && !isCurrentPlan && (!canChangePlan || plan?.isFreeTrial)))) {
       return;
     }
     if (isAddon && isCurrentPlanFreeTrial) {
@@ -199,7 +208,7 @@ export default function SubscriptionCard({
                   </button>
                 ) : (
                   <button 
-                    disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
+                    disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan && (!canChangePlan || plan?.isFreeTrial)) || loading || (isAddon && isCurrentPlanFreeTrial)}
                     onClick={handleCardClick}
                     className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
                   >
@@ -363,7 +372,7 @@ export default function SubscriptionCard({
               </button>
             ) : (
               <button 
-                disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
+                disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan && (!canChangePlan || plan?.isFreeTrial)) || loading || (isAddon && isCurrentPlanFreeTrial)}
                 onClick={handleCardClick}
                 className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
               >

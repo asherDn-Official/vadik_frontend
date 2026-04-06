@@ -11,7 +11,11 @@ export default function ConfirmationModal({
   totalPrice,
   onConfirm,
   loading = false,
-  orderData = null
+  orderData = null,
+  autoPayEnabled = false,
+  onAutoPayChange = null,
+  showAutoPayToggle = false,
+  showPriceBreakdown = true
 }) {
   if (!isOpen) return null;
 
@@ -127,25 +131,57 @@ export default function ConfirmationModal({
           )}
 
           {/* Price Breakdown with GST */}
-          {(() => {
-            const billing = calculateTotalWithGST(totalPrice);
-            return (
-              <div className="border-t pt-4 mt-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="text-gray-800 font-medium">Rs. {billing.subtotal.toLocaleString()}</span>
+          {showPriceBreakdown ? (
+            (() => {
+              const billing = calculateTotalWithGST(totalPrice);
+              return (
+                <div className="border-t pt-4 mt-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="text-gray-800 font-medium">Rs. {billing.subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">GST ({billing.gstPercentage}%):</span>
+                    <span className="text-gray-800 font-medium">Rs. {billing.gstAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-lg font-semibold border-t pt-3">
+                    <span>Total Amount:</span>
+                    <span className="text-pink-700">Rs. {billing.totalAmount.toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">GST ({billing.gstPercentage}%):</span>
-                  <span className="text-gray-800 font-medium">Rs. {billing.gstAmount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center text-lg font-semibold border-t pt-3">
-                  <span>Total Amount:</span>
-                  <span className="text-pink-700">Rs. {billing.totalAmount.toLocaleString()}</span>
-                </div>
+              );
+            })()
+          ) : (
+            <div className="border-t pt-4 mt-4 text-sm text-gray-600">
+              Final charge will be calculated at checkout based on remaining days
+              in your current billing cycle.
+            </div>
+          )}
+
+          {showAutoPayToggle && (
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-700">AutoPay</p>
+                <p className="text-xs text-gray-500">
+                  Automatically renew every billing cycle
+                </p>
               </div>
-            );
-          })()}
+              <button
+                type="button"
+                onClick={() => onAutoPayChange && onAutoPayChange(!autoPayEnabled)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  autoPayEnabled ? "bg-green-500" : "bg-gray-300"
+                }`}
+                aria-pressed={autoPayEnabled}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    autoPayEnabled ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+          )}
 
           {/* Billing Details */}
           {/* <div className="border-t mt-4 pt-4">
