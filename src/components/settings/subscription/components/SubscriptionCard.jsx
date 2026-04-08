@@ -1,6 +1,7 @@
 export default function SubscriptionCard({
   title,
   price,
+  originalPrice,
   period,
   features,
   recommended = false,
@@ -169,8 +170,15 @@ export default function SubscriptionCard({
         </div>
 
         <div className="p-6 flex flex-col flex-grow">
-          <div className="text-center mb-6">
-            <span className="text-4xl font-bold text-gray-800">Rs. {price.toLocaleString()}</span>
+          <div className="text-center mb-6 flex flex-col items-center">
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-gray-800">Rs. {price.toLocaleString()}</span>
+              {originalPrice && (
+                <span className="text-xl text-gray-400 line-through">
+                  Rs. {originalPrice.toLocaleString()}
+                </span>
+              )}
+            </div>
             <span className="text-sm text-gray-500">/{period}</span>
           </div>
 
@@ -284,8 +292,15 @@ export default function SubscriptionCard({
         )}
       </div>
 
-      <div className="text-center mb-6">
-        <span className={`text-4xl font-bold ${textColor}`}>Rs. {price.toLocaleString()}</span>
+      <div className="text-center mb-6 flex flex-col items-center">
+        <div className="flex items-baseline gap-2">
+          <span className={`text-4xl font-bold ${textColor}`}>Rs. {price.toLocaleString()}</span>
+          {originalPrice && (
+            <span className={`text-xl line-through ${variant === 'primary' ? 'text-white/60' : 'text-gray-400'}`}>
+              Rs. {originalPrice.toLocaleString()}
+            </span>
+          )}
+        </div>
         {period && <span className={`text-sm ${variant === 'primary' ? 'text-white/80' : 'text-gray-500'}`}>/{period}</span>}
       </div>
 

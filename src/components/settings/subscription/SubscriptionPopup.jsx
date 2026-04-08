@@ -704,6 +704,11 @@ const SubscriptionPopup = ({
                 const transformedPlan = {
                   title: plan.name,
                   price: plan.price,
+                  originalPrice:
+                    plan.originalPrice ||
+                    plan.origianalPrice ||
+                    plan["  originalPrice"] ||
+                    null,
                   period: `${plan.durationInDays} days`,
                   features,
                   variant:
@@ -720,6 +725,7 @@ const SubscriptionPopup = ({
                     plan={plan}
                     title={transformedPlan.title}
                     price={transformedPlan.price}
+                    originalPrice={transformedPlan.originalPrice}
                     period={transformedPlan.period}
                     features={transformedPlan.features}
                     variant={transformedPlan.variant}
@@ -809,10 +815,28 @@ const SubscriptionPopup = ({
                     (() => {
                       const totalPrice = calculateTotalPrice();
                       const billing = calculateTotalWithGST(totalPrice);
+                      
+                      // Calculate original total for strikethrough display
+                      const planOrig = selectedPlan?.originalPrice || selectedPlan?.origianalPrice || selectedPlan?.["  originalPrice"];
+                      let totalOriginal = null;
+                      if (planOrig) {
+                        let baseOrig = planOrig;
+                        selectedAddons.forEach((addon) => {
+                          const quantity = addonQuantities[addon._id] || 1;
+                          baseOrig += (addon.originalPrice || addon.price) * quantity;
+                        });
+                        totalOriginal = calculateTotalWithGST(baseOrig).totalAmount;
+                      }
+
                       return (
                         <div className="space-y-1">
                           <div className="text-gray-600 text-sm">
                             <span>Subtotal: </span>
+                            {totalOriginal && (
+                              <span className="text-xs text-gray-400 line-through mr-1">
+                                ₹{calculateTotalWithGST(planOrig).subtotal.toLocaleString()}
+                              </span>
+                            )}
                             <span className="font-medium">₹{billing.subtotal.toLocaleString()}</span>
                           </div>
                           <div className="text-gray-600 text-sm">
@@ -821,6 +845,11 @@ const SubscriptionPopup = ({
                           </div>
                           <div className="text-gray-700 font-medium">
                             <span>Total: </span>
+                            {totalOriginal && totalOriginal > billing.totalAmount && (
+                              <span className="text-sm text-gray-400 line-through mr-2">
+                                ₹{totalOriginal.toLocaleString()}
+                              </span>
+                            )}
                             <span className="text-xl font-bold text-pink-700">
                               ₹{billing.totalAmount.toLocaleString()}
                             </span>

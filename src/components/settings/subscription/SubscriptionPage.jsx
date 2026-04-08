@@ -870,6 +870,11 @@ export default function SubscriptionPage() {
               const transformedPlan = {
                 title: plan.name,
                 price: plan.price,
+                originalPrice:
+                  plan.originalPrice ||
+                  plan.origianalPrice ||
+                  plan["  originalPrice"] ||
+                  null,
                 period: `${plan.durationInDays} days`,
                 features,
                 variant:
@@ -886,6 +891,7 @@ export default function SubscriptionPage() {
                   plan={plan}
                   title={transformedPlan.title}
                   price={transformedPlan.price}
+                  originalPrice={transformedPlan.originalPrice}
                   period={transformedPlan.period}
                   features={transformedPlan.features}
                   variant={transformedPlan.variant}
