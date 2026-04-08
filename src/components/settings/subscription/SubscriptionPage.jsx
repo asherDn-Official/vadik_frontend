@@ -155,6 +155,7 @@ export default function SubscriptionPage() {
     try {
       const verificationPayload = {
         razorpay_order_id: response.razorpay_order_id,
+        razorpay_subscription_id: response.razorpay_subscription_id,
         razorpay_payment_id: response.razorpay_payment_id,
         razorpay_signature: response.razorpay_signature,
         subscriptionId: subscriptionId,
@@ -280,6 +281,15 @@ export default function SubscriptionPage() {
   // Regular subscription flow with quantities
   const handleRegularSubscriptionFlow = async () => {
     try {
+      if (autoPayEnabled && selectedAddons.length > 0) {
+        showToast(
+          "AutoPay currently supports plan-only subscriptions. Remove add-ons or disable AutoPay.",
+          "error"
+        );
+        setLoading(false);
+        return;
+      }
+
       let subscriptionData = null;
 
       if (selectedPlan) {
@@ -339,27 +349,28 @@ export default function SubscriptionPage() {
         orderPayload
       );
 
-      if (!orderResponse.data.order) {
-        throw new Error("❌ Missing 'order' in create-order response");
-      }
-      if (!orderResponse.data.subscriptionId) {
-        throw new Error("❌ Missing 'subscriptionId' in create-order response");
-      }
+      const { type, order, subscription: razorpaySubscription, subscriptionId } = orderResponse.data || {};
 
-      const { order, subscriptionId } = orderResponse.data;
+      if (type === "subscription" && !razorpaySubscription?.id) {
+        throw new Error("? Missing 'subscription' in create-order response");
+      }
+      if (type !== "subscription" && !order) {
+        throw new Error("? Missing 'order' in create-order response");
+      }
+      if (!subscriptionId) {
+        throw new Error("? Missing 'subscriptionId' in create-order response");
+      }
 
       // Initialize Razorpay Payment
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: order.amount,
-        currency: order.currency || "INR",
+        currency: order?.currency || "INR",
         name: "Vadik AI Subscription",
         description: `${selectedPlan ? selectedPlan.name + " Plan" : "Addon"}${
           selectedAddons.length > 0
             ? ` with ${selectedAddons.length} Addon(s)`
             : ""
         }`,
-        order_id: order.id,
         handler: async function (response) {
           await verifyRazorpayPayment(response, subscriptionId);
         },
@@ -372,6 +383,13 @@ export default function SubscriptionPage() {
           color: "#D3285B",
         },
       };
+
+      if (type === "subscription") {
+        options.subscription_id = razorpaySubscription.id;
+      } else {
+        options.amount = order.amount;
+        options.order_id = order.id;
+      }
 
       const razorpay = new window.Razorpay(options);
       razorpay.on("payment.failed", function (response) {
