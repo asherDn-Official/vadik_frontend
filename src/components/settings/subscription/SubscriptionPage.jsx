@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Info } from "lucide-react";
 import SubscriptionCard from "./components/SubscriptionCard";
 import UsageTable from "./components/UsageTable";
 import ConfirmationModal from "./components/ConfirmationModal";
@@ -8,7 +7,6 @@ import WhatsAppCredits from "./components/WhatsAppCredits";
 import api from "../../../api/apiconfig";
 import { useAuth } from "../../../context/AuthContext";
 import showToast from "../../../utils/ToastNotification";
-import { calculateTotalWithGST } from "../../../utils/billingUtils";
 
 export default function SubscriptionPage() {
   const [activeTab, setActiveTab] = useState("subscription");
@@ -263,15 +261,7 @@ export default function SubscriptionPage() {
 
     const isAddonsOnly = !selectedPlan && selectedAddons.length > 0;
     const hasActiveSubscription = activeSubscriptionId !== null;
-    const isChangingPlan =
-      !!selectedPlan &&
-      hasActiveSubscription &&
-      subscriptionDetails?.plan?._id &&
-      selectedPlan._id !== subscriptionDetails.plan._id;
-
-    if (isChangingPlan) {
-      await handlePlanChangeFlow();
-    } else if (isAddonsOnly && hasActiveSubscription) {
+    if (isAddonsOnly && hasActiveSubscription) {
       await handleAddCreditsFlow();
     } else {
       await handleRegularSubscriptionFlow();
@@ -410,95 +400,6 @@ export default function SubscriptionPage() {
         error.message ||
         "Failed to process payment. Please try again.";
       alert(`❌ Error: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const verifyPlanChangePayment = async (response, subscriptionId, newPlanId) => {
-    try {
-      const verificationPayload = {
-        subscriptionId,
-        newPlanId,
-        razorpay_order_id: response.razorpay_order_id,
-        razorpay_payment_id: response.razorpay_payment_id,
-        razorpay_signature: response.razorpay_signature,
-      };
-
-      const verificationResponse = await api.post(
-        "/api/subscriptions/plan-change/verify",
-        verificationPayload
-      );
-
-      if (!verificationResponse.data?.status) {
-        throw new Error("Plan change verification failed");
-      }
-
-      showToast("Plan updated successfully", "success");
-      setShowConfirmation(false);
-      setSelectedPlan(null);
-      getCurrentPlanDetails();
-      getActiveSubscription();
-    } catch (error) {
-      console.error("Plan change verification failed:", error);
-      showToast("Plan change verification failed. Please contact support.", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePlanChangeFlow = async () => {
-    try {
-      const response = await api.post("/api/subscriptions/plan-change/create-order", {
-        subscriptionId: activeSubscriptionId,
-        newPlanId: selectedPlan._id,
-      });
-
-      if (response.data.order) {
-        const { order, subscriptionId, newPlanId } = response.data;
-        const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          amount: order.amount,
-          currency: order.currency || "INR",
-          name: "Vadik AI Subscription",
-          description: `Change plan to ${selectedPlan.name}`,
-          order_id: order.id,
-          handler: async function (razorpayResponse) {
-            await verifyPlanChangePayment(razorpayResponse, subscriptionId, newPlanId);
-          },
-          prefill: {
-            name: auth?.user?.fullName,
-            email: auth?.user?.email,
-            contact: auth?.user?.phone,
-          },
-          theme: {
-            color: "#D3285B",
-          },
-        };
-
-        const razorpay = new window.Razorpay(options);
-        razorpay.on("payment.failed", function (error) {
-          console.error("Razorpay plan change failed:", error.error);
-          alert(`Payment failed: ${error.error.description}`);
-          setLoading(false);
-        });
-        razorpay.open();
-      } else if (response.data.status) {
-        showToast(response.data.message || "Plan updated successfully", "success");
-        setShowConfirmation(false);
-        setSelectedPlan(null);
-        getCurrentPlanDetails();
-        getActiveSubscription();
-      } else {
-        throw new Error(response.data.message || "Plan change failed");
-      }
-    } catch (error) {
-      console.error("Plan change failed:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to change plan. Please try again.";
-      alert(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -699,11 +600,6 @@ export default function SubscriptionPage() {
     getActiveSubscription();
   }, []);
 
-  const isPlanChange =
-    !!selectedPlan &&
-    subscriptionDetails?.plan?._id &&
-    selectedPlan._id !== subscriptionDetails.plan._id;
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 relative">
       <div className="max-w-6xl mx-auto">
@@ -857,7 +753,6 @@ export default function SubscriptionPage() {
                 : currentPlanName &&
                   currentPlanName.toLowerCase() === plan.name.toLowerCase();
               const hasActiveSubscription = !!subscriptionDetails;
-              const canChangePlan = hasActiveSubscription && !isCurrentPlanFreeTrial;
 
               const features = [
                 plan.customerLimit > 0 && `${plan.customerLimit} Customers`,
@@ -905,7 +800,6 @@ export default function SubscriptionPage() {
                   onCancel={openCancelConfirmation}
                   activeSubscriptionId={activeSubscriptionId}
                   loading={loading}
-                  canChangePlan={canChangePlan}
                 />
               );
             })}
@@ -993,7 +887,7 @@ export default function SubscriptionPage() {
           autoPayEnabled={autoPayEnabled}
           onAutoPayChange={setAutoPayEnabled}
           showAutoPayToggle={!!selectedPlan && !selectedPlan.isFreeTrial && !subscriptionDetails}
-          showPriceBreakdown={!isPlanChange}
+          showPriceBreakdown={true}
         />
 
         {/* Cancel Confirmation Modal */}

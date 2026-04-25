@@ -685,8 +685,8 @@ const SubscriptionPopup = ({
 
         {/* Content Area */}
         <div className="p-6">
-          {activeTab === "subscription" && showSubscription ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {activeTab === "subscription" && showSubscription ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {subscription.map((plan) => {
                 const currentPlanName = currentPlans?.subscription?.plan;
                 const isCurrentPlan =

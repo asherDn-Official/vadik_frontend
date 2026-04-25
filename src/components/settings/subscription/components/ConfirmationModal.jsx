@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { calculateTotalWithGST } from "../../../../utils/billingUtils";
+import { calculateGSTFromInclusiveTotal, calculateTotalWithGST } from "../../../../utils/billingUtils";
 
 export default function ConfirmationModal({
   isOpen,
@@ -133,7 +133,12 @@ export default function ConfirmationModal({
           {/* Price Breakdown with GST */}
           {showPriceBreakdown ? (
             (() => {
-              const billing = calculateTotalWithGST(totalPrice);
+              const billing = autoPayEnabled
+                ? calculateGSTFromInclusiveTotal(totalPrice)
+                : calculateTotalWithGST(totalPrice);
+              const gstLabel = autoPayEnabled
+                ? "GST (included)"
+                : `GST (${billing.gstPercentage}%)`;
               return (
                 <div className="border-t pt-4 mt-4 space-y-3">
                   <div className="flex justify-between items-center">
@@ -141,7 +146,7 @@ export default function ConfirmationModal({
                     <span className="text-gray-800 font-medium">Rs. {billing.subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">GST ({billing.gstPercentage}%):</span>
+                    <span className="text-gray-600">{gstLabel}:</span>
                     <span className="text-gray-800 font-medium">Rs. {billing.gstAmount.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center text-lg font-semibold border-t pt-3">

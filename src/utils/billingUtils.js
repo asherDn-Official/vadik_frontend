@@ -15,8 +15,21 @@ export const calculateTotalWithGST = (subtotal) => {
   };
 };
 
+export const calculateGSTFromInclusiveTotal = (totalAmount) => {
+  const numericTotal = Number(totalAmount) || 0;
+  const subtotal = Math.round(numericTotal / (1 + GST_PERCENTAGE / 100));
+  const gstAmount = numericTotal - subtotal;
+
+  return {
+    subtotal,
+    gstAmount,
+    gstPercentage: GST_PERCENTAGE,
+    totalAmount: numericTotal,
+  };
+};
+
 export const formatPrice = (amount) => {
-  return amount ? `₹${amount.toLocaleString()}` : '₹0';
+  return amount ? `Rs. ${amount.toLocaleString()}` : 'Rs. 0';
 };
 
 export const downloadBill = (subscriptionId, type = 'subscription') => {
