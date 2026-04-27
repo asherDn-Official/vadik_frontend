@@ -2,8 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { FiX, FiAlertCircle, FiExternalLink, FiCreditCard, FiShield } from 'react-icons/fi';
 import api from '../../api/apiconfig';
 
+const getAlertGroupKey = (alert) =>
+  alert.alertData?.groupKey ||
+  (alert.alertData?.errorCode ? `error_${alert.alertData.errorCode}` : alert._id);
+
 const WhatsAppAlertPopup = () => {
   const [alerts, setAlerts] = useState([]);
+  const [rawAlerts, setRawAlerts] = useState([]);
   const [currentAlertIndex, setCurrentAlertIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -11,7 +16,24 @@ const WhatsAppAlertPopup = () => {
     try {
       const response = await api.get('/api/notifications?type=whatsapp_failure&isRead=false');
       if (response.data && response.data.notifications) {
-        setAlerts(response.data.notifications);
+        const groupedAlerts = [];
+        const seenGroups = new Set();
+
+        response.data.notifications.forEach((notification) => {
+          const groupKey = getAlertGroupKey(notification);
+          if (!seenGroups.has(groupKey)) {
+            seenGroups.add(groupKey);
+            groupedAlerts.push(notification);
+          }
+        });
+
+        setRawAlerts(response.data.notifications);
+        setAlerts(groupedAlerts);
+        setCurrentAlertIndex((prev) => Math.min(prev, Math.max(groupedAlerts.length - 1, 0)));
+      } else {
+        setRawAlerts([]);
+        setAlerts([]);
+        setCurrentAlertIndex(0);
       }
     } catch (error) {
       console.error('Error fetching WhatsApp alerts:', error);
@@ -29,9 +51,20 @@ const WhatsAppAlertPopup = () => {
 
   const handleMarkAsRead = async (id) => {
     try {
-      await api.put(`/api/notifications/${id}/read`);
-      const updatedAlerts = alerts.filter(alert => alert._id !== id);
+      const currentAlert = alerts.find(alert => alert._id === id);
+      const groupKey = currentAlert ? getAlertGroupKey(currentAlert) : null;
+      const alertsToMark = groupKey
+        ? rawAlerts.filter(alert => getAlertGroupKey(alert) === groupKey)
+        : rawAlerts.filter(alert => alert._id === id);
+
+      await Promise.all(
+        alertsToMark.map(alert => api.put(`/api/notifications/${alert._id}/read`))
+      );
+
+      const updatedAlerts = alerts.filter(alert => getAlertGroupKey(alert) !== groupKey);
+      const updatedRawAlerts = rawAlerts.filter(alert => getAlertGroupKey(alert) !== groupKey);
       setAlerts(updatedAlerts);
+      setRawAlerts(updatedRawAlerts);
       if (currentAlertIndex >= updatedAlerts.length && updatedAlerts.length > 0) {
         setCurrentAlertIndex(updatedAlerts.length - 1);
       }
@@ -44,6 +77,7 @@ const WhatsAppAlertPopup = () => {
 
   const alert = alerts[currentAlertIndex];
   const isPaymentIssue = alert.alertData?.errorCode === 131042;
+  const affectedCount = Number(alert.alertData?.count || 1);
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 p-4">
@@ -71,6 +105,16 @@ const WhatsAppAlertPopup = () => {
             <p className="text-gray-700 leading-relaxed">
               {alert.message}
             </p>
+            {affectedCount > 1 && (
+              <p className="mt-3 text-sm font-medium text-gray-700">
+                Affected messages: {affectedCount}
+              </p>
+            )}
+            {alert.alertData?.lastRecipientPhone && (
+              <p className="mt-1 text-sm text-gray-500">
+                Latest phone: {alert.alertData.lastRecipientPhone}
+              </p>
+            )}
             {alert.alertData?.errorCode && (
               <p className="mt-2 text-xs font-mono text-gray-400">
                 Meta Error Code: {alert.alertData.errorCode}
