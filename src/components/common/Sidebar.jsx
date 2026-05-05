@@ -111,12 +111,12 @@ function Sidebar() {
       icon: subscriptionIcon,
       label: "Subscription",
     },
-    {
-      path: "/settings",
-      module: "Settings",
-      icon: settingsIcon,
-      label: "Settings",
-    },
+    // {
+    //   path: "/settings",
+    //   module: "Settings",
+    //   icon: settingsIcon,
+    //   label: "Settings",
+    // },
   ];
 
   const handleLogout = (e) => {
@@ -184,7 +184,7 @@ function Sidebar() {
               alt="Vadik Logo"
             />
       </div>
-      <div className="my-3">{userRole === "retailer" && <ToggleBadge />}</div>
+      {/* <div className="my-3">{userRole === "retailer" && <ToggleBadge />}</div> */}
       <nav className="flex-1 pb-2 ">
         {sidebarItems.map((item) => {
           if (!canAccess(item.module)) return null;
