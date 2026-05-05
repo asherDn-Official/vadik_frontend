@@ -32,6 +32,7 @@ const SettingsPage = () => {
   const { hasUnsavedChanges, setHasUnsavedChanges } = useUnsavedChanges();
   const [pendingTab, setPendingTab] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  
 
   const activeTab = tab || "my-profile";
 

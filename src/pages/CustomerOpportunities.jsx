@@ -7,6 +7,10 @@ import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 import ComingSoon from "../components/common/ComingSoon";
 import Campaign from "../components/customeroppertunites/Campaign";
 import SubscriptionPopup from "../components/settings/subscription/SubscriptionPopup";
+import Coupon from "../components/settings/Coupon";
+import LoyaltyPoint from "../components/settings/LoyaltyPoint";
+import { LuTicketPercent } from "react-icons/lu";
+import { FaCoins } from "react-icons/fa";
 
 const CustomerOpportunities = () => {
   const [activeTab, setActiveTab] = useState("engagement");
@@ -43,7 +47,7 @@ const CustomerOpportunities = () => {
                 showAutopay={false}
                 showSubscription={false}
                 showAddon={true}
-                title= {"Add Ons Plan "}
+                title={"Add Ons Plan "}
               />
             )}
           </div>
@@ -70,7 +74,8 @@ const CustomerOpportunities = () => {
                 </div>
                 <div className=" flex items-center justify-between">
                   <span className="text-xs text-gray-500 text-start  ">
-                    Create engaging customer activities like Quiz, Spin Wheel, and Scratch Cards to collect insights and boost interaction.
+                    Create engaging customer activities like Quiz, Spin Wheel,
+                    and Scratch Cards to collect insights and boost interaction.
                     <span className=" float-right">
                       <VideoPopupWithShare
                         video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
@@ -101,7 +106,8 @@ const CustomerOpportunities = () => {
                 </div>
                 <div className=" flex items-center justify-between">
                   <span className="text-xs text-gray-500 text-start">
-                   Easily send campaigns and activities to your customers via WhatsApp to drive engagement and repeat visits.
+                    Easily send campaigns and activities to your customers via
+                    WhatsApp to drive engagement and repeat visits.
                     <span className=" float-right">
                       <VideoPopupWithShare
                         video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
@@ -131,7 +137,8 @@ const CustomerOpportunities = () => {
                   Chats
                 </div>
                 <div className="text-xs text-gray-500 text-start">
-                 Automatically suggest the right products and offers during customer conversations based on behavior and preferences.
+                  Automatically suggest the right products and offers during
+                  customer conversations based on behavior and preferences.
                 </div>
               </div>
             </button>
@@ -151,10 +158,59 @@ const CustomerOpportunities = () => {
               </div>
               <div>
                 <div className="font-semibold text-slate-800 text-start">
-                 Vadik Assistant 
+                  Vadik Assistant
                 </div>
                 <div className="text-xs text-gray-500 text-start">
-                  An AI-powered assistant that recommends smart campaigns, customer engagement ideas, and personalised  promotions.
+                  An AI-powered assistant that recommends smart campaigns,
+                  customer engagement ideas, and personalised promotions.
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <div>
+            <button
+              onClick={() => setActiveTab("coupon")}
+              className={`flex w-full max-w-xs sm:w-auto items-center gap-3 px-4 py-3 border rounded-xl transition-all ${
+                activeTab === "coupon"
+                  ? "border-[#EC396F] bg-white shadow-sm"
+                  : "bg-gray-50 border-gray-200 opacity-80 hover:opacity-100 hover:shadow-sm"
+              }`}
+            >
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-pink-50 text-[#EC396F]">
+                <LuTicketPercent size={20} />
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-800 text-start">
+                  Coupons
+                </div>
+                <div className="text-xs text-gray-500 text-start">
+                  Manage and create discount coupons for campaigns.
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <div>
+            <button
+              onClick={() => setActiveTab("loyalty")}
+              className={`flex w-full max-w-xs sm:w-auto items-center gap-3 px-4 py-3 border rounded-xl transition-all ${
+                activeTab === "loyalty"
+                  ? "border-[#EC396F] bg-white shadow-sm"
+                  : "bg-gray-50 border-gray-200 opacity-80 hover:opacity-100 hover:shadow-sm"
+              }`}
+            >
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-yellow-50 text-yellow-600">
+                <FaCoins size={18} />
+              </div>
+
+              <div>
+                <div className="font-semibold text-slate-800 text-start">
+                  Loyalty Points
+                </div>
+                <div className="text-xs text-gray-500 text-start">
+                  Configure loyalty rewards and points system.
                 </div>
               </div>
             </button>
@@ -170,6 +226,16 @@ const CustomerOpportunities = () => {
         {activeTab === "store-recommendation" && <StoreRecommendation />} */}
         {activeTab === "customer-recommendation" && <ComingSoon />}
         {activeTab === "store-recommendation" && <ComingSoon />}
+        {activeTab === "coupon" && (
+          <div className="bg-white p-4 rounded-xl">
+            <Coupon />
+          </div>
+        )}
+        {activeTab === "loyalty" && (
+          <div className="bg-white p-4 rounded-xl">
+            <LoyaltyPoint />
+          </div>
+        )}
       </div>
     </div>
   );

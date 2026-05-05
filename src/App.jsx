@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { useState, useEffect } from "react";
 import Dashboard from "./pages/Dashboard";
 import CustomerList from "./pages/CustomerList";
@@ -20,6 +25,9 @@ import api from "./api/apiconfig";
 import Notification from "./pages/Notification";
 import ForgotPassword from "./pages/ForgotPassword";
 import Subscription from "./pages/Subscription";
+import CustomerFieldPreferences from "./components/settings/CustomerFieldPreferences";
+import RolesAndPermissions from "./components/settings/RolesAndPermissions";
+import MyProfile from "./components/settings/MyProfile";
 
 function App() {
   const { auth, loading, checkAuth } = useAuth();
@@ -80,7 +88,9 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route
           path="/register/*"
-          element={<Register formData={formData} updateFormData={updateFormData} />}
+          element={
+            <Register formData={formData} updateFormData={updateFormData} />
+          }
         />
         <Route path="completion" element={<Completion />} />
 
@@ -88,59 +98,179 @@ function App() {
           <Route path="/" element={<Layout />}>
             <Route
               path="dashboard"
-              element={onboardingDone ? <Dashboard /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <Dashboard />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
             <Route
               path="customers"
-              element={onboardingDone ? <CustomerList /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <CustomerList />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
             <Route
               path="customers/add"
-              element={onboardingDone ? <CustomerAdd /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <CustomerAdd />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
             <Route
               path="customers/customer-profile/:customerId"
-              element={onboardingDone ? <CustomerProfile /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <CustomerProfile />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
             <Route
               path="personalisation"
-              element={onboardingDone ? <CustomerPersonalisation /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <CustomerPersonalisation />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
             <Route
               path="customerrhythm"
-              element={onboardingDone && auth?.data?.isUsingOwnWhatsapp ? <CustomerRhythm /> : <Navigate to="/dashboard" replace />}
+              element={
+                onboardingDone && auth?.data?.isUsingOwnWhatsapp ? (
+                  <CustomerRhythm />
+                ) : (
+                  <Navigate to="/dashboard" replace />
+                )
+              }
             />
             <Route
               path="customeropportunities"
-              element={onboardingDone ? <CustomerOpportunities /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <CustomerOpportunities />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
             <Route
               path="performance"
-              element={onboardingDone ? <PerformanceTracking /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <PerformanceTracking />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
             <Route
               path="integration"
-              element={onboardingDone ? <IntegrationPage /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <IntegrationPage />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
             <Route
               path="quicksearch"
-              element={onboardingDone ? <KYCPage /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <KYCPage />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
             <Route
               path="settings"
-              element={onboardingDone ? <SettingsPage /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <SettingsPage />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
             <Route
               path="settings/:tab"
-              element={onboardingDone ? <SettingsPage /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <SettingsPage />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
+            />
+            <Route
+              path="customer-preferences"
+              element={
+                onboardingDone ? (
+                  <div className="p-6 bg-white rounded-xl">
+                    <CustomerFieldPreferences />
+                  </div>
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
+            />
+            <Route
+              path="my-profile"
+              element={
+                onboardingDone ? (
+                  <div className="p-6 bg-white rounded-xl">
+                    <MyProfile />
+                  </div>
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
+            />
+            <Route
+              path="roles-permissions"
+              element={
+                onboardingDone ? (
+                  <div className="p-6 bg-white rounded-xl">
+                    <RolesAndPermissions />
+                  </div>
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
             <Route
               path="subscription"
-              element={onboardingDone ? <Subscription /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <Subscription />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
             <Route
               path="notifications"
-              element={onboardingDone ? <Notification /> : <Navigate to="/register" replace />}
+              element={
+                onboardingDone ? (
+                  <Notification />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
             />
           </Route>
         ) : (

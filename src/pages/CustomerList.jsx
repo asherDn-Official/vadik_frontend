@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import debounce from "lodash.debounce";
 import api from "../api/apiconfig";
+import { FiUsers } from "react-icons/fi";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 import BulkImportModal from "../components/customerProfile/BulkImportModal";
 import { formatIndianMobile } from "../components/customerProfile/formatIndianMobile";
@@ -24,7 +25,7 @@ const CustomerList = () => {
   });
 
   const itemsPerPage = 10;
-  const totalSize = 10
+  const totalSize = 10;
   const navigate = useNavigate();
   const searchTerm = searchParams.get("search") || "";
   const [source, setSource] = useState("");
@@ -70,10 +71,9 @@ const CustomerList = () => {
       .catch(console.error);
   }, []);
 
-
   let startPage = Math.max(
     1,
-    pagination.currentPage - Math.floor(totalSize / 2)
+    pagination.currentPage - Math.floor(totalSize / 2),
   );
 
   let endPage = startPage + totalSize - 1;
@@ -181,6 +181,13 @@ const CustomerList = () => {
                 </select>
               </div>
               <button
+                className="w-full sm:w-auto sm:ml-2 bg-[#313166] text-white px-4 py-2 rounded-md flex items-center gap-2"
+                onClick={() => navigate("/customer-preferences")}
+              >
+                <FiUsers className="text-lg" />
+                Preferences
+              </button>
+              <button
                 onClick={() => setShowBulkImport(true)}
                 className="w-full sm:w-auto bg-white border border-[#313166] text-[#313166] px-4 py-2 rounded-md"
               >
@@ -245,7 +252,7 @@ const CustomerList = () => {
                               {customer.lastname || "-"}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
-                              { `${formatIndianMobile(customer.countryCode + " " + customer.mobileNumber)}`}
+                              {`${formatIndianMobile(customer.countryCode + " " + customer.mobileNumber)}`}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
                               {customer.source}
@@ -304,24 +311,26 @@ const CustomerList = () => {
                 <button
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={pagination.currentPage === 1}
-                  className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === 1
-                    ? "bg-[#3131661A] cursor-not-allowed opacity-50"
-                    : "bg-[#3131661A] hover:bg-gray-100"
-                    }`}
+                  className={`px-3 py-1 text-sm border rounded-md ${
+                    pagination.currentPage === 1
+                      ? "bg-[#3131661A] cursor-not-allowed opacity-50"
+                      : "bg-[#3131661A] hover:bg-gray-100"
+                  }`}
                 >
                   Previous
                 </button>
                 {Array.from(
                   { length: endPage - startPage + 1 },
-                  (_, i) => startPage + i
+                  (_, i) => startPage + i,
                 ).map((page) => (
                   <button
                     key={page}
                     onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === page
-                      ? "bg-[#313166] text-white border-[#313166]"
-                      : "bg-[#3131661A] text-[#313166] hover:bg-gray-100"
-                      }`}
+                    className={`px-3 py-1 text-sm border rounded-md ${
+                      pagination.currentPage === page
+                        ? "bg-[#313166] text-white border-[#313166]"
+                        : "bg-[#3131661A] text-[#313166] hover:bg-gray-100"
+                    }`}
                   >
                     {page}
                   </button>
@@ -330,10 +339,11 @@ const CustomerList = () => {
                 <button
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={pagination.currentPage === pagination.totalPages}
-                  className={`px-3 py-1 text-sm border rounded-md ${pagination.currentPage === pagination.totalPages
-                    ? "bg-[#3131661A] cursor-not-allowed opacity-50"
-                    : "bg-[#3131661A] hover:bg-gray-100"
-                    }`}
+                  className={`px-3 py-1 text-sm border rounded-md ${
+                    pagination.currentPage === pagination.totalPages
+                      ? "bg-[#3131661A] cursor-not-allowed opacity-50"
+                      : "bg-[#3131661A] hover:bg-gray-100"
+                  }`}
                 >
                   Next
                 </button>
@@ -342,13 +352,14 @@ const CustomerList = () => {
                   onChange={(e) => handlePageChange(Number(e.target.value))}
                   className="px-3 py-1 text-sm  rounded-md bg-white hover border border-[#313166] text-[#313166] hover:bg-gray-100 transition-all duration-300"
                 >
-                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
-                    (page) => (
-                      <option key={page} value={page}>
-                        Page {page}
-                      </option>
-                    )
-                  )}
+                  {Array.from(
+                    { length: pagination.totalPages },
+                    (_, i) => i + 1,
+                  ).map((page) => (
+                    <option key={page} value={page}>
+                      Page {page}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

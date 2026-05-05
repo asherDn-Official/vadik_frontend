@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import DatePicker from "../components/common/DatePicker";
 import CustomerProfileCollection from "../components/dashboard/CustomerProfileCollection";
 import CustomerProfileOverview from "../components/dashboard/CustomerProfileOverview";
@@ -8,13 +8,28 @@ import CustomerEngagementScore from "../components/dashboard/CustomerEngagementS
 import OptInOptOut from "../components/dashboard/OptInOptOut";
 import CustomerSatisfactionScore from "../components/dashboard/CustomerSatisfactionScore";
 import { useNavigate } from "react-router-dom";
+import { FiUser, FiUsers } from "react-icons/fi";
 
 function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
   const handleDateChange = (date) => {
     setSelectedDate(date);
   };
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   const navigate = useNavigate();
   function gotoNotification() {
     navigate("/notifications");
@@ -47,8 +62,38 @@ function Dashboard() {
                   />
                 </svg>
               </button>
-              <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center">
-                S
+              <div className="relative" ref={dropdownRef}>
+                <div
+                  className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center cursor-pointer"
+                  onClick={() => setShowDropdown((prev) => !prev)}
+                >
+                  S
+                </div>
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-50">
+                    <button
+                      className="w-full flex items-center gap-2 text-left px-4 py-2 hover:bg-gray-100"
+                      onClick={() => {
+                        navigate("/my-profile");
+                        setShowDropdown(false);
+                      }}
+                    >
+                      <FiUser />
+                      My Profile
+                    </button>
+
+                    <button
+                      className="w-full flex items-center gap-2 text-left px-4 py-2 hover:bg-gray-100"
+                      onClick={() => {
+                        navigate("/roles-permissions");
+                        setShowDropdown(false);
+                      }}
+                    >
+                      <FiUsers />
+                      Roles & Permissions
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </header>
