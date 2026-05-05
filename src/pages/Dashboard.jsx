@@ -1,5 +1,3 @@
-import { useState } from "react";
-import DatePicker from "../components/common/DatePicker";
 import CustomerProfileCollection from "../components/dashboard/CustomerProfileCollection";
 import CustomerProfileOverview from "../components/dashboard/CustomerProfileOverview";
 import CustomerRetentionRate from "../components/dashboard/CustomerRetentionRate";
@@ -10,11 +8,6 @@ import CustomerSatisfactionScore from "../components/dashboard/CustomerSatisfact
 import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-
-  const handleDateChange = (date) => {
-    setSelectedDate(date);
-  };
   const navigate = useNavigate();
   function gotoNotification() {
     navigate("/notifications");
