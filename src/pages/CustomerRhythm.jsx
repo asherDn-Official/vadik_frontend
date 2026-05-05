@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { Zap, LayoutTemplate, Target, Megaphone, Send, MessageCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Zap, LayoutTemplate, Target, Megaphone, MessageCircle } from "lucide-react";
 import TemplateDashboard from "../components/customerRhythm/TemplateDashboard";
 import TemplateBuilder from "../components/customerRhythm/TemplateBuilder";
 import SendCampaign from "../components/customerRhythm/SendCampaign";
 import EngagementDashboard from "../components/customerRhythm/EngagementDashboard";
 import LiveChat from "../components/customerRhythm/LiveChat";
-import ComingSoon from "../components/common/ComingSoon";
+import RetentionRhythmAutomation from "../components/customerRhythm/RetentionRhythmAutomation";
 import { useAuth } from "../context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
@@ -13,7 +13,6 @@ import Template from "../components/settings/Template";
 
   const CustomerRhythm = () => {
   const { auth } = useAuth();
-  const userEmail = auth?.user?.email || auth?.data?.email || localStorage.getItem("email");
   const location = useLocation();
   const [soon, setSoon] = useState();
   const [activeSection, setActiveSection] = useState("templates");
@@ -30,7 +29,7 @@ import Template from "../components/settings/Template";
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
-    if (section && ["templates", "send_campaign", "automation", "engagement", "live_chat"].includes(section)) {
+    if (section && ["templates", "send_campaign", "automation", "retention", "engagement", "live_chat"].includes(section)) {
       setActiveSection(section);
     }
   }, [location.search]);
@@ -97,6 +96,17 @@ import Template from "../components/settings/Template";
                 Automation
               </button>
               <button
+                onClick={() => setActiveSection("retention")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  activeSection === "retention"
+                    ? "bg-white text-[#313166] shadow-md"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Target size={18} />
+                Retention Rhythm
+              </button>
+              <button
                 onClick={() => setActiveSection("engagement")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs  font-medium transition-all whitespace-nowrap ${
                   activeSection === "engagement"
@@ -155,6 +165,10 @@ import Template from "../components/settings/Template";
 
         {activeSection === "automation" && (
           <Template />
+        )}
+
+        {activeSection === "retention" && (
+          <RetentionRhythmAutomation />
         )}
 
         {activeSection === "engagement" && (
