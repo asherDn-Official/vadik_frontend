@@ -28,6 +28,8 @@ import Subscription from "./pages/Subscription";
 import CustomerFieldPreferences from "./components/settings/CustomerFieldPreferences";
 import RolesAndPermissions from "./components/settings/RolesAndPermissions";
 import MyProfile from "./components/settings/MyProfile";
+import SearchPage from "./components/common/SearchPage";
+import CustomerProfilePage from "./components/common/CustomerProfilePage";
 
 function App() {
   const { auth, loading, checkAuth } = useAuth();
@@ -247,6 +249,26 @@ function App() {
                   <div className="p-6 bg-white rounded-xl">
                     <RolesAndPermissions />
                   </div>
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
+            />
+            <Route
+              path="search"
+              element={
+                onboardingDone ? (
+                  <SearchPage />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
+            />
+            <Route
+              path="customer/:customerId"
+              element={
+                onboardingDone ? (
+                  <CustomerProfilePage />
                 ) : (
                   <Navigate to="/register" replace />
                 )

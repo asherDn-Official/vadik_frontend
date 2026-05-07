@@ -47,7 +47,7 @@ function Sidebar() {
     // Staff permissions check
     if (userRole === "staff" && auth?.user?.permissions) {
       const modulePermission = auth.user.permissions.find(
-        (perm) => perm.module === moduleName
+        (perm) => perm.module === moduleName,
       );
       return modulePermission?.canRead || false;
     }
@@ -81,24 +81,24 @@ function Sidebar() {
       icon: customerOpportunitiesIcon,
       label: "Customer Activity",
     },
-    {
-      path: "/performance",
-      module: "Performance Tracking",
-      icon: performanceIcon,
-      label: "Performance Tracking",
-    },
+    // {
+    //   path: "/performance",
+    //   module: "Performance Tracking",
+    //   icon: performanceIcon,
+    //   label: "Performance Tracking",
+    // },
     {
       path: "/integration",
       module: "Integration Management",
       icon: integrationIcon,
       label: "Integration Management",
     },
-    {
-      path: "/quicksearch",
-      module: "Quick Search",
-      icon: kycIcon,
-      label: "Quick Search",
-    },
+    // {
+    //   path: "/quicksearch",
+    //   module: "Quick Search",
+    //   icon: kycIcon,
+    //   label: "Quick Search",
+    // },
     {
       path: "/customerrhythm",
       module: "Customer Rhythm",
@@ -175,55 +175,51 @@ function Sidebar() {
         onConfirm={confirmNavigation}
         onCancel={() => setShowUnsavedModal(false)}
       />
-      
-      <aside className="sticky left-0 top-0 h-screen w-full md:w-60  bg-[#313166] text-white flex flex-col overflow-y-auto">
-      <div className=" flex pt-2 font-medium text-base md:text-lg lg:text-xl text-center truncate justify-center">
-         <img
-              className="w-36"
-              src="/vadik_ai_log_.png"
-              alt="Vadik Logo"
-            />
-      </div>
-      {/* <div className="my-3">{userRole === "retailer" && <ToggleBadge />}</div> */}
-      <nav className="flex-1 pb-2 ">
-        {sidebarItems.map((item) => {
-          if (!canAccess(item.module)) return null;
 
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={(e) => handleNavigation(e, item.path)}
-              className={`sidebar-icon flex items-center px-4 md:px-6 py-2 text-white no-underline transition-colors hover:bg-[#3d3b83] ${
-                isActive(item.path) ? "sidebar-active bg-[#3d3b83]" : ""
-              }`}
-            >
-              <img
-                src={item.icon}
-                alt={item.label}
-                className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 mr-2 md:mr-3 flex-shrink-0"
-              />
-              <span className="text-xs md:text-sm lg:text-base truncate flex flex-col">
-                {item.label.split(" ").map((word, index) => (
-                  <span key={index}>{word}</span>
-                ))}
-              </span>
-            </NavLink>
-          );
-        })}
-       
-        <button
-          onClick={(e) => handleLogout(e)}
-          className="flex w-full items-center px-4 md:px-7 py-3 md:py-4 text-white no-underline transition-colors hover:bg-[#3d3b83] mt-auto"
-        >
-          <LogOut
-            size={16}
-            className="mr-2 md:mr-3 w-4 h-4 md:w-5 md:h-5 flex-shrink-0"
-          />
-          <span className="text-xs md:text-sm lg:text-base">Logout</span>
-        </button>
-      </nav>
-    </aside>
+      <aside className="sticky left-0 top-0 h-screen w-full md:w-60  bg-[#313166] text-white flex flex-col overflow-y-auto">
+        <div className=" flex pt-2 font-medium text-base md:text-lg lg:text-xl text-center truncate justify-center">
+          <img className="w-36" src="/vadik_ai_log_.png" alt="Vadik Logo" />
+        </div>
+        {/* <div className="my-3">{userRole === "retailer" && <ToggleBadge />}</div> */}
+        <nav className="flex-1 pb-2 ">
+          {sidebarItems.map((item) => {
+            if (!canAccess(item.module)) return null;
+
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={(e) => handleNavigation(e, item.path)}
+                className={`sidebar-icon flex items-center px-4 md:px-6 py-2 text-white no-underline transition-colors hover:bg-[#3d3b83] ${
+                  isActive(item.path) ? "sidebar-active bg-[#3d3b83]" : ""
+                }`}
+              >
+                <img
+                  src={item.icon}
+                  alt={item.label}
+                  className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 mr-2 md:mr-3 flex-shrink-0"
+                />
+                <span className="text-xs md:text-sm lg:text-base truncate flex flex-col">
+                  {item.label.split(" ").map((word, index) => (
+                    <span key={index}>{word}</span>
+                  ))}
+                </span>
+              </NavLink>
+            );
+          })}
+
+          <button
+            onClick={(e) => handleLogout(e)}
+            className="flex w-full items-center px-4 md:px-7 py-3 md:py-4 text-white no-underline transition-colors hover:bg-[#3d3b83] mt-auto"
+          >
+            <LogOut
+              size={16}
+              className="mr-2 md:mr-3 w-4 h-4 md:w-5 md:h-5 flex-shrink-0"
+            />
+            <span className="text-xs md:text-sm lg:text-base">Logout</span>
+          </button>
+        </nav>
+      </aside>
     </>
   );
 }

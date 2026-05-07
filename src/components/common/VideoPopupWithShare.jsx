@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Play, X, Share2, Copy, Check } from 'lucide-react';
-import Lottie from "lottie-react"
-
+// src/components/common/VideoPopupWithShare.jsx
+import React, { useState, useRef, useEffect } from "react";
+import { Play, X, Share2, Copy, Check } from "lucide-react";
+import Lottie from "lottie-react";
 
 const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,12 +9,10 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
   const [copied, setCopied] = useState(false);
   const popupRef = useRef(null);
   const shareRef = useRef(null);
-      const LottieRef = useRef(null)
-
-    
+  const LottieRef = useRef(null);
 
   // Get current page URL for sharing
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
   // Close popups when clicking outside
   useEffect(() => {
@@ -24,7 +22,7 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
         setIsOpen(false);
         setShowSharePopup(false);
       }
-      
+
       // Close share popup
       if (shareRef.current && !shareRef.current.contains(event.target)) {
         setShowSharePopup(false);
@@ -32,31 +30,31 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.body.style.overflow = 'hidden';
+      document.addEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "hidden";
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.body.style.overflow = 'unset';
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
   // Close with Escape key
   useEffect(() => {
     const handleEscape = (event) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setIsOpen(false);
         setShowSharePopup(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener("keydown", handleEscape);
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen]);
 
@@ -72,14 +70,14 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy: ', err);
+      console.error("Failed to copy: ", err);
     }
   };
 
   const shareUrl = () => {
     if (navigator.share) {
       navigator.share({
-        title: 'Check this out!',
+        title: "Check this out!",
         url: currentUrl,
       });
     } else {
@@ -88,16 +86,14 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
   };
 
   // Default button classes with custom CSS override
-  const defaultButtonClasses = "flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105";
+  const defaultButtonClasses =
+    "flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105";
   const buttonClasses = buttonCss || defaultButtonClasses;
 
   return (
     <>
       {/* Watch Button */}
-      <button
-        onClick={openPopup}
-        className={buttonClasses}
-      >
+      <button onClick={openPopup} className={buttonClasses}>
         <Play size={20} className="fill-current" />
         Watch Video
       </button>
@@ -118,7 +114,7 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
               >
                 <Share2 size={20} />
               </button> */}
-              
+
               {/* Close Button */}
               <button
                 onClick={closePopup}
@@ -129,7 +125,9 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
             </div>
 
             {/* Video Container */}
-            <div className="relative pt-[56.25%]"> {/* 16:9 aspect ratio */}
+            <div className="relative pt-[56.25%]">
+              {" "}
+              {/* 16:9 aspect ratio */}
               <iframe
                 src={video_url}
                 className="absolute top-0 left-0 w-full h-full"
@@ -138,13 +136,13 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
                 allowFullScreen
                 title="Video Player"
               />
-               <Lottie
-                        animationData={animationData}
-                        loop={true}
-                        autoplay={true}
-                        lottieRef={LottieRef}
-                        className="absolute top-0 left-0 w-full h-full"
-                    />
+              <Lottie
+                animationData={animationData}
+                loop={true}
+                autoplay={true}
+                lottieRef={LottieRef}
+                className="absolute top-0 left-0 w-full h-full"
+              />
             </div>
 
             {/* Share Popup */}
@@ -153,7 +151,9 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
                 ref={shareRef}
                 className="absolute top-20 right-4 bg-white rounded-lg shadow-xl p-4 min-w-64 z-20 border border-gray-200"
               >
-                <h3 className="font-semibold text-gray-800 mb-3">Share this video</h3>
+                <h3 className="font-semibold text-gray-800 mb-3">
+                  Share this video
+                </h3>
                 <div className="flex items-center gap-2 mb-3">
                   <input
                     type="text"
@@ -166,7 +166,7 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
                     className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
                   >
                     {copied ? <Check size={16} /> : <Copy size={16} />}
-                    {copied ? 'Copied!' : 'Copy'}
+                    {copied ? "Copied!" : "Copy"}
                   </button>
                 </div>
                 <div className="flex gap-2">

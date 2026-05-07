@@ -37,7 +37,7 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-[#F3F4F8]">
       <div className=" ">
-        <div className="bg-white px-2 py-2 sm:p-4">
+        {/* <div className="bg-white px-2 py-2 sm:p-4">
           <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <h1 className="font-[Poppins] font-medium text-[24px] leading-[114%] tracking-[0] text-[#313166]">
               Welcome, Admin
@@ -97,7 +97,7 @@ function Dashboard() {
               </div>
             </div>
           </header>
-        </div>
+        </div> */}
 
         <div className="grid grid-cols-1 gap-5 p-[2%] md:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
           {/* First Column */}

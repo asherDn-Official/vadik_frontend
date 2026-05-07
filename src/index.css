@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
 :root {
   font-family: "Poppins", sans-serif;
   line-height: 1.5;
@@ -87,7 +85,7 @@ body {
   /* Progress Components */
   .progress-connector {
     height: 2px;
-    background: linear-gradient(to right, #ffc107 50%, #F3F4F8 50%);
+    background: linear-gradient(to right, #ffc107 50%, #f3f4f8 50%);
     background-size: 200% 100%;
     transition: all 0.5s ease;
   }
@@ -114,7 +112,7 @@ body {
   }
 
   .customer-sidebar-scroll {
-    scrollbar-width:8px;
+    scrollbar-width: 8px;
     scrollbar-color: #313166 #31316629;
   }
 
@@ -134,4 +132,19 @@ body {
   .customer-sidebar-scroll::-webkit-scrollbar-thumb:active {
     background-color: #313166;
   }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-in-out;
 }

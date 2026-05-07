@@ -146,7 +146,7 @@ useEffect(() => {
         </div>
 
         {/* Third Row - Revenue Growth & Cart Value | CLV Section */}
-        <div className="grid grid-cols-2 lg:grid-cols-2 gap-6">
+        <div className="hidden grid grid-cols-2 lg:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
              <div className="bg-white p-6 rounded-[10px]">

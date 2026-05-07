@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+// src/pages/CustomerOpportunities.jsx
+/* eslint-disable react/prop-types */
+
+import { useRef, useState } from "react";
 import PersonalizationCampaign from "../components/customeroppertunites/PersonalizationCampaign";
-import CustomerRecommendation from "../components/customeroppertunites/CustomerRecommendation";
-import StoreRecommendation from "../components/customeroppertunites/StoreRecommendation";
 import EngagementActivities from "../components/customeroppertunites/EngagementActivities";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 import ComingSoon from "../components/common/ComingSoon";
@@ -11,6 +12,8 @@ import Coupon from "../components/settings/Coupon";
 import LoyaltyPoint from "../components/settings/LoyaltyPoint";
 import { LuTicketPercent } from "react-icons/lu";
 import { FaCoins } from "react-icons/fa";
+import { Info, PlayCircle, Send, Sparkles } from "lucide-react";
+import PerformanceTracking from "./PerformanceTracking";
 
 const CustomerOpportunities = () => {
   const [activeTab, setActiveTab] = useState("engagement");
@@ -21,222 +24,308 @@ const CustomerOpportunities = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className=" flex justify-center items-center flex-wrap">
-          <div className="text-center flex-1">
-            <h1 className="text-2xl font-bold text-slate-800 mb-2">
+    <div className="min-h-screen bg-[#F6F7FB]">
+      {/* Header Section */}
+      <div className="px-4 md:px-6 xl:px-8 py-5">
+        <div className="relative overflow-visible bg-white rounded-3xl border border-gray-100 shadow-sm p-5 md:p-6 max-w-7xl mx-auto">
+          {/* Top Header */}
+          <div className="text-center max-w-4xl mx-auto mb-6">
+            <h1 className="text-3xl md:text-4xl font-bold text-[#313166]">
               Customer Activity
             </h1>
-            <p className="text-gray-600 ">
-              This smart chatbot suggests the right offers to the right
-              customers
-              <br />
-              at the right time using intelligent triggers.
+
+            <p className="text-gray-500 mt-4 text-sm md:text-base leading-relaxed">
+              Create campaigns, engagement activities, loyalty rewards, and
+              customer interaction workflows from one place.
             </p>
-          </div>
-          <div className=" text-center ">
-            <Campaign onUpdatePlan={handleUpdatePlan} />
 
-            {showSubscriptionPopup && (
-              <SubscriptionPopup
-                onClose={() => setShowSubscriptionPopup(false)}
-                activeTabName={"addon"}
-                showCloseButton={true}
-                showAutopay={false}
-                showSubscription={false}
-                showAddon={true}
-                title={"Add Ons Plan "}
-              />
-            )}
-          </div>
-        </div>
+            <div className="mt-6 flex justify-center">
+              <Campaign onUpdatePlan={handleUpdatePlan} />
 
-        {/* Tabs */}
-        <div className="mt-8 sm:mt-10 flex flex-wrap justify-center items-center gap-4 md:gap-6 lg:gap-8">
-          <div>
-            <button
-              onClick={() => setActiveTab("engagement")}
-              className={`flex w-full max-w-xs sm:w-auto items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-                activeTab === "engagement"
-                  ? " border-[#EC396F] rounded-[12px]"
-                  : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
-              }`}
-            >
-              <div className="w-10 h-10 rounded-lg flex justify-center items-center">
-                <img src="../assets/cus-1.png" alt="" />
-              </div>
-
-              <div>
-                <div className="font-semibold text-slate-800 text-start">
-                  Create Activity
-                </div>
-                <div className=" flex items-center justify-between">
-                  <span className="text-xs text-gray-500 text-start  ">
-                    Create engaging customer activities like Quiz, Spin Wheel,
-                    and Scratch Cards to collect insights and boost interaction.
-                    <span className=" float-right">
-                      <VideoPopupWithShare
-                        video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                        buttonCss=" flex text-pink-500 items-center gap-2 whitespace-nowrap "
-                      />
-                    </span>
-                  </span>
-                </div>
-              </div>
-            </button>
+              {showSubscriptionPopup && (
+                <SubscriptionPopup
+                  onClose={() => setShowSubscriptionPopup(false)}
+                  activeTabName={"addon"}
+                  showCloseButton={true}
+                  showAutopay={false}
+                  showSubscription={false}
+                  showAddon={true}
+                  title={"Add Ons Plan "}
+                />
+              )}
+            </div>
           </div>
 
-          <div>
-            <button
-              onClick={() => setActiveTab("campaign")}
-              className={`flex w-full max-w-xs sm:w-auto items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-                activeTab === "campaign"
-                  ? " border-[#EC396F] rounded-[12px]"
-                  : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
-              }`}
-            >
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                <img src="../assets/cus-2.png" alt="" />
-              </div>
-              <div>
-                <div className="font-semibold text-slate-800 text-start">
-                  Send Activity
-                </div>
-                <div className=" flex items-center justify-between">
-                  <span className="text-xs text-gray-500 text-start">
-                    Easily send campaigns and activities to your customers via
-                    WhatsApp to drive engagement and repeat visits.
-                    <span className=" float-right">
-                      <VideoPopupWithShare
-                        video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                        buttonCss=" flex text-pink-500  items-center gap-2 whitespace-nowrap "
-                      />
-                    </span>
-                  </span>
-                </div>
-              </div>
-            </button>
-          </div>
+          {/* Top Navigation Tabs */}
+          <div className="relative z-20 max-w-6xl mx-auto overflow-visible">
+            <div className="flex justify-center overflow-visible">
+              <div className="flex max-w-full flex-wrap items-center justify-center gap-1 overflow-visible rounded-xl bg-gray-100 p-1 shadow-inner">
+                <TopTab
+                  active={activeTab === "engagement"}
+                  onClick={() => setActiveTab("engagement")}
+                  icon={<Sparkles size={18} />}
+                  title="Create Activity"
+                  description="Build quizzes, scratch cards, and spin wheel campaigns to increase customer interaction."
+                  video={true}
+                />
 
-          <div>
-            <button
-              onClick={() => setActiveTab("customer-recommendation")}
-              className={`flex w-full max-w-xs sm:w-auto items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-                activeTab === "customer-recommendation"
-                  ? "border-[#EC396F] rounded-[12px]"
-                  : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
-              }`}
-            >
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                <img src="../assets/cus-3.png" alt="" />
-              </div>
-              <div>
-                <div className="font-semibold text-slate-800 text-start">
-                  Chats
-                </div>
-                <div className="text-xs text-gray-500 text-start">
-                  Automatically suggest the right products and offers during
-                  customer conversations based on behavior and preferences.
-                </div>
-              </div>
-            </button>
-          </div>
+                <TopTab
+                  active={activeTab === "campaign"}
+                  onClick={() => setActiveTab("campaign")}
+                  icon={<Send size={18} />}
+                  title="Send Activity"
+                  description="Launch WhatsApp campaigns and engagement workflows."
+                  video={true}
+                />
 
-          <div>
-            <button
-              onClick={() => setActiveTab("store-recommendation")}
-              className={`flex w-full max-w-xs sm:w-auto items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-                activeTab === "store-recommendation"
-                  ? "border-[#EC396F] rounded-[12px]"
-                  : "bg-gray-50 border-gray-200 opacity-60 hover:opacity-100"
-              }`}
-            >
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                <img src="../assets/cus-4.png" alt="" />
-              </div>
-              <div>
-                <div className="font-semibold text-slate-800 text-start">
-                  Vadik Assistant
-                </div>
-                <div className="text-xs text-gray-500 text-start">
-                  An AI-powered assistant that recommends smart campaigns,
-                  customer engagement ideas, and personalised promotions.
-                </div>
-              </div>
-            </button>
-          </div>
+                {/* <TopTab
+                  active={activeTab === "customer-recommendation"}
+                  onClick={() => setActiveTab("customer-recommendation")}
+                  icon={<Info size={18} />}
+                  title="Customer Recommendation"
+                  description="Provide personalized product recommendations to customers based on their browsing and purchase history."
+                  video={false}
+                />
 
-          <div>
-            <button
-              onClick={() => setActiveTab("coupon")}
-              className={`flex w-full max-w-xs sm:w-auto items-center gap-3 px-4 py-3 border rounded-xl transition-all ${
-                activeTab === "coupon"
-                  ? "border-[#EC396F] bg-white shadow-sm"
-                  : "bg-gray-50 border-gray-200 opacity-80 hover:opacity-100 hover:shadow-sm"
-              }`}
-            >
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-pink-50 text-[#EC396F]">
-                <LuTicketPercent size={20} />
-              </div>
+                <TopTab
+                  active={activeTab === "store-recommendation"}
+                  onClick={() => setActiveTab("store-recommendation")}
+                  icon={<Info size={18} />}
+                  title="Store Recommendation"
+                  description="Offer personalized store recommendations to customers based on their location and preferences."
+                  video={false}
+                /> */}
 
-              <div>
-                <div className="font-semibold text-slate-800 text-start">
-                  Coupons
-                </div>
-                <div className="text-xs text-gray-500 text-start">
-                  Manage and create discount coupons for campaigns.
-                </div>
-              </div>
-            </button>
-          </div>
+                <TopTab
+                  active={activeTab === "coupon"}
+                  onClick={() => setActiveTab("coupon")}
+                  icon={<LuTicketPercent size={18} />}
+                  title="Coupons"
+                  description="Create and manage promotional coupons to drive customer engagement."
+                  video={false}
+                />
 
-          <div>
-            <button
-              onClick={() => setActiveTab("loyalty")}
-              className={`flex w-full max-w-xs sm:w-auto items-center gap-3 px-4 py-3 border rounded-xl transition-all ${
-                activeTab === "loyalty"
-                  ? "border-[#EC396F] bg-white shadow-sm"
-                  : "bg-gray-50 border-gray-200 opacity-80 hover:opacity-100 hover:shadow-sm"
-              }`}
-            >
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-yellow-50 text-yellow-600">
-                <FaCoins size={18} />
-              </div>
+                <TopTab
+                  active={activeTab === "loyalty"}
+                  onClick={() => setActiveTab("loyalty")}
+                  icon={<FaCoins size={17} />}
+                  title="Loyalty Points"
+                  description="Manage loyalty points and rewards to increase customer retention."
+                  video={false}
+                />
 
-              <div>
-                <div className="font-semibold text-slate-800 text-start">
-                  Loyalty Points
-                </div>
-                <div className="text-xs text-gray-500 text-start">
-                  Configure loyalty rewards and points system.
-                </div>
+                <TopTab
+                  active={activeTab === "performanceTracking"}
+                  onClick={() => setActiveTab("performanceTracking")}
+                  icon={<FaCoins size={17} />}
+                  title="Performance Tracking"
+                  description="Monitor and analyze customer performance metrics."
+                  video={false}
+                />
               </div>
-            </button>
+            </div>
+
+            {/* Active Tab Description */}
+            {/* <div className="mt-5 max-w-3xl mx-auto">
+              <TabDescriptionCloud activeTab={activeTab} />
+            </div> */}
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-6">
-        {activeTab === "engagement" && <EngagementActivities />}
-        {activeTab === "campaign" && <PersonalizationCampaign />}
-        {/* {activeTab === "customer-recommendation" && <CustomerRecommendation />}
-        {activeTab === "store-recommendation" && <StoreRecommendation />} */}
-        {activeTab === "customer-recommendation" && <ComingSoon />}
-        {activeTab === "store-recommendation" && <ComingSoon />}
+      {/* Content Section */}
+      <div className="px-4 md:px-6 xl:px-8 pb-6">
+        {activeTab === "engagement" && (
+          <div className="max-w-7xl mx-auto">
+            <EngagementActivities />
+          </div>
+        )}
+
+        {activeTab === "campaign" && (
+          <div className="max-w-7xl mx-auto">
+            <PersonalizationCampaign />
+          </div>
+        )}
+
+        {/* Future Ready */}
+        {/* 
+        {activeTab === "customer-recommendation" && (
+          <CustomerRecommendation />
+        )}
+
+        {activeTab === "store-recommendation" && (
+          <StoreRecommendation />
+        )} 
+        */}
+
+        {activeTab === "customer-recommendation" && (
+          <div className="max-w-7xl mx-auto">
+            <ComingSoon />
+          </div>
+        )}
+
+        {activeTab === "store-recommendation" && (
+          <div className="max-w-7xl mx-auto">
+            <ComingSoon />
+          </div>
+        )}
+
         {activeTab === "coupon" && (
-          <div className="bg-white p-4 rounded-xl">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 md:p-6 max-w-7xl mx-auto">
             <Coupon />
           </div>
         )}
+
         {activeTab === "loyalty" && (
-          <div className="bg-white p-4 rounded-xl">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 md:p-6 max-w-7xl mx-auto">
             <LoyaltyPoint />
           </div>
         )}
+
+        {activeTab === "performanceTracking" && (
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 md:p-6 max-w-7xl mx-auto">
+            <PerformanceTracking />
+          </div>
+        )}
       </div>
+    </div>
+  );
+};
+
+/* ========================================================= */
+/* Reusable Tab Card */
+/* ========================================================= */
+
+const TopTab = ({ active, onClick, icon, title, description, video }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ left: 0, top: 0 });
+  const tabRef = useRef(null);
+  const hiddenVideoButtonRef = useRef(null);
+
+  const openTooltip = () => {
+    const rect = tabRef.current?.getBoundingClientRect();
+
+    if (rect) {
+      const tooltipWidth = Math.min(320, window.innerWidth - 48);
+      const halfTooltipWidth = tooltipWidth / 2;
+      const center = rect.left + rect.width / 2;
+
+      setTooltipPosition({
+        left: Math.min(
+          Math.max(center, halfTooltipWidth + 24),
+          window.innerWidth - halfTooltipWidth - 24,
+        ),
+        top: rect.bottom + 8,
+      });
+    }
+
+    setShowTooltip(true);
+  };
+
+  return (
+    <div
+      ref={tabRef}
+      className={`relative flex items-center gap-2 rounded-lg px-3 py-2 transition-all whitespace-nowrap sm:px-4 ${
+        active
+          ? "bg-white text-[#313166] shadow-md"
+          : "text-gray-500 hover:text-gray-700"
+      }`}
+      onMouseEnter={openTooltip}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <button
+        onClick={onClick}
+        className="flex items-center gap-2 text-xs font-medium"
+      >
+        {icon}
+        {title}
+      </button>
+
+      <button
+        type="button"
+        aria-label={`${title} details`}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (showTooltip) {
+            setShowTooltip(false);
+          } else {
+            openTooltip();
+          }
+        }}
+        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-gray-400 transition-all hover:bg-gray-100 hover:text-[#EC396F]"
+      >
+        <Info size={14} />
+      </button>
+
+      <div
+        style={{
+          left: `${tooltipPosition.left}px`,
+          top: `${tooltipPosition.top}px`,
+        }}
+        className={`fixed z-[9999] -translate-x-1/2 transition-all duration-200 ${
+          showTooltip
+            ? "visible translate-y-0 opacity-100"
+            : "invisible translate-y-1 opacity-0"
+        }`}
+      >
+        <div className="relative w-[min(320px,calc(100vw-48px))] rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-[0_10px_40px_rgba(0,0,0,0.14)]">
+          <div className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-gray-100 bg-white" />
+
+          <div className="flex items-start gap-3 w-full">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FFF1F5] text-[#EC396F]">
+              {icon}
+            </div>
+
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <h4 className="text-[17px] font-semibold leading-tight text-[#313166] break-words">
+                {title}
+              </h4>
+
+              <p
+                className="
+                  mt-2
+                  text-sm
+                  leading-relaxed
+                  text-gray-500
+                  break-words
+                  whitespace-normal
+                "
+              >
+                {description}
+              </p>
+            </div>
+          </div>
+
+          {video && (
+            <div className="mt-5">
+              <button
+                onClick={() => {
+                  hiddenVideoButtonRef.current
+                    ?.querySelector("button")
+                    ?.click();
+
+                  setTimeout(() => {
+                    setShowTooltip(false);
+                  }, 150);
+                }}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#EC396F] to-[#7C3AED] text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:opacity-95"
+              >
+                <PlayCircle size={18} />
+                Watch Video
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {video && (
+        <div ref={hiddenVideoButtonRef} className="absolute left-0 top-0">
+          <VideoPopupWithShare
+            video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+            buttonCss="!absolute !m-0 !h-0 !w-0 !overflow-hidden !border-0 !p-0 !opacity-0"
+          />
+        </div>
+      )}
     </div>
   );
 };
