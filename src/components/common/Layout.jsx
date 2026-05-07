@@ -164,7 +164,7 @@ function Layout() {
           )}
 
         <Sidebar onOpenTour={setActiveTour} />
-        <main className="flex-1 bg-[#F4F5F9]">
+        <main className="flex-1 bg-[#F4F5F9] pb-20 md:pb-0">
           <div className="bg-white px-3 py-3 shadow-sm sm:px-4">
             <header
               className="

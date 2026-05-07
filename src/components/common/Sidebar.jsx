@@ -2,7 +2,6 @@ import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { LogOut } from "lucide-react";
-import ToggleBadge from "./ToggleBadge";
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import UnsavedChangesModal from "./UnsavedChangesModal";
 import { useUnsavedChanges } from "../../context/UnsavedChangesContext";
@@ -10,10 +9,7 @@ import dashboardIcon from "/assets/mage_dashboard-icon.png";
 import customersIcon from "/assets/bi_person-fill-icon.png";
 import personalisationIcon from "/assets/fluent-insights.png";
 import customerOpportunitiesIcon from "/assets/user-check-icon.png";
-import performanceIcon from "/assets/mdi_performance-icon.png";
 import integrationIcon from "/assets/integration-icon.png";
-import kycIcon from "/assets/iconamoon_search-bold.png";
-import settingsIcon from "/assets/settings-icon.png";
 import rhytmIcon from "/assets/ix_customer.png";
 import subscriptionIcon from "/assets/crown-icon.png";
 
@@ -176,33 +172,43 @@ function Sidebar() {
         onCancel={() => setShowUnsavedModal(false)}
       />
 
-      <aside className="sticky left-0 top-0 h-screen w-full md:w-60  bg-[#313166] text-white flex flex-col overflow-y-auto">
-        <div className=" flex pt-2 font-medium text-base md:text-lg lg:text-xl text-center truncate justify-center">
-          <img className="w-36" src="/vadik_ai_log_.png" alt="Vadik Logo" />
+      <aside className="fixed inset-x-0 bottom-0 z-40 flex h-[74px] w-full flex-col border-t border-white/10 bg-[#313166]/95 text-white shadow-[0_-10px_30px_rgba(49,49,102,0.18)] backdrop-blur md:sticky md:left-0 md:top-0 md:h-screen md:w-64 md:shrink-0 md:border-r md:border-t-0 md:border-white/10 md:bg-[#313166] md:shadow-none">
+        <div className="hidden px-5 pb-4 pt-5 md:block">
+          <div className="flex items-center justify-center rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
+            <img className="w-36" src="/vadik_ai_log_.png" alt="Vadik Logo" />
+          </div>
         </div>
         {/* <div className="my-3">{userRole === "retailer" && <ToggleBadge />}</div> */}
-        <nav className="flex-1 pb-2 ">
+        <nav className="flex h-full items-center gap-1 overflow-x-auto px-2 py-2 md:h-auto md:flex-1 md:flex-col md:items-stretch md:gap-1.5 md:overflow-y-auto md:overflow-x-hidden md:px-4 md:pb-4 md:pt-1">
           {sidebarItems.map((item) => {
             if (!canAccess(item.module)) return null;
+            const active = isActive(item.path);
 
             return (
               <NavLink
                 key={item.path}
                 to={item.path}
                 onClick={(e) => handleNavigation(e, item.path)}
-                className={`sidebar-icon flex items-center px-4 md:px-6 py-2 text-white no-underline transition-colors hover:bg-[#3d3b83] ${
-                  isActive(item.path) ? "sidebar-active bg-[#3d3b83]" : ""
+                className={`group relative flex h-full min-w-[76px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 text-white/75 no-underline transition-all hover:bg-white/10 hover:text-white md:h-auto md:min-w-0 md:flex-row md:justify-start md:gap-3 md:px-4 md:py-[14px] ${
+                  active
+                    ? "bg-white/12 text-white backdrop-blur-md ring-1 ring-white/10"
+                    : "text-white/75 hover:bg-white/10 hover:text-white"
                 }`}
               >
+                <span
+                  className={`hidden h-10 w-[3px] rounded-full bg-gradient-to-b from-[#FF4D8D] to-[#EC396F] md:absolute md:left-0 md:block ${
+                    active ? "opacity-100" : "opacity-0"
+                  }`}
+                />
                 <img
                   src={item.icon}
                   alt={item.label}
-                  className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 mr-2 md:mr-3 flex-shrink-0"
+                  className={`h-5 w-5 shrink-0 object-contain md:h-6 md:w-6 ${
+                    active ? "" : "opacity-90 group-hover:opacity-100"
+                  }`}
                 />
-                <span className="text-xs md:text-sm lg:text-base truncate flex flex-col">
-                  {item.label.split(" ").map((word, index) => (
-                    <span key={index}>{word}</span>
-                  ))}
+                <span className="line-clamp-2 max-w-[68px] text-center text-[11px] font-medium leading-tight md:max-w-none md:text-left md:text-sm">
+                  {item.label}
                 </span>
               </NavLink>
             );
@@ -210,13 +216,10 @@ function Sidebar() {
 
           <button
             onClick={(e) => handleLogout(e)}
-            className="flex w-full items-center px-4 md:px-7 py-3 md:py-4 text-white no-underline transition-colors hover:bg-[#3d3b83] mt-auto"
+            className="group flex h-full min-w-[76px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 text-white/75 transition-all hover:bg-white/10 hover:text-white md:mt-auto md:h-auto md:min-w-0 md:flex-row md:justify-start md:gap-3 md:px-4 md:py-[14px]"
           >
-            <LogOut
-              size={16}
-              className="mr-2 md:mr-3 w-4 h-4 md:w-5 md:h-5 flex-shrink-0"
-            />
-            <span className="text-xs md:text-sm lg:text-base">Logout</span>
+            <LogOut size={16} className="h-5 w-5 shrink-0 md:h-6 md:w-6" />
+            <span className="text-[11px] font-medium md:text-sm">Logout</span>
           </button>
         </nav>
       </aside>
