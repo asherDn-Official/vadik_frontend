@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { calculateGSTFromInclusiveTotal, calculateTotalWithGST } from "../../../../utils/billingUtils";
+import { calculateTotalWithGST } from "../../../../utils/billingUtils";
 
 export default function ConfirmationModal({
   isOpen,
@@ -133,12 +133,8 @@ export default function ConfirmationModal({
           {/* Price Breakdown with GST */}
           {showPriceBreakdown ? (
             (() => {
-              const billing = autoPayEnabled
-                ? calculateGSTFromInclusiveTotal(totalPrice)
-                : calculateTotalWithGST(totalPrice);
-              const gstLabel = autoPayEnabled
-                ? "GST (included)"
-                : `GST (${billing.gstPercentage}%)`;
+              const billing = calculateTotalWithGST(totalPrice);
+              const gstLabel = `GST (${billing.gstPercentage}%)`;
               return (
                 <div className="border-t pt-4 mt-4 space-y-3">
                   <div className="flex justify-between items-center">
