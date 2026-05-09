@@ -164,13 +164,75 @@ const formatDate = (value) => {
   return date.toLocaleDateString();
 };
 
+const normalizeTemplateVariableToken = (value = "") => {
+  const match = String(value).match(/\d+/);
+  return match ? `{{${match[0]}}}` : String(value);
+};
+
+const getTemplateHeaderMediaType = (template) => {
+  const header = template?.components?.find((component) => component.type === "HEADER");
+  return header && ["IMAGE", "VIDEO", "DOCUMENT"].includes(header.format) ? header.format : "";
+};
+
 const extractTemplateVariables = (template) => {
-  const values = new Set();
+  const values = [];
   (template?.components || []).forEach((component) => {
-    const matches = (component?.text || "").match(/\{\{\d+\}\}/g) || [];
-    matches.forEach((match) => values.add(match));
+    if (!["HEADER", "BODY"].includes(component?.type)) return;
+
+    const textSources = [
+      component?.text || "",
+      ...(Array.isArray(component?.example?.body_text) ? component.example.body_text.flat() : []),
+    ].filter(Boolean);
+
+    const matches = textSources.join(" ").match(/\{\{\s*\d+\s*\}\}/g) || [];
+    const uniqueMatches = [...new Set(matches.map(normalizeTemplateVariableToken))].sort(
+      (left, right) => Number(left.replace(/\D/g, "")) - Number(right.replace(/\D/g, ""))
+    );
+
+    uniqueMatches.forEach((variable) => {
+      values.push({
+        key: `${component.type}:${variable}`,
+        componentType: component.type,
+        variable,
+      });
+    });
   });
-  return Array.from(values).sort((a, b) => Number(a.replace(/\D/g, "")) - Number(b.replace(/\D/g, "")));
+  return values;
+};
+
+const findVariableMapping = (mappings = [], descriptor = {}) =>
+  mappings.find(
+    (mapping) =>
+      (mapping.componentType || "BODY") === descriptor.componentType && mapping.variable === descriptor.variable
+  ) ||
+  mappings.find(
+    (mapping) =>
+      !mapping.componentType && descriptor.componentType === "BODY" && mapping.variable === descriptor.variable
+  );
+
+const upsertVariableMapping = (mappings = [], descriptor = {}, updates = {}) => {
+  const nextMappings = [...mappings];
+  const index = nextMappings.findIndex(
+    (mapping) =>
+      ((mapping.componentType || "BODY") === descriptor.componentType && mapping.variable === descriptor.variable) ||
+      (!mapping.componentType && descriptor.componentType === "BODY" && mapping.variable === descriptor.variable)
+  );
+  const nextMapping = {
+    componentType: descriptor.componentType,
+    variable: descriptor.variable,
+    sourceType: "customer_field",
+    value: "firstname",
+    ...(index >= 0 ? nextMappings[index] : {}),
+    ...updates,
+  };
+
+  if (index >= 0) {
+    nextMappings[index] = nextMapping;
+  } else {
+    nextMappings.push(nextMapping);
+  }
+
+  return nextMappings;
 };
 
 const getTemplatePreviewText = (template, mappings, fields) => {
@@ -181,7 +243,9 @@ const getTemplatePreviewText = (template, mappings, fields) => {
   if (!template) return bodyText;
 
   let previewText = bodyText;
-  mappings.forEach((mapping) => {
+  mappings
+    .filter((mapping) => (mapping.componentType || "BODY") === "BODY")
+    .forEach((mapping) => {
     const field = fields.find((item) => item.fieldKey === mapping.value);
     const replacement =
       mapping.sourceType === "static"
@@ -191,9 +255,31 @@ const getTemplatePreviewText = (template, mappings, fields) => {
           : field?.label || "customer field";
 
     previewText = previewText.replaceAll(mapping.variable, `{{${replacement}}}`);
-  });
+    });
 
   return previewText;
+};
+
+const formatPhone = (countryCode = "", mobileNumber = "") => {
+  const phone = `${countryCode || ""}${mobileNumber || ""}`.trim();
+  return phone ? (phone.startsWith("+") ? phone : `+${phone}`) : "No mobile";
+};
+
+const formatRuleGroupSummary = (ruleGroup = {}) => {
+  const rules = Array.isArray(ruleGroup?.conditions) ? ruleGroup.conditions : [];
+  if (!rules.length) return "All";
+  return `${ruleGroup.logic || "AND"} • ${rules.length} rule${rules.length === 1 ? "" : "s"}`;
+};
+
+const formatExecutionSummary = (log) => {
+  const triggerSnapshot = log?.triggerSnapshot || {};
+  if (triggerSnapshot.customerCreatedAt) return "New customer";
+  if (triggerSnapshot.keyword) return `Keyword: ${triggerSnapshot.keyword}`;
+  if (triggerSnapshot.activityType) return `Activity: ${triggerSnapshot.activityType}`;
+
+  const audienceSummary = formatRuleGroupSummary(log?.conditionSnapshot?.audienceRules);
+  const conditionSummary = formatRuleGroupSummary(log?.conditionSnapshot?.conditionRules);
+  return `Audience ${audienceSummary} | Conditions ${conditionSummary}`;
 };
 
 const normalizeAutomationForForm = (automation) => {
@@ -621,6 +707,7 @@ function RetentionBuilderView({
   const [form, setForm] = useState(() => normalizeAutomationForForm(initialAutomation));
   const [audienceDraftRule, setAudienceDraftRule] = useState({ fieldKey: "", operator: "", value: "", valueTo: "" });
   const [conditionDraftRule, setConditionDraftRule] = useState({ fieldKey: "", operator: "", value: "", valueTo: "" });
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   useEffect(() => {
     setForm(normalizeAutomationForForm(initialAutomation));
@@ -631,14 +718,22 @@ function RetentionBuilderView({
   const selectedTemplate = templates.find((template) => template._id === form.actionConfig.templateId);
   const dateFields = fields.filter((field) => field.type === "date");
   const templateVariables = extractTemplateVariables(selectedTemplate);
+  const templateHeaderMediaType = getTemplateHeaderMediaType(selectedTemplate);
   const previewText = getTemplatePreviewText(selectedTemplate, form.actionConfig.variableMappings || [], fields);
 
   const updateTemplate = (templateId) => {
     const template = templates.find((item) => item._id === templateId);
-    const nextMappings = extractTemplateVariables(template).map((variable) => {
-      const existing = form.actionConfig.variableMappings.find((mapping) => mapping.variable === variable);
-      return existing || { variable, sourceType: "customer_field", value: "firstname" };
-    });
+    const nextVariables = extractTemplateVariables(template);
+    const nextMappings = nextVariables.map(
+      (descriptor) =>
+        findVariableMapping(form.actionConfig.variableMappings, descriptor) || {
+          componentType: descriptor.componentType,
+          variable: descriptor.variable,
+          sourceType: "customer_field",
+          value: "firstname",
+        }
+    );
+    const mediaType = getTemplateHeaderMediaType(template);
 
     setForm({
       ...form,
@@ -648,8 +743,46 @@ function RetentionBuilderView({
         templateName: template?.name || "",
         languageCode: template?.language || "en_US",
         variableMappings: nextMappings,
+        mediaType,
+        mediaUrl: mediaType === form.actionConfig.mediaType ? form.actionConfig.mediaUrl : "",
       },
     });
+  };
+
+  const handleMediaUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = templateHeaderMediaType === "VIDEO" ? 64 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showToast(`File too large. Max ${maxSize / (1024 * 1024)}MB.`, "warning");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setUploadingMedia(true);
+      const response = await api.post("/api/integrationManagement/whatsapp/media/upload", formData);
+      if (response.data?.status) {
+        setForm((previous) => ({
+          ...previous,
+          actionConfig: {
+            ...previous.actionConfig,
+            mediaUrl: response.data.url || "",
+            mediaType: templateHeaderMediaType,
+          },
+        }));
+        showToast("Media uploaded successfully", "success");
+      }
+    } catch (error) {
+      console.error("Error uploading template media:", error);
+      showToast("Failed to upload media", "error");
+    } finally {
+      setUploadingMedia(false);
+      event.target.value = "";
+    }
   };
 
   const addRule = (ruleType, draftRule) => {
@@ -691,7 +824,29 @@ function RetentionBuilderView({
     });
   };
 
-  const handleSave = () => onSave(form);
+  const handleSave = () => {
+    if (!form.actionConfig.templateId) {
+      showToast("Choose a WhatsApp template before saving", "warning");
+      return;
+    }
+
+    const missingMappings = templateVariables.filter((descriptor) => {
+      const mapping = findVariableMapping(form.actionConfig.variableMappings, descriptor);
+      return !mapping?.value?.trim();
+    });
+
+    if (missingMappings.length > 0) {
+      showToast("Fill all template variables before saving", "warning");
+      return;
+    }
+
+    if (templateHeaderMediaType && !form.actionConfig.mediaUrl?.trim()) {
+      showToast(`Add a ${templateHeaderMediaType.toLowerCase()} header URL or upload media before saving`, "warning");
+      return;
+    }
+
+    onSave(form);
+  };
 
   return (
     <div className="space-y-6">
@@ -990,6 +1145,50 @@ function RetentionBuilderView({
                   ))}
                 </select>
 
+                {templateHeaderMediaType && (
+                  <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
+                    <div className="text-sm font-semibold text-[#313166]">{templateHeaderMediaType} header media</div>
+                    <p className="text-sm text-gray-500">
+                      This template uses a media header. Add the file URL or upload the media that should be sent with the automation.
+                    </p>
+                    <input
+                      value={form.actionConfig.mediaUrl || ""}
+                      onChange={(event) =>
+                        setForm({
+                          ...form,
+                          actionConfig: {
+                            ...form.actionConfig,
+                            mediaUrl: event.target.value,
+                            mediaType: templateHeaderMediaType,
+                          },
+                        })
+                      }
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                      placeholder={`Paste ${templateHeaderMediaType.toLowerCase()} URL here...`}
+                    />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#313166] px-4 py-2 text-sm font-medium text-[#313166]">
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept={
+                            templateHeaderMediaType === "IMAGE"
+                              ? "image/*"
+                              : templateHeaderMediaType === "VIDEO"
+                                ? "video/*"
+                                : ".pdf,.doc,.docx"
+                          }
+                          onChange={handleMediaUpload}
+                        />
+                        {uploadingMedia ? "Uploading..." : form.actionConfig.mediaUrl ? "Replace File" : "Upload File"}
+                      </label>
+                      {form.actionConfig.mediaUrl ? (
+                        <span className="truncate text-xs text-gray-500">{form.actionConfig.mediaUrl}</span>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-2">
                   {delayOptions.map((item) => (
                     <button
@@ -1014,16 +1213,27 @@ function RetentionBuilderView({
                 {templateVariables.length > 0 && (
                   <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
                     <div className="text-sm font-semibold text-[#313166]">Template variable mapping</div>
-                    {templateVariables.map((variable, index) => {
-                      const mapping = form.actionConfig.variableMappings[index] || { variable, sourceType: "customer_field", value: "firstname" };
+                    {templateVariables.map((descriptor) => {
+                      const mapping = findVariableMapping(form.actionConfig.variableMappings, descriptor) || {
+                        componentType: descriptor.componentType,
+                        variable: descriptor.variable,
+                        sourceType: "customer_field",
+                        value: "firstname",
+                      };
                       return (
-                        <div key={variable} className="grid gap-3 md:grid-cols-3">
-                          <input value={variable} readOnly className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm" />
+                        <div key={descriptor.key} className="grid gap-3 md:grid-cols-3">
+                          <div className="space-y-1">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">{descriptor.componentType}</div>
+                            <input value={descriptor.variable} readOnly className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm" />
+                          </div>
                           <select
                             value={mapping.sourceType}
                             onChange={(event) => {
-                              const nextMappings = [...form.actionConfig.variableMappings];
-                              nextMappings[index] = { ...mapping, sourceType: event.target.value, value: "" };
+                              const nextMappings = upsertVariableMapping(form.actionConfig.variableMappings, descriptor, {
+                                ...mapping,
+                                sourceType: event.target.value,
+                                value: "",
+                              });
                               setForm({ ...form, actionConfig: { ...form.actionConfig, variableMappings: nextMappings } });
                             }}
                             className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
@@ -1036,8 +1246,10 @@ function RetentionBuilderView({
                             <select
                               value={mapping.value}
                               onChange={(event) => {
-                                const nextMappings = [...form.actionConfig.variableMappings];
-                                nextMappings[index] = { ...mapping, value: event.target.value };
+                                const nextMappings = upsertVariableMapping(form.actionConfig.variableMappings, descriptor, {
+                                  ...mapping,
+                                  value: event.target.value,
+                                });
                                 setForm({ ...form, actionConfig: { ...form.actionConfig, variableMappings: nextMappings } });
                               }}
                               className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
@@ -1053,22 +1265,31 @@ function RetentionBuilderView({
                             <select
                               value={mapping.value}
                               onChange={(event) => {
-                                const nextMappings = [...form.actionConfig.variableMappings];
-                                nextMappings[index] = { ...mapping, value: event.target.value };
+                                const nextMappings = upsertVariableMapping(form.actionConfig.variableMappings, descriptor, {
+                                  ...mapping,
+                                  value: event.target.value,
+                                });
                                 setForm({ ...form, actionConfig: { ...form.actionConfig, variableMappings: nextMappings } });
                               }}
                               className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
                             >
                               <option value="">Choose derived value</option>
                               <option value="full_name">Full name</option>
+                              <option value="first_name">First name</option>
+                              <option value="last_name">Last name</option>
+                              <option value="mobile_number">Mobile number</option>
                               <option value="loyalty_points">Loyalty points</option>
+                              <option value="store_name">Store name</option>
+                              <option value="current_date">Current date</option>
                             </select>
                           ) : (
                             <input
                               value={mapping.value}
                               onChange={(event) => {
-                                const nextMappings = [...form.actionConfig.variableMappings];
-                                nextMappings[index] = { ...mapping, value: event.target.value };
+                                const nextMappings = upsertVariableMapping(form.actionConfig.variableMappings, descriptor, {
+                                  ...mapping,
+                                  value: event.target.value,
+                                });
                                 setForm({ ...form, actionConfig: { ...form.actionConfig, variableMappings: nextMappings } });
                               }}
                               className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
@@ -1371,35 +1592,43 @@ function AutomationLogsView({ automation, onBack }) {
                   <td colSpan="4" className="py-8 text-center text-sm text-gray-500">No executions found for this automation.</td>
                 </tr>
               ) : (
-                logs.map((log) => (
-                  <tr key={log._id} className="hover:bg-gray-50/50">
-                    <td className="py-4">
-                      <div className="font-medium text-[#313166]">{log.customerId?.firstname || "Unknown Customer"}</div>
-                      <div className="text-xs text-gray-500">{log.customerId?.mobileNumber || "No mobile"}</div>
-                    </td>
-                    <td className="py-4">
-                      <div className="max-w-xs overflow-hidden text-ellipsis whitespace-nowrap text-sm text-gray-600">
-                        {Object.entries(log.conditionSnapshot || {}).length > 0 
-                          ? Object.entries(log.conditionSnapshot).map(([k, v]) => `${k}: ${v}`).join(", ")
-                          : "Default trigger"}
-                      </div>
-                    </td>
-                    <td className="py-4">
-                      <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
-                        log.sendResult === "delivered" || log.sendResult === "read" 
-                          ? "bg-emerald-100 text-emerald-600" 
-                          : log.sendResult === "failed" 
-                            ? "bg-red-100 text-red-600" 
-                            : "bg-gray-100 text-gray-500"
-                      }`}>
-                        {log.sendResult}
-                      </span>
-                    </td>
-                    <td className="py-4 text-sm text-gray-500">
-                      {new Date(log.runAt).toLocaleString()}
-                    </td>
-                  </tr>
-                ))
+                logs.map((log) => {
+                  const customer = log.customerId || {};
+                  const messageLog = log.messageLogId || {};
+                  const fullName = [customer.firstname, customer.lastname].filter(Boolean).join(" ") ||
+                    [messageLog.firstname, messageLog.lastname].filter(Boolean).join(" ") ||
+                    customer.firstname ||
+                    messageLog.firstname ||
+                    "Unknown Customer";
+                  const mobileNumber = customer.mobileNumber || messageLog.mobileNumber || "";
+
+                  return (
+                    <tr key={log._id} className="hover:bg-gray-50/50">
+                      <td className="py-4">
+                        <div className="font-medium text-[#313166]">{fullName}</div>
+                        <div className="text-xs text-gray-500">{formatPhone(customer.countryCode, mobileNumber)}</div>
+                      </td>
+                      <td className="py-4">
+                        <div className="max-w-xs text-sm text-gray-600">{formatExecutionSummary(log)}</div>
+                        {log.failureReason ? <div className="mt-1 text-xs text-red-500">{log.failureReason}</div> : null}
+                      </td>
+                      <td className="py-4">
+                        <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
+                          log.sendResult === "delivered" || log.sendResult === "read"
+                            ? "bg-emerald-100 text-emerald-600"
+                            : log.sendResult === "failed"
+                              ? "bg-red-100 text-red-600"
+                              : "bg-gray-100 text-gray-500"
+                        }`}>
+                          {log.sendResult}
+                        </span>
+                      </td>
+                      <td className="py-4 text-sm text-gray-500">
+                        {new Date(log.runAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
