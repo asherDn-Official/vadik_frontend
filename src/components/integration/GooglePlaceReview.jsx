@@ -38,7 +38,7 @@ const GooglePlaceReview = () => {
 
     try {
       const response = await api.get(
-        `/api/integrationManagement/search?search=${query}`
+        `/api/integrationManagement/search?search=${query}`,
       );
       if (response.data.status) {
         setSearchResults(response.data.data);
@@ -59,7 +59,7 @@ const GooglePlaceReview = () => {
     setIsLoading(true);
     try {
       const response = await api.get(
-        `/api/integrationManagement/businessDetails?placeId=${placeId}`
+        `/api/integrationManagement/businessDetails?placeId=${placeId}`,
       );
       if (response.data.status) {
         setSelectedPlace({
@@ -110,7 +110,7 @@ const GooglePlaceReview = () => {
       } else {
         showToast(
           "Failed to update business location. Please try again.",
-          "error"
+          "error",
         );
       }
     } catch (err) {
@@ -132,7 +132,7 @@ const GooglePlaceReview = () => {
           Business Location Setup
         </h2>
         <VideoPopupWithShare
-          video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+          video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ"
           buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
         />
       </div>

@@ -230,9 +230,9 @@ const Inventory = () => {
         </h2>
         <div className=" flex items-center gap-2">
           <VideoPopupWithShare
-                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                buttonCss="flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
-              />
+            video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ"
+            buttonCss="flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-700 bg-white rounded hover:bg-gray-700 hover:text-white transition-colors"
+          />
           <button
             onClick={() => setShowAddProduct(true)}
             className="flex items-center px-4 py-2 bg-[#EC396F] text-white rounded-md hover:bg-pink-700 transition"
@@ -256,7 +256,7 @@ const Inventory = () => {
                   // Allow only letters, numbers, and spaces
                   const filteredValue = inputValue.replace(
                     /[^a-zA-Z0-9\s]/g,
-                    ""
+                    "",
                   );
 
                   setSearchTerm(filteredValue);
@@ -437,7 +437,7 @@ const Inventory = () => {
                     {pageNum}
                   </button>
                 );
-              }
+              },
             )}
 
             {pagination.totalPages > 5 &&

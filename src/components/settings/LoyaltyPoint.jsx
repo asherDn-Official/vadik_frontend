@@ -130,7 +130,7 @@ function LoyaltyPoint() {
             </div>
 
             <VideoPopupWithShare
-              video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+              video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ"
               buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
             />
           </div>

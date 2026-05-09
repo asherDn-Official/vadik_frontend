@@ -109,7 +109,7 @@ const CustomerPersonalisation = () => {
       const newFilters = { ...prev, [key]: value };
       // Calculate applied filters count (exclude periodValue)
       const count = Object.entries(newFilters).filter(
-        ([k, v]) => k !== "periodValue" && v !== undefined && v !== ""
+        ([k, v]) => k !== "periodValue" && v !== undefined && v !== "",
       ).length;
       setAppliedFiltersCount(count);
       return newFilters;
@@ -128,7 +128,7 @@ const CustomerPersonalisation = () => {
     const dataToExport =
       selectedCustomers.length > 0
         ? filteredData.filter((customer) =>
-            selectedCustomers.includes(customer._id)
+            selectedCustomers.includes(customer._id),
           )
         : filteredData;
 
@@ -151,14 +151,14 @@ const CustomerPersonalisation = () => {
     setSelectedCustomers((prevSelected) =>
       prevSelected.includes(customerId)
         ? prevSelected.filter((id) => id !== customerId)
-        : [...prevSelected, customerId]
+        : [...prevSelected, customerId],
     );
   };
 
   // Toggle all customers on current page
   const toggleAllCustomers = () => {
     const allCurrentPageCustomerIds = filteredData.map(
-      (customer) => customer._id
+      (customer) => customer._id,
     );
     if (
       selectedCustomers.length === filteredData.length &&
@@ -196,7 +196,7 @@ const CustomerPersonalisation = () => {
             </div>
             <div className="flex items-center gap-4 relative" ref={dropdownRef}>
               <VideoPopupWithShare
-                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ"
                 buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
               />
 
@@ -223,7 +223,7 @@ const CustomerPersonalisation = () => {
                   ))}
                 </select>
               </div>
-{/* 
+              {/* 
               <button
                 className="px-4 bg-[#3131661A] py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
                 onClick={() => setShowExport(!showExport)}

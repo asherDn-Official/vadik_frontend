@@ -1,4 +1,5 @@
 // src/components/common/VideoPopupWithShare.jsx
+import { createPortal } from "react-dom";
 import React, { useState, useRef, useEffect } from "react";
 import { Play, X, Share2, Copy, Check } from "lucide-react";
 import Lottie from "lottie-react";
@@ -99,90 +100,63 @@ const VideoPopupWithShare = ({ video_url, buttonCss = "", animationData }) => {
       </button>
 
       {/* Video Popup Overlay */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+      {isOpen &&
+        createPortal(
           <div
-            ref={popupRef}
-            className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden"
+            className="
+        fixed inset-0 z-[999999]
+        flex items-center justify-center
+        bg-black/70
+        backdrop-blur-sm
+        p-4
+      "
           >
-            {/* Header with Close and Share Buttons */}
-            <div className="absolute top-4 right-4 flex gap-2 z-10">
-              {/* Share Button */}
-              {/* <button
-                onClick={shareUrl}
-                className="bg-white bg-opacity-20 backdrop-blur-md rounded-full p-2 hover:bg-opacity-30 transition-all duration-200 text-white border border-white border-opacity-30"
-              >
-                <Share2 size={20} />
-              </button> */}
+            {/* Close */}
+            <button
+              onClick={closePopup}
+              className="
+          absolute top-5 right-5
+          z-50
+          flex h-12 w-12 items-center justify-center
+          rounded-full
+          bg-black/50
+          text-white
+          backdrop-blur-md
+          transition-all duration-200
+          hover:bg-black/80
+        "
+            >
+              <X size={22} />
+            </button>
 
-              {/* Close Button */}
-              <button
-                onClick={closePopup}
-                className="bg-black bg-opacity-20 backdrop-blur-md rounded-full p-2 hover:bg-opacity-30 transition-all duration-200 text-white border border-white border-opacity-30"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Video Container */}
-            <div className="relative pt-[56.25%]">
-              {" "}
-              {/* 16:9 aspect ratio */}
+            {/* Video */}
+            <div
+              ref={popupRef}
+              className="
+          relative
+          w-full
+          max-w-5xl
+          aspect-video
+          animate-[fadeIn_.25s_ease]
+        "
+            >
               <iframe
                 src={video_url}
-                className="absolute top-0 left-0 w-full h-full"
+                className="
+            h-full
+            w-full
+            rounded-2xl
+            shadow-[0_25px_120px_rgba(0,0,0,0.65)]
+          "
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 title="Video Player"
               />
-              <Lottie
-                animationData={animationData}
-                loop={true}
-                autoplay={true}
-                lottieRef={LottieRef}
-                className="absolute top-0 left-0 w-full h-full"
-              />
             </div>
-
-            {/* Share Popup */}
-            {showSharePopup && (
-              <div
-                ref={shareRef}
-                className="absolute top-20 right-4 bg-white rounded-lg shadow-xl p-4 min-w-64 z-20 border border-gray-200"
-              >
-                <h3 className="font-semibold text-gray-800 mb-3">
-                  Share this video
-                </h3>
-                <div className="flex items-center gap-2 mb-3">
-                  <input
-                    type="text"
-                    value={currentUrl}
-                    readOnly
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm bg-gray-50 text-gray-700"
-                  />
-                  <button
-                    onClick={copyToClipboard}
-                    className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
-                  >
-                    {copied ? <Check size={16} /> : <Copy size={16} />}
-                    {copied ? "Copied!" : "Copy"}
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  {/* Social Share Buttons */}
-                  <button className="flex-1 px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors">
-                    Facebook
-                  </button>
-                  <button className="flex-1 px-3 py-2 bg-blue-400 text-white rounded text-sm hover:bg-blue-500 transition-colors">
-                    Twitter
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 };

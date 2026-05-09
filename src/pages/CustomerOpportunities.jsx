@@ -321,7 +321,7 @@ const TopTab = ({ active, onClick, icon, title, description, video }) => {
       {video && (
         <div ref={hiddenVideoButtonRef} className="absolute left-0 top-0">
           <VideoPopupWithShare
-            video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+            video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ"
             buttonCss="!absolute !m-0 !h-0 !w-0 !overflow-hidden !border-0 !p-0 !opacity-0"
           />
         </div>

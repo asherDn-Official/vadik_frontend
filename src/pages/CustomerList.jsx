@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import debounce from "lodash.debounce";
+import Select from "react-select";
 import api from "../api/apiconfig";
 import { FiUsers } from "react-icons/fi";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
@@ -54,7 +55,7 @@ const CustomerList = () => {
         currentPage: data.pagination.currentPage,
       });
     } catch (err) {
-      console.error("Error fetching customers:", err);
+      setError("Failed to fetch customers");
     } finally {
       setLoading(false);
     }
@@ -82,6 +83,13 @@ const CustomerList = () => {
     endPage = pagination.totalPages;
     startPage = Math.max(1, endPage - totalSize + 1);
   }
+
+  const paginationPages = useMemo(() => {
+    return Array.from(
+      { length: endPage - startPage + 1 },
+      (_, i) => startPage + i,
+    );
+  }, [startPage, endPage]);
 
   // Debounced search to avoid too many API calls while typing
   const debouncedSearch = useCallback(
@@ -127,85 +135,272 @@ const CustomerList = () => {
     fetchCustomers();
   };
 
-  return (
-    <div className="flex min-h-screen bg-[#F4F5F9]">
-      <div className="flex-1 flex flex-col overflow-hidden m-2 rounded-[20px]">
-        <div className="bg-white shadow-sm p-4 sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-xl font-semibold text-[#313166]">
-              Customer List{" "}
-              <span className="text-gray-500 font-normal">
-                ({pagination.totalItems})
-              </span>
-            </h1>
-            <div className="flex flex-wrap gap-3 sm:gap-4 items-center">
-              <VideoPopupWithShare
-                // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
-                animationData={soon}
-                buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
-              />
-              <div className="relative w-full sm:w-auto">
-                <input
-                  type="text"
-                  placeholder="Search by name, mobile or source"
-                  defaultValue={searchTerm}
-                  onChange={handleSearchChange}
-                  className="w-full sm:w-64 pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-transparent"
-                />
-                <svg
-                  className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <select
-                  name=""
-                  id=""
-                  className="py-2 border px-5 border-gray-300 rounded-lg outline-none w-full sm:w-auto"
-                  onChange={(e) => setSource(e.target.value)}
-                >
-                  <option value="">select source</option>
-                  <option value="walk-in">walkin</option>
-                  <option value="website">website</option>
-                  <option value="social-media">social-media</option>
-                  <option value="others">others</option>
-                </select>
-              </div>
-              <button
-                className="w-full sm:w-auto sm:ml-2 bg-[#313166] text-white px-4 py-2 rounded-md flex items-center gap-2"
-                onClick={() => navigate("/customer-preferences")}
-              >
-                <FiUsers className="text-lg" />
-                Preferences
-              </button>
-              <button
-                onClick={() => setShowBulkImport(true)}
-                className="w-full sm:w-auto bg-white border border-[#313166] text-[#313166] px-4 py-2 rounded-md"
-              >
-                Bulk Import
-              </button>
+  const sourceOptions = [
+    { value: "", label: "All Sources" },
+    { value: "walk-in", label: "Walk In" },
+    { value: "website", label: "Website" },
+    { value: "social-media", label: "Social Media" },
+    { value: "others", label: "Others" },
+  ];
 
-              <button
-                onClick={handleAddNewCustomer}
-                className="w-full sm:w-auto sm:ml-2 bg-[#313166] text-white px-4 py-2 rounded-md"
-              >
-                Add New Customer
-              </button>
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-transparent">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+        <div className="space-y-4">
+          {/* Top Header */}
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <h1 className="text-[28px] font-bold tracking-[-0.04em] text-[#1F1C5C]">
+                Customer Directory
+              </h1>
+
+              <p className="mt-2 text-sm text-[#8B90B2]">
+                Manage customer profiles, engagement records and customer
+                insights
+              </p>
+            </div>
+
+            {/* Primary CTA */}
+            <button
+              onClick={handleAddNewCustomer}
+              className="
+                h-12 rounded-2xl
+                bg-[#313166]
+                px-5
+                text-sm font-medium text-white
+                transition-all duration-200
+                hover:scale-[1.02]
+                hover:bg-[#272757]
+                shadow-[0_8px_24px_rgba(49,49,102,0.18)]
+              "
+            >
+              Add New Customer
+            </button>
+          </div>
+
+          {/* Filters Row */}
+          <div
+            className="
+              mt-6
+              rounded-2xl
+              border border-[#EEF1FF]
+              bg-white/95
+              p-3
+              shadow-[0_4px_20px_rgba(49,49,102,0.06)]
+              backdrop-blur-sm
+            "
+          >
+            <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
+              {/* Left Side */}
+              <div className="flex flex-1 flex-col gap-3 xl:flex-row">
+                {/* Search */}
+                <div
+                  className="
+                    group
+
+                    flex h-12 flex-1 items-center
+
+                    rounded-2xl
+
+                    border border-[#E7EBFA]
+
+                    bg-[#F8F9FF]
+
+                    px-4
+
+                    transition-all duration-200
+
+                    focus-within:border-[#313166]/15
+                    focus-within:bg-white
+
+                    focus-within:shadow-[0_0_0_4px_rgba(49,49,102,0.05)]
+
+                    hover:border-[#DCE2F5]
+                  "
+                >
+                  {/* Icon */}
+                  <div
+                    className="
+                      flex items-center justify-center
+
+                      text-[#9AA3C7]
+
+                      transition-colors duration-200
+
+                      group-focus-within:text-[#313166]
+                    "
+                  >
+                    <svg
+                      className="h-[18px] w-[18px]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </div>
+
+                  {/* Input */}
+                  <input
+                    type="text"
+                    placeholder="Search customers..."
+                    defaultValue={searchTerm}
+                    onChange={handleSearchChange}
+                    className="
+                      ml-3
+
+                      h-full
+                      w-full
+
+                      bg-transparent
+
+                      text-sm font-medium
+                      text-[#1F1C5C]
+
+                      outline-none
+
+                      placeholder:font-normal
+                      placeholder:text-[#9AA3C7]
+                    "
+                  />
+                </div>
+
+                {/* Source Filter */}
+                <div className="min-w-[210px]">
+                  <Select
+                    options={sourceOptions}
+                    defaultValue={sourceOptions[0]}
+                    onChange={(selected) => setSource(selected?.value || "")}
+                    isSearchable={false}
+                    className="text-sm"
+                    styles={{
+                      control: (base, state) => ({
+                        ...base,
+                        minHeight: "48px",
+                        borderRadius: "16px",
+                        borderColor: state.isFocused ? "#31316620" : "#EEF1FF",
+                        backgroundColor: "#F8F9FF",
+                        boxShadow: state.isFocused
+                          ? "0 0 0 4px rgba(49,49,102,0.06)"
+                          : "none",
+                        cursor: "pointer",
+                        paddingLeft: "4px",
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          borderColor: "#D8DDF8",
+                          backgroundColor: "#FFFFFF",
+                        },
+                      }),
+
+                      menu: (base) => ({
+                        ...base,
+                        borderRadius: "16px",
+                        overflow: "hidden",
+                        border: "1px solid #EEF1FF",
+                        boxShadow: "0 12px 32px rgba(49,49,102,0.12)",
+                        zIndex: 9999,
+                      }),
+
+                      menuList: (base) => ({
+                        ...base,
+                        padding: "8px",
+                      }),
+
+                      option: (base, state) => ({
+                        ...base,
+                        borderRadius: "12px",
+                        padding: "12px 14px",
+                        fontSize: "14px",
+                        backgroundColor: state.isSelected
+                          ? "#313166"
+                          : state.isFocused
+                            ? "#F4F6FF"
+                            : "#FFFFFF",
+                        color: state.isSelected ? "#FFFFFF" : "#1F1C5C",
+                        cursor: "pointer",
+                      }),
+
+                      indicatorSeparator: () => ({
+                        display: "none",
+                      }),
+
+                      dropdownIndicator: (base) => ({
+                        ...base,
+                        color: "#8B90B2",
+                      }),
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Right Side */}
+              <div className="flex flex-wrap items-center gap-3">
+                <VideoPopupWithShare
+                  video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                  animationData={soon}
+                  buttonCss="
+                    flex h-12 items-center gap-2
+                    rounded-2xl
+                    border border-[#EEF1FF]
+                    bg-white px-4
+                    text-sm font-medium text-[#1F1C5C]
+                    transition-all duration-200
+                    hover:bg-[#F8F9FF]
+                  "
+                />
+
+                <button
+                  onClick={() => navigate("/customer-preferences")}
+                  className="
+                    flex h-12 items-center gap-2
+                    rounded-2xl
+                    border border-[#EEF1FF]
+                    bg-white px-4
+                    text-sm font-medium text-[#1F1C5C]
+                    transition-all duration-200
+                    hover:bg-[#F8F9FF]
+                  "
+                >
+                  <FiUsers className="text-lg" />
+                  Preferences
+                </button>
+
+                <button
+                  onClick={() => setShowBulkImport(true)}
+                  className="
+                    h-12 rounded-2xl
+                    border border-[#313166]
+                    px-4
+                    text-sm font-medium text-[#313166]
+                    transition-all duration-200
+                    hover:bg-[#313166]
+                    hover:text-white
+                  "
+                >
+                  Bulk Import
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto">
-          <div className="bg-white shadow-sm p-4">
+        <div className="w-full flex-1 min-h-0">
+          <div
+            className="
+              flex flex-1 flex-col
+              overflow-hidden
+              rounded-2xl
+              border border-[#EEF1FF]
+              bg-white/95
+              shadow-[0_4px_20px_rgba(49,49,102,0.06)]
+              backdrop-blur-sm
+            "
+          >
             {loading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
@@ -217,47 +412,60 @@ const CustomerList = () => {
                     No customers found
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div
+                    className="
+                      flex-1
+                      overflow-auto
+                      scrollbar-thin
+                      scrollbar-thumb-[#D7DBF5]
+                      scrollbar-track-transparent
+                    "
+                  >
                     <table className="min-w-full">
-                      <thead className="bg-gray-100 border-b border-gray-200">
+                      <thead className="border-b border-[#EEF1FF] bg-[#F8F9FF]">
                         <tr className="">
-                          <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                          <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                             First Name
                           </th>
-                          <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                          <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                             Last Name
                           </th>
-                          <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                          <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                             Mobile Number
                           </th>
-                          <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                          <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                             Source
                           </th>
-                          <th className="px-4 py-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                          <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                             Actions
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                      <tbody className="bg-white">
                         {customers.map((customer) => (
                           <tr
                             key={customer._id}
-                            className="hover:bg-gray-50 cursor-pointer  divide-gray-200"
+                            className="
+                              cursor-pointer
+                              border-b border-[#F4F6FB]
+                              transition-all duration-200
+                              hover:bg-[#F8F9FF]
+                            "
                             onClick={() => handleCustomerClick(customer._id)}
                           >
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
+                            <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               {customer.firstname}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
+                            <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               {customer.lastname || "-"}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
+                            <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               {`${formatIndianMobile(customer.countryCode + " " + customer.mobileNumber)}`}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
+                            <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               {customer.source}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-[#313166] text-center">
+                            <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               <button
                                 className="text-gray-500 hover:text-gray-700"
                                 onClick={(e) =>
@@ -292,7 +500,7 @@ const CustomerList = () => {
         </div>
 
         {!loading && customers.length > 0 && (
-          <div className="bg-white border-t border-gray-200 px-4 py-3 sm:px-6">
+          <div className="mt-2 rounded-2xl border border-[#EEF1FF] bg-white/95 px-4 py-2.5 shadow-[0_4px_20px_rgba(49,49,102,0.06)]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-[#313166]">
                 Showing{" "}
@@ -308,59 +516,111 @@ const CustomerList = () => {
                 of {pagination.totalItems} results
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                {/* Previous */}
                 <button
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={pagination.currentPage === 1}
-                  className={`px-3 py-1 text-sm border rounded-md ${
-                    pagination.currentPage === 1
-                      ? "bg-[#3131661A] cursor-not-allowed opacity-50"
-                      : "bg-[#3131661A] hover:bg-gray-100"
-                  }`}
+                  className={`
+                    h-9 rounded-xl px-4
+                    text-sm font-medium
+                    transition-all duration-200
+                    ${
+                      pagination.currentPage === 1
+                        ? "cursor-not-allowed bg-[#F4F5FA] text-[#A0A6C1]"
+                        : "bg-[#F8F9FF] text-[#313166] hover:bg-[#EEF1FF]"
+                    }
+                  `}
                 >
                   Previous
                 </button>
-                {Array.from(
-                  { length: endPage - startPage + 1 },
-                  (_, i) => startPage + i,
-                ).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1 text-sm border rounded-md ${
-                      pagination.currentPage === page
-                        ? "bg-[#313166] text-white border-[#313166]"
-                        : "bg-[#3131661A] text-[#313166] hover:bg-gray-100"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
 
+                {/* Page Numbers */}
+                <div className="flex items-center gap-1 rounded-2xl bg-[#F8F9FF] p-1">
+                  {paginationPages.map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`
+                        h-9 min-w-[36px]
+                        rounded-xl px-3
+                        text-sm font-medium
+                        transition-all duration-200
+                        ${
+                          pagination.currentPage === page
+                            ? "bg-[#313166] text-white shadow-md"
+                            : "text-[#313166] hover:bg-white"
+                        }
+                      `}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Next */}
                 <button
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={pagination.currentPage === pagination.totalPages}
-                  className={`px-3 py-1 text-sm border rounded-md ${
-                    pagination.currentPage === pagination.totalPages
-                      ? "bg-[#3131661A] cursor-not-allowed opacity-50"
-                      : "bg-[#3131661A] hover:bg-gray-100"
-                  }`}
+                  className={`
+                    h-9 rounded-xl px-4
+                    text-sm font-medium
+                    transition-all duration-200
+                    ${
+                      pagination.currentPage === pagination.totalPages
+                        ? "cursor-not-allowed bg-[#F4F5FA] text-[#A0A6C1]"
+                        : "bg-[#F8F9FF] text-[#313166] hover:bg-[#EEF1FF]"
+                    }
+                  `}
                 >
                   Next
                 </button>
-                <select
-                  value={pagination.currentPage}
-                  onChange={(e) => handlePageChange(Number(e.target.value))}
-                  className="px-3 py-1 text-sm  rounded-md bg-white hover border border-[#313166] text-[#313166] hover:bg-gray-100 transition-all duration-300"
-                >
-                  {Array.from(
-                    { length: pagination.totalPages },
-                    (_, i) => i + 1,
-                  ).map((page) => (
-                    <option key={page} value={page}>
-                      Page {page}
-                    </option>
-                  ))}
-                </select>
+
+                {/* Page Select */}
+                <div className="relative">
+                  <select
+                    value={pagination.currentPage}
+                    onChange={(e) => handlePageChange(Number(e.target.value))}
+                    className="
+                      h-9 appearance-none
+                      rounded-xl
+                      border border-[#EEF1FF]
+                      bg-[#F8F9FF]
+                      px-3 pr-9
+                      text-sm font-medium text-[#313166]
+                      outline-none
+                      transition-all duration-200
+
+                      hover:bg-white
+                      focus:border-[#313166]/20
+                    "
+                  >
+                    {Array.from(
+                      { length: pagination.totalPages },
+                      (_, i) => i + 1,
+                    ).map((page) => (
+                      <option key={page} value={page}>
+                        Page {page}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8B90B2]">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

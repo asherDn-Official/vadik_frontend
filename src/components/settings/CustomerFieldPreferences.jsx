@@ -200,7 +200,7 @@ const CustomerFieldPreferences = () => {
     const duplicateExists = fields[activeTab].some(
       (field) =>
         field.key.toLowerCase() === newFieldName.trim().toLowerCase() &&
-        (!isEditingField || field.key !== editingFieldKey)
+        (!isEditingField || field.key !== editingFieldKey),
     );
 
     if (duplicateExists) {
@@ -230,7 +230,7 @@ const CustomerFieldPreferences = () => {
       updatedFields = {
         ...fields,
         [activeTab]: fields[activeTab].map((field) =>
-          field.key === editingFieldKey ? updatedField : field
+          field.key === editingFieldKey ? updatedField : field,
         ),
       };
     } else {
@@ -277,7 +277,7 @@ const CustomerFieldPreferences = () => {
 
   const removeOption = (optionToRemove) => {
     setNewFieldOptions(
-      newFieldOptions.filter((option) => option !== optionToRemove)
+      newFieldOptions.filter((option) => option !== optionToRemove),
     );
   };
 
@@ -312,406 +312,595 @@ const CustomerFieldPreferences = () => {
   }
 
   const handleCancelBtn = (activeTab, key) => {
-    const onConfirm = ()=> {
+    const onConfirm = () => {
       handleRemoveField(activeTab, key);
-      showToast("Deleted successfully", 'success')
+      showToast("Deleted successfully", "success");
     };
     deleteConfirmTostNotification("", onConfirm);
   };
+
+  const inputStyles = `
+  h-12 w-full
+
+  rounded-2xl
+
+  border border-[#E8ECF8]
+
+  bg-white
+
+  px-4
+
+  text-sm text-[#1F1C5C]
+
+  outline-none
+
+  transition-all duration-200
+
+  placeholder:text-[#8B90B2]
+
+  focus:border-[#313166]/20
+  focus:shadow-[0_0_0_4px_rgba(49,49,102,0.06)]
+`;
+
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="bg-white overflow-hidden">
-        <div className="border-b   flex  justify-between items-center ">
-          <div className="flex ">
-            {Object.keys(fields).map((tab) => (
-              <button
-                key={tab}
-                className={`px-6 py-4 text-sm font-semibold transition-all duration-200 ${
-                  activeTab === tab
-                    ? "text-primary bg-white border-b-2 border-gray-900 relative"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-                onClick={() => {
-                  setActiveTab(tab);
-                  cancelEditing();
-                }}
-              >
-                {tab}
-                {activeTab === tab && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
-                )}
-              </button>
-            ))}
-          </div>
-          <div>
-            <VideoPopupWithShare
-                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
+    <div className="h-full bg-transparent">
+      <div className="mx-auto flex flex-col gap-5 p-4 sm:p-5 xl:p-6">
+        <div
+          className="
+    overflow-hidden
+    rounded-[28px]
+
+    border border-[#EEF1FF]
+
+    bg-white/95
+
+    shadow-[0_10px_40px_rgba(49,49,102,0.06)]
+
+    backdrop-blur-sm
+  "
+        >
+          <div
+            className="
+    flex flex-col gap-4
+    border-b border-[#EEF1FF]
+
+    px-6 py-5
+
+    lg:flex-row
+    lg:items-center
+    lg:justify-between
+  "
+          >
+            <div className="flex ">
+              {Object.keys(fields).map((tab) => (
+                <button
+                  key={tab}
+                  className={`
+  relative
+
+  rounded-2xl
+
+  px-5 py-3
+
+  text-sm font-semibold
+
+  transition-all duration-200
+
+  ${
+    activeTab === tab
+      ? `
+        bg-[#313166]
+        text-white
+
+        shadow-[0_10px_25px_rgba(49,49,102,0.18)]
+      `
+      : `
+        text-[#6B7195]
+
+        hover:bg-[#F8F9FF]
+        hover:text-[#1F1C5C]
+      `
+  }
+`}
+                  onClick={() => {
+                    setActiveTab(tab);
+                    cancelEditing();
+                  }}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+            <div>
+              <VideoPopupWithShare
+                video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ"
                 buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
               />
-          </div>
-        </div>
-
-        <div className="p-8">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h3 className="text-xl font-semibold text-[#313166] mb-1">
-                {activeTab} Management
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Manage custom fields for {activeTab.toLowerCase()} section
-              </p>
             </div>
-            {isEditingField && (
-              <button
-                onClick={startAddingField}
-                className="flex items-center px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <FiPlus className="mr-2" /> Add New Field
-              </button>
-            )}
           </div>
 
-          {/* Always visible form section */}
-          <div className="mb-6 rounded-lg border bg-gray-100 p-6">
-            <div className="flex flex-col gap-4">
-              <h3 className="text-lg font-semibold">
-                {isEditingField ? "Edit Field" : "Add New Field"}
-              </h3>
+          <div className="space-y-6 p-5 lg:p-7">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 className="text-2xl font-bold tracking-[-0.03em] text-[#1F1C5C]">
+                  {activeTab} Management
+                </h3>
+                <p className="mt-1 text-sm text-[#8B90B2]">
+                  Manage custom fields for {activeTab.toLowerCase()} section
+                </p>
+              </div>
+              {isEditingField && (
+                <button
+                  onClick={startAddingField}
+                  className="
+  inline-flex items-center gap-2
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Field Name
-                  </label>
-                  <input
-                    type="text"
-                    value={newFieldName}
-                    onChange={(e) => {
-                      setNewFieldName(e.target.value);
-                      setAddError(null);
-                    }}
-                    placeholder={`Enter ${activeTab.toLowerCase()} field name`}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    autoFocus
-                  />
+  h-12
+
+  rounded-2xl
+
+  bg-[#313166]
+
+  px-5
+
+  text-sm font-medium text-white
+
+  shadow-[0_10px_25px_rgba(49,49,102,0.18)]
+
+  transition-all duration-200
+
+  hover:scale-[1.02]
+  hover:bg-[#272757]
+"
+                >
+                  <FiPlus className="mr-2" /> Add New Field
+                </button>
+              )}
+            </div>
+
+            {/* Always visible form section */}
+            <div
+              className="
+    rounded-[28px]
+
+    border border-[#EEF1FF]
+
+    bg-[#FCFCFF]
+
+    p-5 lg:p-6
+
+    shadow-[0_4px_24px_rgba(49,49,102,0.04)]
+  "
+            >
+              <div className="flex flex-col gap-4">
+                <h3 className="text-lg font-semibold">
+                  {isEditingField ? "Edit Field" : "Add New Field"}
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Field Name
+                    </label>
+                    <input
+                      type="text"
+                      value={newFieldName}
+                      onChange={(e) => {
+                        setNewFieldName(e.target.value);
+                        setAddError(null);
+                      }}
+                      placeholder={`Enter ${activeTab.toLowerCase()} field name`}
+                      className={inputStyles}
+                      autoFocus
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Field Type
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={newFieldType}
+                        onChange={(e) => {
+                          setNewFieldType(e.target.value);
+                          if (e.target.value !== "options") {
+                            setNewFieldOptions([]);
+                            setCurrentOption("");
+                          }
+                        }}
+                        className={`${inputStyles} appearance-none`}
+                      >
+                        {fieldTypes.map((type) => (
+                          <option key={type} value={type}>
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                      <FiType className="absolute right-3 top-4 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Field Type
+                    Icon (Optional)
                   </label>
-                  <div className="relative">
-                    <select
-                      value={newFieldType}
-                      onChange={(e) => {
-                        setNewFieldType(e.target.value);
-                        if (e.target.value !== "options") {
-                          setNewFieldOptions([]);
-                          setCurrentOption("");
-                        }
-                      }}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowIconSelector(!showIconSelector)}
+                      className="
+  flex items-center gap-2
+
+  rounded-2xl
+
+  border border-[#E8ECF8]
+
+  bg-white
+
+  px-4 py-3
+
+  transition-all duration-200
+
+  hover:bg-[#F8F9FF]
+"
+                      title="Select Icon"
                     >
-                      {fieldTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                    <FiType className="absolute right-3 top-4 text-gray-400 pointer-events-none" />
+                      {newFieldIcon ? (
+                        <>
+                          <img
+                            src={newFieldIcon}
+                            alt="Selected icon"
+                            className="w-5 h-5 object-contain"
+                          />
+                          <span className="text-sm text-gray-600">
+                            {newFieldIconName}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <FiPlus className="w-5 h-5" />
+                          <span className="text-sm text-gray-600">
+                            Select Icon
+                          </span>
+                        </>
+                      )}
+                    </button>
+                    {newFieldIcon && (
+                      <button
+                        onClick={() => {
+                          setNewFieldIcon("");
+                          setNewFieldIconName("");
+                        }}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                        title="Remove Icon"
+                      >
+                        <FiX />
+                      </button>
+                    )}
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Icon (Optional)
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowIconSelector(!showIconSelector)}
-                    className="flex items-center gap-2 p-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                    title="Select Icon"
+                {showIconSelector && (
+                  <div
+                    className="
+    rounded-2xl
+
+    border border-[#EEF1FF]
+
+    bg-white
+
+    p-4
+
+    shadow-[0_4px_20px_rgba(49,49,102,0.06)]
+  "
                   >
-                    {newFieldIcon ? (
-                      <>
-                        <img
-                          src={newFieldIcon}
-                          alt="Selected icon"
-                          className="w-5 h-5 object-contain"
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">
+                      Select an Icon
+                    </h4>
+                    <div className="grid grid-cols-8 gap-2 max-h-48 overflow-y-auto">
+                      {icons.map((icon) => (
+                        <button
+                          key={icon.name}
+                          onClick={() => selectIcon(icon.dataUrl, icon.name)}
+                          className={`p-2 border rounded-lg hover:border-primary transition-colors ${
+                            newFieldIcon === icon.dataUrl
+                              ? "border-2 border-primary bg-primary/10"
+                              : "border-gray-200"
+                          }`}
+                          title={icon.name}
+                        >
+                          <img
+                            src={icon.dataUrl}
+                            alt={icon.name}
+                            className="w-10 h-10 mx-auto object-contain"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {newFieldType === "options" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Options
+                    </label>
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={currentOption}
+                          onChange={(e) => {
+                            setCurrentOption(e.target.value);
+                            setAddError(null);
+                          }}
+                          onKeyPress={handleOptionKeyPress}
+                          placeholder="Enter option name"
+                          className={`${inputStyles} flex-1`}
                         />
-                        <span className="text-sm text-gray-600">
-                          {newFieldIconName}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <FiPlus className="w-5 h-5" />
-                        <span className="text-sm text-gray-600">
-                          Select Icon
-                        </span>
-                      </>
-                    )}
-                  </button>
-                  {newFieldIcon && (
+                        <button
+                          onClick={addOption}
+                          disabled={!currentOption.trim()}
+                          className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <FiPlus />
+                        </button>
+                      </div>
+
+                      {newFieldOptions.length > 0 && (
+                        <div className="bg-white rounded-lg border border-gray-200 p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FiList className="text-gray-500" />
+                            <span className="text-sm font-medium text-gray-700">
+                              Options ({newFieldOptions.length})
+                            </span>
+                          </div>
+                          <div className="space-y-2">
+                            {newFieldOptions.map((option, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-2 bg-gray-50 rounded border"
+                              >
+                                <span className="text-sm">{option}</span>
+                                <button
+                                  onClick={() => removeOption(option)}
+                                  className="text-red-500 hover:bg-red-50 p-1 rounded"
+                                  title="Remove option"
+                                >
+                                  <FiX size={14} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  {isEditingField && (
                     <button
-                      onClick={() => {
-                        setNewFieldIcon("");
-                        setNewFieldIconName("");
-                      }}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                      title="Remove Icon"
+                      onClick={cancelEditing}
+                      className="
+  flex items-center gap-2
+
+  rounded-2xl
+
+  border border-[#EEF1FF]
+
+  bg-white
+
+  px-5 py-3
+
+  text-sm font-medium text-[#313166]
+
+  transition-all duration-200
+
+  hover:bg-[#F8F9FF]
+"
                     >
-                      <FiX />
+                      <FiX className="mr-2" /> Cancel Edit
                     </button>
                   )}
-                </div>
-              </div>
-
-              {showIconSelector && (
-                <div className="border rounded-lg p-4 bg-white shadow-sm">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">
-                    Select an Icon
-                  </h4>
-                  <div className="grid grid-cols-8 gap-2 max-h-48 overflow-y-auto">
-                    {icons.map((icon) => (
-                      <button
-                        key={icon.name}
-                        onClick={() => selectIcon(icon.dataUrl, icon.name)}
-                        className={`p-2 border rounded-lg hover:border-primary transition-colors ${
-                          newFieldIcon === icon.dataUrl
-                            ? "border-2 border-primary bg-primary/10"
-                            : "border-gray-200"
-                        }`}
-                        title={icon.name}
-                      >
-                        <img
-                          src={icon.dataUrl}
-                          alt={icon.name}
-                          className="w-10 h-10 mx-auto object-contain"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {newFieldType === "options" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Options
-                  </label>
-                  <div className="space-y-3">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={currentOption}
-                        onChange={(e) => {
-                          setCurrentOption(e.target.value);
-                          setAddError(null);
-                        }}
-                        onKeyPress={handleOptionKeyPress}
-                        placeholder="Enter option name"
-                        className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      />
-                      <button
-                        onClick={addOption}
-                        disabled={!currentOption.trim()}
-                        className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <FiPlus />
-                      </button>
-                    </div>
-
-                    {newFieldOptions.length > 0 && (
-                      <div className="bg-white rounded-lg border border-gray-200 p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FiList className="text-gray-500" />
-                          <span className="text-sm font-medium text-gray-700">
-                            Options ({newFieldOptions.length})
-                          </span>
-                        </div>
-                        <div className="space-y-2">
-                          {newFieldOptions.map((option, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded border"
-                            >
-                              <span className="text-sm">{option}</span>
-                              <button
-                                onClick={() => removeOption(option)}
-                                className="text-red-500 hover:bg-red-50 p-1 rounded"
-                                title="Remove option"
-                              >
-                                <FiX size={14} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                {isEditingField && (
                   <button
-                    onClick={cancelEditing}
-                    className="flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                    onClick={handleSaveField}
+                    className="
+  flex items-center gap-2
+
+  rounded-2xl
+
+  bg-[#313166]
+
+  px-5 py-3
+
+  text-sm font-medium text-white
+
+  shadow-[0_10px_25px_rgba(49,49,102,0.18)]
+
+  transition-all duration-200
+
+  hover:scale-[1.02]
+  hover:bg-[#272757]
+"
                   >
-                    <FiX className="mr-2" /> Cancel Edit
+                    <FiSave className="mr-2" />{" "}
+                    {isEditingField ? "Update Field" : "Add Field"}
                   </button>
-                )}
-                <button
-                  onClick={handleSaveField}
-                  className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                >
-                  <FiSave className="mr-2" />{" "}
-                  {isEditingField ? "Update Field" : "Add Field"}
-                </button>
+                </div>
               </div>
+
+              {addError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="text-red-700 text-sm">{addError}</div>
+                </div>
+              )}
             </div>
 
-            {addError && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <div className="text-red-700 text-sm">{addError}</div>
-              </div>
-            )}
-          </div>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId={activeTab}>
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-4"
+                  >
+                    {fields[activeTab].length > 0 ? (
+                      fields[activeTab].map((field, index) => (
+                        <Draggable
+                          key={field.key}
+                          draggableId={field.key}
+                          index={index}
+                        >
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className="
+  rounded-2xl
 
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId={activeTab}>
-              {(provided) => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="space-y-4"
-                >
-                  {fields[activeTab].length > 0 ? (
-                    fields[activeTab].map((field, index) => (
-                      <Draggable
-                        key={field.key}
-                        draggableId={field.key}
-                        index={index}
-                      >
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-                          >
-                            <div className="flex items-center justify-between p-4">
-                              <div className="flex items-center gap-4">
-                                <div
-                                  {...provided.dragHandleProps}
-                                  className="cursor-move"
-                                >
-                                  <FiMove className="w-5 h-5 text-gray-400" />
-                                </div>
+  border border-[#EEF1FF]
 
-                                {field.iconUrl && (
-                                  <div className="flex-shrink-0">
-                                    <img
-                                      src={field.iconUrl}
-                                      alt={field.key}
-                                      className="w-12 h-12 object-contain p-1"
-                                    />
-                                  </div>
-                                )}
+  bg-white
 
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="font-semibold text-gray-900">
-                                      {field.key}
-                                    </h4>
-                                    <span
-                                      className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                        field.type === "string"
-                                          ? "bg-blue-100 text-blue-800"
-                                          : field.type === "number"
-                                          ? "bg-green-100 text-green-800"
-                                          : field.type === "options"
-                                          ? "bg-purple-100 text-purple-800"
-                                          : field.type === "date"
-                                          ? "bg-orange-100 text-orange-800"
-                                          : "bg-gray-100 text-gray-800"
-                                      }`}
-                                    >
-                                      {field.type}
-                                    </span>
+  transition-all duration-200
+
+  hover:-translate-y-[1px]
+
+  hover:shadow-[0_10px_30px_rgba(49,49,102,0.08)]
+"
+                            >
+                              <div className="flex items-center justify-between p-4">
+                                <div className="flex items-center gap-4">
+                                  <div
+                                    {...provided.dragHandleProps}
+                                    className="cursor-move"
+                                  >
+                                    <FiMove className="w-5 h-5 text-gray-400" />
                                   </div>
 
-                                  {field.options &&
-                                    field.options.length > 0 && (
-                                      <div className="mt-2">
-                                        <div className="text-xs text-gray-500 mb-1">
-                                          Options ({field.options.length}):
-                                        </div>
-                                        <div className="flex flex-wrap gap-1">
-                                          {field.options
-                                            .slice(0, 3)
-                                            .map((option, idx) => (
-                                              <span
-                                                key={idx}
-                                                className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded border"
-                                              >
-                                                {option}
+                                  {field.iconUrl && (
+                                    <div className="flex-shrink-0">
+                                      <img
+                                        src={field.iconUrl}
+                                        alt={field.key}
+                                        className="w-12 h-12 object-contain p-1"
+                                      />
+                                    </div>
+                                  )}
+
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="font-semibold text-gray-900">
+                                        {field.key}
+                                      </h4>
+                                      <span
+                                        className={`
+                                          rounded-full
+
+                                          px-3 py-1
+
+                                          text-[11px]
+                                          font-semibold
+
+                                          ${
+                                            field.type === "string"
+                                              ? "bg-blue-100 text-blue-700"
+                                              : field.type === "number"
+                                                ? "bg-green-100 text-green-700"
+                                                : field.type === "options"
+                                                  ? "bg-purple-100 text-purple-700"
+                                                  : "bg-orange-100 text-orange-700"
+                                          }
+                                        `}
+                                      >
+                                        {field.type}
+                                      </span>
+                                    </div>
+
+                                    {field.options &&
+                                      field.options.length > 0 && (
+                                        <div className="mt-2">
+                                          <div className="text-xs text-gray-500 mb-1">
+                                            Options ({field.options.length}):
+                                          </div>
+                                          <div className="flex flex-wrap gap-1">
+                                            {field.options
+                                              .slice(0, 3)
+                                              .map((option, idx) => (
+                                                <span
+                                                  key={idx}
+                                                  className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded border"
+                                                >
+                                                  {option}
+                                                </span>
+                                              ))}
+                                            {field.options.length > 3 && (
+                                              <span className="px-2 py-1 text-xs text-gray-500">
+                                                +{field.options.length - 3} more
                                               </span>
-                                            ))}
-                                          {field.options.length > 3 && (
-                                            <span className="px-2 py-1 text-xs text-gray-500">
-                                              +{field.options.length - 3} more
-                                            </span>
-                                          )}
+                                            )}
+                                          </div>
                                         </div>
-                                      </div>
-                                    )}
+                                      )}
+                                  </div>
                                 </div>
-                              </div>
 
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => startEditingField(field)}
-                                  className="flex-shrink-0 p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                                  title="Edit field"
-                                >
-                                  <FiEdit size={18} />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleCancelBtn(activeTab, field.key)
-                                  }
-                                  className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                  title="Remove field"
-                                >
-                                  <X size={18} />
-                                </button>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => startEditingField(field)}
+                                    className="flex-shrink-0 p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="Edit field"
+                                  >
+                                    <FiEdit size={18} />
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleCancelBtn(activeTab, field.key)
+                                    }
+                                    className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Remove field"
+                                  >
+                                    <X size={18} />
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                        <FiType className="w-8 h-8 text-gray-400" />
+                          )}
+                        </Draggable>
+                      ))
+                    ) : (
+                      <div
+                        className="
+    rounded-[28px]
+
+    border border-dashed border-[#DCE2F5]
+
+    bg-[#FCFCFF]
+
+    py-16
+    text-center
+  "
+                      >
+                        <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                          <FiType className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No fields added yet
+                        </h3>
+                        <p className="text-gray-500 mb-4">
+                          Start by adding custom fields for{" "}
+                          {activeTab.toLowerCase()}
+                        </p>
                       </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        No fields added yet
-                      </h3>
-                      <p className="text-gray-500 mb-4">
-                        Start by adding custom fields for{" "}
-                        {activeTab.toLowerCase()}
-                      </p>
-                    </div>
-                  )}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+                    )}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </div>
         </div>
       </div>
     </div>

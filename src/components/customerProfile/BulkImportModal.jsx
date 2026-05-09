@@ -83,8 +83,32 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-xl w-full max-w-2xl p-6 shadow-xl relative">
+    <div
+      className="
+        fixed inset-0 z-[9999]
+        flex items-center justify-center
+        bg-black/60
+        backdrop-blur-sm
+        p-4
+      "
+    >
+      <div
+        className="
+          relative
+          w-full max-w-2xl
+          overflow-hidden
+
+          rounded-[28px]
+          border border-[#EEF1FF]
+
+          bg-white
+          p-6
+
+          shadow-[0_20px_80px_rgba(15,23,42,0.18)]
+
+          animate-[fadeIn_.2s_ease]
+        "
+      >
         {loading && (
           <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center rounded-xl z-10">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#313166]"></div>
@@ -93,29 +117,80 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
         <button
           onClick={onClose}
           disabled={loading}
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+          className="
+            absolute right-4 top-4
+            flex h-10 w-10 items-center justify-center
+
+            rounded-full
+            border border-[#EEF1FF]
+
+            bg-white
+            text-[#8B90B2]
+
+            transition-all duration-200
+
+            hover:bg-[#F8F9FF]
+            hover:text-[#313166]
+
+            disabled:opacity-50
+          "
         >
           ✕
         </button>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold mb-4">Bulk Import Customers</h2>
+          <h2 className="text-[24px] font-bold tracking-[-0.03em] text-[#1F1C5C]">
+            Bulk Import Customers
+          </h2>
           <button
             onClick={downloadTemplate}
-            className="text-sm text-[#313166] underline"
+            className="
+              text-sm font-medium
+              text-[#313166]
+              transition-all duration-200
+              hover:text-[#1F1C5C]
+            "
           >
             Download Excel Template
           </button>
         </div>
 
         {successMessage && (
-          <div className="mb-4 p-3 rounded bg-green-100 text-green-700 text-sm">
+          <div
+            className="
+              mb-4 rounded-2xl
+              border border-green-200
+              bg-green-50
+              px-4 py-3
+
+              text-sm font-medium
+              text-green-700
+            "
+          >
             {successMessage}
           </div>
         )}
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <label className="px-4 py-2 border rounded-md cursor-pointer bg-gray-50 hover:bg-gray-100">
+            <label
+              className="
+                flex h-11 items-center
+                rounded-xl
+
+                border border-[#EEF1FF]
+                bg-[#F8F9FF]
+
+                px-4
+
+                text-sm font-medium text-[#313166]
+
+                cursor-pointer
+                transition-all duration-200
+
+                hover:bg-white
+                hover:border-[#D8DDF8]
+              "
+            >
               Choose Excel File
               <input
                 type="file"
@@ -148,7 +223,16 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
         )}
 
         {errors.length > 0 && (
-          <div className="max-h-48 overflow-auto border rounded mb-4">
+          <div
+            className="
+              mb-4 max-h-56 overflow-auto
+
+              rounded-2xl
+              border border-[#EEF1FF]
+
+              bg-[#FCFCFF]
+            "
+          >
             <table className="min-w-full text-sm">
               <thead className="bg-gray-100">
                 <tr>
@@ -180,10 +264,33 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
         )}
 
-        <div className="sticky bottom-0 bg-white pt-4 flex justify-end gap-3 border-t">
+        <div
+          className="
+            sticky bottom-0
+            mt-5
+
+            flex justify-end gap-3
+
+            border-t border-[#EEF1FF]
+            bg-white
+            pt-5
+          "
+        >
           <button
             onClick={onClose}
-            className="px-4 py-2 border rounded-md"
+            className="
+              h-11 rounded-xl
+              border border-[#EEF1FF]
+
+              px-5
+
+              text-sm font-medium
+              text-[#313166]
+
+              transition-all duration-200
+
+              hover:bg-[#F8F9FF]
+            "
             disabled={loading}
           >
             Cancel
@@ -205,11 +312,17 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
 
           <button
             onClick={() => handleUpload(false)}
-            className={`px-4 py-2 rounded-md ${
-              loading || !file
-                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                : "bg-[#313166] text-white"
-            }`}
+            className={`
+              h-11 rounded-xl px-5
+              text-sm font-medium
+              transition-all duration-200
+
+              ${
+                loading || !file
+                  ? "cursor-not-allowed bg-[#E5E7F3] text-[#8B90B2]"
+                  : "bg-[#313166] text-white hover:bg-[#272757]"
+              }
+            `}
             disabled={loading || !file}
           >
             {loading ? "Uploading..." : "Upload"}

@@ -1,6 +1,9 @@
 import React from "react";
 import { Controller, useForm } from "react-hook-form";
-import PhoneInput, { isValidPhoneNumber, parsePhoneNumber } from "react-phone-number-input";
+import PhoneInput, {
+  isValidPhoneNumber,
+  parsePhoneNumber,
+} from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 
 import DatePicker from "react-datepicker";
@@ -16,7 +19,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
 
   const sanitizeSourceName = React.useCallback(
     (value = "") => value.trim().toLowerCase(),
-    []
+    [],
   );
 
   const {
@@ -109,7 +112,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
     const nextSelection =
       currentSource && updatedSources.includes(currentSource)
         ? currentSource
-        : updatedSources[0] ?? "";
+        : (updatedSources[0] ?? "");
 
     setValue("source", nextSelection);
   };
@@ -175,10 +178,10 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
     const firstVisitDate = data.firstVisit ? new Date(data.firstVisit) : null;
     const formattedFirstVisit = firstVisitDate
       ? `${firstVisitDate.getFullYear()}-${String(
-          firstVisitDate.getMonth() + 1
+          firstVisitDate.getMonth() + 1,
         ).padStart(2, "0")}-${String(firstVisitDate.getDate()).padStart(
           2,
-          "0"
+          "0",
         )}`
       : null;
 
@@ -189,6 +192,28 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
       firstVisit: formattedFirstVisit,
     });
   };
+
+  const inputStyles = `
+  h-14 w-full
+  rounded-2xl
+
+  border border-[#E8ECF8]
+
+  bg-[#F8F9FF]
+  px-4
+
+  text-sm text-[#1F1C5C]
+
+  outline-none
+
+  transition-all duration-200
+
+  placeholder:text-[#8B90B2]
+
+  focus:border-[#313166]/20
+  focus:bg-white
+  focus:shadow-[0_0_0_4px_rgba(49,49,102,0.06)]
+`;
 
   const today = new Date().toISOString().split("T")[0];
   const mobileNumber = watch("mobileNumber");
@@ -209,11 +234,17 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
 
       <form
         onSubmit={handleSubmit(onFormSubmit)}
-        className="grid grid-cols-1 gap-6"
+        className="flex flex-col gap-8"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <div className="space-y-2">
-            <label className="block text-sm text-[#31316680]">
+            <label
+              className="
+  mb-2 block
+  text-sm font-medium
+  text-[#313166]
+"
+            >
               First Name *
             </label>
             <input
@@ -234,9 +265,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                   message: "Only letters, hyphens, and apostrophes allowed",
                 },
               })}
-              className={`w-full p-2 border ${
-                errors.firstname ? "border-red-500" : "border-gray-300"
-              } rounded text-[#313166]`}
+              className={`${inputStyles} ${
+                errors.firstname ? "border-red-400 focus:shadow-red-100" : ""
+              }`}
             />
             {errors.firstname && (
               <p className="text-red-500 text-xs">{errors.firstname.message}</p>
@@ -244,7 +275,13 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm text-[#31316680]">
+            <label
+              className="
+  mb-2 block
+  text-sm font-medium
+  text-[#313166]
+"
+            >
               Last Name *
             </label>
             <input
@@ -261,9 +298,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                   message: "Only letters are allowed in the last name",
                 },
               })}
-              className={`w-full p-2 border ${
-                errors.lastname ? "border-red-500" : "border-gray-300"
-              } rounded text-[#313166]`}
+              className={`${inputStyles} ${
+                errors.lastname ? "border-red-400 focus:shadow-red-100" : ""
+              }`}
             />
             {errors.lastname && (
               <p className="text-red-500 text-xs">{errors.lastname.message}</p>
@@ -271,9 +308,15 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <div className="space-y-2">
-            <label className="block text-sm text-[#31316680]">
+            <label
+              className="
+  mb-2 block
+  text-sm font-medium
+  text-[#313166]
+"
+            >
               Mobile Number *
             </label>
             <Controller
@@ -289,9 +332,28 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                   defaultCountry="IN"
                   value={value}
                   onChange={onChange}
-                  className={`w-full p-2 border ${
-                    errors.mobileNumber ? "border-red-500" : "border-gray-300"
-                  } rounded text-[#313166] `}
+                  className={`
+                    phone-input-modern
+
+                    h-14 w-full
+
+                    rounded-2xl
+                    border
+
+                    ${errors.mobileNumber ? "border-red-400" : "border-[#E8ECF8]"}
+
+                    bg-[#F8F9FF]
+
+                    px-4
+
+                    text-sm text-[#1F1C5C]
+
+                    transition-all duration-200
+
+                    focus-within:border-[#313166]/20
+                    focus-within:bg-white
+                    focus-within:shadow-[0_0_0_4px_rgba(49,49,102,0.06)]
+                  `}
                   inputStyle={{ width: "100%", padding: "0.5rem" }}
                   dropdownClass="text-gray-700"
                   countryCallingCodeEditable={false}
@@ -310,12 +372,20 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm text-[#31316680]">Gender *</label>
+            <label
+              className="
+  mb-2 block
+  text-sm font-medium
+  text-[#313166]
+"
+            >
+              Gender *
+            </label>
             <select
               {...register("gender", { required: "Gender is required" })}
-              className={`w-full p-2 border ${
-                errors.gender ? "border-red-500" : "border-gray-300"
-              } rounded text-[#313166] bg-white`}
+              className={`${inputStyles} appearance-none ${
+                errors.gender ? "border-red-400" : ""
+              }`}
             >
               <option value="">Select Gender</option>
               <option value="male">Male</option>
@@ -329,7 +399,15 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="block text-sm text-[#31316680]">Source *</label>
+              <label
+                className="
+  mb-2 block
+  text-sm font-medium
+  text-[#313166]
+"
+              >
+                Source *
+              </label>
               <div
                 className="text-sm text-blue-400 underline cursor-pointer hover:text-blue-600 transition-colors"
                 onClick={() => setShowSourcePopup(true)}
@@ -339,9 +417,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
             </div>
             <select
               {...register("source", { required: "Source is required" })}
-              className={`w-full p-2 border ${
-                errors.source ? "border-red-500" : "border-gray-300"
-              } rounded text-[#313166] bg-white`}
+              className={`${inputStyles} ${
+                errors.source ? "border-red-400" : ""
+              }`}
               disabled={loading || sources.length === 0}
             >
               {loading ? (
@@ -362,7 +440,13 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm text-[#31316680]">
+            <label
+              className="
+  mb-2 block
+  text-sm font-medium
+  text-[#313166]
+"
+            >
               First Visit Date *
             </label>
             <Controller
@@ -374,6 +458,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
               }}
               render={({ field }) => (
                 <DatePicker
+                  className={inputStyles}
                   selected={field.value}
                   onChange={(date) => field.onChange(date)}
                   dateFormat="dd/MM/yyyy"
@@ -396,7 +481,29 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
         <div>
           <button
             type="submit"
-            className="px-6 py-2 bg-primary text-white bg-gradient-to-r from-[#CB376D] to-[#A72962] rounded hover:bg-pink-700 transition"
+            className="
+              inline-flex items-center justify-center
+
+              h-14
+              rounded-2xl
+
+              bg-[#313166]
+
+              px-8
+
+              text-sm font-semibold
+              text-white
+
+              shadow-[0_10px_30px_rgba(49,49,102,0.18)]
+
+              transition-all duration-200
+
+              hover:scale-[1.01]
+              hover:bg-[#272757]
+
+              disabled:cursor-not-allowed
+              disabled:opacity-60
+            "
             disabled={loading || isSubmitting}
           >
             {loading || isSubmitting ? "Processing..." : "Create Customer"}

@@ -168,3 +168,25 @@ body {
 .animate-fadeIn {
   animation: fadeIn 0.25s ease-in-out;
 }
+
+.phone-input-modern input {
+  height: 100% !important;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-size: 14px !important;
+  color: #1f1c5c !important;
+}
+
+.phone-input-modern .PhoneInputCountry {
+  margin-right: 12px;
+}
+
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker__input-container input {
+  width: 100%;
+}

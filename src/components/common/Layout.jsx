@@ -164,7 +164,7 @@ function Layout() {
           )}
 
         <Sidebar onOpenTour={setActiveTour} />
-        <main className="flex-1 overflow-x-hidden bg-[#F4F5F9] pb-20 md:pb-0">
+        <main className="flex flex-1 flex-col overflow-hidden bg-[#F4F5F9] pb-20 md:pb-0">
           <div className="bg-white px-3 py-3 shadow-sm sm:px-4">
             <header
               className="
@@ -352,7 +352,7 @@ function Layout() {
               </div>
             </header>
           </div>
-          <div className="mx-auto w-full max-w-[1700px]">
+          <div className="mx-auto flex min-h-0 w-full max-w-[1700px] flex-1 flex-col">
             <Outlet />
           </div>
         </main>

@@ -8,85 +8,178 @@ import showToast from "../utils/ToastNotification";
 import { usePlan } from "../context/PlanContext";
 
 const CustomerAdd = () => {
-    const navigate = useNavigate();
-    const { refreshPlans, currentPlans } = usePlan();
-    const [whatsappConfig, setWhatsappConfig] = useState(null);
-    const [retailerId, setRetailerId] = useState(() => {
-        return localStorage.getItem("retailerId") || "";
-    });
+  const navigate = useNavigate();
+  const { refreshPlans, currentPlans } = usePlan();
+  const [whatsappConfig, setWhatsappConfig] = useState(null);
+  const [retailerId, setRetailerId] = useState(() => {
+    return localStorage.getItem("retailerId") || "";
+  });
 
-    // Fetch WhatsApp configuration
-    useEffect(() => {
-        const fetchWhatsappConfig = async () => {
-            try {
-                const response = await api.get("/api/integrationManagement/whatsapp/config");
-                if (response.data.status) {
-                    setWhatsappConfig(response.data.data);
-                }
-            } catch (error) {
-                console.error("Error fetching WhatsApp config:", error);
-            }
-        };
-        fetchWhatsappConfig();
-        refreshPlans();
-    }, []);
-
-    const isLowCredits = whatsappConfig && !whatsappConfig.isUsingOwnWhatsapp && currentPlans?.data?.whatsapp?.remaining <= 0;
-    const [resetForm, setResetForm] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleSubmit = async (customerData) => {
-        const apiData = {
-            ...customerData,
-            retailerId: retailerId,
-        };
-
-        setIsSubmitting(true);
-
-        try {
-            const response = await api.post('/api/customers', apiData);
-            const newCustomer = response.data;
-            showToast('Customer added successfully!', 'success');
-
-            navigate(`/customers/customer-profile/${newCustomer._id}`);
-
-        } catch (error) {
-            console.error(error.response.data.error);
-            showToast(error.response.data.error, 'error');
-
-        } finally {
-            setIsSubmitting(false);
+  // Fetch WhatsApp configuration
+  useEffect(() => {
+    const fetchWhatsappConfig = async () => {
+      try {
+        const response = await api.get(
+          "/api/integrationManagement/whatsapp/config",
+        );
+        if (response.data.status) {
+          setWhatsappConfig(response.data.data);
         }
+      } catch (error) {
+        console.error("Error fetching WhatsApp config:", error);
+      }
+    };
+    fetchWhatsappConfig();
+    refreshPlans();
+  }, []);
 
+  const isLowCredits =
+    whatsappConfig &&
+    !whatsappConfig.isUsingOwnWhatsapp &&
+    currentPlans?.data?.whatsapp?.remaining <= 0;
+  const [resetForm, setResetForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (customerData) => {
+    const apiData = {
+      ...customerData,
+      retailerId: retailerId,
     };
 
-    const handleBackClick = () => {
-        navigate("/customers");
+    setIsSubmitting(true);
+
+    try {
+      const response = await api.post("/api/customers", apiData);
+      const newCustomer = response.data;
+      showToast("Customer added successfully!", "success");
+
+      navigate(`/customers/customer-profile/${newCustomer._id}`);
+    } catch (error) {
+      console.error(error.response.data.error);
+      showToast(error.response.data.error, "error");
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-    return (
-        <div className="flex h-screen bg-[#F4F5F9]">
-            <div className="p-14">
-                <button className="flex gap-2" onClick={handleBackClick}>
-                    <ArrowLeft /> Back
-                </button>
-                <div className=" p-4   max-w-2xl ">
-                    <h1 className="text-xl font-bold mb-4">Add New Customer</h1>
+  const handleBackClick = () => {
+    navigate("/customers");
+  };
 
-                    {/* <h2>Create New Customer</h2> */}
-                    {isLowCredits && (
-                        <p className="text-red-600 font-semibold text-sm mb-4">
-                            ⚠️ You have low WhatsApp credits. Please top up your credits in the subscription page to continue using Vadik's default WhatsApp account. Adding a new customer will not send an opt-in message.
-                        </p>
-                    )}
-                    <div className=" max-w-2xl  flex justify-center items-center mt-3">
+  return (
+    <div className="h-full bg-transparent">
+      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 p-4 sm:p-5 xl:p-6">
+        {/* Top Navigation */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleBackClick}
+            className="
+            inline-flex items-center gap-2
 
-                        <CustomerForm onSubmit={handleSubmit} resetForm={resetForm} isSubmitting={isSubmitting} />
-                    </div>
-                </div>
-            </div>
+            rounded-2xl
+            border border-[#EEF1FF]
+
+            bg-white/95
+            px-4 py-3
+
+            text-sm font-medium text-[#313166]
+
+            shadow-[0_4px_20px_rgba(49,49,102,0.06)]
+
+            transition-all duration-200
+
+            hover:bg-[#F8F9FF]
+          "
+          >
+            <ArrowLeft size={18} />
+            Back to Customers
+          </button>
         </div>
-    );
+
+        {/* Hero Section */}
+        <div
+          className="
+          relative overflow-hidden
+
+          rounded-[32px]
+          border border-[#EEF1FF]
+
+          bg-white/95
+          p-6 sm:p-8
+
+          shadow-[0_10px_40px_rgba(49,49,102,0.08)]
+        "
+        >
+          {/* Ambient Glow */}
+          <div className="absolute right-0 top-0 h-52 w-52 rounded-full bg-pink-500/5 blur-3xl" />
+
+          <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+            {/* Left */}
+            <div>
+              <h1 className="text-[32px] font-bold tracking-[-0.05em] text-[#1F1C5C]">
+                Add New Customer
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#8B90B2]">
+                Create customer profiles, manage onboarding information and
+                capture engagement details for your CRM ecosystem.
+              </p>
+            </div>
+
+            {/* Right Badge */}
+            <div className="rounded-2xl bg-[#F8F9FF] px-5 py-4">
+              <div className="text-xs font-medium uppercase tracking-wide text-[#8B90B2]">
+                Customer Workspace
+              </div>
+
+              <div className="mt-2 text-sm font-medium text-[#1F1C5C]">
+                Customer Onboarding
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Credit Warning */}
+        {isLowCredits && (
+          <div
+            className="
+            rounded-2xl
+            border border-red-200
+
+            bg-red-50
+            px-5 py-4
+
+            text-sm font-medium
+            text-red-700
+          "
+          >
+            ⚠️ You have low WhatsApp credits. Please top up your credits in the
+            subscription page to continue using Vadik's default WhatsApp
+            account. Adding a new customer will not send an opt-in message.
+          </div>
+        )}
+
+        {/* Form Container */}
+        <div
+          className="
+          rounded-[32px]
+          border border-[#EEF1FF]
+
+          bg-white/95
+          p-5 sm:p-7
+
+          shadow-[0_10px_40px_rgba(49,49,102,0.08)]
+        "
+        >
+          <CustomerForm
+            onSubmit={handleSubmit}
+            resetForm={resetForm}
+            isSubmitting={isSubmitting}
+          />
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default CustomerAdd;
