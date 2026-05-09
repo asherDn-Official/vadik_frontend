@@ -164,7 +164,7 @@ function Layout() {
           )}
 
         <Sidebar onOpenTour={setActiveTour} />
-        <main className="flex-1 bg-[#F4F5F9] pb-20 md:pb-0">
+        <main className="flex-1 overflow-x-hidden bg-[#F4F5F9] pb-20 md:pb-0">
           <div className="bg-white px-3 py-3 shadow-sm sm:px-4">
             <header
               className="
@@ -352,7 +352,9 @@ function Layout() {
               </div>
             </header>
           </div>
-          <Outlet />
+          <div className="mx-auto w-full max-w-[1700px]">
+            <Outlet />
+          </div>
         </main>
       </div>
     </SecurityPopupProvider>

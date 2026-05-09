@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../api/apiconfig";
 
 function OptInOptOut() {
@@ -32,46 +32,118 @@ function OptInOptOut() {
     return () => clearTimeout(timer); // Cleanup if component unmounts
   }, []);
 
-  return (
-    <div className="rounded-xl bg-white px-6 py-5 shadow-md border border-[#EEF1FF] h-[237px] flex flex-col justify-between">
-      <h2 className="text-[20px] font-medium font-poppins text-[#1F1C5C] leading-[100%] mb-6">
-        Opt-In/Opt-Out
-      </h2>
+  const safeOptIn = Number.isFinite(optIn)
+    ? Math.min(Math.max(optIn, 0), 100)
+    : 0;
+  const safeOptOut = Number.isFinite(optOut)
+    ? Math.min(Math.max(optOut, 0), 100)
+    : 0;
 
-      <div className="space-y-5">
-        <div className="flex items-center gap-3 pr-4">
-          <div className="relative flex-1 h-6 rounded-full bg-[#F2F4FF] overflow-hidden">
-            <div
-              className="absolute inset-0 rounded-full bg-gradient-to-r from-[#B01D4B] via-[#E43274] to-[#FF5A8C]"
-              style={{ width: `${optOut}%` }}
-            />
+  return (
+    <div className="dashboard-card flex min-h-[280px] flex-col justify-between">
+      {/* Header */}
+      <div>
+        <h2 className="dashboard-card-title">
+          Customer Loyalty
+        </h2>
+
+        <p className="dashboard-card-description">
+          Loyalty and disengagement customer analytics
+        </p>
+      </div>
+
+      {/* Loyal Customers */}
+      <div className="mt-7">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-[#1F1C5C]" />
+
+            <span className="truncate text-sm font-medium text-[#1F1C5C]">
+              Loyal Customers
+            </span>
           </div>
-          <span className="text-[#E43274] font-poppins font-semibold text-[22px] min-w-[52px] text-right">
-            {optOut.toFixed(0)}%
+
+          <span className="ml-3 text-2xl font-bold leading-none text-[#1F1C5C] sm:text-[28px]">
+            {loading ? "--" : `${safeOptIn.toFixed(0)}%`}
           </span>
         </div>
 
-        <div className="flex items-center gap-3 pr-4">
-          <div className="relative flex-1 h-7 rounded-full bg-[#EEF0FF] overflow-hidden">
-            <div
-              className="absolute inset-0 rounded-full bg-gradient-to-r from-[#1F1C5C] via-[#1C1E8B] to-[#00007A]"
-              style={{ width: `${optIn}%` }}
-            />
-          </div>
-          <span className="text-[#1F1C5C] font-poppins font-semibold text-[22px] min-w-[52px] text-right">
-            {optIn.toFixed(0)}%
-          </span>
+        <div className="relative h-4 overflow-hidden rounded-full bg-[#EEF1FF] sm:h-5">
+          <div
+            className="
+            absolute left-0 top-0 h-full rounded-full
+            bg-gradient-to-r
+            from-[#1F1C5C]
+            via-[#1C1E8B]
+            to-[#00007A]
+            shadow-[0_0_20px_rgba(28,30,139,0.35)]
+            transition-all duration-700 ease-out
+          "
+            style={{ width: `${safeOptIn}%` }}
+          />
+
+          {/* Shine */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
         </div>
       </div>
 
-      <div className="flex items-center gap-6 text-sm font-medium">
-        <div className="flex items-center gap-2 text-[#1F1C5C]">
-          <span className="h-3 w-3 rounded-full bg-[#1F1C5C]"></span>
-          Opt-In
+      {/* Non Loyal Customers */}
+      <div className="mt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-[#E43274]" />
+
+            <span className="truncate text-sm font-medium text-[#E43274]">
+              Non Loyal Customers
+            </span>
+          </div>
+
+          <span className="ml-3 text-2xl font-bold leading-none text-[#E43274] sm:text-[28px]">
+            {loading ? "--" : `${safeOptOut.toFixed(0)}%`}
+          </span>
         </div>
-        <div className="flex items-center gap-2 text-[#E43274]">
-          <span className="h-3 w-3 rounded-full bg-[#E43274]"></span>
-          Opt-Out
+
+        <div className="relative h-4 overflow-hidden rounded-full bg-[#FFF1F6] sm:h-5">
+          <div
+            className="
+            absolute left-0 top-0 h-full rounded-full
+            bg-gradient-to-r
+            from-[#FF8DB6]
+            via-[#E43274]
+            to-[#C81E63]
+            shadow-[0_0_20px_rgba(228,50,116,0.35)]
+            transition-all duration-700 ease-out
+          "
+            style={{ width: `${safeOptOut}%` }}
+          />
+
+          {/* Shine */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+        </div>
+      </div>
+
+      {/* Footer Analytics */}
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
+        {/* Loyal Box */}
+        <div className="dashboard-stat-panel">
+          <div className="text-xs font-medium uppercase tracking-wide text-[#8B90B2]">
+            Loyalty Score
+          </div>
+
+          <div className="dashboard-stat-value">
+            {loading ? "--" : safeOptIn.toFixed(0)}
+          </div>
+        </div>
+
+        {/* Risk Box */}
+        <div className="rounded-xl bg-[#FFF5F8] px-3 py-3 sm:px-4">
+          <div className="text-xs font-medium uppercase tracking-wide text-[#D85B8B]">
+            Risk Score
+          </div>
+
+          <div className="mt-2 text-2xl font-bold leading-none text-[#E43274] sm:text-[28px]">
+            {loading ? "--" : safeOptOut.toFixed(0)}
+          </div>
         </div>
       </div>
     </div>

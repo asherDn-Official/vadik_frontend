@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import api from "../../api/apiconfig"; // adjust this path as needed
@@ -10,26 +10,27 @@ function CustomerProfileOverview() {
   const [inactive, setInactive] = useState(12);
   const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-  const timer = setTimeout(() => {
-    const fetchCustomerData = async () => {
-      try {
-        const res = await api.get("api/dashboard/activeInactiveCustomerCount");
-        setActive(res.data.active || 0);
-        setInactive(res.data.inactive || 0);
-      } catch (err) {
-        console.error("Error fetching customer profile data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const fetchCustomerData = async () => {
+        try {
+          const res = await api.get(
+            "api/dashboard/activeInactiveCustomerCount",
+          );
+          setActive(res.data.active || 0);
+          setInactive(res.data.inactive || 0);
+        } catch (err) {
+          console.error("Error fetching customer profile data:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    fetchCustomerData();
-  }, 1000); // Delay by 1 second
+      fetchCustomerData();
+    }, 1000); // Delay by 1 second
 
-  return () => clearTimeout(timer); // Cleanup on unmount
-}, []);
-
+    return () => clearTimeout(timer); // Cleanup on unmount
+  }, []);
 
   const total = active + inactive;
 
@@ -38,9 +39,10 @@ useEffect(() => {
       {
         data: [active, inactive],
         backgroundColor: ["#db2777", "#313166"], // pink & dark blue
-        borderColor: "#fff",
-        borderWidth: 6,
-        cutout: "75%",
+        borderWidth: 0,
+        spacing: 4,
+        hoverOffset: 2,
+        cutout: "82%",
         borderRadius: 30,
         circumference: 360,
         rotation: -90,
@@ -58,49 +60,65 @@ useEffect(() => {
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow-md h-[100%] flex flex-col justify-between">
-      {/* h-[287px] */}
+    <div className="dashboard-card flex min-h-[300px] flex-col justify-between">
       {/* Title */}
-      <h2 className="text-center font-poppins font-medium text-[20px] py-2 leading-[100%] text-[#313166]">
-  Customer Profile Overview
-</h2>
+      <div>
+        <h2 className="dashboard-card-title text-center">
+          Customer Profile Overview
+        </h2>
 
-
-      {/* Chart */}
-      <div className="relative w-[160px] h-[160px] mx-auto">
-        
-          <>
-            <Doughnut data={data} options={options} />
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-4xl font-extrabold text-[#313166]">
-                {total}
-              </span>
-              <span className="text-xs font-medium text-[#313166]">
-                Total Customers
-              </span>
-            </div>
-          </>
-        
-        
+        <p className="dashboard-card-description text-center">
+          Active vs inactive customer analytics
+        </p>
       </div>
 
-      {/* Legend */}
-      <div className="flex justify-around items-end mt-2">
+      {/* Chart */}
+      <div className="flex items-center justify-center py-4">
+        <div className="relative h-[170px] w-[170px] sm:h-[200px] sm:w-[200px]">
+          <Doughnut data={data} options={options} />
+
+          {/* Center Content */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-4xl font-bold leading-none text-[#1F1C5C] sm:text-[40px]">
+              {loading ? "..." : total}
+            </span>
+
+            <span className="mt-1 text-center text-xs font-medium text-[#7E85A8] sm:text-sm">
+              Total Customers
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Footer */}
+      <div className="mt-2 grid grid-cols-2 gap-3 sm:gap-4">
         {/* Active */}
-        <div className="flex flex-col items-center">
-          <span className="text-xl font-bold text-[#313166]">{active}</span>
-          <div className="flex items-center gap-1 mt-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#db2777]"></span>
-            <span className="text-xs text-[#313166]">Active Customers</span>
+        <div className="dashboard-stat-panel">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-[#db2777]" />
+
+            <span className="dashboard-stat-label">
+              Active Customers
+            </span>
+          </div>
+
+          <div className="dashboard-stat-value">
+            {loading ? "--" : active}
           </div>
         </div>
 
         {/* Inactive */}
-        <div className="flex flex-col items-center">
-          <span className="text-xl font-bold text-[#313166]">{inactive}</span>
-          <div className="flex items-center gap-1 mt-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#313166]"></span>
-            <span className="text-xs text-[#313166]">Inactive Customers</span>
+        <div className="dashboard-stat-panel">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-[#313166]" />
+
+            <span className="dashboard-stat-label">
+              Inactive Customers
+            </span>
+          </div>
+
+          <div className="dashboard-stat-value">
+            {loading ? "--" : inactive}
           </div>
         </div>
       </div>

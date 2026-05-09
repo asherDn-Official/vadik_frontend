@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import api from "../../api/apiconfig";
@@ -32,17 +32,17 @@ function ChurnRate() {
     return () => clearTimeout(timer); // cleanup if component unmounts
   }, []);
 
+  const safeChurn = Number.isFinite(churn)
+    ? Math.min(Math.max(churn, 0), 100)
+    : 0;
+
   useEffect(() => {
     if (chartRef.current && chartRef.current.canvas) {
       const ctx = chartRef.current.canvas.getContext("2d");
-      const grad = ctx.createLinearGradient(
-        0,
-        0,
-        chartRef.current.canvas.width,
-        0
-      );
-      grad.addColorStop(0, "#db2777");
-      grad.addColorStop(1, "#1e1b4b");
+      const grad = ctx.createLinearGradient(0, 0, 300, 0);
+      grad.addColorStop(0, "#FF4D8D");
+      grad.addColorStop(0.5, "#E9357B");
+      grad.addColorStop(1, "#312E81");
       setGradient(grad);
     }
   }, []);
@@ -51,13 +51,13 @@ function ChurnRate() {
     labels: ["Churn", "Remaining"],
     datasets: [
       {
-        data: [churn, 100 - churn],
+        data: [safeChurn, 100 - safeChurn],
         backgroundColor: gradient
           ? [gradient, "#f1f5f9"]
           : ["#db2777", "#f1f5f9"],
         borderWidth: 0,
         borderRadius: 30,
-        cutout: "85%",
+        cutout: "78%",
         circumference: 180,
         rotation: 270,
       },
@@ -70,6 +70,9 @@ function ChurnRate() {
     plugins: {
       tooltip: {
         enabled: true,
+        padding: 12,
+        cornerRadius: 14,
+        displayColors: false,
         backgroundColor: "#1e1b4b",
         titleColor: "#fff",
         bodyColor: "#fff",
@@ -87,37 +90,28 @@ function ChurnRate() {
     },
   };
 
-  const calcArrowRotation = (percent) => {
-    return (percent / 100) * 180;
-  };
-
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md w-full mx-auto h-[332px]">
-      <h2 className="text-[20px] font-medium leading-[100%] tracking-[0px] font-poppins text-[#1e1b4b] mb-4">
+    <div className="dashboard-card min-h-[280px]">
+      <h2 className="dashboard-card-title">
         Churn Rate
       </h2>
+      <p className="dashboard-card-description">
+        Customer loss analytics overview
+      </p>
 
-      <div className="relative w-full h-5/6">
+      <div className="relative mt-4 flex h-[190px] items-center justify-center sm:h-[220px]">
         {
           <>
             <Doughnut ref={chartRef} data={data} options={options} />
 
-            {/* Triangle indicator */}
-            <div
-              className="absolute top-1/2 left-1/2 origin-bottom pointer-events-none"
-              style={{
-                transform: `rotate(${calcArrowRotation(
-                  churn
-                )}deg) translateY(-80%)`,
-              }}
-            >
-              {/* You can add a triangle/arrow SVG or shape here if needed */}
-            </div>
-
             {/* Center Percentage */}
-            <div className="absolute inset-0 flex items-center justify-center mt-8 pointer-events-none">
-              <span className="text-4xl font-extrabold text-[#1e1b4b]">
-                {churn.toFixed(2)}%
+            <div className="absolute inset-0 flex flex-col items-center justify-end pb-10 pointer-events-none">
+              <span className="text-3xl font-bold leading-none text-[#1F1C5C] sm:text-[34px]">
+                {loading ? "--" : `${safeChurn.toFixed(1)}%`}
+              </span>
+
+              <span className="mt-1 text-sm font-medium text-[#7E85A8]">
+                Churn Rate
               </span>
             </div>
           </>

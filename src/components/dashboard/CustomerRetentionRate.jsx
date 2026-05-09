@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useLayoutEffect, useState } from "react";
+import { useRef, useEffect, useLayoutEffect, useState } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import api from "../../api/apiconfig";
@@ -44,17 +44,23 @@ function CustomerRetentionRate() {
     }
   }, [retention]);
 
+  const safeRetention = Number.isFinite(retention)
+    ? Math.min(Math.max(retention, 0), 100)
+    : 0;
+
   // Chart Data
   const data = {
     labels: ["Retention", "Churn"],
     datasets: [
       {
-        data: [retention, 100 - retention],
+        data: [safeRetention, 100 - safeRetention],
         backgroundColor: gradient
           ? [gradient, "#D9D9D942"] // soft white-grey ring
           : ["#db2777", "#D9D9D942"],
         borderWidth: 0,
-        borderRadius: 50, // round ends
+        borderRadius: 100,
+        spacing: 4,
+        hoverOffset: 2,
         circumference: 360,
         rotation: -90,
       },
@@ -65,7 +71,7 @@ function CustomerRetentionRate() {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    cutout: "75%", // thick donut ring like reference UI
+    cutout: "82%",
     plugins: {
       tooltip: {
         enabled: true,
@@ -85,29 +91,73 @@ function CustomerRetentionRate() {
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow-md h-[100%] flex flex-col justify-between">
-      <h2 className="text-center py-2 font-poppins font-medium text-[20px] leading-[114%] text-[#1e1b4b]">
-        Customer Retention Rate
-      </h2>
+    <div className="dashboard-card flex min-h-[300px] flex-col justify-between">
+      {/* Header */}
+      <div>
+        <h2 className="dashboard-card-title text-center">
+          Customer Retention Rate
+        </h2>
 
-      {/* Chart container */}
-      <div className="relative w-[180px] h-[180px] mx-auto mb-2 drop-shadow-lg">
-        {retention !== null ? (
-          <>
-            <Doughnut ref={chartRef} data={data} options={options} />
+        <p className="dashboard-card-description text-center">
+          Customer loyalty and retention analytics
+        </p>
+      </div>
 
-            {/* Center Text */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-3xl font-extrabold text-[#1e1b4b]">
-                {retention} %
+      {/* Chart */}
+      <div className="flex items-center justify-center py-4">
+        <div className="relative h-[170px] w-[170px] sm:h-[200px] sm:w-[200px]">
+          {retention !== null ? (
+            <>
+              <Doughnut ref={chartRef} data={data} options={options} />
+
+              {/* Center Content */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-4xl font-bold leading-none text-[#1F1C5C] sm:text-[40px]">
+                  {safeRetention}%
+                </span>
+
+                <span className="mt-1 text-center text-xs font-medium text-[#7E85A8] sm:text-sm">
+                  Retention Score
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <span className="text-sm font-medium text-[#7E85A8]">
+                Loading...
               </span>
             </div>
-          </>
-        ) : (
-          <div className="flex items-center justify-center w-full h-full">
-            <span className="text-[#1e1b4b] font-medium">Loading...</span>
+          )}
+        </div>
+      </div>
+
+      {/* Footer Stats */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        {/* Retained */}
+        <div className="dashboard-stat-panel">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-[#db2777]" />
+
+            <span className="dashboard-stat-label">Retained</span>
           </div>
-        )}
+
+          <div className="dashboard-stat-value">
+            {safeRetention}%
+          </div>
+        </div>
+
+        {/* Churn */}
+        <div className="dashboard-stat-panel">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-[#313166]" />
+
+            <span className="dashboard-stat-label">Churned</span>
+          </div>
+
+          <div className="dashboard-stat-value">
+            {(100 - safeRetention).toFixed(0)}%
+          </div>
+        </div>
       </div>
     </div>
   );

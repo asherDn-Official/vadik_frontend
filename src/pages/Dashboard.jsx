@@ -1,5 +1,3 @@
-import { useEffect, useState, useRef } from "react";
-import DatePicker from "../components/common/DatePicker";
 import CustomerProfileCollection from "../components/dashboard/CustomerProfileCollection";
 import CustomerProfileOverview from "../components/dashboard/CustomerProfileOverview";
 import CustomerRetentionRate from "../components/dashboard/CustomerRetentionRate";
@@ -7,119 +5,52 @@ import ChurnRate from "../components/dashboard/ChurnRate";
 import CustomerEngagementScore from "../components/dashboard/CustomerEngagementScore";
 import OptInOptOut from "../components/dashboard/OptInOptOut";
 import CustomerSatisfactionScore from "../components/dashboard/CustomerSatisfactionScore";
-import { useNavigate } from "react-router-dom";
-import { FiUser, FiUsers } from "react-icons/fi";
 
 function Dashboard() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef(null);
-
-  const handleDateChange = (date) => {
-    setSelectedDate(date);
-  };
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-  const navigate = useNavigate();
-  function gotoNotification() {
-    navigate("/notifications");
-  }
   return (
-    <div className="min-h-screen bg-[#F3F4F8]">
-      <div className=" ">
-        {/* <div className="bg-white px-2 py-2 sm:p-4">
-          <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <h1 className="font-[Poppins] font-medium text-[24px] leading-[114%] tracking-[0] text-[#313166]">
-              Welcome, Admin
+    <div className="min-h-screen bg-[#F4F5F9]">
+      <div className="mx-auto w-full max-w-[1600px] px-3 py-4 sm:px-5 sm:py-5 lg:px-6 xl:px-8">
+        <div className="mb-4 flex flex-col gap-2 sm:mb-5">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold leading-tight text-[#1F1C5C] sm:text-[28px]">
+              Customer Intelligence
             </h1>
-            <div className="flex items-center gap-3 sm:gap-4">
-              <button
-                className="text-gray-600 hover:text-gray-800  bg-[#F4F5F9] py-2 px-2 rounded-full"
-                onClick={() => gotoNotification()}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  />
-                </svg>
-              </button>
-              <div className="relative" ref={dropdownRef}>
-                <div
-                  className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center cursor-pointer"
-                  onClick={() => setShowDropdown((prev) => !prev)}
-                >
-                  S
-                </div>
-                {showDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-50">
-                    <button
-                      className="w-full flex items-center gap-2 text-left px-4 py-2 hover:bg-gray-100"
-                      onClick={() => {
-                        navigate("/my-profile");
-                        setShowDropdown(false);
-                      }}
-                    >
-                      <FiUser />
-                      My Profile
-                    </button>
 
-                    <button
-                      className="w-full flex items-center gap-2 text-left px-4 py-2 hover:bg-gray-100"
-                      onClick={() => {
-                        navigate("/roles-permissions");
-                        setShowDropdown(false);
-                      }}
-                    >
-                      <FiUsers />
-                      Roles & Permissions
-                    </button>
-                  </div>
-                )}
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-[#7E85A8]">
+              Real-time customer analytics and engagement insights
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] xl:gap-5 2xl:gap-6">
+          <section className="min-w-0 space-y-3">
+            <h2 className="px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7E85A8]">
+              Customer Analytics
+            </h2>
+            <div className="grid grid-cols-1 gap-4 xl:gap-5 2xl:gap-6">
+              <CustomerProfileCollection />
+              <ChurnRate />
+            </div>
+          </section>
+
+          <section className="min-w-0 space-y-3">
+            <h2 className="px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7E85A8]">
+              Engagement Insights
+            </h2>
+            <div className="grid grid-cols-1 gap-4 xl:gap-5 2xl:gap-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:gap-5 2xl:gap-6">
+                <CustomerProfileOverview />
+                <CustomerRetentionRate />
+              </div>
+
+              <CustomerEngagementScore />
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:gap-5 2xl:gap-6">
+                <OptInOptOut />
+                <CustomerSatisfactionScore />
               </div>
             </div>
-          </header>
-        </div> */}
-
-        <div className="grid grid-cols-1 gap-5 p-[2%] md:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-          {/* First Column */}
-          <div className="w-full space-y-5">
-            <CustomerProfileCollection />
-            <ChurnRate />
-          </div>
-
-          {/* Second Column */}
-          <div className="w-full space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 sm:gap-5">
-              <CustomerProfileOverview />
-              <CustomerRetentionRate />
-            </div>
-
-            <CustomerEngagementScore />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 sm:gap-5">
-              <OptInOptOut />
-              <CustomerSatisfactionScore />
-            </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>
