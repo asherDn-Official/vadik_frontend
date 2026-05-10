@@ -5,7 +5,6 @@ import CustomerDetails from "./CustomerDetails";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 
-
 const CustomerProfile = () => {
   const { customerId } = useParams();
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -42,8 +41,8 @@ const CustomerProfile = () => {
     const result = {};
 
     for (const [key, value] of Object.entries(dateObject)) {
-      if (typeof value === 'string' && value.includes('/')) {
-        const [day, month, year] = value.split('/');
+      if (typeof value === "string" && value.includes("/")) {
+        const [day, month, year] = value.split("/");
         const date = new Date(year, month - 1, day);
         result[key] = date.toISOString();
       } else {
@@ -63,41 +62,86 @@ const CustomerProfile = () => {
 
       const response = await api.patch(
         `/api/customers/${selectedCustomer._id}`,
-        payload
+        payload,
       );
-      showToast('Customer data updated successfully!', 'success');
+      showToast("Customer data updated successfully!", "success");
       const updatedCustomer = response.data;
       setSelectedCustomer(updatedCustomer);
       setIsEditing(false);
     } catch (error) {
-      showToast(error.response?.data?.message || 'Error updating customer', 'error');
+      showToast(
+        error.response?.data?.message || "Error updating customer",
+        "error",
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   if (isLoading && !selectedCustomer) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex min-h-[calc(100vh-96px)] items-center justify-center p-4">
+        <div className="rounded-2xl border border-[#EEF1FF] bg-white px-6 py-4 text-sm font-medium text-[#313166] shadow-[0_4px_20px_rgba(49,49,102,0.06)]">
+          Loading customer profile...
+        </div>
+      </div>
+    );
   }
 
   if (!selectedCustomer) {
-    return <div className="flex items-center justify-center h-screen">Customer not found</div>;
+    return (
+      <div className="flex min-h-[calc(100vh-96px)] items-center justify-center p-4">
+        <div className="rounded-2xl border border-[#EEF1FF] bg-white px-6 py-4 text-sm font-medium text-[#313166] shadow-[0_4px_20px_rgba(49,49,102,0.06)]">
+          Customer not found
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <div className="flex-1 flex">
-        <CustomerSidebar />
-        <CustomerDetails
-          customer={selectedCustomer}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          isEditing={isEditing}
-          onEdit={handleEdit}
-          onCancel={handleCancel}
-          onSave={handleSave}
-          isLoading={isLoading}
-        />
+    <div className="flex h-full min-h-0 flex-col bg-transparent">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+        <div
+          className="
+          flex min-h-0 flex-1 flex-col overflow-hidden
+          rounded-2xl
+          border border-[#EEF1FF]
+          bg-white/95
+          shadow-[0_4px_20px_rgba(49,49,102,0.06)]
+          backdrop-blur-sm
+        "
+        >
+          <div
+            className="
+            flex min-h-0 flex-1 flex-col
+            xl:flex-row
+          "
+          >
+            <div
+              className="
+              shrink-0
+              border-[#EEF1FF]
+              xl:w-[330px]
+              xl:border-r
+            "
+            >
+              <CustomerSidebar />
+            </div>
+
+            <div className="min-h-0 min-w-0 flex-1">
+              <CustomerDetails
+                customer={selectedCustomer}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                isEditing={isEditing}
+                onEdit={handleEdit}
+                onCancel={handleCancel}
+                onSave={handleSave}
+                isLoading={isLoading}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

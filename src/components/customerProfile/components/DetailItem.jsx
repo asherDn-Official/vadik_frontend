@@ -131,9 +131,11 @@ const DetailItem = React.memo(
           onChange={onChange}
           ref={ref}
           placeholder="DD/MM/YYYY"
-          className={`mt-1 px-2 py-1 border ${
-            error ? "border-red-500" : "border-gray-300"
-          } rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full cursor-pointer`}
+          className={`mt-2 h-11 w-full cursor-pointer rounded-xl border bg-white px-3 text-sm font-medium text-[#1F1C5C] outline-none transition ${
+            error
+              ? "border-red-500"
+              : "border-[#E5E9FF] focus:border-[#313166]/30 focus:ring-4 focus:ring-[#313166]/5"
+          }`}
           autoComplete="off"
           readOnly
         />
@@ -148,16 +150,13 @@ const DetailItem = React.memo(
 
 
     return (
-      <div
-        className="flex items-center justify-between px-3 py-4 rounded-[14px]"
-        style={{ border: "1px solid #3131661A" }}
-      >
-        <div className="flex items-center gap-x-5">
+      <div className="flex min-h-[86px] items-center justify-between rounded-xl border border-[#EEF1FF] bg-[#FCFCFF] px-4 py-3 transition-all duration-200 hover:border-[#DCE2FF] hover:bg-white hover:shadow-[0_8px_24px_rgba(49,49,102,0.05)]">
+        <div className="flex min-w-0 items-center gap-x-4">
           {fieldData.iconUrl && (
-            <img src={fieldData.iconUrl} alt={label} className="w-12 h-12" />
+            <img src={fieldData.iconUrl} alt={label} className="h-10 w-10 shrink-0 rounded-xl object-contain" />
           )}
-          <div className="flex-1">
-            <p className="font-medium text-[16px] leading-normal tracking-normal text-[#31316699]">
+          <div className="min-w-0 flex-1">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8B90B2]">
               {label}
             </p>
             {isEditing && isEditable ? (
@@ -166,9 +165,11 @@ const DetailItem = React.memo(
                   <select
                     value={value || ""}
                     onChange={handleSelectChange}
-                    className={`mt-1 px-2 py-1 border ${
-                      error ? "border-red-500" : "border-gray-300"
-                    } rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
+                    className={`mt-2 h-11 w-full rounded-xl border bg-white px-3 text-sm font-medium text-[#1F1C5C] outline-none transition ${
+                      error
+                        ? "border-red-500"
+                        : "border-[#E5E9FF] focus:border-[#313166]/30 focus:ring-4 focus:ring-[#313166]/5"
+                    }`}
                   >
                     <option value="">Select an option</option>
                     {options.map((option, index) => (
@@ -206,9 +207,11 @@ const DetailItem = React.memo(
                     type={inputType}
                     value={value || ""}
                     onChange={handleInputChange}
-                    className={`mt-1 px-2 py-1 border ${
-                      error ? "border-red-500" : "border-gray-300"
-                    } rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
+                    className={`mt-2 h-11 w-full rounded-xl border bg-white px-3 text-sm font-medium text-[#1F1C5C] outline-none transition ${
+                      error
+                        ? "border-red-500"
+                        : "border-[#E5E9FF] focus:border-[#313166]/30 focus:ring-4 focus:ring-[#313166]/5"
+                    }`}
                     placeholder={`Enter ${label.toLowerCase()}`}
                     autoComplete="off"
                   />
@@ -218,7 +221,7 @@ const DetailItem = React.memo(
                 </div>
               )
             ) : (
-              <p className="font-medium text-[16px] leading-[30px] tracking-normal text-[#313166]">
+              <p className="mt-2 break-words text-[15px] font-semibold leading-6 text-[#1F1C5C]">
                 {displayContent}
               </p>
             )}

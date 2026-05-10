@@ -113,22 +113,85 @@ const FieldItem = React.memo(
     // Special rendering for mobile number field
     if (isMobileNumber && isEditing && isEditable) {
       return (
-        <div className="mb-4">
-          <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">
+        <div
+          className="
+    group
+
+    rounded-xl
+
+    border border-[#EEF1FF]
+
+    bg-[#FCFCFF]
+
+    p-4
+
+    transition-all duration-200
+
+    hover:border-[#DCE2FF]
+    hover:bg-white
+    hover:shadow-[0_8px_24px_rgba(49,49,102,0.05)]
+  "
+        >
+          <p
+            className="
+    mb-2
+
+    text-[12px]
+    font-semibold
+    uppercase
+    tracking-[0.08em]
+
+    text-[#8B90B2]
+  "
+          >
             {label}
           </p>
           <div
-            className={`phone-input-container border ${
-              error ? "border-red-500" : "border-gray-300"
-            } rounded `}
+            className={`
+  overflow-hidden
+
+  rounded-xl
+
+  border
+
+  bg-white
+
+  transition-all duration-200
+
+  ${
+    error
+      ? "border-red-400"
+      : `
+        border-[#E5E9FF]
+
+        focus-within:border-[#313166]/30
+        focus-within:shadow-[0_0_0_4px_rgba(49,49,102,0.06)]
+      `
+  }
+`}
           >
             <PhoneInput
               international
               defaultCountry="IN"
               value={actualValue || ""}
               onChange={handlePhoneChange}
-              className="w-full py-1.5 px-0.5 outline-none"
-              inputClassName="!border-none !focus:ring-0 !w-full !py-2 !px-3 !text-sm !font-medium !text-gray-900"
+              className="w-full px-2 py-1"
+              inputClassName="
+  !h-10
+  !w-full
+
+  !border-none
+  !bg-transparent
+
+  !px-3
+
+  !text-sm
+  !font-medium
+  !text-[#1F1C5C]
+
+  focus:!ring-0
+  focus:!outline-none
+"
               numberInputProps={{
                 className: "focus:ring-0 focus:outline-none",
               }}
@@ -140,8 +203,37 @@ const FieldItem = React.memo(
     }
 
     return (
-      <div className="mb-4">
-        <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">
+      <div
+        className="
+    group
+
+                rounded-xl
+
+    border border-[#EEF1FF]
+
+    bg-[#FCFCFF]
+
+    p-4
+
+    transition-all duration-200
+
+    hover:border-[#DCE2FF]
+    hover:bg-white
+    hover:shadow-[0_8px_24px_rgba(49,49,102,0.05)]
+  "
+      >
+        <p
+          className="
+    mb-2
+
+    text-[12px]
+    font-semibold
+    uppercase
+    tracking-[0.08em]
+
+    text-[#8B90B2]
+  "
+        >
           {label}
         </p>
         {isEditing && isEditable ? (
@@ -150,9 +242,14 @@ const FieldItem = React.memo(
               <select
                 value={actualValue || ""}
                 onChange={handleSelectChange}
-                className={`text-sm font-medium text-gray-900 border ${
-                  error ? "border-red-500" : "border-gray-300"
-                } rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
+                className={`
+  h-11 w-full appearance-none rounded-xl border bg-white px-4 text-sm font-medium text-[#1F1C5C] outline-none transition-all duration-200
+  ${
+    error
+      ? "border-red-400 focus:border-red-500"
+      : "border-[#E5E9FF] focus:border-[#313166]/30 focus:bg-[#FCFCFF] focus:shadow-[0_0_0_4px_rgba(49,49,102,0.06)]"
+  }
+`}
               >
                 <option value="">Select an option</option>
                 {options.map((option, index) => (
@@ -169,9 +266,14 @@ const FieldItem = React.memo(
                 type={inputType}
                 value={actualValue || ""}
                 onChange={handleInputChange}
-                className={`text-sm font-medium text-gray-900 border ${
-                  error ? "border-red-500" : "border-gray-300"
-                } rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
+                className={`
+  h-11 w-full rounded-xl border bg-white px-4 text-sm font-medium text-[#1F1C5C] outline-none transition-all duration-200 placeholder:text-[#A0A6C2]
+  ${
+    error
+      ? "border-red-400 focus:border-red-500"
+      : "border-[#E5E9FF] focus:border-[#313166]/30 focus:bg-[#FCFCFF] focus:shadow-[0_0_0_4px_rgba(49,49,102,0.06)]"
+  }
+`}
                 placeholder={`Enter ${label.toLowerCase()}`}
                 autoComplete="off"
               />
@@ -179,7 +281,16 @@ const FieldItem = React.memo(
             </div>
           )
         ) : (
-          <p className="font-medium text-[16px] leading-[30px] tracking-normal text-[#313166]">
+          <p
+            className="
+    break-words
+
+    text-[15px]
+    font-semibold
+
+    text-[#1F1C5C]
+  "
+          >
             {isMobileNumber
               ? formatIndianMobile(actualValue)
               : formatFieldForDisplay(actualValue, fieldType)}
@@ -581,17 +692,19 @@ const CustomerDetails = ({
           return (
             <div
               key={key}
-              className="flex items-center p-4 border-b border-gray-100"
+              className="flex min-h-[86px] items-center rounded-xl border border-[#EEF1FF] bg-[#FCFCFF] p-4 transition-all duration-200 hover:border-[#DCE2FF] hover:bg-white hover:shadow-[0_8px_24px_rgba(49,49,102,0.05)]"
             >
-              <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4">
+              <div className="mr-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F8F9FF]">
                 <img
                   src="../ssets/score-icon.png"
                   alt={key}
-                  className="w-12 h-12"
+                  className="h-8 w-8"
                 />
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-500 mb-1">{key}</p>
+              <div className="min-w-0 flex-1">
+                <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8B90B2]">
+                  {key}
+                </p>
                 <div className="flex items-center">{renderStars(value)}</div>
               </div>
             </div>
@@ -660,26 +773,43 @@ const CustomerDetails = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#F4F5F9]">
-      <div className=" py-5  px-8">
-        <h1 className="text-xl font-semibold text-gray-900">
-          Customer Profile
-        </h1>
-      </div>
-
-      <div className="flex-1 px-8 overflow-y-auto">
+    <div className="flex h-full min-w-0 flex-1 flex-col bg-transparent">
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-4">
         <form onSubmit={onSubmit}>
-          <div className="rounded-lg ">
+          <div className="space-y-3">
             {/* Profile Header */}
-            <div className=" mb-3  border-b border-gray-200  bg-white rounded-[20px]  px-4 py-6 ">
-              <div className="flex items-start justify-between ">
-                <div className="flex items-center w-full">
-                  <div className="relative pl-4">
+            <div
+              className="
+    relative overflow-hidden
+
+    rounded-2xl
+
+    border border-[#EEF1FF]
+
+    bg-white/95
+    backdrop-blur-sm
+
+    px-4 py-4
+    sm:px-5
+
+    shadow-[0_4px_20px_rgba(49,49,102,0.06)]
+  "
+            >
+              <div className="relative z-10">
+                <div
+                  className="
+    flex flex-col gap-5
+
+    lg:flex-row
+    lg:items-start
+  "
+                >
+                  <div className="relative mx-auto shrink-0 lg:mx-0">
                     <div
-                      className={`absolute top-2 right-1 flex items-center gap-2 px-3 py-1 rounded-full shadow-sm border ${statusBadgeClasses}`}
+                      className={`absolute right-2 top-2 flex items-center gap-2 rounded-full border px-3 py-1 shadow-sm ${statusBadgeClasses}`}
                     >
                       <span
-                        className={`w-2.5 h-2.5 rounded-full ${statusIndicatorColor}`}
+                        className={`h-2.5 w-2.5 rounded-full ${statusIndicatorColor}`}
                       ></span>
                       <span className="text-xs font-semibold uppercase tracking-wide">
                         {statusLabel}
@@ -687,8 +817,9 @@ const CustomerDetails = ({
                     </div>
                     <img
                       src={
-                        transformedCustomer?.profileImage ||
-                        transformedCustomer?.gender === "male"
+                        transformedCustomer?.profileImage
+                          ? transformedCustomer.profileImage
+                          : transformedCustomer?.gender === "male"
                           ? defaultImage.menDefaultImgUrl
                           : transformedCustomer?.gender === "female"
                             ? defaultImage.femaleDefaultImgUrl
@@ -697,21 +828,47 @@ const CustomerDetails = ({
                               : defaultImage.menDefaultImgUrl
                       }
                       alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
-                      className="w-[202px] h-[192px] rounded-2xl   "
+                      className="
+  h-[180px]
+  w-[180px]
+  sm:h-[200px]
+  sm:w-[200px]
+
+  rounded-2xl
+
+  border border-[#EEF1FF]
+
+  object-cover
+
+  shadow-[0_10px_30px_rgba(49,49,102,0.08)]
+"
                     />
                   </div>
                   {/* Basic Details Sections */}
-                  <div className="ml-16 w-full  pr-8 pt-3">
-                    <div className="flex items-center justify-between mb-1  ">
-                      <h2 className="font-semibold text-[18px] leading-[30px] tracking-normal text-[#313166] font-poppins border-b-[1.5px] border-[#313166] pb-[2px]">
-                        Basic Details
-                      </h2>
+                  <div className="min-w-0 flex-1 lg:pt-1">
+                    <div
+                      className="
+    flex flex-col gap-4
+
+    sm:flex-row
+    sm:items-center
+    sm:justify-between
+  "
+                    >
+                      <div>
+                        <h1 className="text-[24px] font-bold text-[#1F1C5C] sm:text-[28px]">
+                          {customerName || "Customer Profile"}
+                        </h1>
+                        <p className="mt-1 text-sm text-[#8B90B2]">
+                          Basic details, preferences and customer activity
+                        </p>
+                      </div>
 
                       {!isEditing ? (
                         <button
                           type="button"
                           onClick={onEdit}
-                          className="px-4 py-2 text-[#313166] border border-1 border-[#31316680] rounded-lg text-sm font-medium   flex items-center"
+                          className="flex h-10 items-center rounded-xl border border-[#31316680] px-4 text-sm font-medium text-[#313166] transition-all duration-200 hover:bg-[#F8F9FF]"
                         >
                           <img
                             src={EditIcon}
@@ -725,13 +882,13 @@ const CustomerDetails = ({
                           <button
                             type="button"
                             onClick={onCancel}
-                            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                            className="h-10 rounded-xl border border-[#E5E9FF] bg-white px-4 text-sm font-medium text-[#313166] transition hover:bg-[#F8F9FF]"
                           >
                             Cancel
                           </button>
                           <button
                             type="submit"
-                            className="px-4 py-2 bg-[#313166] text-white rounded-lg text-sm font-medium hover:bg-[#27275a] focus:outline-none focus:ring-2 focus:ring-[#313166]"
+                            className="h-10 rounded-xl bg-[#313166] px-4 text-sm font-medium text-white transition hover:bg-[#27275a]"
                           >
                             Update Changes
                           </button>
@@ -739,9 +896,48 @@ const CustomerDetails = ({
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-10  ">
-                      <div className="mb-4">
-                        <p className="font-normal text-[14px] leading-[30px] tracking-normal text-[#31316699]">
+                    <div
+                      className="
+    mt-5
+
+    grid grid-cols-1
+    gap-3
+
+    md:grid-cols-2
+    2xl:grid-cols-3
+  "
+                    >
+                      <div
+                        className="
+    group
+
+    rounded-xl
+
+    border border-[#EEF1FF]
+
+    bg-[#FCFCFF]
+
+    p-4
+
+    transition-all duration-200
+
+    hover:border-[#DCE2FF]
+    hover:bg-white
+    hover:shadow-[0_8px_24px_rgba(49,49,102,0.05)]
+  "
+                      >
+                        <p
+                          className="
+    mb-2
+
+    text-[12px]
+    font-semibold
+    uppercase
+    tracking-[0.08em]
+
+    text-[#8B90B2]
+  "
+                        >
                           Name
                         </p>
                         {isEditing ? (
@@ -753,12 +949,40 @@ const CustomerDetails = ({
                                 setCustomerNameInput(e.target.value);
                                 handleCustomerNameChange(e.target.value);
                               }}
-                              className={`text-sm font-medium text-gray-900 border ${
-                                errors?.basic?.firstname ||
-                                errors?.basic?.lastname
-                                  ? "border-red-500"
-                                  : "border-gray-300"
-                              } rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full`}
+                              className={`
+  h-11 w-full
+
+  rounded-xl
+
+  border
+
+  bg-white
+
+  px-4
+
+  text-sm
+  font-medium
+  text-[#1F1C5C]
+
+  outline-none
+
+  transition-all duration-200
+
+  placeholder:text-[#A0A6C2]
+
+  ${
+    errors?.basic?.firstname || errors?.basic?.lastname
+      ? "border-red-400 focus:border-red-500"
+      : `
+        border-[#E5E9FF]
+
+        focus:border-[#313166]/30
+        focus:bg-[#FCFCFF]
+
+        focus:shadow-[0_0_0_4px_rgba(49,49,102,0.06)]
+      `
+  }
+`}
                               placeholder="Enter customer name"
                               autoComplete="off"
                             />
@@ -771,7 +995,16 @@ const CustomerDetails = ({
                             )}
                           </div>
                         ) : (
-                          <p className="font-medium text-[16px] leading-[30px] tracking-normal text-[#313166]">
+                          <p
+                            className="
+    break-words
+
+    text-[15px]
+    font-semibold
+
+    text-[#1F1C5C]
+  "
+                          >
                             {customerName || "-"}
                           </p>
                         )}
@@ -845,30 +1078,77 @@ const CustomerDetails = ({
             </div>
 
             {/* Main Content */}
-            <div className="bg-white px-2 pt-5 rounded-[20px]">
+            <div
+              className="
+    relative overflow-hidden
+
+    rounded-2xl
+
+    border border-[#EEF1FF]
+
+    bg-white/95
+    backdrop-blur-sm
+
+    shadow-[0_4px_20px_rgba(49,49,102,0.06)]
+  "
+            >
               {/* Tabs */}
-              <div className="border-b  border-gray-200  py-3 ">
-                <nav className="flex space-x-8  px-4 pb-2 ">
+              <div className="relative z-10 border-b border-[#EEF1FF] px-3 pt-3 sm:px-4">
+                <nav
+                  className="
+    flex items-center gap-2
+
+    overflow-x-auto
+    scrollbar-hide
+
+    pb-3
+  "
+                >
                   {tabs.map((tab) => (
                     <button
                       key={tab}
                       type="button"
                       onClick={() => setActiveTab(tab)}
-                      className={`py-3 px-4 border-b-2 font-normal text-[16px] leading-[100%] rounded-[10px] ${
-                        activeTab === tab
-                          ? "bg-[#EC396F1A] text-[#EC396F]"
-                          : "border-transparent text-[#31316680] hover:text-[#EC396F] hover:bg-[#EC396F1A]"
-                      }`}
+                      className={`
+  whitespace-nowrap
+
+    rounded-xl
+
+  px-4 py-2.5
+
+  text-sm font-semibold
+
+  transition-all duration-200
+
+  ${
+    activeTab === tab
+      ? `
+        bg-[#313166]
+
+        text-white
+
+        shadow-[0_8px_18px_rgba(49,49,102,0.18)]
+      `
+      : `
+        bg-[#F8F9FF]
+
+        text-[#8B90B2]
+
+        hover:bg-[#EEF1FF]
+        hover:text-[#1F1C5C]
+      `
+  }
+`}
                     >
                       {tab}
                     </button>
                   ))}
-                  <div className="flex-1 flex justify-end items-center">
+                  <div className="ml-auto hidden lg:flex items-center">
                     {!isEditing && (
                       <button
                         type="button"
                         onClick={onEdit}
-                        className="px-4 py-2 text-[#313166] border border-1 border-[#31316680] rounded-lg text-sm font-medium   flex items-center"
+                        className="flex h-10 items-center rounded-xl border border-[#31316680] px-4 text-sm font-medium text-[#313166] transition-all duration-200 hover:bg-[#F8F9FF]"
                       >
                         <img
                           src={EditIcon}
@@ -883,9 +1163,26 @@ const CustomerDetails = ({
               </div>
 
               {/* Tab Content */}
-              <div className=" px-5 py-5  max-w-[95%]">
+              <div
+                className="
+    relative z-10
+
+    px-4 py-4
+    sm:px-5
+
+    min-h-[320px]
+  "
+              >
                 {activeTab === "Advanced Details" && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div
+                    className="
+    grid grid-cols-1
+    gap-3
+
+    xl:grid-cols-2
+    2xl:grid-cols-3
+  "
+                  >
                     {transformedCustomer?.advancedDetails &&
                       renderDynamicFields(
                         transformedCustomer?.advancedDetails,
@@ -895,8 +1192,16 @@ const CustomerDetails = ({
                 )}
 
                 {activeTab === "Advanced Privacy" && (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-3">
+                    <div
+                      className="
+    grid grid-cols-1
+    gap-3
+
+    xl:grid-cols-2
+    2xl:grid-cols-3
+  "
+                    >
                       {transformedCustomer?.advancedPrivacyDetails &&
                         renderDynamicFields(
                           transformedCustomer?.advancedPrivacyDetails,
@@ -912,7 +1217,15 @@ const CustomerDetails = ({
                 )}
 
                 {activeTab === "Additional Details" && (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div
+                    className="
+    grid grid-cols-1
+    gap-3
+
+    xl:grid-cols-2
+    2xl:grid-cols-3
+  "
+                  >
                     {transformedCustomer?.additionalData &&
                     Object.keys(transformedCustomer.additionalData).length >
                       0 ? (
@@ -921,7 +1234,24 @@ const CustomerDetails = ({
                         "additionalData",
                       )
                     ) : (
-                      <div className="col-span-2 text-center py-8 text-gray-500">
+                      <div
+                        className="
+    col-span-full
+
+    rounded-2xl
+
+    border border-dashed border-[#DCE2FF]
+
+    bg-[#FAFBFF]
+
+    py-12
+
+    text-center
+    text-sm
+    font-medium
+    text-[#8B90B2]
+  "
+                      >
                         No basic data available
                       </div>
                     )}
@@ -929,7 +1259,15 @@ const CustomerDetails = ({
                 )}
 
                 {activeTab === "Activity" && (
-                  <div className=" grid grid-cols-2 gap-3">
+                  <div
+                    className="
+    grid grid-cols-1
+    gap-3
+
+    lg:grid-cols-2
+    2xl:grid-cols-3
+  "
+                  >
                     <DetailItem
                       label="Loyalty Points"
                       name="loyaltyPoints"
@@ -1067,19 +1405,65 @@ const CustomerDetails = ({
 
             {/* Edit Mode Buttons */}
             {isEditing && (
-              <div className="bg-white border-t border-gray-200 p-6 flex justify-center space-x-4">
+              <div
+                className="
+    sticky bottom-0 z-20
+
+    flex flex-col gap-3
+    sm:flex-row sm:justify-end
+
+    border-t border-[#EEF1FF]
+
+    bg-white/90
+    backdrop-blur-xl
+
+    px-4 py-3
+    sm:px-5
+  "
+              >
                 <button
                   type="button"
                   onClick={onCancel}
                   disabled={isLoading}
-                  className="px-6 py-2 border border-pink-600 rounded-md text-sm font-medium text-pink-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="
+  rounded-xl
+
+  border border-[#E5E9FF]
+
+  px-5 py-2.5
+
+  text-sm font-semibold
+  text-[#313166]
+
+  transition-all duration-200
+
+  hover:bg-[#F8F9FF]
+"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-6 py-2 bg-pink-600 text-white rounded-md text-sm font-medium hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 disabled:opacity-50 flex items-center"
+                  className="
+  flex items-center justify-center
+
+  rounded-xl
+
+  bg-[#313166]
+
+  px-5 py-2.5
+
+  text-sm font-semibold text-white
+
+  shadow-[0_8px_18px_rgba(49,49,102,0.18)]
+
+  transition-all duration-200
+
+  hover:bg-[#27275a]
+
+  disabled:opacity-50
+"
                 >
                   {isLoading ? (
                     <>

@@ -45,14 +45,14 @@ const CustomerSidebar = () => {
       const { data, pagination: paginationData } = response.data;
 
       setCustomers((prevCustomers) =>
-        append ? [...prevCustomers, ...data] : data
+        append ? [...prevCustomers, ...data] : data,
       );
       setPagination(paginationData);
 
       if (!append) {
         if (customerId && data.length > 0) {
           const currentCustomer = data.find(
-            (customer) => customer._id === customerId
+            (customer) => customer._id === customerId,
           );
           if (currentCustomer) {
             setSelectedCustomer(currentCustomer);
@@ -110,22 +110,78 @@ const CustomerSidebar = () => {
   };
 
   return (
-    <div className="w-80 bg-white flex flex-col pl-6  pr-4 pt-5  rounded-[10px]">
-      <div className="border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Customer List{" "}
-          <span className=" text-[#31316699] ">({pagination?.totalItems})</span>
-        </h2>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search here"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
+    <div
+      className="
+      h-auto
+      max-h-[36vh]
+      bg-transparent
+
+      xl:h-full
+      xl:max-h-none
+
+      flex flex-col
+    "
+    >
+      {/* Header */}
+      <div
+        className="
+        border-b border-[#EEF1FF]
+
+        px-4 sm:px-5
+        py-4
+      "
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-[20px] font-semibold text-[#1F1C5C]">
+              Customers
+            </h2>
+
+            <p className="mt-1 text-sm text-[#8B90B2]">
+              {pagination?.totalItems || 0} profiles available
+            </p>
+          </div>
+
+          <div
+            className="
+            flex h-10 min-w-[40px]
+            items-center justify-center
+
+            rounded-xl
+
+            bg-[#F8F9FF]
+
+            text-sm font-semibold
+            text-[#313166]
+          "
+          >
+            {pagination?.totalItems || 0}
+          </div>
+        </div>
+
+        {/* Search */}
+        <div
+          className="
+          mt-4
+
+          flex h-11 items-center
+
+          rounded-xl
+          border border-[#EEF1FF]
+
+          bg-[#F8F9FF]
+
+          px-4
+
+          transition-all
+
+          focus-within:border-[#313166]/20
+          focus-within:bg-white
+          focus-within:shadow-sm
+        "
+        >
           <svg
-            className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
+            className="h-5 w-5 shrink-0 text-[#8B90B2]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -137,80 +193,231 @@ const CustomerSidebar = () => {
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
+
+          <input
+            type="text"
+            placeholder="Search customers..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="
+            ml-3
+            h-full
+            w-full
+
+            bg-transparent
+
+            text-sm text-[#1F1C5C]
+
+            outline-none
+
+            placeholder:text-[#8B90B2]
+          "
+          />
         </div>
       </div>
 
+      {/* Customer List */}
       <div
         ref={listRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto customer-sidebar-scroll"
+        className="
+        flex-1 overflow-y-auto
+
+        px-3 py-3
+
+        customer-sidebar-scroll
+      "
       >
         {loading ? (
-          <div className="p-4 space-y-4">
+          <div className="space-y-3">
             {skeletonItems.map((_, index) => (
-              <div key={index} className="animate-pulse">
+              <div
+                key={index}
+                className="
+                animate-pulse
+
+                rounded-xl
+
+                border border-[#EEF1FF]
+
+                bg-[#F8F9FF]
+
+                p-3
+              "
+              >
                 <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full bg-gray-200"></div>
+                  <div className="h-11 w-11 rounded-xl bg-gray-200" />
+
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-32"></div>
-                    <div className="h-3 bg-gray-100 rounded w-24"></div>
+                    <div className="h-4 w-32 rounded bg-gray-200" />
+                    <div className="h-3 w-24 rounded bg-gray-100" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : error ? (
-          <div className="p-4 text-red-500 text-center">{error}</div>
+          <div
+            className="
+            rounded-xl
+            border border-red-100
+            bg-red-50
+
+            p-5
+
+            text-center text-sm text-red-500
+          "
+          >
+            {error}
+          </div>
         ) : customers.length === 0 ? (
-          <div className="p-4 text-gray-500 text-center">
+          <div
+            className="
+            rounded-xl
+            border border-[#EEF1FF]
+            bg-[#F8F9FF]
+
+            p-6
+
+            text-center text-sm text-[#8B90B2]
+          "
+          >
             No customers found
           </div>
         ) : (
           <>
-            <div className=" mt-4  ">
-              {customers.map((customer) => (
-                <div
-                  key={customer._id}
-                  onClick={() => handleCustomerSelect(customer)}
-                  className={`cursor-pointer transition-colors duration-200 
-                `}
-                >
+            <div className="space-y-2">
+              {customers.map((customer) => {
+                const isActive = selectedCustomer?._id === customer._id;
+
+                return (
                   <div
-                    className={`flex flex-col px-2 py-3  rounded-md ${
-                      selectedCustomer?._id === customer._id
-                        ? "bg-[#3131660F]   "
-                        : "hover:bg-gray-50"
-                    } `}
+                    key={customer._id}
+                    onClick={() => handleCustomerSelect(customer)}
+                    className={`
+                    group
+                    relative
+
+                    cursor-pointer
+
+                    overflow-hidden
+
+                    rounded-xl
+
+                    border
+
+                    transition-all duration-200
+
+                    ${
+                      isActive
+                        ? "border-[#313166]/10 bg-[#3131660A] shadow-sm"
+                        : "border-transparent hover:border-[#EEF1FF] hover:bg-[#F8F9FF]"
+                    }
+                  `}
                   >
-                    <div className="flex items-center gap-3 ">
-                      <div className="w-6 h-6 flex items-center justify-center">
+                    {/* Active Glow */}
+                    {isActive && (
+                      <div className="absolute inset-y-3 left-0 w-1 rounded-full bg-[#313166]" />
+                    )}
+
+                    <div className="flex items-center gap-3 p-3">
+                      {/* Avatar */}
+                      <div
+                        className="
+                        relative
+
+                        flex h-11 w-11 shrink-0
+                        items-center justify-center
+
+                        rounded-xl
+
+                        bg-[#F8F9FF]
+                      "
+                      >
                         <img
                           src={profileIcon}
                           alt={formatName(customer)}
-                          className="rounded-full w-6 h-6 object-cover"
+                          className="
+                          h-9 w-9 rounded-lg object-cover
+                        "
                         />
                       </div>
 
-                      <h3 className="font-[400] text-[18px] text-[#313166]">
-                        {formatName(customer)}
-                      </h3>
+                      {/* Content */}
+                      <div className="min-w-0 flex-1">
+                        <h3
+                          className="
+                          truncate
+
+                          text-[14px]
+                          font-semibold
+
+                          text-[#1F1C5C]
+                        "
+                        >
+                          {formatName(customer)}
+                        </h3>
+
+                        <p
+                          className="
+                          mt-1
+
+                          truncate
+
+                          text-sm
+                          text-[#8B90B2]
+                        "
+                        >
+                          {formatIndianMobile(
+                            customer.countryCode + " " + customer.mobileNumber,
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Arrow */}
+                      <div
+                        className={`
+                        text-sm transition-all duration-200
+
+                        ${
+                          isActive
+                            ? "translate-x-0 opacity-100 text-[#313166]"
+                            : "translate-x-1 opacity-0 text-[#8B90B2] group-hover:translate-x-0 group-hover:opacity-100"
+                        }
+                      `}
+                      >
+                        →
+                      </div>
                     </div>
-                    <p className="  font-[400] pl-8 text-[15px] text-[#31316680]">
-                       { `${formatIndianMobile(customer.countryCode + " " + customer.mobileNumber)}`}
-                    </p>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+
+            {/* Load More Skeleton */}
             {isLoadingMore && (
-              <div className="p-4 space-y-4">
+              <div className="mt-3 space-y-3">
                 {skeletonItems.slice(0, 2).map((_, index) => (
-                  <div key={`loading-${index}`} className="animate-pulse">
+                  <div
+                    key={`loading-${index}`}
+                    className="
+                    animate-pulse
+
+                    rounded-xl
+
+                    border border-[#EEF1FF]
+
+                    bg-[#F8F9FF]
+
+                    p-3
+                  "
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full bg-gray-200"></div>
+                      <div className="h-11 w-11 rounded-xl bg-gray-200" />
+
                       <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-gray-200 rounded w-32"></div>
-                        <div className="h-3 bg-gray-100 rounded w-24"></div>
+                        <div className="h-4 w-32 rounded bg-gray-200" />
+                        <div className="h-3 w-24 rounded bg-gray-100" />
                       </div>
                     </div>
                   </div>
