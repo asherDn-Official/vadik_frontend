@@ -350,7 +350,8 @@ const SendCampaign = () => {
         status: "COMPLETED"
       };
       
-      await api.post("/api/integrationManagement/whatsapp/campaigns", savePayload);
+      const campaignSaveRes = await api.post("/api/integrationManagement/whatsapp/campaigns", savePayload);
+      const savedCampaign = campaignSaveRes.data?.data;
 
       // 2. Execute sending
       const recipients = campaignData.audience.map(customer => {
@@ -369,6 +370,9 @@ const SendCampaign = () => {
       });
 
       const payload = {
+        campaignId: savedCampaign?._id,
+        campaignName: campaignData.name,
+        templateId: campaignData.template._id,
         templateName: campaignData.template.name,
         languageCode: campaignData.template.language,
         recipients,

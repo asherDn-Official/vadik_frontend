@@ -18,6 +18,14 @@ const EngagementDashboard = () => {
   const [analytics, setAnalytics] = useState(null);
   const [retryStats, setRetryStats] = useState(null);
   const [retryTimeline, setRetryTimeline] = useState([]);
+  const [individualAnalytics, setIndividualAnalytics] = useState([]);
+  const [individualLoading, setIndividualLoading] = useState(false);
+  const [individualFilter, setIndividualFilter] = useState("all");
+  const [individualPage, setIndividualPage] = useState(1);
+  const [individualPageSize] = useState(6);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItemLogs, setSelectedItemLogs] = useState([]);
+  const [selectedItemLogsLoading, setSelectedItemLogsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [retryLoading, setRetryLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -66,6 +74,64 @@ const EngagementDashboard = () => {
     }
   };
 
+  const fetchIndividualAnalytics = async () => {
+    try {
+      setIndividualLoading(true);
+      let url = "/api/whatsappMessage/analytics/individual";
+      const params = [];
+      if (startDate) params.push(`startDate=${startDate}`);
+      if (endDate) params.push(`endDate=${endDate}`);
+      if (params.length > 0) url += `?${params.join("&")}`;
+
+      const res = await api.get(url);
+      if (res.data.status) {
+        const items = res.data.data?.items || [];
+        setIndividualAnalytics(items);
+        setSelectedItem((previous) => {
+          if (!items.length) return null;
+          if (previous) {
+            const matched = items.find((item) => item.key === previous.key);
+            if (matched) return matched;
+          }
+          return items[0];
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching individual analytics:", error);
+    } finally {
+      setIndividualLoading(false);
+    }
+  };
+
+  const fetchSelectedItemLogs = async (item) => {
+    if (!item) {
+      setSelectedItemLogs([]);
+      return;
+    }
+
+    try {
+      setSelectedItemLogsLoading(true);
+      const params = new URLSearchParams();
+      params.set("page", "1");
+      params.set("limit", "8");
+      if (startDate) params.set("startDate", startDate);
+      if (endDate) params.set("endDate", endDate);
+      if (item.sourceType) params.set("sourceType", item.sourceType);
+      if (item.sourceId) params.set("sourceId", item.sourceId);
+      if (item.sourceType === "template" && item.templateName) params.set("templateName", item.templateName);
+
+      const res = await api.get(`/api/whatsappMessage/logs?${params.toString()}`);
+      if (res.data.status) {
+        setSelectedItemLogs(res.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching selected item logs:", error);
+      setSelectedItemLogs([]);
+    } finally {
+      setSelectedItemLogsLoading(false);
+    }
+  };
+
   const fetchRetryData = async () => {
     try {
       setRetryLoading(true);
@@ -89,7 +155,12 @@ const EngagementDashboard = () => {
 
   useEffect(() => {
     fetchAnalytics();
+    fetchIndividualAnalytics();
   }, [startDate, endDate]);
+
+  useEffect(() => {
+    fetchSelectedItemLogs(selectedItem);
+  }, [selectedItem, startDate, endDate]);
 
   useEffect(() => {
     if (activeTab === "retry") {
@@ -113,6 +184,47 @@ const EngagementDashboard = () => {
   };
 
   const COLORS = ['#313166', '#4CAF50', '#2196F3', '#FFC107', '#F44336'];
+
+  const sourceTypeOptions = [
+    { value: "all", label: "All" },
+    { value: "campaign", label: "Campaigns" },
+    { value: "template", label: "Templates" },
+    { value: "retention_automation", label: "Automations" },
+    { value: "spinWheel", label: "Spin Wheel" },
+    { value: "scratchCard", label: "Scratch Card" },
+    { value: "quiz", label: "Quiz" },
+    { value: "greeting", label: "Greetings" },
+  ];
+
+  const filteredItems = individualAnalytics.filter(
+    (item) => individualFilter === "all" || item.sourceType === individualFilter
+  );
+  const totalIndividualPages = Math.max(1, Math.ceil(filteredItems.length / individualPageSize));
+  const paginatedItems = filteredItems.slice(
+    (individualPage - 1) * individualPageSize,
+    individualPage * individualPageSize
+  );
+
+  useEffect(() => {
+    if (!filteredItems.length) {
+      setSelectedItem(null);
+      return;
+    }
+
+    if (!selectedItem || !filteredItems.some((item) => item.key === selectedItem.key)) {
+      setSelectedItem(filteredItems[0]);
+    }
+  }, [individualFilter, individualAnalytics, selectedItem]);
+
+  useEffect(() => {
+    setIndividualPage(1);
+  }, [individualFilter, individualAnalytics]);
+
+  useEffect(() => {
+    if (individualPage > totalIndividualPages) {
+      setIndividualPage(totalIndividualPages);
+    }
+  }, [individualPage, totalIndividualPages]);
 
   const renderOverview = () => {
     if (!analytics) return <div className="p-8 text-center text-gray-500">Loading analytics...</div>;
@@ -296,6 +408,7 @@ const EngagementDashboard = () => {
             </div>
           </div>
         </div>
+
       </div>
     );
   };
@@ -386,6 +499,371 @@ const EngagementDashboard = () => {
     );
   };
 
+  const renderIndividualAnalytics = () => {
+    const itemPerformanceData = selectedItem
+      ? [
+          { name: "Sent", value: selectedItem.sent || 0 },
+          { name: "Delivered", value: selectedItem.delivered || 0 },
+          { name: "Read", value: selectedItem.read || 0 },
+          { name: "Failed", value: selectedItem.failed || 0 },
+        ]
+      : [];
+
+    const itemRateData = selectedItem
+      ? [
+          { name: "Delivered Rate", rate: selectedItem.deliveredRate || 0 },
+          { name: "Read Rate", rate: selectedItem.readRate || 0 },
+          ...(selectedItem.activityStats
+            ? [
+                { name: "Open Rate", rate: selectedItem.activityStats.openRate || 0 },
+                { name: "Completion Rate", rate: selectedItem.activityStats.completionRate || 0 },
+              ]
+            : []),
+        ]
+      : [];
+
+    const activityBreakdownData = selectedItem?.activityStats
+      ? [
+          { name: "Shared", value: selectedItem.activityStats.shared || 0 },
+          { name: "Opened", value: selectedItem.activityStats.opened || 0 },
+          { name: "Completed", value: selectedItem.activityStats.completed || 0 },
+          { name: "Responded", value: selectedItem.activityStats.responded || 0 },
+          { name: "Coupon Issued", value: selectedItem.activityStats.couponIssued || 0 },
+        ]
+      : [];
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Individual Analytics</h3>
+              <p className="text-sm text-gray-500">
+                Open one campaign, template, automation, or customer activity and view only its own performance.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {sourceTypeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setIndividualFilter(option.value)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                    individualFilter === option.value
+                      ? "bg-[#313166] text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-[340px_minmax(0,1fr)] gap-6">
+            <div className="rounded-2xl border border-gray-100 bg-[#F8F9FD] p-4 flex flex-col min-h-[780px]">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="text-sm font-bold text-[#313166]">Items</h4>
+                  <p className="text-xs text-gray-500">Campaign-wise and template-wise analytics</p>
+                </div>
+                <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-gray-500 border border-gray-100">
+                  {filteredItems.length}
+                </span>
+              </div>
+
+              <div className="flex-1 space-y-3 overflow-y-auto pr-1 min-h-0">
+                {individualLoading ? (
+                  <div className="rounded-2xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500 bg-white">
+                    Loading individual analytics...
+                  </div>
+                ) : filteredItems.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500 bg-white">
+                    No individual analytics found for this filter.
+                  </div>
+                ) : (
+                  paginatedItems.map((item) => (
+                    <button
+                      key={item.key}
+                      onClick={() => setSelectedItem(item)}
+                      className={`w-full rounded-2xl border p-4 text-left transition-all ${
+                        selectedItem?.key === item.key
+                          ? "border-[#313166] bg-[#313166]/8 shadow-sm"
+                          : "border-gray-100 bg-white hover:border-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            {item.sourceType.replaceAll("_", " ")}
+                          </div>
+                          <h4 className="mt-1 text-sm font-bold text-[#313166] truncate">{item.sourceName}</h4>
+                          <p className="mt-1 text-xs text-gray-500 truncate">
+                            {item.templateName || "WhatsApp analytics item"}
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-[#F4F5F9] px-2 py-1 text-[10px] font-bold text-gray-500 border border-gray-100">
+                          {item.total}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <div className="rounded-xl bg-[#F8F9FD] px-3 py-2">
+                          <div className="text-[10px] uppercase tracking-wide text-gray-400">Delivered</div>
+                          <div className="text-sm font-bold text-gray-900">{item.deliveredRate}%</div>
+                        </div>
+                        <div className="rounded-xl bg-[#F8F9FD] px-3 py-2">
+                          <div className="text-[10px] uppercase tracking-wide text-gray-400">Read</div>
+                          <div className="text-sm font-bold text-gray-900">{item.readRate}%</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+
+              {filteredItems.length > 0 && (
+                <div className="mt-4 border-t border-gray-200 pt-4 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">
+                    Page <span className="font-semibold">{individualPage}</span> of <span className="font-semibold">{totalIndividualPages}</span>
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      disabled={individualPage === 1}
+                      onClick={() => setIndividualPage((prev) => Math.max(1, prev - 1))}
+                      className="px-3 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      disabled={individualPage === totalIndividualPages}
+                      onClick={() => setIndividualPage((prev) => Math.min(totalIndividualPages, prev + 1))}
+                      className="px-3 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-gray-100 bg-[#FCFCFF] p-5 min-h-[780px]">
+              {selectedItem ? (
+                <div className="space-y-6">
+                  <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <div className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
+                        {selectedItem.sourceType.replaceAll("_", " ")}
+                      </div>
+                      <h3 className="mt-2 text-2xl font-bold text-[#313166]">{selectedItem.sourceName}</h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        {selectedItem.templateName || "Performance and recent delivery details"}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedItem.meta?.status ? (
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-600 border border-gray-200">
+                          {selectedItem.meta.status}
+                        </span>
+                      ) : null}
+                      {selectedItem.meta?.audienceSize !== undefined ? (
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-600 border border-gray-200">
+                          Audience {selectedItem.meta.audienceSize}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="rounded-2xl bg-white p-4 border border-gray-100">
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Sent</div>
+                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.sent}</div>
+                    </div>
+                    <div className="rounded-2xl bg-white p-4 border border-gray-100">
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Delivered Rate</div>
+                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.deliveredRate}%</div>
+                    </div>
+                    <div className="rounded-2xl bg-white p-4 border border-gray-100">
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Read Rate</div>
+                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.readRate}%</div>
+                    </div>
+                    <div className="rounded-2xl bg-white p-4 border border-gray-100">
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Failed</div>
+                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.failed}</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                      <h4 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <PieChartIcon size={18} className="text-[#313166]" />
+                        Message Distribution
+                      </h4>
+                      <div className="h-72 flex items-center">
+                        <div className="w-1/2 h-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={itemPerformanceData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={55}
+                                outerRadius={80}
+                                paddingAngle={4}
+                                dataKey="value"
+                              >
+                                {itemPerformanceData.map((entry, index) => (
+                                  <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="w-1/2 space-y-3">
+                          {itemPerformanceData.map((entry, index) => (
+                            <div key={entry.name} className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                                <span className="text-sm font-medium text-gray-600">{entry.name}</span>
+                              </div>
+                              <span className="text-sm font-bold text-gray-900">{entry.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                      <h4 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <BarChart2 size={18} className="text-[#313166]" />
+                        Performance Rates
+                      </h4>
+                      <div className="h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={itemRateData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                            <YAxis domain={[0, 100]} />
+                            <Tooltip formatter={(value) => [`${value}%`, "Rate"]} />
+                            <Bar dataKey="rate" fill="#313166" radius={[8, 8, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedItem.activityStats ? (
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-base font-bold text-gray-900">Activity Performance</h4>
+                        <p className="text-sm text-gray-500">Customer progress for this activity item.</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div className="rounded-2xl bg-white p-4 border border-gray-100">
+                          <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Shared</div>
+                          <div className="mt-2 text-xl font-bold text-gray-900">{selectedItem.activityStats.shared}</div>
+                        </div>
+                        <div className="rounded-2xl bg-white p-4 border border-gray-100">
+                          <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Opened</div>
+                          <div className="mt-2 text-xl font-bold text-gray-900">{selectedItem.activityStats.opened}</div>
+                        </div>
+                        <div className="rounded-2xl bg-white p-4 border border-gray-100">
+                          <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Completed</div>
+                          <div className="mt-2 text-xl font-bold text-gray-900">{selectedItem.activityStats.completed}</div>
+                        </div>
+                        <div className="rounded-2xl bg-white p-4 border border-gray-100">
+                          <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Open Rate</div>
+                          <div className="mt-2 text-xl font-bold text-gray-900">{selectedItem.activityStats.openRate}%</div>
+                        </div>
+                        <div className="rounded-2xl bg-white p-4 border border-gray-100">
+                          <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Coupon Issued</div>
+                          <div className="mt-2 text-xl font-bold text-gray-900">{selectedItem.activityStats.couponIssued}</div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                        <h4 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                          <Activity size={18} className="text-[#313166]" />
+                          Activity Breakdown
+                        </h4>
+                        <div className="h-72">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={activityBreakdownData}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                              <YAxis />
+                              <Tooltip />
+                              <Bar dataKey="value" fill="#CB376D" radius={[8, 8, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-base font-bold text-gray-900">Recent Message History</h4>
+                      <p className="text-sm text-gray-500">Latest WhatsApp delivery records for this item only.</p>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden">
+                      <div className="max-h-[320px] overflow-y-auto">
+                        {selectedItemLogsLoading ? (
+                          <div className="p-8 text-center text-sm text-gray-500">Loading item logs...</div>
+                        ) : selectedItemLogs.length === 0 ? (
+                          <div className="p-8 text-center text-sm text-gray-500">No message history found for this item.</div>
+                        ) : (
+                          <div className="divide-y divide-gray-100">
+                            {selectedItemLogs.map((log) => (
+                              <div key={log._id} className="p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                                <div>
+                                  <div className="font-semibold text-gray-900">
+                                    {log.firstname || log.lastname ? `${log.firstname} ${log.lastname}` : "Unknown Customer"}
+                                  </div>
+                                  <div className="text-xs text-gray-500">{log.mobileNumber}</div>
+                                </div>
+                                <div className="text-sm text-gray-600 max-w-md truncate" title={log.messageContent}>
+                                  {log.messageContent}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
+                                    log.status === "read"
+                                      ? "bg-blue-50 text-blue-700"
+                                      : log.status === "delivered"
+                                        ? "bg-green-50 text-green-700"
+                                        : log.status === "failed"
+                                          ? "bg-red-50 text-red-700"
+                                          : "bg-gray-100 text-gray-600"
+                                  }`}>
+                                    {log.status}
+                                  </span>
+                                  <span className="text-xs text-gray-500 whitespace-nowrap">
+                                    {moment(log.timestamp).format("MMM DD, HH:mm")}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full min-h-[420px] flex items-center justify-center text-center text-gray-400">
+                  Select an individual item to view its analytics.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -413,6 +891,17 @@ const EngagementDashboard = () => {
             Message Logs
           </button>
           <button
+            onClick={() => setActiveTab("individual")}
+            className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === "individual"
+                ? "bg-white text-[#313166] shadow-md"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <Activity size={18} />
+            Individual Analytics
+          </button>
+          <button
             onClick={() => setActiveTab("retry")}
             className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === "retry"
@@ -426,14 +915,20 @@ const EngagementDashboard = () => {
         </div>
 
         <button 
-          onClick={() => { fetchLogs(); fetchAnalytics(); if(activeTab === "retry") fetchRetryData(); }}
+          onClick={() => {
+            fetchLogs();
+            fetchAnalytics();
+            fetchIndividualAnalytics();
+            if(activeTab === "retry") fetchRetryData();
+            if(activeTab === "individual" && selectedItem) fetchSelectedItemLogs(selectedItem);
+          }}
           className="p-2 text-gray-500 hover:text-[#313166] hover:bg-gray-100 rounded-xl transition-all"
         >
           <RefreshCw size={20} />
         </button>
       </div>
 
-      {activeTab === "overview" ? renderOverview() : activeTab === "retry" ? renderRetryReport() : (
+      {activeTab === "overview" ? renderOverview() : activeTab === "individual" ? renderIndividualAnalytics() : activeTab === "retry" ? renderRetryReport() : (
         <div className="space-y-6">
           {/* Filters and Search */}
           <div className="flex flex-col gap-4">
