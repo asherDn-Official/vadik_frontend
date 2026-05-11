@@ -220,6 +220,10 @@ const Login = () => {
       const data = response.data;
 
       if (data.token) {
+        if (activePortal === "retailer") {
+          localStorage.setItem("email", credentials.email);
+          sessionStorage.setItem("password", credentials.password);
+        }
         localStorage.setItem("token", data.token);
 
         const authResponse = await checkAuth();
