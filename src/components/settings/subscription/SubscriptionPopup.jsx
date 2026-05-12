@@ -25,7 +25,7 @@ const SubscriptionPopup = ({
   const [loading, setLoading] = useState(false);
   const [currentPlans, setCurrentPlans] = useState(null);
   const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
-  const [autoplay, setAutoplay] = useState(true);
+  const [autoplay, setAutoplay] = useState(showAutopay);
   const [addonQuantities, setAddonQuantities] = useState({});
   const [billingDetails, setBillingDetails] = useState(null);
   const [showBillingModal, setShowBillingModal] = useState(false);
@@ -33,6 +33,7 @@ const SubscriptionPopup = ({
   
   const retailerid = localStorage.getItem("retailerId");
   const { auth, setAuth } = useAuth();
+  const isAutoPayEnabled = showAutopay && autoplay;
   
   // Check if we should show tabs
   const shouldShowTabs = showSubscription && showAddon;
@@ -64,6 +65,12 @@ const SubscriptionPopup = ({
       setAddonQuantities(initialQuantities);
     }
   }, [addons]);
+
+  useEffect(() => {
+    if (!showAutopay) {
+      setAutoplay(false);
+    }
+  }, [showAutopay]);
 
   const getCurrentPlanDetails = async () => {
     try {
@@ -292,12 +299,12 @@ const SubscriptionPopup = ({
   const handleTrialSubscription = async (plan) => {
     setLoading(true);
     try {
-      const trialPayload = {
+        const trialPayload = {
         planId: plan._id,
         addOnIds: [],
         isTrial: true,
         enableAutoPay: false,
-        autoplay: autoplay,
+        autoplay: false,
       };
 
       const trialResponse = await api.post("/api/subscriptions", trialPayload);
@@ -347,7 +354,7 @@ const SubscriptionPopup = ({
   // Regular subscription flow with quantities
   const handleRegularSubscriptionFlow = async () => {
     try {
-      if (autoplay && selectedAddons.length > 0) {
+      if (isAutoPayEnabled && selectedAddons.length > 0) {
         alert("AutoPay currently supports plan-only subscriptions. Remove add-ons or disable AutoPay.");
         setLoading(false);
         return;
@@ -366,8 +373,8 @@ const SubscriptionPopup = ({
           planId: selectedPlan._id,
           addOnIds: addonsWithQuantities,
           isTrial: false,
-          enableAutoPay: autoplay,
-          autoplay: autoplay,
+          enableAutoPay: isAutoPayEnabled,
+          autoplay: isAutoPayEnabled,
         };
 
         const subscriptionResponse = await api.post(
@@ -396,9 +403,9 @@ const SubscriptionPopup = ({
           ).toISOString(),
           isActive: false,
           isTrial: selectedPlan?.isFreeTrial || false,
-          autoplay: autoplay,
+          autoplay: isAutoPayEnabled,
           autoPay: {
-            enabled: autoplay,
+            enabled: isAutoPayEnabled,
             razorpayCustomerId: null,
             razorpayTokenId: null,
           },
@@ -492,7 +499,7 @@ const SubscriptionPopup = ({
       const preparePayload = {
         subscriptionId: activeSubscriptionId,
         addOnIds: addonsWithQuantities,
-        autoplay: autoplay,
+        autoplay: isAutoPayEnabled,
       };
 
       const prepareResponse = await api.post(
@@ -905,6 +912,10 @@ const SubscriptionPopup = ({
         totalPrice={calculateTotalPrice()}
         onConfirm={handlePaymentProcess}
         loading={loading}
+        autoPayEnabled={autoplay}
+        onAutoPayChange={setAutoplay}
+        showAutoPayToggle={showAutopay && !!selectedPlan && !selectedPlan.isFreeTrial && !currentPlans}
+        showPriceBreakdown={true}
       />
 
       {/* Billing Details Modal */}

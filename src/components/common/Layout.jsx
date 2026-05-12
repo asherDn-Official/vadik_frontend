@@ -157,7 +157,7 @@ function Layout() {
           !loading && (
             <SubscriptionPopup
               onClose={() => setShowSubscriptionPopup(false)}
-              showAutopay={false}
+              showAutopay={true}
               showSubscription={true}
               showAddon={true}
             />
