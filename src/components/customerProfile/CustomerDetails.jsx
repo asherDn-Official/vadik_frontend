@@ -36,6 +36,7 @@ import PhoneInput, {
 } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import api from "../../api/apiconfig";
+import CustomerJourneyPanel from "./CustomerJourneyPanel";
 
 const FieldItem = React.memo(
   ({
@@ -623,6 +624,7 @@ const CustomerDetails = ({
   }, [formData, touched, isEditing]);
 
   const tabs = [
+    "Customer Journey",
     "Advanced Details",
     "Additional Details",
     "Advanced Privacy",
@@ -1144,6 +1146,15 @@ const CustomerDetails = ({
                     </button>
                   ))}
                   <div className="ml-auto hidden lg:flex items-center">
+                    {activeTab !== "Customer Journey" && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("Customer Journey")}
+                        className="mr-3 flex h-10 items-center rounded-xl bg-[#313166] px-4 text-sm font-medium text-white shadow-[0_8px_18px_rgba(49,49,102,0.18)] transition-all duration-200 hover:bg-[#27275a]"
+                      >
+                        Customer Journey
+                      </button>
+                    )}
                     {!isEditing && (
                       <button
                         type="button"
@@ -1173,6 +1184,13 @@ const CustomerDetails = ({
     min-h-[320px]
   "
               >
+                {activeTab === "Customer Journey" && (
+                  <CustomerJourneyPanel
+                    customerId={customer?._id}
+                    isActive={activeTab === "Customer Journey"}
+                  />
+                )}
+
                 {activeTab === "Advanced Details" && (
                   <div
                     className="
