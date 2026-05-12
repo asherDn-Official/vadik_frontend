@@ -260,60 +260,72 @@ const CustomerJourneyPanel = ({ customerId, isActive }) => {
             </div>
           </div>
 
-          <div className="mt-5 space-y-4">
+          <div className="relative mt-8 space-y-8 px-1">
+            {/* Timeline Vertical Line */}
+            {timeline.length > 1 && (
+              <div
+                className="absolute left-[22px] top-0 bottom-0 w-[2px] bg-gradient-to-b from-[#313166]/30 via-[#313166]/10 to-transparent"
+                aria-hidden="true"
+              />
+            )}
+
             {timeline.length ? (
               timeline.map((item) => {
                 const Icon = getTimelineIcon(item.type);
                 const detailLines = renderDetailLines(item);
 
                 return (
-                  <div
-                    key={item.id}
-                    className="rounded-2xl border border-[#EEF1FF] bg-[#FCFCFF] p-4"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#313166] text-white">
+                  <div key={item.id} className="relative flex items-start gap-6">
+                    {/* Timeline Node (Icon) */}
+                    <div className="relative z-10 shrink-0">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#313166] text-white shadow-[0_8px_16px_rgba(49,49,102,0.2)] ring-4 ring-white">
                         <Icon className="h-5 w-5" />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h4 className="text-sm font-semibold text-[#1F1C5C]">
+                    </div>
+
+                    {/* Timeline Card */}
+                    <div className="flex-1 rounded-2xl border border-[#EEF1FF] bg-[#FCFCFF] p-5 shadow-[0_2px_12px_rgba(49,49,102,0.03)] transition-all duration-200 hover:border-[#DCE2FF] hover:bg-white hover:shadow-[0_8_24px_rgba(49,49,102,0.06)]">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EEF1FF]/50 pb-3">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-[15px] font-bold text-[#1F1C5C]">
                             {item.title}
                           </h4>
-                          {item.status ? (
-                            <span className="rounded-full bg-[#EEF1FF] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#313166]">
+                          {item.status && (
+                            <span className="rounded-full bg-[#313166]/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#313166]">
                               {item.status}
                             </span>
-                          ) : null}
-                          {item.channel ? (
-                            <span className="rounded-full bg-[#F8E6EE] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#B42361]">
+                          )}
+                          {item.channel && (
+                            <span className="rounded-full bg-[#B42361]/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#B42361]">
                               {item.channel}
                             </span>
-                          ) : null}
-                        </div>
-                        <p className="mt-1 text-xs text-[#8B90B2]">
-                          {formatDateTime(item.occurredAt)}
-                        </p>
-                        <div className="mt-3 space-y-1.5">
-                          {detailLines.length ? (
-                            detailLines.map((line, index) => (
-                              <p key={index} className="text-sm text-[#4A4F74]">
-                                {line}
-                              </p>
-                            ))
-                          ) : (
-                            <p className="text-sm text-[#4A4F74]">
-                              No extra details captured for this event yet.
-                            </p>
                           )}
                         </div>
+                        <p className="flex items-center gap-1.5 text-[11px] font-semibold text-[#8B90B2]">
+                          <CalendarDays className="h-3.5 w-3.5" />
+                          {formatDateTime(item.occurredAt)}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 space-y-2">
+                        {detailLines.length ? (
+                          detailLines.map((line, idx) => (
+                            <p key={idx} className="text-sm font-medium text-[#4A4F74]">
+                              {line}
+                            </p>
+                          ))
+                        ) : (
+                          <p className="text-sm italic text-[#8B90B2]">
+                            No extra details captured for this event.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="rounded-2xl border border-dashed border-[#DCE2FF] bg-[#FAFBFF] p-6 text-sm text-[#8B90B2]">
+              <div className="rounded-2xl border border-dashed border-[#DCE2FF] bg-[#FAFBFF] p-8 text-center text-sm font-medium text-[#8B90B2]">
                 No journey activity found for this customer yet.
               </div>
             )}
