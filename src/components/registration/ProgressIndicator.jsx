@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 
 const ProgressIndicator = ({ currentStep, completedSteps = [], onStepChange = null, isCurrentStepValid = false }) => {
   const steps = [
@@ -17,17 +18,21 @@ const ProgressIndicator = ({ currentStep, completedSteps = [], onStepChange = nu
       title: "Additional Details",
       subtitle: "Complete your Business  profile.",
     },
-    { number: 4, title: "You're All Set!", subtitle: "" },
+    {
+      number: 4,
+      title: "WhatsApp Setup",
+      subtitle: "Use Vadik or connect your own Meta account.",
+    },
+    {
+      number: 5,
+      title: "Template Review",
+      subtitle: "Review the templates used in your automations.",
+    },
+    { number: 6, title: "You're All Set!", subtitle: "" },
   ];
 
   const getProgressClass = (step) => {
-    if (step < currentStep) return "progress-connector-100";
-    if (step === currentStep - 1) {
-      if (currentStep === 2) return "progress-connector-33";
-      if (currentStep === 3) return "progress-connector-66";
-      if (currentStep === 4) return "progress-connector-100";
-    }
-    return "progress-connector-0";
+    return step < currentStep - 1 ? "progress-connector-100" : "progress-connector-0";
   };
 
   const handleStepClick = (stepNumber) => {
@@ -142,3 +147,10 @@ const ProgressIndicator = ({ currentStep, completedSteps = [], onStepChange = nu
 };
 
 export default ProgressIndicator;
+
+ProgressIndicator.propTypes = {
+  currentStep: PropTypes.number.isRequired,
+  completedSteps: PropTypes.arrayOf(PropTypes.number),
+  onStepChange: PropTypes.func,
+  isCurrentStepValid: PropTypes.bool,
+};

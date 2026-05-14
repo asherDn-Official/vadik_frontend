@@ -1,10 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
 
-const Completion = ({ formData }) => {
+const Completion = () => {
 
   const navigate = useNavigate();
 
   const handleNavigate = () => {
+     localStorage.removeItem("formData");
+     localStorage.removeItem("registerSetupState");
      navigate("/dashboard");
   }
 
@@ -23,10 +25,10 @@ const Completion = ({ formData }) => {
         </div>
 
         <h2 className="text-2xl font-bold mb-4 text-[#EC396F]">
-          You're Successfully a Vadik Al Member!
+          You&apos;re Successfully a Vadik Al Member!
         </h2>
         <p className="text-lg text-[#313166] mb-8">
-          Let's make today productive!
+          Let&apos;s make today productive!
         </p>
 
         <div className="w-full flex justify-center" onClick={handleNavigate}>
@@ -34,7 +36,7 @@ const Completion = ({ formData }) => {
             // to="/dashboard"
             className="min-w-[200px] px-6 py-3 bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-[10px] hover:opacity-90 transition-opacity duration-200 text-center"
           >
-            Let's go!
+            Let&apos;s go!
           </Link>
         </div>
       </div>

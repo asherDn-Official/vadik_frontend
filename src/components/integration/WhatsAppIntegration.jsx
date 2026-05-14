@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
+import PropTypes from 'prop-types';
 import { API_BASE_URL } from '../../api/apiconfig.js';
 import { 
   MessageSquare, 
@@ -24,7 +25,7 @@ import {
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 
-const WhatsAppIntegration = () => {
+const WhatsAppIntegration = ({ onConfigChange = null }) => {
   const { checkAuth } = useAuth();
   const [config, setConfig] = useState(null);
   const [webhookInfo, setWebhookInfo] = useState(null);
@@ -161,6 +162,7 @@ const WhatsAppIntegration = () => {
       });
       if (response.data.status) {
         setConfig(response.data.data);
+        onConfigChange?.(response.data.data);
         setWebhookInfo(response.data.webhook);
         setTokenExpiry(response.data.tokenExpiry);
         if (response.data.data.whatsappOnboardingStatus === 'pin_required' && response.data.data.whatsappPhoneNumberId) {
@@ -1055,3 +1057,7 @@ const WhatsAppIntegration = () => {
 };
 
 export default WhatsAppIntegration;
+
+WhatsAppIntegration.propTypes = {
+  onConfigChange: PropTypes.func,
+};

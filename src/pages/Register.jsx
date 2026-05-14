@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 import {
   Routes,
   Route,
@@ -10,15 +11,20 @@ import ProgressIndicator from "../components/registration/ProgressIndicator";
 import BasicInformation from "../components/registration/BasicInformation";
 import StoreInformation from "../components/registration/StoreInformation";
 import AdditionalDetails from "../components/registration/AdditionalDetails";
+import WhatsAppSetup from "../components/registration/WhatsAppSetup";
+import TemplateSetup from "../components/registration/TemplateSetup";
 import Completion from "../components/registration/Completion";
 import api from "../api/apiconfig";
 
 const Register = ({ formData, updateFormData }) => {
-  const [initialOnboardingData, setInitialOnboardingData] = useState({});
-  const [isLoading, setIsLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
-  const [completedSteps, setCompletedSteps] = useState([]);
-  const [isCurrentStepValid, setIsCurrentStepValid] = useState(false);
+  const [setupState, setSetupState] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("registerSetupState")) || {};
+    } catch {
+      return {};
+    }
+  });
   const navigate = useNavigate();
   const params = useParams();
   const wildcardPath = params["*"];
@@ -27,10 +33,8 @@ const Register = ({ formData, updateFormData }) => {
 
   const getOnBoradingInitialData = async () => {
     try {
-      setIsLoading(true);
       const response = await api.get(`/api/retailer/profile`);
       const data = response.data.data;
-      setInitialOnboardingData(data);
 
       const savedFormData = localStorage.getItem("formData");
       const parsedSavedData = savedFormData ? JSON.parse(savedFormData) : {};
@@ -57,6 +61,10 @@ const Register = ({ formData, updateFormData }) => {
         mobile: hasSavedMobile ? sanitizeDigits(parsedSavedData.mobile) : apiMobile,
         storeName: parsedSavedData.storeName || data.storeName,
       });
+      setSetupState((prev) => ({
+        ...prev,
+        isUsingOwnWhatsapp: data?.isUsingOwnWhatsapp || prev.isUsingOwnWhatsapp || false,
+      }));
     } catch (err) {
       console.error("Error fetching onboarding context:", err);
       // Restore from localStorage if API fails
@@ -64,8 +72,6 @@ const Register = ({ formData, updateFormData }) => {
       if (savedFormData) {
         updateFormData(JSON.parse(savedFormData));
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -77,12 +83,12 @@ const Register = ({ formData, updateFormData }) => {
   }, [urlId]);
 
   useEffect(() => {
-    setIsCurrentStepValid(isStepValid(currentStep));
-  }, [formData, currentStep]);
-
-  useEffect(() => {
     localStorage.setItem("formData", JSON.stringify(formData));
   }, [formData]);
+
+  useEffect(() => {
+    localStorage.setItem("registerSetupState", JSON.stringify(setupState));
+  }, [setupState]);
 
   useEffect(() => {
     const savedFormData = localStorage.getItem("formData");
@@ -100,6 +106,21 @@ const Register = ({ formData, updateFormData }) => {
       }
     }
   }, []);
+
+  useEffect(() => {
+    const routeStep = (() => {
+      if (!wildcardPath || wildcardPath === "") return 1;
+      if (wildcardPath.startsWith("basic")) return 1;
+      if (wildcardPath.startsWith("store")) return 2;
+      if (wildcardPath.startsWith("additional")) return 3;
+      if (wildcardPath.startsWith("whatsapp")) return 4;
+      if (wildcardPath.startsWith("templates")) return 5;
+      if (wildcardPath.startsWith("complete")) return 6;
+      return 1;
+    })();
+
+    setCurrentStep(routeStep);
+  }, [wildcardPath]);
 
   const validateBasicInfo = () => {
     return (
@@ -126,8 +147,7 @@ const Register = ({ formData, updateFormData }) => {
       formData.staffCount &&
       formData.customerCount &&
       formData.contactNumber &&
-      formData.ownerName &&
-      formData.logo
+      formData.ownerName
     );
   };
 
@@ -139,25 +159,19 @@ const Register = ({ formData, updateFormData }) => {
         return validateStoreInfo();
       case 3:
         return validateAdditionalInfo();
+      case 4:
+        return setupState.whatsappChoice === "default" || setupState.isUsingOwnWhatsapp === true;
+      case 5:
+        return (
+          setupState.templateSetupCompleted === true ||
+          setupState.whatsappChoice === "default"
+        );
       default:
         return true;
     }
   };
 
   const goToStep = (step) => {
-    setCurrentStep(step);
-    
-    if (isStepValid(step)) {
-      setCompletedSteps((prev) => {
-        if (!prev.includes(step)) {
-          return [...prev, step];
-        }
-        return prev;
-      });
-    }
-    
-    setIsCurrentStepValid(false);
-
     switch (step) {
       case 1:
         navigate(`/register/basic/${id}`);
@@ -169,6 +183,12 @@ const Register = ({ formData, updateFormData }) => {
         navigate("/register/additional");
         break;
       case 4:
+        navigate("/register/whatsapp");
+        break;
+      case 5:
+        navigate("/register/templates");
+        break;
+      case 6:
         navigate("/register/complete");
         break;
       default:
@@ -181,6 +201,12 @@ const Register = ({ formData, updateFormData }) => {
       return;
     }
     goToStep(step);
+  };
+
+  const completedSteps = [1, 2, 3, 4, 5].filter((step) => isStepValid(step));
+
+  const updateSetupState = (newData) => {
+    setSetupState((prev) => ({ ...prev, ...newData }));
   };
 
   // if (isLoading) {
@@ -211,7 +237,7 @@ const Register = ({ formData, updateFormData }) => {
             and grow your business digitally.
           </p>
           <p className="mb-6 text-[18px]">
-            Create your account and set up your Business  in just 3 simple steps. It
+            Create your account and set up your Business in just 5 simple steps. It
             only takes a minute to complete and start using the platform:
           </p>
 
@@ -263,6 +289,53 @@ const Register = ({ formData, updateFormData }) => {
             }
           />
           <Route
+            path="/whatsapp"
+            element={
+              <WhatsAppSetup
+                isUsingOwnWhatsapp={setupState.isUsingOwnWhatsapp === true}
+                onConfigChange={(config) => {
+                  updateSetupState({
+                    isUsingOwnWhatsapp: config?.isUsingOwnWhatsapp === true,
+                    whatsappChoice:
+                      config?.isUsingOwnWhatsapp === true
+                        ? "own"
+                        : setupState.whatsappChoice,
+                  });
+                }}
+                onUseDefault={() => {
+                  updateSetupState({
+                    whatsappChoice: "default",
+                    isUsingOwnWhatsapp: false,
+                    templateSetupCompleted: true,
+                  });
+                  goToStep(5);
+                }}
+                onContinue={() => {
+                  updateSetupState({
+                    whatsappChoice: "own",
+                    isUsingOwnWhatsapp: true,
+                    templateSetupCompleted: false,
+                  });
+                  goToStep(5);
+                }}
+                goToPreviousStep={() => goToStep(3)}
+              />
+            }
+          />
+          <Route
+            path="/templates"
+            element={
+              <TemplateSetup
+                isUsingOwnWhatsapp={setupState.isUsingOwnWhatsapp === true}
+                markTemplateSetupComplete={() =>
+                  updateSetupState({ templateSetupCompleted: true })
+                }
+                goToNextStep={() => goToStep(6)}
+                goToPreviousStep={() => goToStep(4)}
+              />
+            }
+          />
+          <Route
             path="/complete"
             element={<Completion formData={formData} />}
           />
@@ -273,3 +346,26 @@ const Register = ({ formData, updateFormData }) => {
 };
 
 export default Register;
+
+Register.propTypes = {
+  formData: PropTypes.shape({
+    firstName: PropTypes.string,
+    lastName: PropTypes.string,
+    mobile: PropTypes.string,
+    email: PropTypes.string,
+    password: PropTypes.string,
+    storeName: PropTypes.string,
+    storeType: PropTypes.string,
+    storeAddress: PropTypes.string,
+    city: PropTypes.string,
+    pincode: PropTypes.string,
+    logo: PropTypes.any,
+    staffCount: PropTypes.string,
+    customerCount: PropTypes.string,
+    contactNumber: PropTypes.string,
+    ownerName: PropTypes.string,
+    gstNumber: PropTypes.string,
+    countryCode: PropTypes.string,
+  }).isRequired,
+  updateFormData: PropTypes.func.isRequired,
+};

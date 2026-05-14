@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import PropTypes from "prop-types";
 import api from "../../api/apiconfig";
 import { updateToken } from "./utils/updateTokan";
 
@@ -18,7 +17,6 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
     gstNumber: false,
   });
   const fileInputRef = useRef(null);
-  const navigate = useNavigate();
 
   const retailerId = localStorage.getItem("retailerId");
 
@@ -155,8 +153,9 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
     // If empty, clear error and skip validation
     if (!gst) {
       setErrors((prev) => {
-        const { gstNumber, ...rest } = prev;
-        return rest;
+        const nextErrors = { ...prev };
+        delete nextErrors.gstNumber;
+        return nextErrors;
       });
       updateFormData({ gstNumber: "" });
       return;
@@ -175,8 +174,9 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
       }));
     } else {
       setErrors((prev) => {
-        const { gstNumber, ...rest } = prev;
-        return rest;
+        const nextErrors = { ...prev };
+        delete nextErrors.gstNumber;
+        return nextErrors;
       });
       updateFormData({ gstNumber: gst }); // ensures stored value is uppercase
     }
@@ -236,24 +236,18 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
       data.append("notes", "Updated retailer information");
       data.append("onboarding", true);
 
-      const response = await api.patch(`api/retailer/${retailerId}`, data, {
+      await api.patch(`api/retailer/${retailerId}`, data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
       const email = localStorage.getItem("email");
-      const loginType = sessionStorage.getItem("loginType");
       const password = sessionStorage.getItem("password");
       await updateToken(password, email);
 
       // console.log("Registration successful:", response.data);
-      navigate("/completion", {
-        state: {
-          success: true,
-          data: [],
-        },
-      });
+      goToNextStep();
     } catch (error) {
       console.error("Registration failed:", error);
       setSubmitError(
@@ -368,7 +362,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
             className={`form-input ${
               errors.staffCount ? "border-red-500" : ""
             }`}
-            autocomplete="off"
+            autoComplete="off"
           >
             <option value="">Select Number of Staff</option>
             {staffOptions.map((option) => (
@@ -399,7 +393,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
             className={`form-input ${
               errors.customerCount ? "border-red-500" : ""
             }`}
-            autocomplete="off"
+            autoComplete="off"
           >
             <option value="">Select Number of Customers</option>
             {customerOptions.map((option) => (
@@ -433,7 +427,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
             }`}
             placeholder="Business  Contact Number"
             maxLength={10}
-            autocomplete="off"
+            autoComplete="off"
           />
           {errors.contactNumber && (
             <p className="text-red-500 text-xs mt-1">{errors.contactNumber}</p>
@@ -446,7 +440,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
             Owner Name
           </label>
           <p className="text-[16px] text-[#31316699] mb-1">
-            Enter the owner's full name (minimum 4 characters).
+            Enter the owner&apos;s full name (minimum 4 characters).
           </p>
           <input
             type="text"
@@ -457,7 +451,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
             onBlur={() => handleBlur("ownerName")}
             className={`form-input ${errors.ownerName ? "border-red-500" : ""}`}
             placeholder="Owner Name"
-            autocomplete="off"
+            autoComplete="off"
           />
           {errors.ownerName && (
             <p className="text-red-500 text-xs mt-1">{errors.ownerName}</p>
@@ -482,7 +476,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
             className={`form-input ${errors.gstNumber ? "border-red-500" : ""}`}
             placeholder="GST Number"
             maxLength={15}
-            autocomplete="off"
+            autoComplete="off"
           />
           {errors.gstNumber && (
             <p className="text-red-500 text-xs mt-1">{errors.gstNumber}</p>
@@ -541,3 +535,25 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
 };
 
 export default AdditionalDetails;
+
+AdditionalDetails.propTypes = {
+  formData: PropTypes.shape({
+    firstName: PropTypes.string,
+    lastName: PropTypes.string,
+    storeName: PropTypes.string,
+    storeType: PropTypes.string,
+    storeAddress: PropTypes.string,
+    city: PropTypes.string,
+    pincode: PropTypes.string,
+    logo: PropTypes.any,
+    staffCount: PropTypes.string,
+    customerCount: PropTypes.string,
+    contactNumber: PropTypes.string,
+    ownerName: PropTypes.string,
+    gstNumber: PropTypes.string,
+    email: PropTypes.string,
+  }).isRequired,
+  updateFormData: PropTypes.func.isRequired,
+  goToNextStep: PropTypes.func.isRequired,
+  goToPreviousStep: PropTypes.func.isRequired,
+};
