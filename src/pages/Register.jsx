@@ -13,6 +13,7 @@ import StoreInformation from "../components/registration/StoreInformation";
 import AdditionalDetails from "../components/registration/AdditionalDetails";
 import WhatsAppSetup from "../components/registration/WhatsAppSetup";
 import TemplateSetup from "../components/registration/TemplateSetup";
+import GoogleReviewSetup from "../components/registration/GoogleReviewSetup";
 import Completion from "../components/registration/Completion";
 import api from "../api/apiconfig";
 
@@ -115,7 +116,8 @@ const Register = ({ formData, updateFormData }) => {
       if (wildcardPath.startsWith("additional")) return 3;
       if (wildcardPath.startsWith("whatsapp")) return 4;
       if (wildcardPath.startsWith("templates")) return 5;
-      if (wildcardPath.startsWith("complete")) return 6;
+      if (wildcardPath.startsWith("google-review")) return 6;
+      if (wildcardPath.startsWith("complete")) return 7;
       return 1;
     })();
 
@@ -166,6 +168,11 @@ const Register = ({ formData, updateFormData }) => {
           setupState.templateSetupCompleted === true ||
           setupState.whatsappChoice === "default"
         );
+      case 6:
+        return (
+          setupState.googleReviewSetupCompleted === true ||
+          setupState.googleReviewSkipped === true
+        );
       default:
         return true;
     }
@@ -189,6 +196,9 @@ const Register = ({ formData, updateFormData }) => {
         navigate("/register/templates");
         break;
       case 6:
+        navigate("/register/google-review");
+        break;
+      case 7:
         navigate("/register/complete");
         break;
       default:
@@ -203,7 +213,7 @@ const Register = ({ formData, updateFormData }) => {
     goToStep(step);
   };
 
-  const completedSteps = [1, 2, 3, 4, 5].filter((step) => isStepValid(step));
+  const completedSteps = [1, 2, 3, 4, 5, 6].filter((step) => isStepValid(step));
 
   const updateSetupState = (newData) => {
     setSetupState((prev) => ({ ...prev, ...newData }));
@@ -237,7 +247,7 @@ const Register = ({ formData, updateFormData }) => {
             and grow your business digitally.
           </p>
           <p className="mb-6 text-[18px]">
-            Create your account and set up your Business in just 5 simple steps. It
+            Create your account and set up your Business in just 6 simple steps. It
             only takes a minute to complete and start using the platform:
           </p>
 
@@ -307,6 +317,8 @@ const Register = ({ formData, updateFormData }) => {
                     whatsappChoice: "default",
                     isUsingOwnWhatsapp: false,
                     templateSetupCompleted: true,
+                    googleReviewSetupCompleted: false,
+                    googleReviewSkipped: false,
                   });
                   goToStep(5);
                 }}
@@ -315,6 +327,8 @@ const Register = ({ formData, updateFormData }) => {
                     whatsappChoice: "own",
                     isUsingOwnWhatsapp: true,
                     templateSetupCompleted: false,
+                    googleReviewSetupCompleted: false,
+                    googleReviewSkipped: false,
                   });
                   goToStep(5);
                 }}
@@ -332,6 +346,29 @@ const Register = ({ formData, updateFormData }) => {
                 }
                 goToNextStep={() => goToStep(6)}
                 goToPreviousStep={() => goToStep(4)}
+              />
+            }
+          />
+          <Route
+            path="/google-review"
+            element={
+              <GoogleReviewSetup
+                isCompleted={setupState.googleReviewSetupCompleted === true}
+                onComplete={() => {
+                  updateSetupState({
+                    googleReviewSetupCompleted: true,
+                    googleReviewSkipped: false,
+                  });
+                  goToStep(7);
+                }}
+                onSkip={() => {
+                  updateSetupState({
+                    googleReviewSetupCompleted: false,
+                    googleReviewSkipped: true,
+                  });
+                  goToStep(7);
+                }}
+                goToPreviousStep={() => goToStep(5)}
               />
             }
           />

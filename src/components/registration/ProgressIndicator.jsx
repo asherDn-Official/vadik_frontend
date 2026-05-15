@@ -28,7 +28,12 @@ const ProgressIndicator = ({ currentStep, completedSteps = [], onStepChange = nu
       title: "Template Review",
       subtitle: "Review the templates used in your automations.",
     },
-    { number: 6, title: "You're All Set!", subtitle: "" },
+    {
+      number: 6,
+      title: "Google Review Setup",
+      subtitle: "Connect your Google business location or skip for now.",
+    },
+    { number: 7, title: "You're All Set!", subtitle: "" },
   ];
 
   const getProgressClass = (step) => {

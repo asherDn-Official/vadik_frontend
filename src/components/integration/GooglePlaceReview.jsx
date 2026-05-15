@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import VideoPopupWithShare from "../common/VideoPopupWithShare";
 
-const GooglePlaceReview = () => {
+const GooglePlaceReview = ({
+  onPlaceConfirmed = null,
+  showVideo = true,
+  containerClassName = "max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md",
+}) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [selectedPlace, setSelectedPlace] = useState(null);
@@ -106,7 +111,14 @@ const GooglePlaceReview = () => {
       });
 
       if (response.data.status) {
+        setSuccess("Business location updated successfully!");
         showToast("Business location updated successfully!", "success");
+        if (onPlaceConfirmed) {
+          onPlaceConfirmed({
+            ...selectedPlace,
+            place_id: selectedPlace.place_id,
+          });
+        }
       } else {
         showToast(
           "Failed to update business location. Please try again.",
@@ -126,15 +138,17 @@ const GooglePlaceReview = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className={containerClassName}>
       <div className=" flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold text-gray-800 ">
           Business Location Setup
         </h2>
-        <VideoPopupWithShare
-          video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ"
-          buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
-        />
+        {showVideo && (
+          <VideoPopupWithShare
+            video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ"
+            buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
+          />
+        )}
       </div>
 
       {error && (
@@ -236,3 +250,9 @@ const GooglePlaceReview = () => {
 };
 
 export default GooglePlaceReview;
+
+GooglePlaceReview.propTypes = {
+  onPlaceConfirmed: PropTypes.func,
+  showVideo: PropTypes.bool,
+  containerClassName: PropTypes.string,
+};
