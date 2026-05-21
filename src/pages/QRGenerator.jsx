@@ -1,0 +1,863 @@
+import { useState, useEffect } from "react";
+import { QRCodeSVG } from "qrcode.react";
+import { 
+  QrCode, 
+  UserPlus, 
+  Gamepad2, 
+  Download, 
+  Copy, 
+  ExternalLink,
+  ChevronRight,
+  Info,
+  Loader2,
+  FileSpreadsheet,
+  Plus,
+  X,
+  ChevronDown,
+  Check,
+  ShieldCheck,
+  LayoutDashboard,
+  Database
+} from "lucide-react";
+import api from "../api/apiconfig";
+import showToast from "../utils/ToastNotification";
+
+const QRGenerator = () => {
+  const [qrType, setQrType] = useState("registration"); // registration | activity
+  const [activityType, setActivityType] = useState("quiz"); // quiz | spinwheel | scratchcard
+  const [activities, setActivities] = useState({
+    quiz: [],
+    spinwheel: [],
+    scratchcard: []
+  });
+  const [selectedActivityId, setSelectedActivityId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [retailerId, setRetailerId] = useState(localStorage.getItem("retailerId") || "");
+  const [includePreferences, setIncludePreferences] = useState(false);
+  const [selectedPreferences, setSelectedPreferences] = useState([]); // [{key, question, section}]
+  const [categorizedPreferences, setCategorizedPreferences] = useState({
+    additionalData: [],
+    advancedDetails: [],
+    advancedPrivacyDetails: []
+  });
+  const [isPreferenceDropdownOpen, setIsPreferenceDropdownOpen] = useState([]);
+  const [qrStatement, setQrStatement] = useState("");
+  const [isDynamic, setIsDynamic] = useState(false);
+  const [qrName, setQrName] = useState("");
+  const [savedQRs, setSavedQRs] = useState([]);
+  const [selectedDynamicQR, setSelectedDynamicQR] = useState(null);
+  const [fgColor, setFgColor] = useState("#000000");
+  const [bgColor, setBgColor] = useState("#ffffff");
+  const [brandingName, setBrandingName] = useState("");
+  const [logo, setLogo] = useState(null);
+  const [logoOpacity, setLogoOpacity] = useState(1);
+  const [logoSize, setLogoSize] = useState(40);
+
+  const landingPageBaseUrl = "https://vadik.ai"; // Adjust as needed
+
+  useEffect(() => {
+    fetchActivities();
+    fetchSavedQRs();
+    fetchAvailablePreferences();
+  }, []);
+
+  const fetchAvailablePreferences = async () => {
+    try {
+      const response = await api.get(`/api/customer-preferences/${retailerId}`);
+      if (response.data) {
+        setCategorizedPreferences({
+          additionalData: response.data.additionalData || [],
+          advancedDetails: response.data.advancedDetails || [],
+          advancedPrivacyDetails: response.data.advancedPrivacyDetails || []
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching available preferences:", error);
+    }
+  };
+
+  const fetchSavedQRs = async () => {
+    try {
+      const response = await api.get("/api/dynamic-qr/my-qrs");
+      if (response.data.status) {
+        setSavedQRs(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching saved QRs:", error);
+    }
+  };
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        showToast("Logo size should be less than 2MB", "error");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogo(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveQR = async () => {
+    if (!qrName) {
+      showToast("Please enter a name for this QR", "error");
+      return;
+    }
+
+    if (includePreferences) {
+      const invalid = selectedPreferences.some(p => !p.key || !p.question);
+      if (invalid) {
+        showToast("Please complete all preference fields and questions", "error");
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      const payload = {
+        name: qrName,
+        type: qrType,
+        activityType: qrType === "activity" ? activityType : "none",
+        activityId: qrType === "activity" ? selectedActivityId : "",
+        includePreferences,
+        selectedPreferences: includePreferences ? selectedPreferences : [],
+        qrStatement,
+        fgColor,
+        bgColor,
+        brandingName,
+        logo,
+        logoSize,
+        logoOpacity
+      };
+
+      let response;
+      if (selectedDynamicQR) {
+        response = await api.patch(`/api/dynamic-qr/${selectedDynamicQR._id}`, payload);
+        showToast("QR updated successfully!", "success");
+      } else {
+        response = await api.post("/api/dynamic-qr", payload);
+        showToast("QR created successfully!", "success");
+      }
+
+      if (response.data.status) {
+        fetchSavedQRs();
+        setSelectedDynamicQR(response.data.data);
+        setIsDynamic(true);
+      }
+    } catch (error) {
+      showToast("Failed to save QR", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectDynamicQR = (qr) => {
+    setSelectedDynamicQR(qr);
+    setQrName(qr.name);
+    setQrType(qr.type);
+    if (qr.type === "activity") {
+      setActivityType(qr.activityType);
+      setSelectedActivityId(qr.activityId);
+    }
+    setIncludePreferences(qr.includePreferences);
+    setSelectedPreferences(qr.selectedPreferences || []);
+    setQrStatement(qr.qrStatement || "");
+    setFgColor(qr.fgColor || "#000000");
+    setBgColor(qr.bgColor || "#ffffff");
+    setBrandingName(qr.brandingName || "");
+    setLogo(qr.logo || null);
+    setLogoSize(Math.min(qr.logoSize || 40, 50));
+    setLogoOpacity(qr.logoOpacity || 1);
+    setIsDynamic(true);
+    setIsPreferenceDropdownOpen(new Array(qr.selectedPreferences?.length || 0).fill(false));
+  };
+
+  const fetchActivities = async () => {
+    setLoading(true);
+    try {
+      const [quizRes, spinRes, scratchRes] = await Promise.all([
+        api.get("/api/quiz?fully=true"),
+        api.get("/api/spinWheels/spinWheel/all?fully=true"),
+        api.get("/api/scratchCards/scratchCard/all?fully=true")
+      ]);
+
+      setActivities({
+        quiz: quizRes.data.docs || [],
+        spinwheel: spinRes.data.data || [],
+        scratchcard: scratchRes.data.data || []
+      });
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      showToast("Failed to load activities", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addPreferenceQuestion = () => {
+    setSelectedPreferences([...selectedPreferences, { key: "", question: "", section: "" }]);
+    setIsPreferenceDropdownOpen([...isPreferenceDropdownOpen, false]);
+  };
+
+  const removePreferenceQuestion = (index) => {
+    const updated = selectedPreferences.filter((_, i) => i !== index);
+    setSelectedPreferences(updated);
+    const updatedDropdowns = isPreferenceDropdownOpen.filter((_, i) => i !== index);
+    setIsPreferenceDropdownOpen(updatedDropdowns);
+  };
+
+  const togglePreferenceDropdown = (index) => {
+    const updated = [...isPreferenceDropdownOpen];
+    updated[index] = !updated[index];
+    setIsPreferenceDropdownOpen(updated);
+  };
+
+  const handlePreferenceKeyChange = (index, key, section) => {
+    const sectionFields = categorizedPreferences[section];
+    const selectedPref = sectionFields.find(p => p.key === key);
+    
+    if (selectedPref) {
+      const updated = [...selectedPreferences];
+      updated[index] = {
+        key: selectedPref.key,
+        section: section,
+        question: selectedPref.type === "date" 
+          ? `When is your ${selectedPref.key}?` 
+          : `What is your ${selectedPref.key}?`
+      };
+      setSelectedPreferences(updated);
+    }
+  };
+
+  const handlePreferenceQuestionChange = (index, value) => {
+    const updated = [...selectedPreferences];
+    updated[index].question = value;
+    setSelectedPreferences(updated);
+  };
+
+  const getGeneratedUrl = () => {
+    if (isDynamic && selectedDynamicQR) {
+      return `${landingPageBaseUrl}/q/${selectedDynamicQR.qrId}`;
+    }
+
+    let baseUrl = "";
+    if (qrType === "registration") {
+      baseUrl = `${landingPageBaseUrl}/customer-registration/${retailerId}`;
+    } else {
+      if (!selectedActivityId) return "";
+      baseUrl = `${landingPageBaseUrl}/customer-registration/${retailerId}?activityType=${activityType}&activityId=${selectedActivityId}`;
+    }
+
+    if (includePreferences) {
+      baseUrl += (baseUrl.includes("?") ? "&" : "?") + "includePreferences=true";
+      if (selectedPreferences.length > 0) {
+        baseUrl += `&prefFields=${encodeURIComponent(JSON.stringify(selectedPreferences))}`;
+      }
+    }
+    return baseUrl;
+  };
+
+  const generatedUrl = getGeneratedUrl();
+
+  const downloadQR = () => {
+    const svg = document.getElementById("qr-code-svg");
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.onload = () => {
+      const padding = 40;
+      const statementHeight = qrStatement ? 60 : 0;
+      const brandingHeight = brandingName ? 60 : 0;
+      
+      canvas.width = img.width + (padding * 2);
+      canvas.height = img.height + (padding * 2) + statementHeight + brandingHeight;
+      
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (brandingName) {
+        ctx.fillStyle = fgColor === "#ffffff" ? "#000000" : fgColor;
+        ctx.font = "bold 28px Inter, system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(brandingName, canvas.width / 2, padding + 30);
+      }
+
+      ctx.drawImage(img, padding, padding + brandingHeight);
+      
+      if (qrStatement) {
+        ctx.fillStyle = fgColor === "#ffffff" ? "#000000" : fgColor;
+        ctx.font = "bold 24px Inter, system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(qrStatement, canvas.width / 2, img.height + padding + brandingHeight + 40);
+      }
+      
+      const pngFile = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `QR_${qrType}_${new Date().getTime()}.png`;
+      downloadLink.href = `${pngFile}`;
+      downloadLink.click();
+    };
+    img.src = `data:image/svg+xml;base64,${window.btoa(unescape(encodeURIComponent(svgData)))}`;
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generatedUrl);
+    showToast("URL copied to clipboard!", "success");
+  };
+
+  const handleQrTypeChange = (type) => {
+    setQrType(type);
+    if (type === "activity") {
+      setIncludePreferences(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F6F7FB] p-4 md:p-8">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-[#313166] flex items-center gap-3">
+            <QrCode className="w-8 h-8 text-pink-500" />
+            QR Module
+          </h1>
+          <p className="text-gray-500 mt-2">
+            Generate QR codes for customer registration and engagement activities.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-6 md:p-8">
+              <h2 className="text-xl font-bold text-[#313166] mb-6 flex items-center gap-2">
+                1. Select QR Type
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => handleQrTypeChange("registration")}
+                  className={`flex flex-col items-start p-5 rounded-2xl border-2 transition-all ${
+                    qrType === "registration" 
+                    ? "border-purple-500 bg-purple-50" 
+                    : "border-gray-100 hover:border-gray-200"
+                  }`}
+                >
+                  <UserPlus className={`w-8 h-8 mb-3 ${qrType === "registration" ? "text-purple-600" : "text-gray-400"}`} />
+                  <span className={`font-bold ${qrType === "registration" ? "text-purple-900" : "text-gray-700"}`}>Customer Registration</span>
+                  <span className="text-sm text-gray-500 mt-1">Direct customers to your sign-up page</span>
+                </button>
+
+                <button
+                  onClick={() => handleQrTypeChange("activity")}
+                  className={`flex flex-col items-start p-5 rounded-2xl border-2 transition-all ${
+                    qrType === "activity" 
+                    ? "border-pink-500 bg-pink-50" 
+                    : "border-gray-100 hover:border-gray-200"
+                  }`}
+                >
+                  <Gamepad2 className={`w-8 h-8 mb-3 ${qrType === "activity" ? "text-pink-600" : "text-gray-400"}`} />
+                  <span className={`font-bold ${qrType === "activity" ? "text-pink-900" : "text-gray-700"}`}>Customer Activity</span>
+                  <span className="text-sm text-gray-500 mt-1">Redirect to games or quizzes</span>
+                </button>
+              </div>
+
+              <div className="mt-8 pt-8 border-t border-gray-100">
+                <h2 className="text-xl font-bold text-[#313166] mb-6 flex items-center gap-2">
+                  2. Customize QR Options
+                </h2>
+                
+                <div className="space-y-6">
+                  {qrType === "registration" && (
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="includePreferences"
+                        checked={includePreferences}
+                        onChange={(e) => {
+                          setIncludePreferences(e.target.checked);
+                          if (e.target.checked && selectedPreferences.length === 0) {
+                            addPreferenceQuestion();
+                          }
+                        }}
+                        className="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      />
+                      <label htmlFor="includePreferences" className="text-sm font-semibold text-gray-700">
+                        Include Customer Preference Questions in Form
+                      </label>
+                    </div>
+                  )}
+
+                  {qrType === "registration" && includePreferences && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-top-4">
+                      {selectedPreferences.map((item, index) => (
+                        <div key={index} className="bg-[#31316612] rounded-2xl p-6 border border-gray-200 relative group">
+                          <div className="flex justify-between items-start mb-4">
+                            <h3 className="text-lg font-semibold text-slate-800">
+                              Question {index + 1}
+                            </h3>
+                            
+                            <div className="flex items-center gap-3">
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() => togglePreferenceDropdown(index)}
+                                  className="flex items-center justify-between w-64 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                >
+                                  <span className="text-sm truncate">
+                                    {item.key ? `${item.key} (${item.section.replace(/([A-Z])/g, ' $1')})` : "Select Field"}
+                                  </span>
+                                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                                </button>
+
+                                {isPreferenceDropdownOpen[index] && (
+                                  <div className="absolute top-full right-0 mt-1 w-72 bg-white border border-gray-300 rounded-md shadow-lg z-[100] max-h-80 overflow-y-auto">
+                                    {/* Additional Data */}
+                                    {categorizedPreferences.additionalData.length > 0 && (
+                                      <div className="p-2">
+                                        <div className="flex items-center gap-2 px-2 py-1 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                                          <Database className="w-3 h-3" /> Additional Data
+                                        </div>
+                                        {categorizedPreferences.additionalData.map((pref) => (
+                                          <button
+                                            key={pref.key}
+                                            type="button"
+                                            onClick={() => {
+                                              handlePreferenceKeyChange(index, pref.key, "additionalData");
+                                              togglePreferenceDropdown(index);
+                                            }}
+                                            className="w-full px-3 py-2 text-left text-sm hover:bg-purple-50 transition-colors rounded-lg flex items-center justify-between group"
+                                          >
+                                            <span className="text-gray-700 group-hover:text-purple-700">{pref.key}</span>
+                                            <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded uppercase">{pref.type}</span>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* Advanced Details */}
+                                    {categorizedPreferences.advancedDetails.length > 0 && (
+                                      <div className="p-2 bg-gray-50/50">
+                                        <div className="flex items-center gap-2 px-2 py-1 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                                          <LayoutDashboard className="w-3 h-3" /> Advanced Details
+                                        </div>
+                                        {categorizedPreferences.advancedDetails.map((pref) => (
+                                          <button
+                                            key={pref.key}
+                                            type="button"
+                                            onClick={() => {
+                                              handlePreferenceKeyChange(index, pref.key, "advancedDetails");
+                                              togglePreferenceDropdown(index);
+                                            }}
+                                            className="w-full px-3 py-2 text-left text-sm hover:bg-purple-50 transition-colors rounded-lg flex items-center justify-between group"
+                                          >
+                                            <span className="text-gray-700 group-hover:text-purple-700">{pref.key}</span>
+                                            <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded uppercase">{pref.type}</span>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* Advanced Privacy Details */}
+                                    {categorizedPreferences.advancedPrivacyDetails.length > 0 && (
+                                      <div className="p-2">
+                                        <div className="flex items-center gap-2 px-2 py-1 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                                          <ShieldCheck className="w-3 h-3" /> Advanced Privacy Details
+                                        </div>
+                                        {categorizedPreferences.advancedPrivacyDetails.map((pref) => (
+                                          <button
+                                            key={pref.key}
+                                            type="button"
+                                            onClick={() => {
+                                              handlePreferenceKeyChange(index, pref.key, "advancedPrivacyDetails");
+                                              togglePreferenceDropdown(index);
+                                            }}
+                                            className="w-full px-3 py-2 text-left text-sm hover:bg-purple-50 transition-colors rounded-lg flex items-center justify-between group"
+                                          >
+                                            <span className="text-gray-700 group-hover:text-purple-700">{pref.key}</span>
+                                            <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded uppercase">{pref.type}</span>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <button
+                                onClick={() => removePreferenceQuestion(index)}
+                                className="text-red-500 hover:text-red-700 transition-colors"
+                              >
+                                <X className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="mt-2">
+                            <input
+                              type="text"
+                              value={item.question}
+                              onChange={(e) => handlePreferenceQuestionChange(index, e.target.value)}
+                              placeholder="Enter your display question"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none bg-white transition-all font-medium"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                      
+                      <button
+                        type="button"
+                        onClick={addPreferenceQuestion}
+                        className="w-full py-4 border-2 border-dashed border-gray-300 rounded-2xl text-gray-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 transition-all flex items-center justify-center gap-2 font-bold"
+                      >
+                        <Plus className="w-5 h-5" />
+                        Add New Question
+                      </button>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Static Statement on Downloadable QR (e.g., "Earn Points")
+                    </label>
+                    <input
+                      type="text"
+                      value={qrStatement}
+                      onChange={(e) => setQrStatement(e.target.value)}
+                      placeholder="Enter statement to show below QR"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {qrType === "activity" && (
+                <div className="mt-8 pt-8 border-t border-gray-100">
+                  <h2 className="text-xl font-bold text-[#313166] mb-6 flex items-center gap-2">
+                    3. Select Activity Details
+                  </h2>
+                  
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-3">Activity Category</label>
+                      <div className="flex flex-wrap gap-3">
+                        {["quiz", "spinwheel", "scratchcard"].map((type) => (
+                          <button
+                            key={type}
+                            onClick={() => {
+                              setActivityType(type);
+                              setSelectedActivityId("");
+                            }}
+                            className={`px-6 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                              activityType === type 
+                              ? "bg-[#313166] border-[#313166] text-white" 
+                              : "border-gray-100 text-gray-600 hover:border-gray-200"
+                            }`}
+                          >
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-3">Choose {activityType}</label>
+                      <select
+                        value={selectedActivityId}
+                        onChange={(e) => setSelectedActivityId(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                      >
+                        <option value="">Select an activity</option>
+                        {activities[activityType].map((act) => (
+                          <option key={act._id} value={act._id}>
+                            {act.name || act.campaignName || "Untitled Activity"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-8 pt-8 border-t border-gray-100">
+                <h2 className="text-xl font-bold text-[#313166] mb-6 flex items-center gap-2">
+                  4. QR Styling & Branding
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Campaign Branding Name
+                      </label>
+                      <input
+                        type="text"
+                        value={brandingName}
+                        onChange={(e) => setBrandingName(e.target.value)}
+                        placeholder="Enter brand name"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          QR Color
+                        </label>
+                        <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-xl">
+                          <input
+                            type="color"
+                            value={fgColor}
+                            onChange={(e) => setFgColor(e.target.value)}
+                            className="w-10 h-10 rounded-lg cursor-pointer border-none"
+                          />
+                          <span className="text-xs font-mono uppercase">{fgColor}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Background
+                        </label>
+                        <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-xl">
+                          <input
+                            type="color"
+                            value={bgColor}
+                            onChange={(e) => setBgColor(e.target.value)}
+                            className="w-10 h-10 rounded-lg cursor-pointer border-none"
+                          />
+                          <span className="text-xs font-mono uppercase">{bgColor}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Upload Logo
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="hidden"
+                            id="logo-upload"
+                          />
+                          <label
+                            htmlFor="logo-upload"
+                            className="flex items-center justify-center px-4 py-3 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-purple-300 hover:bg-purple-50 transition-all text-gray-500 font-medium gap-2"
+                          >
+                            <Plus className="w-5 h-5" />
+                            {logo ? "Change Logo" : "Choose File"}
+                          </label>
+                        </div>
+                        {logo && (
+                          <button
+                            onClick={() => setLogo(null)}
+                            className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {logo && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 mb-1">
+                            Logo Size ({logoSize}px)
+                          </label>
+                          <input
+                            type="range"
+                            min="20"
+                            max="50"
+                            value={logoSize}
+                            onChange={(e) => setLogoSize(parseInt(e.target.value))}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 mb-1">
+                            Logo Opacity ({logoOpacity})
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            value={logoOpacity}
+                            onChange={(e) => setLogoOpacity(parseFloat(e.target.value))}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-8 border-t border-gray-100">
+                <h2 className="text-xl font-bold text-[#313166] mb-6 flex items-center gap-2">
+                  5. Save & Manage Dynamic QR
+                </h2>
+                
+                <div className="space-y-4">
+                  {savedQRs.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Load Saved QR</label>
+                      <select
+                        value={selectedDynamicQR?._id || ""}
+                        onChange={(e) => {
+                          const qr = savedQRs.find(q => q._id === e.target.value);
+                          if (qr) handleSelectDynamicQR(qr);
+                          else {
+                            setSelectedDynamicQR(null);
+                            setIsDynamic(false);
+                            setQrName("");
+                          }
+                        }}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                      >
+                        <option value="">Create New QR</option>
+                        {savedQRs.map(qr => (
+                          <option key={qr._id} value={qr._id}>{qr.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={qrName}
+                        onChange={(e) => setQrName(e.target.value)}
+                        placeholder="Enter QR name to save"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                      />
+                    </div>
+                    <button
+                      onClick={handleSaveQR}
+                      disabled={loading}
+                      className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-50"
+                    >
+                      {selectedDynamicQR ? "Update QR" : "Save as Dynamic"}
+                    </button>
+                    {selectedDynamicQR && (
+                      <button
+                        onClick={() => {
+                          setSelectedDynamicQR(null);
+                          setIsDynamic(false);
+                          setQrName("");
+                        }}
+                        className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl transition-all"
+                      >
+                        New
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-1">
+            <div className="sticky top-8 bg-white rounded-[32px] border border-gray-100 shadow-lg p-6 md:p-8 flex flex-col items-center">
+              <h2 className="text-xl font-bold text-[#313166] mb-8 w-full">QR Preview</h2>
+              
+              <div className="bg-[#F8F9FF] p-8 rounded-[32px] mb-8 border border-[#EEF1FF] flex flex-col items-center justify-center">
+                {generatedUrl ? (
+                  <>
+                    {brandingName && (
+                      <p className="mb-4 text-[#313166] font-bold text-xl text-center break-words max-w-[200px]">
+                        {brandingName}
+                      </p>
+                    )}
+                    <QRCodeSVG 
+                      id="qr-code-svg"
+                      value={generatedUrl} 
+                      size={200}
+                      level="H"
+                      includeMargin={true}
+                      fgColor={fgColor}
+                      bgColor={bgColor}
+                      imageSettings={logo ? {
+                        src: logo,
+                        x: undefined,
+                        y: undefined,
+                        height: logoSize,
+                        width: logoSize,
+                        excavate: true,
+                        opacity: logoOpacity
+                      } : undefined}
+                    />
+                    {qrStatement && (
+                      <p className="mt-4 text-[#313166] font-bold text-lg text-center break-words max-w-[200px]">
+                        {qrStatement}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <div className="w-[200px] h-[200px] flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl text-gray-400 text-center p-4">
+                    Complete setup to see preview
+                  </div>
+                )}
+              </div>
+
+              <div className="w-full space-y-4">
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Target URL</p>
+                  <p className="text-sm font-medium text-[#313166] break-all line-clamp-2">
+                    {generatedUrl || "---"}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    disabled={!generatedUrl}
+                    onClick={copyToClipboard}
+                    className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 transition-all gap-1 disabled:opacity-50"
+                  >
+                    <Copy className="w-5 h-5 text-gray-600" />
+                    <span className="text-xs font-bold text-gray-600">Copy Link</span>
+                  </button>
+
+                  <a
+                    href={generatedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 transition-all gap-1 ${!generatedUrl ? "pointer-events-none opacity-50" : ""}`}
+                  >
+                    <ExternalLink className="w-5 h-5 text-gray-600" />
+                    <span className="text-xs font-bold text-gray-600">Test Link</span>
+                  </a>
+                </div>
+
+                <button
+                  disabled={!generatedUrl}
+                  onClick={downloadQR}
+                  className="w-full py-4 rounded-2xl bg-[#313166] hover:bg-[#272757] text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-900/10 disabled:opacity-50"
+                >
+                  <Download className="w-5 h-5" />
+                  Download PNG
+                </button>
+              </div>
+
+              <div className="mt-8 p-4 bg-blue-50 rounded-2xl border border-blue-100 flex gap-3">
+                <Info className="w-5 h-5 text-blue-500 shrink-0" />
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  When customers scan this QR, they will be asked to register with WhatsApp OTP before {qrType === "registration" ? "completing registration" : "playing the game"}.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default QRGenerator;

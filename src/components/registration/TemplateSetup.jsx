@@ -14,6 +14,14 @@ const BASE_TEMPLATES = [
     usedIn: "Used during customer verification flows and login-related confirmation steps.",
   },
   {
+    id: "customer_registration_otp",
+    label: "Customer Registration OTP",
+    category: "UTILITY",
+    defaultText: "Your registration code for {{2}} is {{1}}. Valid for 10 minutes.",
+    vars: ["Code", "Store Name"],
+    usedIn: "Specifically used for new customer registration via QR code scanning.",
+  },
+  {
     id: "optin_optout",
     label: "Opt-in / Opt-out Request",
     category: "MARKETING",

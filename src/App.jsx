@@ -21,6 +21,7 @@ import CustomerRhythm from "./pages/CustomerRhythm";
 import CustomerOpportunities from "./pages/CustomerOpportunities";
 import { useAuth } from "./context/AuthContext";
 import CustomerAdd from "./pages/CustomerAdd";
+import QRGenerator from "./pages/QRGenerator";
 import api from "./api/apiconfig";
 import Notification from "./pages/Notification";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -289,6 +290,16 @@ function App() {
               element={
                 onboardingDone ? (
                   <Notification />
+                ) : (
+                  <Navigate to="/register" replace />
+                )
+              }
+            />
+            <Route
+              path="qr-generator"
+              element={
+                onboardingDone ? (
+                  <QRGenerator />
                 ) : (
                   <Navigate to="/register" replace />
                 )

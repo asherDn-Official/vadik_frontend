@@ -12,6 +12,7 @@ import customerOpportunitiesIcon from "/assets/user-check-icon.png";
 import integrationIcon from "/assets/integration-icon.png";
 import rhytmIcon from "/assets/ix_customer.png";
 import subscriptionIcon from "/assets/crown-icon.png";
+import { QrCode } from "lucide-react";
 
 function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -107,12 +108,13 @@ function Sidebar() {
       icon: subscriptionIcon,
       label: "Subscription",
     },
-    // {
-    //   path: "/settings",
-    //   module: "Settings",
-    //   icon: settingsIcon,
-    //   label: "Settings",
-    // },
+    {
+      path: "/qr-generator",
+      module: "Customer Profile",
+      icon: null,
+      lucideIcon: QrCode,
+      label: "QR Generator",
+    },
   ];
 
   const handleLogout = (e) => {
@@ -200,13 +202,21 @@ function Sidebar() {
                     active ? "opacity-100" : "opacity-0"
                   }`}
                 />
-                <img
-                  src={item.icon}
-                  alt={item.label}
-                  className={`h-5 w-5 shrink-0 object-contain md:h-6 md:w-6 ${
-                    active ? "" : "opacity-90 group-hover:opacity-100"
-                  }`}
-                />
+                {item.lucideIcon ? (
+                  <item.lucideIcon
+                    className={`h-5 w-5 shrink-0 md:h-6 md:w-6 ${
+                      active ? "text-white" : "text-white/75 group-hover:text-white"
+                    }`}
+                  />
+                ) : (
+                  <img
+                    src={item.icon}
+                    alt={item.label}
+                    className={`h-5 w-5 shrink-0 object-contain md:h-6 md:w-6 ${
+                      active ? "" : "opacity-90 group-hover:opacity-100"
+                    }`}
+                  />
+                )}
                 <span className="line-clamp-2 max-w-[68px] text-center text-[11px] font-medium leading-tight md:max-w-none md:text-left md:text-sm">
                   {item.label}
                 </span>

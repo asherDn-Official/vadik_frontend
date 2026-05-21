@@ -21,6 +21,14 @@ const STANDARD_TEMPLATES = [
     category: 'UTILITY',
     description: 'Used for verifying customer phone numbers during login or registration.'
   },
+  {
+    id: 'customer_registration_otp',
+    label: 'Customer Registration OTP',
+    defaultText: 'Your registration code for {{2}} is {{1}}. Valid for 10 minutes.',
+    vars: ['Code', 'Store Name'],
+    category: 'UTILITY',
+    description: 'Specifically used for new customer registration via QR code.'
+  },
   { 
     id: 'optin_optout', 
     label: 'Opt-in/Opt-out Request', 
