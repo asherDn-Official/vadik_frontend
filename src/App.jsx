@@ -4,6 +4,11 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+
+import {
+  requestPermission,
+  listenNotifications,
+} from "./notification";
 import { useState, useEffect } from "react";
 import Dashboard from "./pages/Dashboard";
 import CustomerList from "./pages/CustomerList";
@@ -33,7 +38,36 @@ import SearchPage from "./components/common/SearchPage";
 import CustomerProfilePage from "./components/common/CustomerProfilePage";
 
 function App() {
+  // console.log("APP COMPONENT RUNNING");
+  
   const { auth, loading, checkAuth } = useAuth();
+// console.log("AUTH:", auth);
+ useEffect(() => {
+
+  // console.log(
+  //   "NOTIFICATION EFFECT RUNNING"
+  // );
+
+  // console.log(
+  //   "AUTH ID:",
+  //   auth?.user?._id
+  // );
+
+  if (auth?.user?._id) {
+
+    // console.log(
+    //   "CALLING requestPermission"
+    // );
+
+    requestPermission(
+      auth.user._id
+    );
+
+    listenNotifications();
+
+  }
+
+}, [auth]);
   const [onboardingDone, setOnboardingDone] = useState(true); // assume true until checked
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
@@ -82,6 +116,7 @@ function App() {
   if (loading || checkingOnboarding) {
     return <div>Loading...</div>;
   }
+
 
   return (
     <Router>

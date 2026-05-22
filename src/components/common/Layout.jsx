@@ -23,6 +23,7 @@ function Layout() {
   const { currentPlans, refreshPlans, loading } = usePlan();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const [searchInput, setSearchInput] = useState("");
   const navigate = useNavigate();
@@ -47,6 +48,33 @@ function Layout() {
       }
     } catch (error) {
       console.log("Profile fetch error:", error);
+    }
+  }
+
+
+  async function getUnreadNotifications() {
+    try {
+
+      const response = await api.get(
+        "/api/notifications/stats"
+      );
+
+      // console.log(
+      //   "notification stats",
+      //   response.data
+      // );
+
+      setUnreadCount(
+        response.data?.overall?.unread || 0
+      );
+
+    } catch (error) {
+
+      console.log(
+        "Unread notification error:",
+        error
+      );
+
     }
   }
 
@@ -123,6 +151,7 @@ function Layout() {
     getTourStatus();
     getProfileData();
     refreshPlans();
+    getUnreadNotifications();
   }, []);
 
   const profileName = profileData?.fullName || "User";
@@ -239,13 +268,14 @@ function Layout() {
                   type="button"
                   aria-label="Notifications"
                   className="
-                    flex h-11 w-11 items-center justify-center
-                    rounded-full bg-[#F4F5F9]
-                    text-gray-600
-                    transition-all
-                    hover:bg-[#ECEEF8]
-                    hover:text-gray-800
-                  "
+    relative
+    flex h-11 w-11 items-center justify-center
+    rounded-full bg-[#F4F5F9]
+    text-gray-600
+    transition-all
+    hover:bg-[#ECEEF8]
+    hover:text-gray-800
+  "
                   onClick={() => gotoNotification()}
                 >
                   <svg
@@ -262,6 +292,31 @@ function Layout() {
                       d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                     />
                   </svg>
+
+                  {unreadCount > 0 && (
+                    <div
+                      className="
+        absolute
+        -top-1
+        -right-1
+        z-50
+        flex
+        min-h-[20px]
+        min-w-[20px]
+        items-center
+        justify-center
+        rounded-full
+        bg-red-500
+        px-1
+        text-[10px]
+        font-bold
+        leading-none
+        text-white
+      "
+                    >
+                      {unreadCount}
+                    </div>
+                  )}
                 </button>
 
                 {/* PROFILE */}
