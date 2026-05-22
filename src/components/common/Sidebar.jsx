@@ -102,19 +102,20 @@ function Sidebar() {
       icon: rhytmIcon,
       label: "Customer Rhythm",
     },
-    {
-      path: "/subscription",
-      module: "Settings",
-      icon: subscriptionIcon,
-      label: "Subscription",
-    },
-    {
+        {
       path: "/qr-generator",
       module: "Customer Profile",
       icon: null,
       lucideIcon: QrCode,
       label: "QR Generator",
     },
+    {
+      path: "/subscription",
+      module: "Settings",
+      icon: subscriptionIcon,
+      label: "Subscription",
+    },
+
   ];
 
   const handleLogout = (e) => {
