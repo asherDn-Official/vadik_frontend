@@ -95,7 +95,7 @@ self.addEventListener(
     event.waitUntil(
 
       clients.openWindow(
-        "http://localhost:5173/dashboard"
+        "https://app.vadik.ai/dashboard"
       )
 
     );
