@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import PropTypes from 'prop-types';
 import { API_BASE_URL } from '../../api/apiconfig.js';
+import Loader from '../../utils/Loader';
 import { 
   MessageSquare, 
   CheckCircle, 
@@ -463,7 +464,7 @@ const WhatsAppIntegration = ({ onConfigChange = null }) => {
   const currentStepIndex = steps.findIndex(s => !s.isCompleted);
   const currentStep = currentStepIndex === -1 ? steps[steps.length - 1] : steps[currentStepIndex];
 
-  if (loading) return <div className="flex justify-center items-center h-64"><RefreshCw className="animate-spin text-[#313166]" /></div>;
+  if (loading) return <Loader text="Loading WhatsApp config..." fullHeight={false} />;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -477,7 +478,7 @@ const WhatsAppIntegration = ({ onConfigChange = null }) => {
           <div className="flex items-center gap-3">
              {config?.whatsappOnboardingStatus === 'provisioning' && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-[12px] font-[600] border border-blue-100 italic">
-                  <RefreshCw size={14} className="animate-spin" />
+                  <Loader size="sm" />
                   Provisioning
                 </div>
              )}
@@ -512,7 +513,7 @@ const WhatsAppIntegration = ({ onConfigChange = null }) => {
                           'bg-white border-gray-200 text-gray-400'}
                       `}>
                         {isDone ? <CheckCircle2 size={24} /> : 
-                         step.isProcessing ? <RefreshCw size={24} className="animate-spin" /> :
+                         step.isProcessing ? <Loader size="sm" /> :
                          <Icon size={24} />}
                       </div>
 
@@ -592,7 +593,7 @@ const WhatsAppIntegration = ({ onConfigChange = null }) => {
                        disabled={refreshingStatus}
                        className="bg-white border border-amber-300 text-amber-700 px-5 py-2.5 rounded-[12px] text-[13px] font-[700] hover:bg-amber-50 transition-all font-[700] flex items-center gap-2"
                      >
-                       {refreshingStatus ? <RefreshCw size={14} className="animate-spin" /> : null}
+                       {refreshingStatus ? <Loader size="sm" /> : null}
                        I'VE ADDED IT
                      </button>
                    </div>
@@ -665,7 +666,7 @@ const WhatsAppIntegration = ({ onConfigChange = null }) => {
                      disabled={refreshingStatus}
                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2"
                    >
-                     {refreshingStatus ? <RefreshCw size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                     {refreshingStatus ? <Loader size="sm" /> : <RefreshCw size={12} />}
                      REFRESH STATUS
                    </button>
                 </div>
@@ -675,7 +676,7 @@ const WhatsAppIntegration = ({ onConfigChange = null }) => {
            {/* Signup Status Alert Bar */}
            {signupStatus && signupStatus !== 'completed' && signupStatus !== 'pin_required' && (
              <div className="mb-10 p-4 bg-[#313166] rounded-[16px] flex items-center gap-4 text-white shadow-lg shadow-[#313166]/20 border border-[#4a4a8a]">
-                <RefreshCw size={20} className="animate-spin text-blue-300" />
+                <Loader size="sm" />
                 <div>
                    <p className="text-[14px] font-[700] capitalize">{signupStatus.replace('_', ' ')}...</p>
                    <p className="text-[12px] text-blue-100">Synchronizing with Meta secure servers</p>
@@ -834,7 +835,7 @@ const WhatsAppIntegration = ({ onConfigChange = null }) => {
                         disabled={pingLoading}
                         className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-[12px] font-bold hover:bg-blue-100 transition-all flex items-center justify-center gap-2"
                       >
-                        {pingLoading ? <RefreshCw size={14} className="animate-spin" /> : <MessageSquare size={14} />}
+                        {pingLoading ? <Loader size="sm" /> : <MessageSquare size={14} />}
                         TEST WHATSAPP PING
                       </button>
                     </div>
@@ -903,7 +904,7 @@ const WhatsAppIntegration = ({ onConfigChange = null }) => {
                 disabled={pinLoading || pin.length !== 6}
                 className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-[16px] font-[700] text-[16px] transition-all shadow-lg shadow-blue-200 disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {pinLoading ? <RefreshCw className="animate-spin" size={20} /> : <CheckCircle size={20} />}
+                {pinLoading ? <Loader size="sm" /> : <CheckCircle size={20} />}
                 Complete Verification
               </button>
             </form>

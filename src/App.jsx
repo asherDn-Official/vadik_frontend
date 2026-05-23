@@ -36,6 +36,7 @@ import RolesAndPermissions from "./components/settings/RolesAndPermissions";
 import MyProfile from "./components/settings/MyProfile";
 import SearchPage from "./components/common/SearchPage";
 import CustomerProfilePage from "./components/common/CustomerProfilePage";
+import Loader from "./utils/Loader";
 
 function App() {
   // console.log("APP COMPONENT RUNNING");
@@ -114,7 +115,7 @@ function App() {
   }, []);
 
   if (loading || checkingOnboarding) {
-    return <div>Loading...</div>;
+    return <Loader fullHeight={true} text="Initializing application..." />;
   }
 
 

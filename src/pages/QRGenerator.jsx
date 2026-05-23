@@ -1017,10 +1017,7 @@ import {
   Download, 
   Copy, 
   ExternalLink,
-  ChevronRight,
   Info,
-  Loader2,
-  FileSpreadsheet,
   Plus,
   X,
   ChevronDown,
@@ -1031,6 +1028,93 @@ import {
 } from "lucide-react";
 import api from "../api/apiconfig";
 import showToast from "../utils/ToastNotification";
+
+const createCanvasGradient = (ctx, width, height, start, end) => {
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, start);
+  gradient.addColorStop(1, end);
+  return gradient;
+};
+
+const loadImage = (src) =>
+  new Promise((resolve, reject) => {
+    if (!src) {
+      resolve(null);
+      return;
+    }
+
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+
+const getWrappedLines = (ctx, text, maxWidth) => {
+  if (!text) return [];
+
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let currentLine = "";
+
+  words.forEach((word) => {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (ctx.measureText(testLine).width <= maxWidth || !currentLine) {
+      currentLine = testLine;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  });
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+};
+
+const measureWrappedText = (ctx, text, maxWidth, lineHeight) => {
+  const lines = getWrappedLines(ctx, text, maxWidth);
+  return {
+    lines,
+    height: lines.length > 0 ? lines.length * lineHeight : 0,
+  };
+};
+
+const drawWrappedText = (ctx, lines, x, y, lineHeight) => {
+  lines.forEach((line, index) => {
+    ctx.fillText(line, x, y + index * lineHeight);
+  });
+};
+
+const normalizePreferenceItem = (item) => {
+  if (!item || typeof item !== "object") {
+    return { key: "", question: "", section: "" };
+  }
+
+  return {
+    key: typeof item.key === "string" ? item.key : "",
+    question: typeof item.question === "string" ? item.question : "",
+    section: typeof item.section === "string" ? item.section : "",
+  };
+};
+
+const formatPreferenceSection = (section) => {
+  if (!section || typeof section !== "string") {
+    return "";
+  }
+
+  return section.replace(/([A-Z])/g, " $1").trim();
+};
+
+const canUseLogoInCanvas = (src) => {
+  if (!src || typeof src !== "string") {
+    return false;
+  }
+
+  return src.startsWith("data:") || src.startsWith("blob:");
+};
 
 const QRGenerator = () => {
   const { auth } = useAuth();
@@ -1043,7 +1127,7 @@ const QRGenerator = () => {
   });
   const [selectedActivityId, setSelectedActivityId] = useState("");
   const [loading, setLoading] = useState(false);
-  const [retailerId, setRetailerId] = useState(localStorage.getItem("retailerId") || "");
+  const [retailerId] = useState(localStorage.getItem("retailerId") || "");
   const [includePreferences, setIncludePreferences] = useState(false);
   const [selectedPreferences, setSelectedPreferences] = useState([]); // [{key, question, section}]
   const [categorizedPreferences, setCategorizedPreferences] = useState({
@@ -1063,7 +1147,8 @@ const QRGenerator = () => {
   const [logo, setLogo] = useState(null);
   const [logoOpacity, setLogoOpacity] = useState(1);
   const [logoSize, setLogoSize] = useState(40);
-  const [logoPlacement, setLogoPlacement] = useState("top"); // top | inside
+  const [qrSubtitle, setQrSubtitle] = useState("");
+  const [resolvedLogo, setResolvedLogo] = useState(null);
 
   // Set default branding and logo from retailer info
   useEffect(() => {
@@ -1080,6 +1165,43 @@ const QRGenerator = () => {
     fetchSavedQRs();
     fetchAvailablePreferences();
   }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const resolveLogo = async () => {
+      if (!logo) {
+        setResolvedLogo(null);
+        return;
+      }
+
+      if (logo.startsWith("data:") || logo.startsWith("blob:")) {
+        setResolvedLogo(logo);
+        return;
+      }
+
+      try {
+        const response = await api.get("/api/dynamic-qr/logo-data", {
+          params: { url: logo },
+        });
+
+        if (!ignore) {
+          setResolvedLogo(response.data?.data || logo);
+        }
+      } catch (error) {
+        console.error("Error resolving QR logo:", error);
+        if (!ignore) {
+          setResolvedLogo(logo);
+        }
+      }
+    };
+
+    resolveLogo();
+
+    return () => {
+      ignore = true;
+    };
+  }, [logo]);
 
   const fetchAvailablePreferences = async () => {
     try {
@@ -1100,7 +1222,14 @@ const QRGenerator = () => {
     try {
       const response = await api.get("/api/dynamic-qr/my-qrs");
       if (response.data.status) {
-        setSavedQRs(response.data.data);
+        setSavedQRs(
+          (response.data.data || []).map((qr) => ({
+            ...qr,
+            selectedPreferences: Array.isArray(qr.selectedPreferences)
+              ? qr.selectedPreferences.map(normalizePreferenceItem)
+              : [],
+          }))
+        );
       }
     } catch (error) {
       console.error("Error fetching saved QRs:", error);
@@ -1117,6 +1246,7 @@ const QRGenerator = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogo(reader.result);
+        setResolvedLogo(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -1152,7 +1282,7 @@ const QRGenerator = () => {
         logo,
         logoSize,
         logoOpacity,
-        logoPlacement
+        qrSubtitle,
       };
 
       let response;
@@ -1169,7 +1299,7 @@ const QRGenerator = () => {
         setSelectedDynamicQR(response.data.data);
         setIsDynamic(true);
       }
-    } catch (error) {
+    } catch {
       showToast("Failed to save QR", "error");
     } finally {
       setLoading(false);
@@ -1185,15 +1315,19 @@ const QRGenerator = () => {
       setSelectedActivityId(qr.activityId);
     }
     setIncludePreferences(qr.includePreferences);
-    setSelectedPreferences(qr.selectedPreferences || []);
+    setSelectedPreferences(
+      Array.isArray(qr.selectedPreferences)
+        ? qr.selectedPreferences.map(normalizePreferenceItem)
+        : []
+    );
     setQrStatement(qr.qrStatement || "");
     setFgColor(qr.fgColor || "#000000");
     setBgColor(qr.bgColor || "#ffffff");
     setBrandingName(qr.brandingName || "");
     setLogo(qr.logo || null);
-    setLogoSize(Math.min(qr.logoSize || 40, 50));
+    setLogoSize(Math.min(qr.logoSize || 40, 80));
     setLogoOpacity(qr.logoOpacity || 1);
-    setLogoPlacement(qr.logoPlacement || "top");
+    setQrSubtitle(qr.qrSubtitle || "");
     setIsDynamic(true);
     setIsPreferenceDropdownOpen(new Array(qr.selectedPreferences?.length || 0).fill(false));
   };
@@ -1284,81 +1418,130 @@ const QRGenerator = () => {
   };
 
   const generatedUrl = getGeneratedUrl();
+  const effectiveLogo = resolvedLogo || logo;
 
-  const downloadQR = () => {
+  const downloadQR = async () => {
     const svg = document.getElementById("qr-code-svg");
     if (!svg) return;
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-    img.onload = () => {
-      const padding = 40;
-      const statementHeight = qrStatement ? 60 : 0;
-      const brandingHeight = (brandingName || (logo && logoPlacement === "top")) ? 80 : 0;
-      
-      canvas.width = img.width + (padding * 2);
-      canvas.height = img.height + (padding * 2) + statementHeight + brandingHeight;
-      
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    try {
+      const svgClone = svg.cloneNode(true);
+      const canRenderLogoInCanvas = canUseLogoInCanvas(effectiveLogo);
 
-      if (brandingHeight > 0) {
-        ctx.fillStyle = fgColor === "#ffffff" ? "#000000" : fgColor;
-        ctx.font = "bold 28px Inter, system-ui, sans-serif";
-        ctx.textAlign = "center";
-        
-        if (logo && logoPlacement === "top") {
-          const logoImg = new Image();
-          logoImg.crossOrigin = "anonymous";
-          logoImg.onload = () => {
-            const logoDispSize = 40;
-            const gap = 15;
-            const textWidth = ctx.measureText(brandingName).width;
-            const totalWidth = brandingName ? (logoDispSize + gap + textWidth) : logoDispSize;
-            const startX = (canvas.width - totalWidth) / 2;
-            
-            ctx.globalAlpha = logoOpacity;
-            ctx.drawImage(logoImg, startX, padding + 10, logoDispSize, logoDispSize);
-            ctx.globalAlpha = 1;
-            
-            if (brandingName) {
-              ctx.textAlign = "left";
-              ctx.fillText(brandingName, startX + logoDispSize + gap, padding + 40);
-            }
-            
-            // Continue drawing rest after logo loads
-            drawRest();
-          };
-          logoImg.src = logo;
-        } else if (brandingName) {
-          ctx.fillText(brandingName, canvas.width / 2, padding + 40);
-          drawRest();
-        } else {
-          drawRest();
-        }
-      } else {
-        drawRest();
+      if (!canRenderLogoInCanvas) {
+        svgClone.querySelectorAll("image").forEach((imageNode) => imageNode.remove());
       }
 
-      function drawRest() {
-        ctx.drawImage(img, padding, padding + brandingHeight);
-        
-        if (qrStatement) {
-          ctx.fillStyle = fgColor === "#ffffff" ? "#000000" : fgColor;
-          ctx.font = "bold 24px Inter, system-ui, sans-serif";
+      const svgData = new XMLSerializer().serializeToString(svgClone);
+      const qrImage = await loadImage(
+        `data:image/svg+xml;base64,${window.btoa(unescape(encodeURIComponent(svgData)))}`
+      );
+      const topLogoImage =
+        effectiveLogo && canRenderLogoInCanvas
+          ? await loadImage(effectiveLogo)
+          : null;
+      
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      
+      const cardWidth = 720;
+      const contentPaddingX = 60;
+      const contentWidth = cardWidth - contentPaddingX * 2;
+      const qrSize = 400;
+      const borderRadius = 24;
+      
+      const brandFontSize = 36;
+      const subtitleFontSize = 20;
+      const statementFontSize = 24;
+      
+      const titleLineHeight = Math.round(brandFontSize * 1.2);
+      const subtitleLineHeight = Math.round(subtitleFontSize * 1.3);
+      const statementLineHeight = Math.round(statementFontSize * 1.4);
+
+      ctx.font = `700 ${brandFontSize}px Inter, system-ui, sans-serif`;
+      const brandMeasure = measureWrappedText(ctx, brandingName, contentWidth, titleLineHeight);
+      
+      ctx.font = `500 ${subtitleFontSize}px Inter, system-ui, sans-serif`;
+      const subtitleMeasure = measureWrappedText(ctx, qrSubtitle, contentWidth, subtitleLineHeight);
+      
+      ctx.font = `600 ${statementFontSize}px Inter, system-ui, sans-serif`;
+      const statementMeasure = measureWrappedText(ctx, qrStatement, contentWidth, statementLineHeight);
+
+      const hasHeader = Boolean(brandingName || topLogoImage || qrSubtitle);
+      const headerHeight = hasHeader ? 
+        (topLogoImage ? 80 : 0) + 
+        (brandingName ? brandMeasure.height + 10 : 0) + 
+        (qrSubtitle ? subtitleMeasure.height + 10 : 0) + 20
+        : 0;
+      
+      const footerHeight = qrStatement ? statementMeasure.height + 40 : 0;
+      
+      canvas.width = cardWidth;
+      canvas.height = 80 + headerHeight + qrSize + 40 + footerHeight + 60;
+      const cardHeight = canvas.height;
+
+      // Background
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.roundRect(0, 0, cardWidth, cardHeight, borderRadius);
+      ctx.fill();
+      
+      // Border
+      ctx.strokeStyle = "#f1f5f9";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      let currentY = 80;
+
+      if (hasHeader) {
+        if (topLogoImage) {
+          const logoDispSize = 80;
+          ctx.save();
+          ctx.globalAlpha = logoOpacity;
+          ctx.drawImage(topLogoImage, (cardWidth - logoDispSize) / 2, currentY, logoDispSize, logoDispSize);
+          ctx.restore();
+          currentY += logoDispSize + 25;
+        }
+
+        if (brandingName) {
+          ctx.fillStyle = "#1e293b";
+          ctx.font = `700 ${brandFontSize}px Inter, system-ui, sans-serif`;
           ctx.textAlign = "center";
-          ctx.fillText(qrStatement, canvas.width / 2, img.height + padding + brandingHeight + 40);
+          drawWrappedText(ctx, brandMeasure.lines, cardWidth / 2, currentY + brandFontSize, titleLineHeight);
+          currentY += brandMeasure.height + 15;
+        }
+
+        if (qrSubtitle) {
+          ctx.fillStyle = "#64748b";
+          ctx.font = `500 ${subtitleFontSize}px Inter, system-ui, sans-serif`;
+          ctx.textAlign = "center";
+          drawWrappedText(ctx, subtitleMeasure.lines, cardWidth / 2, currentY + subtitleFontSize, subtitleLineHeight);
+          currentY += subtitleMeasure.height + 15;
         }
         
-        const pngFile = canvas.toDataURL("image/png");
-        const downloadLink = document.createElement("a");
-        downloadLink.download = `QR_${qrType}_${new Date().getTime()}.png`;
-        downloadLink.href = `${pngFile}`;
-        downloadLink.click();
+        currentY += 10;
       }
-    };
-    img.src = `data:image/svg+xml;base64,${window.btoa(unescape(encodeURIComponent(svgData)))}`;
+
+      // QR Code
+      const qrX = (cardWidth - qrSize) / 2;
+      ctx.drawImage(qrImage, qrX, currentY, qrSize, qrSize);
+      currentY += qrSize + 30;
+
+      if (qrStatement) {
+        ctx.fillStyle = "#475569";
+        ctx.font = `600 ${statementFontSize}px Inter, system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        drawWrappedText(ctx, statementMeasure.lines, cardWidth / 2, currentY + statementFontSize, statementLineHeight);
+      }
+
+      const pngFile = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `QR_${new Date().getTime()}.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    } catch (error) {
+      console.error("Error downloading QR:", error);
+      showToast("Could not prepare QR download", "error");
+    }
   };
 
   const copyToClipboard = () => {
@@ -1482,7 +1665,11 @@ const QRGenerator = () => {
                                 className="flex items-center justify-between w-full px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none text-sm"
                               >
                                 <span className="truncate text-gray-600">
-                                  {item.key ? `${item.key} (${item.section.replace(/([A-Z])/g, ' $1').trim()})` : "Select Field"}
+                                  {item.key
+                                    ? formatPreferenceSection(item.section)
+                                      ? `${item.key} (${formatPreferenceSection(item.section)})`
+                                      : item.key
+                                    : "Select Field"}
                                 </span>
                                 <ChevronDown className="w-4 h-4 text-gray-400" />
                               </button>
@@ -1677,31 +1864,17 @@ const QRGenerator = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Logo Placement
+                      Branding Subtitle
                     </label>
-                    <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
-                      <button
-                        onClick={() => setLogoPlacement("top")}
-                        className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${
-                          logoPlacement === "top" 
-                          ? "bg-white text-indigo-600 shadow-sm" 
-                          : "text-gray-500 hover:text-gray-700"
-                        }`}
-                      >
-                        At Top
-                      </button>
-                      <button
-                        onClick={() => setLogoPlacement("inside")}
-                        className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${
-                          logoPlacement === "inside" 
-                          ? "bg-white text-indigo-600 shadow-sm" 
-                          : "text-gray-500 hover:text-gray-700"
-                        }`}
-                      >
-                        Inside QR
-                      </button>
-                    </div>
+                    <input
+                      type="text"
+                      value={qrSubtitle}
+                      onChange={(e) => setQrSubtitle(e.target.value)}
+                      placeholder="E.g., Your tagline or business type"
+                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition-all"
+                    />
                   </div>
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1733,6 +1906,7 @@ const QRGenerator = () => {
                     </div>
                   </div>
                 </div>
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1757,7 +1931,10 @@ const QRGenerator = () => {
                       </div>
                       {logo && (
                         <button
-                          onClick={() => setLogo(null)}
+                          onClick={() => {
+                            setLogo(null);
+                            setResolvedLogo(null);
+                          }}
                           className="p-2 bg-gray-100 text-gray-500 rounded-lg hover:bg-red-100 hover:text-red-500 transition-colors"
                         >
                           <X className="w-4 h-4" />
@@ -1765,8 +1942,9 @@ const QRGenerator = () => {
                       )}
                     </div>
                   </div>
+                  
                   {logo && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-4">
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">
                           Size ({logoSize}px)
@@ -1774,7 +1952,7 @@ const QRGenerator = () => {
                         <input
                           type="range"
                           min="20"
-                          max="50"
+                          max="80"
                           value={logoSize}
                           onChange={(e) => setLogoSize(parseInt(e.target.value))}
                           className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500"
@@ -1822,10 +2000,13 @@ const QRGenerator = () => {
                           setQrName("");
                           setBrandingName("");
                           setLogo(null);
-                          setLogoPlacement("top");
+                          setResolvedLogo(null);
                           setQrStatement("");
                           setIncludePreferences(false);
                           setSelectedPreferences([]);
+                          setQrSubtitle("");
+                          setFgColor("#000000");
+                          setBgColor("#ffffff");
                         }}
                         className={`group p-3 rounded-xl border-2 border-dashed transition-all cursor-pointer flex items-center justify-center gap-2 ${
                           !selectedDynamicQR 
@@ -1926,50 +2107,54 @@ const QRGenerator = () => {
             <div className="sticky top-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 flex flex-col items-center">
               <h2 className="text-lg font-semibold text-gray-800 mb-6 w-full text-center">QR Preview</h2>
               
-              <div className="bg-gray-50/50 p-6 rounded-2xl mb-6 w-full flex flex-col items-center justify-center border border-gray-100">
+              <div className="bg-gray-50/50 p-4 rounded-2xl mb-6 w-full flex flex-col items-center justify-center border border-gray-100">
                 {generatedUrl ? (
-                  <>
-                    {(brandingName || (logo && logoPlacement === "top")) && (
-                      <div className="mb-4 flex items-center justify-center gap-3 max-w-[220px]">
-                        {logo && logoPlacement === "top" && (
-                          <img 
-                            src={logo} 
-                            alt="Brand Logo" 
-                            className="h-8 w-8 object-contain rounded-md"
-                            style={{ opacity: logoOpacity }}
-                          />
-                        )}
-                        {brandingName && (
-                          <p className="text-gray-800 font-semibold text-base text-center break-words">
-                            {brandingName}
+                  <div
+                    className="w-full max-w-[320px] bg-white border border-gray-100 rounded-3xl shadow-sm p-6 flex flex-col items-center"
+                    style={{
+                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.05)",
+                    }}
+                  >
+                    {effectiveLogo && (
+                      <img
+                        src={effectiveLogo}
+                        alt="Brand Logo"
+                        className="h-12 w-12 object-contain rounded-lg mb-4"
+                        style={{ opacity: logoOpacity }}
+                      />
+                    )}
+
+                    {brandingName && (
+                      <div className="text-center mb-1">
+                        <p className="font-bold text-gray-800 text-lg leading-tight">
+                          {brandingName}
+                        </p>
+                        {qrSubtitle && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {qrSubtitle}
                           </p>
                         )}
                       </div>
                     )}
-                    <QRCodeSVG 
-                      id="qr-code-svg"
-                      value={generatedUrl} 
-                      size={180}
-                      level="H"
-                      includeMargin={true}
-                      fgColor={fgColor}
-                      bgColor={bgColor}
-                      imageSettings={logo && logoPlacement === "inside" ? {
-                        src: logo,
-                        x: undefined,
-                        y: undefined,
-                        height: logoSize,
-                        width: logoSize,
-                        excavate: true,
-                        opacity: logoOpacity
-                      } : undefined}
-                    />
+
+                    <div className="my-6 p-2 bg-gray-50/50 rounded-2xl border border-gray-100">
+                      <QRCodeSVG
+                        id="qr-code-svg"
+                        value={generatedUrl}
+                        size={200}
+                        level="H"
+                        includeMargin={true}
+                        fgColor={fgColor}
+                        bgColor={bgColor}
+                      />
+                    </div>
+
                     {qrStatement && (
-                      <p className="mt-4 text-gray-700 font-medium text-sm text-center break-words max-w-[180px]">
+                      <p className="text-sm font-semibold text-gray-600 text-center leading-relaxed max-w-[220px]">
                         {qrStatement}
                       </p>
                     )}
-                  </>
+                  </div>
                 ) : (
                   <div className="w-[180px] h-[180px] flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl text-gray-400 text-center p-4 text-sm">
                     Complete setup to see preview
@@ -2027,7 +2212,7 @@ const QRGenerator = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }

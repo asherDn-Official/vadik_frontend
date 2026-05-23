@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import api from "../../api/apiconfig";
+import Loader from "../../utils/Loader";
 
 import { formatIndianMobile } from "../customerProfile/formatIndianMobile";
 
@@ -20,6 +21,7 @@ const CustomerList = ({
     "gender",
     "firstVisit",
     "source",
+    "loyaltyPoints",
     "isActive",
   ]);
   const [retailerId, setRetailerId] = useState(() => {
@@ -82,6 +84,7 @@ const CustomerList = ({
             "gender",
             "firstVisit",
             "source",
+            "loyaltyPoints",
             "isActive",
             ...keysArray,
           ]),
@@ -119,6 +122,8 @@ const CustomerList = ({
         return customer.source
           ? customer.source.charAt(0).toUpperCase() + customer.source.slice(1)
           : "";
+      case "loyaltyPoints":
+        return customer.loyaltyPoints ?? 0;
       case "isActive":
         return customer.isActive ? "Active" : "InActive";
       default:
@@ -197,11 +202,7 @@ const CustomerList = ({
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#7E57C2]"></div>
-      </div>
-    );
+    return <Loader text="Loading customer data..." fullHeight={false} />;
   }
 
   if (customers.length === 0) {

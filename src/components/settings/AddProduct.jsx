@@ -10,6 +10,7 @@ import {
 import api from "../../api/apiconfig";
 import { useAuth } from "../../context/AuthContext";
 import showToast from "../../utils/ToastNotification";
+import Loader from "../../utils/Loader";
 
 export const createProduct = async (formData) => {
   try {
@@ -253,6 +254,10 @@ const AddProduct = ({ onBack, product: editProduct }) => {
       setLoading(false);
     }
   };
+
+  if (loading && editProduct) {
+    return <Loader fullHeight />;
+  }
 
   return (
     <div>
@@ -690,13 +695,13 @@ const AddProduct = ({ onBack, product: editProduct }) => {
               className="px-6 py-2 bg-primary bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-md hover:bg-pink-700 transition disabled:opacity-50"
               disabled={loading}
             >
-              {loading
-                ? editProduct
-                  ? "Updating..."
-                  : "Saving..."
-                : editProduct
-                  ? "Update"
-                  : "Save"}
+              {loading ? (
+                <Loader size="sm" />
+              ) : editProduct ? (
+                "Update"
+              ) : (
+                "Save"
+              )}
             </button>
           </div>
         </form>

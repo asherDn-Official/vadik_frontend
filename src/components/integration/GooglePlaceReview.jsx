@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import VideoPopupWithShare from "../common/VideoPopupWithShare";
+import Loader from "../../utils/Loader";
 
 const GooglePlaceReview = ({
   onPlaceConfirmed = null,
@@ -177,7 +178,12 @@ const GooglePlaceReview = ({
             </button>
           </div>
 
-          <div className="p-4 border border-gray-200 rounded-md bg-gray-50">
+          <div className="p-4 border border-gray-200 rounded-md bg-gray-50 relative">
+            {isLoading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px] rounded-md">
+                <Loader text="Updating..." fullHeight={false} size="sm" />
+              </div>
+            )}
             <h4 className="text-lg font-semibold text-gray-800">
               {selectedPlace?.name ||
                 selectedPlace?.structured_formatting?.main_text}
@@ -192,7 +198,7 @@ const GooglePlaceReview = ({
               disabled={isLoading}
               className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
             >
-              {isLoading ? "Updating..." : "Confirm Business Location"}
+              Confirm Business Location
             </button>
           </div>
         </div>
@@ -223,7 +229,9 @@ const GooglePlaceReview = ({
                 Search Results
               </h3>
               {isLoading && (
-                <p className="text-sm text-gray-500">Searching...</p>
+                <div className="py-4">
+                  <Loader text="Searching..." fullHeight={false} size="sm" />
+                </div>
               )}
               <div className="space-y-3">
                 {searchResults.map((place) => (

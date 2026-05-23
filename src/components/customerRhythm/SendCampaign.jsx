@@ -30,6 +30,8 @@ import FilterPanel from "../customerInsigth/FilterPanel";
 import CustomerList from "../customerInsigth/CustomerList";
 import * as XLSX from "xlsx";
 
+import Loader from "../../utils/Loader";
+
 const SendCampaign = () => {
   // Main View State
   const [view, setView] = useState("dashboard"); // "dashboard" or "wizard"
@@ -1075,12 +1077,7 @@ const SendCampaign = () => {
   };
 
   if (fetchingData) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full space-y-4">
-        <div className="w-10 h-10 border-4 border-[#313166] border-t-transparent animate-spin rounded-full"></div>
-        <p className="text-sm font-bold text-[#313166] animate-pulse">Initializing Campaign Manager...</p>
-      </div>
-    );
+    return <Loader text="Initializing Campaign Manager..." />;
   }
 
   return (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import Loader from "../../utils/Loader";
 
 const PurchasedCustomerList = ({ billingData, onBack, onCustomerClick, onPageChange, loading, error }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,9 +88,7 @@ const PurchasedCustomerList = ({ billingData, onBack, onCustomerClick, onPageCha
             Purchased Customer List
           </h2>
         </div>
-        <div className="flex justify-center items-center py-10">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-pink-500"></div>
-        </div>
+        <Loader text="Loading customer data..." fullHeight={false} />
       </div>
     );
   }

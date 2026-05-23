@@ -7,7 +7,6 @@ import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 
 const CustomerPersonalisation = () => {
   const [filters, setFilters] = useState({});
-  const [selectedPeriod, setSelectedPeriod] = useState("Yearly");
   const [selectedCustomers, setSelectedCustomers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showExport, setShowExport] = useState(false);
@@ -23,6 +22,23 @@ const CustomerPersonalisation = () => {
   });
   const [loading, setLoading] = useState(false);
 
+  const hasFilterValue = (value) => {
+    if (value === "" || value === null || value === undefined) {
+      return false;
+    }
+
+    if (typeof value === "object") {
+      return Object.values(value).every(
+        (nestedValue) =>
+          nestedValue !== "" &&
+          nestedValue !== null &&
+          nestedValue !== undefined,
+      );
+    }
+
+    return true;
+  };
+
   // Fetch customer data with filters and pagination
   const fetchCustomers = async () => {
     try {
@@ -32,17 +48,28 @@ const CustomerPersonalisation = () => {
       const filtersArray = Object.entries(filters)
 
         .filter(([name, value]) => {
-          // Exclude periodValue and any other period-related fields
+          // Exclude date range fields because they are sent as top-level payload values
           return (
-            value !== "" &&
-            value !== null &&
-            value !== undefined &&
-            name !== "periodValue"
+            hasFilterValue(value) &&
+            name !== "periodValue" &&
+            name !== "fromDate" &&
+            name !== "toDate"
           );
         })
         .map(([name, value]) => ({
           name,
-          value: typeof value === "string" ? value.trim() : value,
+          value:
+            typeof value === "string"
+              ? value.trim()
+              : typeof value === "object" && value !== null
+                ? {
+                    ...value,
+                    value:
+                      typeof value.value === "string"
+                        ? value.value.trim()
+                        : value.value,
+                  }
+                : value,
         }));
 
       // Prepare the request payload
@@ -50,21 +77,8 @@ const CustomerPersonalisation = () => {
         page: currentPage,
         limit: pagination.limit,
         filters: filtersArray.length > 0 ? filtersArray : undefined,
-        // Period filters (handled separately)
-        ...(selectedPeriod === "Yearly" &&
-          filters.periodValue && {
-            year: parseInt(filters.periodValue),
-          }),
-        ...(selectedPeriod === "Monthly" &&
-          filters.periodValue && {
-            year: new Date().getFullYear(),
-            month: parseInt(filters.periodValue),
-          }),
-        ...(selectedPeriod === "Quarterly" &&
-          filters.periodValue && {
-            year: new Date().getFullYear(),
-            quarter: filters.periodValue,
-          }),
+        ...(filters.fromDate && { fromDate: filters.fromDate }),
+        ...(filters.toDate && { toDate: filters.toDate }),
       };
 
       // Remove undefined parameters
@@ -107,9 +121,9 @@ const CustomerPersonalisation = () => {
   const handleFilterChange = (key, value) => {
     setFilters((prev) => {
       const newFilters = { ...prev, [key]: value };
-      // Calculate applied filters count (exclude periodValue)
+      // Calculate applied filters count (exclude legacy periodValue only)
       const count = Object.entries(newFilters).filter(
-        ([k, v]) => k !== "periodValue" && v !== undefined && v !== "",
+        ([k, v]) => k !== "periodValue" && hasFilterValue(v),
       ).length;
       setAppliedFiltersCount(count);
       return newFilters;
@@ -178,8 +192,7 @@ const CustomerPersonalisation = () => {
           <FilterPanel
             filters={filters}
             onFilterChange={handleFilterChange}
-            selectedPeriod={selectedPeriod}
-            onPeriodChange={setSelectedPeriod}
+            timeFilterMode="dateRange"
             appliedFiltersCount={appliedFiltersCount}
             clearAllFilters={clearAllFilters}
             onFilteredDataChange={setFilteredData}

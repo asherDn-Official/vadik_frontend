@@ -8,6 +8,7 @@ import "react-phone-input-2/lib/style.css";
 import api from "../api/apiconfig";
 import { useAuth } from "../context/AuthContext";
 import { getModulePath } from "../utils/getModulePath";
+import Loader from "../utils/Loader";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -279,7 +280,12 @@ const Login = () => {
     },
   };
   return (
-    <div className="login-bg flex items-center justify-center min-h-screen p-4">
+    <div className="login-bg flex items-center justify-center min-h-screen p-4 relative">
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl">
+          <Loader text="Please wait..." fullHeight={false} />
+        </div>
+      )}
       <motion.div
         layout
         transition={{
@@ -394,7 +400,7 @@ const Login = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] py-3 rounded-xl font-medium"
                 >
-                  {loading ? "Signing In..." : "Sign In"}
+                  Sign In
                 </button>
               </form>
             </motion.div>
@@ -465,7 +471,7 @@ const Login = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] py-3 rounded-xl font-medium"
                 >
-                  {loading ? "Signing In..." : "Sign In"}
+                  Sign In
                 </button>
               </form>
 
@@ -631,7 +637,7 @@ const Login = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] py-3 rounded-xl font-medium"
                 >
-                  {loading ? "Creating Account..." : "Create Account"}
+                  Create Account
                 </button>
               </form>
 
@@ -687,7 +693,7 @@ const Login = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] py-3 rounded-xl font-medium"
                 >
-                  {loading ? "Verifying..." : "Verify Email"}
+                  Verify Email
                 </button>
               </form>
 

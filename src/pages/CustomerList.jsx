@@ -8,6 +8,8 @@ import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 import BulkImportModal from "../components/customerProfile/BulkImportModal";
 import { formatIndianMobile } from "../components/customerProfile/formatIndianMobile";
 
+import Loader from "../utils/Loader";
+
 const CustomerList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [customers, setCustomers] = useState([]);
@@ -402,9 +404,7 @@ const CustomerList = () => {
             "
           >
             {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-              </div>
+              <Loader text="Fetching customers..." fullHeight={false} />
             ) : (
               <>
                 {customers.length === 0 ? (

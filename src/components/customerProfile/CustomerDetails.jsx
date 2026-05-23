@@ -316,9 +316,11 @@ const basicSchema = yup.object().shape({
     .max(15, "Must be 15 characters or less"),
   lastname: yup
     .string()
-    .required("Last name is required")
-    .matches(/^[A-Za-z\s]+$/, "Only letters are allowed")
-    .min(1, "Must be at least 1 character")
+    .trim()
+    .matches(/^[A-Za-z\s]*$/, {
+      message: "Only letters are allowed",
+      excludeEmptyString: true,
+    })
     .max(15, "Must be 15 characters or less"),
   source: yup.string().optional(),
   customerId: yup.string().optional(),

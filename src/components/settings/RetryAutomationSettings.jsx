@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../api/apiconfig";
 import { FiSave, FiRefreshCw, FiAlertCircle } from "react-icons/fi";
 import { toast } from "react-toastify";
+import Loader from "../../utils/Loader";
 
 const RetryAutomationSettings = () => {
   const [loading, setLoading] = useState(true);
@@ -56,11 +57,7 @@ const RetryAutomationSettings = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <FiRefreshCw className="animate-spin text-2xl text-[#313166]" />
-      </div>
-    );
+    return <Loader fullHeight />;
   }
 
   return (
@@ -170,7 +167,7 @@ const RetryAutomationSettings = () => {
             disabled={saving}
             className="flex items-center gap-2 px-6 py-2 bg-[#313166] text-white rounded-lg hover:bg-[#313166]/90 transition-all disabled:opacity-50"
           >
-            {saving ? <FiRefreshCw className="animate-spin" /> : <FiSave />}
+            {saving ? <Loader size="sm" /> : <FiSave />}
             <span>{saving ? "Saving..." : "Save Settings"}</span>
           </button>
         </div>

@@ -4,6 +4,7 @@ import { FiEdit2, FiTrash2, FiSearch, FiPlus } from "react-icons/fi";
 import AddProduct from "./AddProduct";
 import api from "../../api/apiconfig";
 import VideoPopupWithShare from "../common/VideoPopupWithShare";
+import Loader from "../../utils/Loader";
 // import {
 //   getProducts,
 //   deleteProduct as deleteProductApi,
@@ -214,9 +215,9 @@ const Inventory = () => {
     return <AddProduct onBack={handleBack} product={editProduct} />;
   }
 
-  // if (loading && !products.length) {
-  //   return <div className="text-center py-8">Loading products...</div>;
-  // }
+  if (loading && !products.length) {
+    return <Loader text="Loading products..." fullHeight={false} />;
+  }
 
   if (error) {
     return <div className="text-center py-8 text-red-500">{error}</div>;

@@ -282,20 +282,19 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
   text-[#313166]
 "
             >
-              Last Name *
+              Last Name
             </label>
             <input
               type="text"
               placeholder="Last Name"
               {...register("lastname", {
-                required: "Last Name is required",
                 maxLength: {
                   value: 20,
                   message: "Cannot exceed 20 characters",
                 },
                 pattern: {
-                  value: /^[A-Za-z]+$/,
-                  message: "Only letters are allowed in the last name",
+                  value: /^[a-zA-Z\u00C0-\u017F\s'-]*$/,
+                  message: "Only letters, hyphens, and apostrophes allowed",
                 },
               })}
               className={`${inputStyles} ${

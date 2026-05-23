@@ -21,6 +21,7 @@ import {
   X
 } from "lucide-react";
 import api from "../../api/apiconfig";
+import Loader from "../../utils/Loader";
 import { toast } from "react-toastify";
 import { format, isToday } from "date-fns";
 
@@ -499,7 +500,7 @@ const LiveChat = () => {
         
         <div className="flex-1 overflow-y-auto">
           {loading && customers.length === 0 ? (
-            <div className="p-8 text-center text-gray-400 text-sm">Loading chats...</div>
+            <Loader text="Loading chats..." fullHeight={false} />
           ) : filteredCustomers.length === 0 ? (
             <div className="p-8 text-center text-gray-400 text-sm">No chats in {activeTab}</div>
           ) : (
@@ -618,9 +619,7 @@ const LiveChat = () => {
           {/* Messages Window */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F4F5F9]/30">
             {loadingMessages ? (
-              <div className="flex justify-center p-4">
-                <RefreshCcw size={24} className="animate-spin text-gray-300" />
-              </div>
+              <Loader text="Loading messages..." fullHeight={false} />
             ) : (
               [...messages, ...pendingMediaMessages].map((msg, idx) => {
                 const isMine = msg.status !== 'received';
@@ -889,7 +888,9 @@ const LiveChat = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 max-h-[65vh] overflow-y-auto">
               <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {mediaLibraryLoading ? (
-                  <div className="text-sm text-gray-400">Loading media...</div>
+                  <div className="md:col-span-2">
+                    <Loader text="Loading media..." fullHeight={false} />
+                  </div>
                 ) : filteredMediaLibrary.length === 0 ? (
                   <div className="text-sm text-gray-400">No media matches the current filters.</div>
                 ) : (

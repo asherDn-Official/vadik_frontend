@@ -15,7 +15,7 @@ import Template from "../components/settings/Template";
   const { auth } = useAuth();
   const location = useLocation();
   const [soon, setSoon] = useState();
-  const [activeSection, setActiveSection] = useState("templates");
+  const [activeSection, setActiveSection] = useState("live_chat");
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [templateToCopy, setTemplateToCopy] = useState(null);
 
@@ -115,7 +115,7 @@ import Template from "../components/settings/Template";
                 }`}
               >
                 <Target size={18} />
-                Rhythm Report
+                Report
               </button>
             </div>
             <VideoPopupWithShare
