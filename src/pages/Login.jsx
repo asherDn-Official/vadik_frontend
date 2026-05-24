@@ -159,7 +159,9 @@ const Login = () => {
 
       setRetailerView("verifyOtp");
 
-      setSuccessMessage("Verification OTP sent to your email.");
+      setSuccessMessage(
+        "Verification OTP sent to your email. After verification, sign in with the same password you created.",
+      );
     } catch (err) {
       setError(getErrorMessage(err, "Registration failed. Please try again."));
     } finally {
@@ -192,7 +194,9 @@ const Login = () => {
 
       setRetailerView("login");
 
-      setSuccessMessage("Email verified successfully. Please sign in.");
+      setSuccessMessage(
+        "Email verified successfully. Please sign in with the password you created.",
+      );
     } catch (err) {
       setError(getErrorMessage(err, "OTP verification failed."));
     } finally {
@@ -219,11 +223,13 @@ const Login = () => {
       });
 
       const data = response.data;
+      const retailerOnboardingCompleted =
+        data.retailer?.onboardingCompleted === true ||
+        data.retailer?.onboarding === true;
 
       if (data.token) {
         if (activePortal === "retailer") {
           localStorage.setItem("email", credentials.email);
-          sessionStorage.setItem("password", credentials.password);
         }
         localStorage.setItem("token", data.token);
 
@@ -232,7 +238,7 @@ const Login = () => {
         if (activePortal === "retailer" && data.retailer?._id) {
           localStorage.setItem("retailerId", data.retailer._id);
 
-          if (data.retailer.onboarding) {
+          if (retailerOnboardingCompleted) {
             navigate("/dashboard");
           } else {
             navigate(`/register/basic/${data.retailer._id}`);
