@@ -8,55 +8,35 @@ import CustomerSatisfactionScore from "../components/dashboard/CustomerSatisfact
 
 function Dashboard() {
   return (
-    <div className="min-h-screen bg-[#F4F5F9]">
-      <div className="mx-auto w-full max-w-[1600px] px-3 py-4 sm:px-5 sm:py-5 lg:px-6 xl:px-8">
-        <div className="mb-4 flex flex-col gap-2 sm:mb-5">
-          <div className="min-w-0">
-            {/* <h1 className="text-2xl font-semibold leading-tight text-[#1F1C5C] sm:text-[28px]">
-              Customer Intelligence
-            </h1> */}
-
-            {/* <p className="mt-1 max-w-2xl text-sm leading-6 text-[#7E85A8]">
-              Real-time customer analytics and engagement insights
-            </p> */}
-          </div>
-        </div>
-
-        <div className="space-y-3 sm:space-y-4 xl:space-y-5 2xl:space-y-6">
-          <div className="grid grid-cols-1 items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.18fr)] xl:gap-5 2xl:gap-6">
-            <div className="min-w-0 h-full">
-              <CustomerProfileCollection />
-            </div>
-
-            <div className="grid min-w-0 h-full grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:gap-5 2xl:gap-6">
-              <div className="min-w-0 h-full">
-                <CustomerProfileOverview />
-              </div>
-
-              <div className="min-w-0 h-full">
-                <CustomerRetentionRate />
-              </div>
-            </div>
+    <div className="h-full min-h-0 bg-[#F4F5F9]">
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-col px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 xl:px-6">
+        <div className="grid grid-cols-1 items-stretch gap-3 sm:gap-4 lg:grid-cols-2 xl:grid-cols-4 xl:gap-4 2xl:gap-5">
+          <div className="min-w-0 lg:col-span-2 xl:col-span-2">
+            <CustomerProfileCollection />
           </div>
 
-          <div className="grid grid-cols-1 items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.18fr)] xl:gap-5 2xl:gap-6">
-            <div className="min-w-0 h-full">
-              <ChurnRate />
-            </div>
-
-            <div className="min-w-0 h-full">
-              <CustomerEngagementScore />
-            </div>
+          <div className="min-w-0 h-full">
+            <CustomerProfileOverview />
           </div>
 
-          <div className="grid grid-cols-1 items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.18fr)] xl:gap-5 2xl:gap-6">
-            <div className="min-w-0 h-full">
-              <OptInOptOut />
-            </div>
+          <div className="min-w-0 h-full">
+            <CustomerRetentionRate />
+          </div>
 
-            <div className="min-w-0 h-full">
-              <CustomerSatisfactionScore />
-            </div>
+          <div className="min-w-0 h-full">
+            <ChurnRate />
+          </div>
+
+          <div className="min-w-0 h-full">
+            <CustomerEngagementScore />
+          </div>
+
+          <div className="min-w-0 h-full">
+            <OptInOptOut />
+          </div>
+
+          <div className="min-w-0 h-full">
+            <CustomerSatisfactionScore />
           </div>
         </div>
       </div>

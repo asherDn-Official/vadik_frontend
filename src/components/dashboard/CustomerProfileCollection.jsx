@@ -1,6 +1,63 @@
 import { useEffect, useState } from "react";
 import api from "../../api/apiconfig";
-import { format } from "date-fns";
+import { eachDayOfInterval, format } from "date-fns";
+
+const getNumericValue = (item, keys) => {
+  for (const key of keys) {
+    const value = Number(item?.[key]);
+    if (Number.isFinite(value)) {
+      return value;
+    }
+  }
+
+  return 0;
+};
+
+const normalizeCustomerProfileData = (rawData, startDate, endDate) => {
+  const safeData = Array.isArray(rawData)
+    ? rawData
+    : Array.isArray(rawData?.data)
+      ? rawData.data
+      : [];
+
+  const lookup = new Map();
+
+  safeData.forEach((item) => {
+    if (!item?.date) {
+      return;
+    }
+
+    const dateKey = format(new Date(item.date), "yyyy-MM-dd");
+    lookup.set(dateKey, {
+      date: new Date(item.date).toISOString(),
+      newCustomers: getNumericValue(item, [
+        "newCustomers",
+        "newCustomer",
+        "newProfiles",
+        "newCount",
+      ]),
+      retentionCustomers: getNumericValue(item, [
+        "retentionCustomers",
+        "retentionCustomer",
+        "retentionProfiles",
+        "retainedCustomers",
+        "retentionCount",
+      ]),
+    });
+  });
+
+  return eachDayOfInterval({ start: startDate, end: endDate }).map((day) => {
+    const dateKey = format(day, "yyyy-MM-dd");
+
+    return (
+      lookup.get(dateKey) || {
+        date: day.toISOString(),
+        newCustomers: 0,
+        retentionCustomers: 0,
+      }
+    );
+  });
+};
 
 function CustomerProfileCollection() {
   const [data, setData] = useState([
@@ -70,7 +127,13 @@ function CustomerProfileCollection() {
           `api/dashboard/customerProfileCollection?startDate=${formattedStart}&endDate=${formattedEnd}`,
         );
 
-        setData(res.data || []);
+        setData(
+          normalizeCustomerProfileData(
+            res.data,
+            startDate,
+            endDate,
+          ),
+        );
       } catch (err) {
         console.error("Failed to fetch customer profile data", err);
       } finally {
@@ -98,14 +161,11 @@ function CustomerProfileCollection() {
           <h2 className="dashboard-card-title">
             Customer Profile Collection
           </h2>
-          <p className="dashboard-card-description">
-            New and returning customer profiles by day
-          </p>
         </div>
       </div>
 
       {/* Total */}
-      <div className="mt-5 flex flex-wrap items-end gap-x-3 gap-y-1">
+      <div className="mt-4 flex flex-wrap items-end gap-x-3 gap-y-1 lg:mt-3 xl:mt-4">
         <span className="text-5xl font-bold leading-none text-[#1F1C5C] sm:text-[56px]">
           {loading ? "--" : total}
         </span>
@@ -114,100 +174,98 @@ function CustomerProfileCollection() {
           Total Profiles
         </span>
       </div>
-      {/* Bar Graph */}
-      <div className="mt-6 flex h-36 items-end justify-between gap-2 sm:h-44 sm:gap-3 lg:h-48">
-        {data.map(({ date, newCustomers, retentionCustomers }, index) => {
-          const totalHeight = newCustomers + retentionCustomers;
-          const retentionHeight =
-            totalHeight > 0
-              ? Math.max((retentionCustomers / maxDailyTotal) * 100, 8)
-              : 0;
-          const newHeight =
-            totalHeight > 0
-              ? Math.max((newCustomers / maxDailyTotal) * 100, 8)
-              : 0;
-          const day = new Date(date).getDate();
+      <div className="mt-auto">
+        {/* Bar Graph */}
+        <div className="mt-5 flex h-36 items-end justify-between gap-2 sm:h-40 sm:gap-3 lg:h-36 xl:h-44 2xl:h-48">
+          {data.map(({ date, newCustomers, retentionCustomers }, index) => {
+            const totalHeight = newCustomers + retentionCustomers;
+            const hasRetention = retentionCustomers > 0;
+            const hasNewCustomers = newCustomers > 0;
+            const hasBothSegments = hasRetention && hasNewCustomers;
+            const retentionHeight =
+              totalHeight > 0 && hasRetention
+                ? Math.max((retentionCustomers / maxDailyTotal) * 100, 14)
+                : 0;
+            const newHeight =
+              totalHeight > 0 && hasNewCustomers
+                ? Math.max((newCustomers / maxDailyTotal) * 100, 14)
+                : 0;
+            const day = new Date(date).getDate();
 
-          return (
-            <div
-              key={date}
-              className="
-                flex flex-1 flex-col items-center
-                relative group min-w-[28px]
-                transition-all duration-300
-                hover:-translate-y-1
+            return (
+              <div
+                key={date}
+                className="
+                  relative group flex h-full min-w-[28px] flex-1 flex-col items-center justify-end
+                  transition-all duration-300
+                  hover:-translate-y-1
                 "
-              onMouseEnter={() => setHoveredIndex(index)}
-              onMouseLeave={() => setHoveredIndex(null)}
-            >
-              {hoveredIndex === index && totalHeight > 0 && (
-                <div
-                  className="
-                    absolute -top-16 z-20
-                    rounded-2xl
-                    border border-white/20
-                    bg-[#1F1C5C]/95
-                    px-4 py-2
-                    text-xs text-white
-                    shadow-2xl
-                    backdrop-blur-xl
-                    whitespace-nowrap
-                  "
-                >
-                  <div>New: {newCustomers}</div>
-                  <div>Retention: {retentionCustomers}</div>
-                </div>
-              )}
-
-              {totalHeight === 0 ? (
-                <div className="w-full rounded-full bg-gray-300 h-2 mt-auto mb-1"></div>
-              ) : (
-                <div className="flex h-full w-full max-w-[46px] flex-col justify-end overflow-hidden rounded-full">
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+              >
+                {hoveredIndex === index && totalHeight > 0 && (
                   <div
                     className="
-                      bg-gradient-to-t
-                      from-[#F9B4CC]
-                      to-[#F7D6E2]
-                      rounded-t-full
-                      transition-all duration-300
-                      "
-                    style={{ height: `${retentionHeight}%` }}
-                  />
-                  <div
-                    className="
-                      bg-gradient-to-t
-                      from-[#EC396F]
-                      to-[#FF5B93]
-                      rounded-b-full
-                      shadow-[0_4px_20px_rgba(236,57,111,0.35)]
-                      transition-all duration-300
-                      "
-                    style={{ height: `${newHeight}%` }}
-                  />
-                </div>
-              )}
+                      absolute -top-16 z-20
+                      whitespace-nowrap rounded-2xl
+                      border border-white/20
+                      bg-[#1F1C5C]/95
+                      px-4 py-2
+                      text-xs text-white
+                      shadow-2xl
+                      backdrop-blur-xl
+                    "
+                  >
+                    <div>New: {newCustomers}</div>
+                    <div>Retention: {retentionCustomers}</div>
+                  </div>
+                )}
 
-              <span className="mt-3 text-xs font-medium text-[#7E85A8]">
-                {day}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+                {totalHeight === 0 ? (
+                  <div className="h-full" />
+                ) : (
+                  <div className="flex h-full w-full max-w-[46px] flex-col justify-end overflow-hidden rounded-full">
+                    {hasRetention && (
+                      <div
+                        className={`bg-gradient-to-t from-[#F9B4CC] to-[#F7D6E2] transition-all duration-300 ${
+                          hasBothSegments ? "rounded-t-full" : "rounded-full"
+                        }`}
+                        style={{ height: `${retentionHeight}%` }}
+                      />
+                    )}
+                    {hasNewCustomers && (
+                      <div
+                        className={`bg-gradient-to-t from-[#EC396F] to-[#FF5B93] shadow-[0_4px_20px_rgba(236,57,111,0.35)] transition-all duration-300 ${
+                          hasBothSegments ? "rounded-b-full" : "rounded-full"
+                        }`}
+                        style={{ height: `${newHeight}%` }}
+                      />
+                    )}
+                  </div>
+                )}
 
-      {/* Legend */}
-      <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
-        <div className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-full bg-pink-300"></span>
-          <span className="font-[Poppins] text-sm font-medium leading-4 text-[#313166] opacity-80">
-            Retention Customer
-          </span>
+                <span className="mt-3 text-xs font-medium text-[#7E85A8]">
+                  {day}
+                </span>
+              </div>
+            );
+          })}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-full bg-rose-500"></span>
-          <span className="font-[Poppins] text-sm font-medium leading-4 text-[#313166] opacity-80">
-            New Customers
-          </span>
+
+        {/* Legend */}
+        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 lg:mt-4 xl:mt-5">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-pink-300"></span>
+            <span className="font-[Poppins] text-sm font-medium leading-4 text-[#313166] opacity-80">
+              Retention Customer
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-rose-500"></span>
+            <span className="font-[Poppins] text-sm font-medium leading-4 text-[#313166] opacity-80">
+              New Customers
+            </span>
+          </div>
         </div>
       </div>
     </div>

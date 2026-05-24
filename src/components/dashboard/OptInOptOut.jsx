@@ -40,20 +40,16 @@ function OptInOptOut() {
     : 0;
 
   return (
-    <div className="dashboard-card flex h-full min-h-[260px] flex-col justify-between sm:min-h-[280px]">
+    <div className="dashboard-card flex h-full min-h-[230px] flex-col justify-between sm:min-h-[260px] lg:min-h-[220px] xl:min-h-[245px]">
       {/* Header */}
       <div>
         <h2 className="dashboard-card-title">
           Customer Loyalty
         </h2>
-
-        <p className="dashboard-card-description">
-          Loyalty and disengagement customer analytics
-        </p>
       </div>
 
       {/* Loyal Customers */}
-      <div className="mt-7">
+      <div className="mt-5 lg:mt-4 xl:mt-5">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-[#1F1C5C]" />
@@ -88,7 +84,7 @@ function OptInOptOut() {
       </div>
 
       {/* Non Loyal Customers */}
-      <div className="mt-6">
+      <div className="mt-5 lg:mt-4 xl:mt-5">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-[#E43274]" />
@@ -123,7 +119,7 @@ function OptInOptOut() {
       </div>
 
       {/* Footer Analytics */}
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:mt-5 lg:gap-3">
         {/* Loyal Box */}
         <div className="dashboard-stat-panel">
           <div className="text-xs font-medium uppercase tracking-wide text-[#8B90B2]">

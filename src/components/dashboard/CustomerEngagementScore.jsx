@@ -4,10 +4,9 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 
 function CustomerEngagementScore() {
-  const [score, setScore] = useState(68); // default mock percentage
-  const [totalCustomers, setTotalCustomers] = useState(120); // mock
-  const [respondedCustomers, setRespondedCustomers] = useState(80); // mock
-
+  const [score, setScore] = useState(null);
+  const [totalCustomers, setTotalCustomers] = useState(null);
+  const [respondedCustomers, setRespondedCustomers] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,12 +17,26 @@ function CustomerEngagementScore() {
             "api/performanceTracking/customerEngagementScore",
           );
           const data = res.data;
-          setScore(data.engagementPercentage ?? 0);
-          setTotalCustomers(data.totalCustomers ?? 0);
-          setRespondedCustomers(data.respondedCustomers ?? 0);
+          setScore(
+            Number.isFinite(Number(data.engagementPercentage))
+              ? Number(data.engagementPercentage)
+              : 0,
+          );
+          setTotalCustomers(
+            Number.isFinite(Number(data.totalCustomers))
+              ? Number(data.totalCustomers)
+              : 0,
+          );
+          setRespondedCustomers(
+            Number.isFinite(Number(data.respondedCustomers))
+              ? Number(data.respondedCustomers)
+              : 0,
+          );
         } catch (err) {
           console.error("Error fetching engagement score:", err);
-          setScore(0);
+          setScore(null);
+          setTotalCustomers(null);
+          setRespondedCustomers(null);
         } finally {
           setLoading(false);
         }
@@ -38,25 +51,26 @@ function CustomerEngagementScore() {
   const safeScore = Number.isFinite(score)
     ? Math.min(Math.max(score, 0), 100)
     : 0;
+  const hasData = !loading && score !== null;
+  const tooltipContent =
+    respondedCustomers !== null && totalCustomers !== null
+      ? `${respondedCustomers} of ${totalCustomers} customers responded`
+      : "No engagement data available";
 
   return (
-    <div className="dashboard-card flex h-full min-h-[220px] flex-col justify-between sm:min-h-[230px]">
+    <div className="dashboard-card flex h-full min-h-[210px] flex-col justify-between sm:min-h-[220px] lg:min-h-[210px] xl:min-h-[220px]">
       {/* Header */}
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start sm:gap-4">
         <div className="min-w-0">
           <h2 className="dashboard-card-title">
             Customer Engagement
           </h2>
-
-          <p className="dashboard-card-description">
-            Customer interaction and response analytics
-          </p>
         </div>
 
         {/* Percentage */}
         <div className="shrink-0 sm:text-right">
           <div className="text-4xl font-bold leading-none text-[#1F1C5C]">
-            {loading ? "--" : `${safeScore}%`}
+            {loading ? "--" : hasData ? `${safeScore}%` : "--"}
           </div>
 
           <div className="mt-1 text-xs font-medium text-[#7E85A8]">
@@ -66,14 +80,14 @@ function CustomerEngagementScore() {
       </div>
 
       {/* Progress Section */}
-      <div className="mt-7">
+      <div className="mt-6 lg:mt-5 xl:mt-6">
         <div
           className="
           relative h-4 overflow-hidden sm:h-5
           rounded-full bg-[#EEF1FF]
         "
           data-tooltip-id="engagementTooltip"
-          data-tooltip-content={`${respondedCustomers} of ${totalCustomers} customers responded`}
+          data-tooltip-content={tooltipContent}
         >
           {/* Progress Glow */}
           <div
@@ -103,7 +117,7 @@ function CustomerEngagementScore() {
       </div>
 
       {/* Footer Stats */}
-      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:mt-4 lg:gap-3">
         {/* Responded */}
         <div className="dashboard-stat-panel">
           <div className="dashboard-stat-label">
@@ -111,7 +125,7 @@ function CustomerEngagementScore() {
           </div>
 
           <div className="dashboard-stat-value">
-            {loading ? "--" : respondedCustomers}
+            {loading ? "--" : respondedCustomers ?? "--"}
           </div>
         </div>
 
@@ -122,7 +136,7 @@ function CustomerEngagementScore() {
           </div>
 
           <div className="dashboard-stat-value">
-            {loading ? "--" : totalCustomers}
+            {loading ? "--" : totalCustomers ?? "--"}
           </div>
         </div>
       </div>

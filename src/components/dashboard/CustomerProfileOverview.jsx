@@ -60,26 +60,22 @@ function CustomerProfileOverview() {
   };
 
   return (
-    <div className="dashboard-card flex h-full min-h-[280px] flex-col justify-between sm:min-h-[300px]">
+    <div className="dashboard-card flex h-full min-h-[260px] flex-col justify-between sm:min-h-[280px] lg:min-h-[220px] xl:min-h-[250px]">
       {/* Title */}
       <div>
         <h2 className="dashboard-card-title text-center">
           Customer Profile Overview
         </h2>
-
-        <p className="dashboard-card-description text-center">
-          Active vs inactive customer analytics
-        </p>
       </div>
 
       {/* Chart */}
-      <div className="flex items-center justify-center py-4">
-        <div className="relative h-[170px] w-[170px] sm:h-[200px] sm:w-[200px]">
+      <div className="flex items-center justify-center py-3 lg:py-2 xl:py-3">
+        <div className="relative h-[160px] w-[160px] sm:h-[180px] sm:w-[180px] lg:h-[128px] lg:w-[128px] xl:h-[164px] xl:w-[164px]">
           <Doughnut data={data} options={options} />
 
           {/* Center Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-4xl font-bold leading-none text-[#1F1C5C] sm:text-[40px]">
+            <span className="text-4xl font-bold leading-none text-[#1F1C5C] sm:text-[40px] lg:text-[32px] xl:text-[38px]">
               {loading ? "..." : total}
             </span>
 
@@ -91,7 +87,7 @@ function CustomerProfileOverview() {
       </div>
 
       {/* Stats Footer */}
-      <div className="mt-2 grid grid-cols-2 gap-3 sm:gap-4">
+      <div className="mt-2 grid grid-cols-2 gap-3 sm:gap-4 lg:gap-3">
         {/* Active */}
         <div className="dashboard-stat-panel">
           <div className="flex items-center gap-2">

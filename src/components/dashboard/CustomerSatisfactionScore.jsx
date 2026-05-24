@@ -63,32 +63,28 @@ drop-shadow-[0_2px_8px_rgba(245,179,1,0.35)] text-[22px] sm:text-[25px]"
   };
 
   return (
-    <div className="dashboard-card flex h-full min-h-[280px] flex-col justify-between sm:min-h-[300px]">
+    <div className="dashboard-card flex h-full min-h-[240px] flex-col justify-between sm:min-h-[280px] lg:min-h-[220px] xl:min-h-[250px]">
       {/* Header */}
       <div>
         <h2 className="dashboard-card-title">
           Customer Satisfaction
         </h2>
-
-        <p className="dashboard-card-description">
-          Customer review and satisfaction analytics
-        </p>
       </div>
 
       {/* Main Rating Section */}
-      <div className="flex flex-col items-center justify-center py-6">
+      <div className="flex flex-col items-center justify-center py-4 lg:py-3 xl:py-5">
         {/* Rating */}
-        <div className="text-5xl font-bold leading-none text-[#1F1C5C] sm:text-[54px]">
+        <div className="text-5xl font-bold leading-none text-[#1F1C5C] sm:text-[54px] lg:text-[42px] xl:text-[50px]">
           {safeStarCount}
         </div>
 
         {/* Stars */}
-        <div className="mt-4 flex items-center gap-1">
+        <div className="mt-3 flex items-center gap-1">
           {renderStars()}
         </div>
 
         {/* Customer Count */}
-        <p className="mt-4 text-center text-sm font-medium leading-5 text-[#7E85A8]">
+        <p className="mt-3 text-center text-sm font-medium leading-5 text-[#7E85A8]">
           Based on {customers} customer reviews
         </p>
       </div>

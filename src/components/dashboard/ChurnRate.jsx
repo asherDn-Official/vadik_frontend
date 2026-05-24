@@ -91,22 +91,19 @@ function ChurnRate() {
   };
 
   return (
-    <div className="dashboard-card flex h-full min-h-[250px] flex-col sm:min-h-[280px]">
+    <div className="dashboard-card flex h-full min-h-[220px] flex-col sm:min-h-[250px] lg:min-h-[210px] xl:min-h-[240px]">
       <h2 className="dashboard-card-title">
         Churn Rate
       </h2>
-      <p className="dashboard-card-description">
-        Customer loss analytics overview
-      </p>
 
-      <div className="relative mt-4 flex h-[170px] items-center justify-center sm:h-[200px] lg:h-[220px]">
+      <div className="relative mt-4 flex h-[155px] items-center justify-center sm:h-[180px] lg:h-[145px] xl:h-[185px]">
         {
           <>
             <Doughnut ref={chartRef} data={data} options={options} />
 
             {/* Center Percentage */}
             <div className="absolute inset-0 flex flex-col items-center justify-end pb-10 pointer-events-none">
-              <span className="text-3xl font-bold leading-none text-[#1F1C5C] sm:text-[34px]">
+              <span className="text-3xl font-bold leading-none text-[#1F1C5C] sm:text-[34px] lg:text-[30px] xl:text-[34px]">
                 {loading ? "--" : `${safeChurn.toFixed(1)}%`}
               </span>
 
