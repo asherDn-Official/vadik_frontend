@@ -56,7 +56,7 @@ export default function SubscriptionPage() {
       const response = await api.get("/api/subscriptions?isActive=true");
       if (response.data.data && response.data.data.length > 0) {
         const subscriptionWithPlan = response.data.data.find(
-          (sub) => sub.plan !== null
+          (sub) => sub.plan !== null,
         );
         if (subscriptionWithPlan) {
           setActiveSubscriptionId(subscriptionWithPlan._id);
@@ -161,7 +161,7 @@ export default function SubscriptionPage() {
 
       const verificationResponse = await api.post(
         "/api/subscriptions/verify-payment",
-        verificationPayload
+        verificationPayload,
       );
 
       if (!verificationResponse.data?.status) {
@@ -177,7 +177,10 @@ export default function SubscriptionPage() {
         status: verificationResponse.data?.status,
       });
 
-      showToast(`✅ Payment successful! Invoice #${billing?.billNumber}. We will invoice you through mail.`, "success");
+      showToast(
+        `✅ Payment successful! Invoice #${billing?.billNumber}. We will invoice you through mail.`,
+        "success",
+      );
 
       setShowConfirmation(false);
       setSelectedPlan(null);
@@ -187,7 +190,10 @@ export default function SubscriptionPage() {
       getActiveSubscription();
     } catch (error) {
       console.error("Payment verification failed:", error);
-      showToast("Payment verification failed. Please contact support.", "error");
+      showToast(
+        "Payment verification failed. Please contact support.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -212,7 +218,7 @@ export default function SubscriptionPage() {
 
       const verificationResponse = await api.post(
         "/api/subscriptions/add-credits/verify",
-        verificationPayload
+        verificationPayload,
       );
 
       if (!verificationResponse.data?.status) {
@@ -227,7 +233,10 @@ export default function SubscriptionPage() {
         billing,
       });
 
-      showToast(`✅ Credits added! Invoice #${billing?.billNumber}. We will invoice you through mail.`, "success");
+      showToast(
+        `✅ Credits added! Invoice #${billing?.billNumber}. We will invoice you through mail.`,
+        "success",
+      );
 
       setShowConfirmation(false);
       setSelectedAddons([]);
@@ -235,7 +244,10 @@ export default function SubscriptionPage() {
       getCurrentPlanDetails();
     } catch (error) {
       console.error("Credits payment verification failed:", error);
-      showToast("Credits payment verification failed. Please contact support.", "error");
+      showToast(
+        "Credits payment verification failed. Please contact support.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -274,7 +286,7 @@ export default function SubscriptionPage() {
       if (autoPayEnabled && selectedAddons.length > 0) {
         showToast(
           "AutoPay currently supports plan-only subscriptions. Remove add-ons or disable AutoPay.",
-          "error"
+          "error",
         );
         setLoading(false);
         return;
@@ -298,7 +310,7 @@ export default function SubscriptionPage() {
 
         const subscriptionResponse = await api.post(
           "/api/subscriptions",
-          subscriptionPayload
+          subscriptionPayload,
         );
 
         subscriptionData =
@@ -318,7 +330,7 @@ export default function SubscriptionPage() {
           })),
           startDate: new Date().toISOString(),
           endDate: new Date(
-            Date.now() + 30 * 24 * 60 * 60 * 1000
+            Date.now() + 30 * 24 * 60 * 60 * 1000,
           ).toISOString(),
           isActive: false,
           isTrial: selectedPlan?.isFreeTrial || false,
@@ -336,10 +348,15 @@ export default function SubscriptionPage() {
 
       const orderResponse = await api.post(
         "/api/subscriptions/create-order",
-        orderPayload
+        orderPayload,
       );
 
-      const { type, order, subscription: razorpaySubscription, subscriptionId } = orderResponse.data || {};
+      const {
+        type,
+        order,
+        subscription: razorpaySubscription,
+        subscriptionId,
+      } = orderResponse.data || {};
 
       if (type === "subscription" && !razorpaySubscription?.id) {
         throw new Error("? Missing 'subscription' in create-order response");
@@ -421,7 +438,7 @@ export default function SubscriptionPage() {
 
       const prepareResponse = await api.post(
         "/api/subscriptions/add-credits/prepare",
-        preparePayload
+        preparePayload,
       );
 
       if (!prepareResponse.data.status) {
@@ -430,17 +447,17 @@ export default function SubscriptionPage() {
 
       const orderResponse = await api.post(
         "/api/subscriptions/add-credits/create-order",
-        preparePayload
+        preparePayload,
       );
 
       if (!orderResponse.data.order) {
         throw new Error(
-          "❌ Missing 'order' in add-credits create-order response"
+          "❌ Missing 'order' in add-credits create-order response",
         );
       }
       if (!orderResponse.data.subscriptionId) {
         throw new Error(
-          "❌ Missing 'subscriptionId' in add-credits create-order response"
+          "❌ Missing 'subscriptionId' in add-credits create-order response",
         );
       }
 
@@ -534,24 +551,28 @@ export default function SubscriptionPage() {
     setCancelLoading(true);
     try {
       const response = await api.put(
-        `/api/subscriptions/${activeSubscriptionId}/cancel`
+        `/api/subscriptions/${activeSubscriptionId}/cancel`,
       );
-      
+
       if (response.data.status) {
         // console.log("✅ Subscription cancelled successfully:", response.data);
         showToast(response.data.message, "success");
-        
+
         // Refresh data
         getCurrentPlanDetails();
         getActiveSubscription();
-        
+
         setShowCancelConfirmation(false);
       } else {
-        throw new Error(response.data.message || "Failed to cancel subscription");
+        throw new Error(
+          response.data.message || "Failed to cancel subscription",
+        );
       }
     } catch (error) {
       console.error("❌ Error cancelling subscription:", error);
-      alert(`Failed to cancel subscription: ${error.response?.data?.message || error.message}`);
+      alert(
+        `Failed to cancel subscription: ${error.response?.data?.message || error.message}`,
+      );
     } finally {
       setCancelLoading(false);
     }
@@ -563,22 +584,22 @@ export default function SubscriptionPage() {
     try {
       const response = await api.put(
         `/api/subscriptions/${activeSubscriptionId}/autopay`,
-        { enabled: !autoPayEnabled }
+        { enabled: !autoPayEnabled },
       );
       const updatedAutoPay = response.data?.autoPay || null;
       setAutoPayEnabled(!!updatedAutoPay?.enabled);
       setSubscriptionDetails((prev) =>
-        prev ? { ...prev, autoPay: updatedAutoPay } : prev
+        prev ? { ...prev, autoPay: updatedAutoPay } : prev,
       );
       showToast(
         `AutoPay ${updatedAutoPay?.enabled ? "enabled" : "disabled"} successfully`,
-        "success"
+        "success",
       );
     } catch (error) {
       console.error("Failed to toggle AutoPay:", error);
       showToast(
         error.response?.data?.message || "Failed to update AutoPay",
-        "error"
+        "error",
       );
     } finally {
       setAutoPayLoading(false);
@@ -639,19 +660,24 @@ export default function SubscriptionPage() {
                     </span>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        autoPayEnabled ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                        autoPayEnabled
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-600"
                       }`}
                     >
                       {autoPayEnabled ? "Enabled" : "Disabled"}
                     </span>
                     <span className="text-xs text-gray-500">
-                      Mandate: {subscriptionDetails.autoPay?.mandateStatus || "n/a"}
+                      Mandate:{" "}
+                      {subscriptionDetails.autoPay?.mandateStatus || "n/a"}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-gray-600 text-sm">
                       Next Billing:{" "}
-                      {autoPayEnabled ? formatDate(subscriptionDetails.endDate) : "-"}
+                      {autoPayEnabled
+                        ? formatDate(subscriptionDetails.endDate)
+                        : "-"}
                     </span>
                     <button
                       type="button"
@@ -734,7 +760,7 @@ export default function SubscriptionPage() {
                   activeTab === "whatsapp" ? "text-gray-800" : "text-gray-500"
                 }`}
               >
-                WhatsApp Credits
+                Wallet
                 {activeTab === "whatsapp" && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800"></div>
                 )}
@@ -826,7 +852,7 @@ export default function SubscriptionPage() {
               };
 
               const isSelected = selectedAddons.some(
-                (a) => a._id === addon._id
+                (a) => a._id === addon._id,
               );
               const quantity = addonQuantities[addon._id] || 1;
 
@@ -863,15 +889,15 @@ export default function SubscriptionPage() {
               selectedPlan._id !== subscriptionDetails?.plan?._id)) ||
             (selectedAddons.length > 0 &&
               (currentPlans?.subscription || selectedPlan))) && (
-          <div className="fixed bottom-6 left-2/3 transform -translate-x-1/2">
-            <button
-              onClick={() => setShowConfirmation(true)}
-              className="bg-pink-700 text-white px-8 py-3 rounded-lg font-medium shadow-lg hover:bg-pink-800 transition-colors animate-zoom"
-            >
-              Proceed to Payment
-            </button>
-          </div>
-        )}
+            <div className="fixed bottom-6 left-2/3 transform -translate-x-1/2">
+              <button
+                onClick={() => setShowConfirmation(true)}
+                className="bg-pink-700 text-white px-8 py-3 rounded-lg font-medium shadow-lg hover:bg-pink-800 transition-colors animate-zoom"
+              >
+                Proceed to Payment
+              </button>
+            </div>
+          )}
 
         {/* Confirmation Modal for subscription and addons */}
         <ConfirmationModal
@@ -886,7 +912,9 @@ export default function SubscriptionPage() {
           loading={loading}
           autoPayEnabled={autoPayEnabled}
           onAutoPayChange={setAutoPayEnabled}
-          showAutoPayToggle={!!selectedPlan && !selectedPlan.isFreeTrial && !subscriptionDetails}
+          showAutoPayToggle={
+            !!selectedPlan && !selectedPlan.isFreeTrial && !subscriptionDetails
+          }
           showPriceBreakdown={true}
         />
 
