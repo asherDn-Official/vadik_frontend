@@ -165,18 +165,18 @@ function CustomerProfileCollection() {
       </div>
 
       {/* Total */}
-      <div className="mt-4 flex flex-wrap items-end gap-x-3 gap-y-1 lg:mt-3 xl:mt-4">
-        <span className="text-5xl font-bold leading-none text-[#1F1C5C] sm:text-[56px]">
+      <div className="mt-4 flex flex-wrap items-end gap-x-3 gap-y-1">
+        <span className="text-[2.8rem] font-bold leading-none tracking-[-0.04em] text-[#1F1C5C] sm:text-[3.25rem] xl:text-[3.4rem]">
           {loading ? "--" : total}
         </span>
 
-        <span className="mb-2 text-sm font-medium text-[#7E85A8]">
+        <span className="mb-1.5 text-sm font-medium text-[#7E85A8]">
           Total Profiles
         </span>
       </div>
       <div className="mt-auto">
         {/* Bar Graph */}
-        <div className="mt-5 flex h-36 items-end justify-between gap-2 sm:h-40 sm:gap-3 lg:h-36 xl:h-44 2xl:h-48">
+        <div className="mt-5 flex h-36 items-end justify-between gap-2 sm:h-40 sm:gap-3 xl:h-44 2xl:h-48">
           {data.map(({ date, newCustomers, retentionCustomers }, index) => {
             const totalHeight = newCustomers + retentionCustomers;
             const hasRetention = retentionCustomers > 0;
@@ -190,7 +190,9 @@ function CustomerProfileCollection() {
               totalHeight > 0 && hasNewCustomers
                 ? Math.max((newCustomers / maxDailyTotal) * 100, 14)
                 : 0;
-            const day = new Date(date).getDate();
+            const parsedDate = new Date(date);
+            const dayLabel = format(parsedDate, "d");
+            const monthLabel = format(parsedDate, "MMM");
 
             return (
               <div
@@ -243,10 +245,14 @@ function CustomerProfileCollection() {
                     )}
                   </div>
                 )}
-
-                <span className="mt-3 text-xs font-medium text-[#7E85A8]">
-                  {day}
-                </span>
+                <div className="mt-3 flex min-h-[32px] flex-col items-center justify-start text-[#7E85A8]">
+                  <span className="text-xs font-semibold leading-none">
+                    {dayLabel}
+                  </span>
+                  <span className="mt-1 text-[10px] font-medium uppercase leading-none tracking-[0.08em]">
+                    {monthLabel}
+                  </span>
+                </div>
               </div>
             );
           })}

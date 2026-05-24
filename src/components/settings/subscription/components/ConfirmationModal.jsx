@@ -48,9 +48,9 @@ export default function ConfirmationModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
-        <div className="p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
+        <div className="overflow-y-auto p-5 sm:p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
             Confirm Your Subscription
           </h2>
@@ -91,8 +91,8 @@ export default function ConfirmationModal({
                         </span>
                       </div>
                       
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-wrap items-center gap-3">
                           <span className="text-sm text-gray-600">Quantity:</span>
                           <div className="flex items-center border rounded-md overflow-hidden">
                             <button
@@ -117,7 +117,7 @@ export default function ConfirmationModal({
                             </button>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-left sm:text-right">
                           <div className="text-sm text-gray-500">
                             Rs. {addon.price.toLocaleString()} × {quantity}
                           </div>
@@ -238,7 +238,7 @@ export default function ConfirmationModal({
           </div>
         </div>
 
-        <div className="flex gap-3 p-6 border-t border-gray-200">
+        <div className="flex flex-col-reverse gap-3 border-t border-gray-200 p-5 sm:flex-row sm:p-6">
           <button
             onClick={onClose}
             disabled={loading}

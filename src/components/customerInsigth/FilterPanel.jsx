@@ -611,7 +611,7 @@ const FilterPanel = ({
   
 
   return (
-    <div className="bg-white rounded-tl-[20px] rounded-bl-[20px] shadow-sm h-screen  overflow-hidden flex flex-col min-h-0">
+    <div className="flex min-h-0 h-full flex-col overflow-hidden bg-white">
       {/* Filter Header with Applied Count & Clear */}
 
       <div className="flex items-center justify-between p-4 border-b">

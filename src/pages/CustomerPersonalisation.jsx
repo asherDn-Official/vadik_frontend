@@ -185,105 +185,81 @@ const CustomerPersonalisation = () => {
   };
 
   return (
-    <div className="p-2">
-      <div className="grid grid-cols-12 bg-white rounded-[20px]">
-        {/* Filters Section */}
-        <div className="col-span-12 md:col-span-4 lg:col-span-3">
-          <FilterPanel
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            timeFilterMode="dateRange"
-            appliedFiltersCount={appliedFiltersCount}
-            clearAllFilters={clearAllFilters}
-            onFilteredDataChange={setFilteredData}
-          />
-        </div>
-
-        {/* Customer List Section */}
-        <div className="col-span-12 md:col-span-8 lg:col-span-9 p-5">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl text-[#313166] font-semibold">
-                Customer List ({pagination.total})
-              </h1>
-            </div>
-            <div className="flex items-center gap-4 relative" ref={dropdownRef}>
-              <VideoPopupWithShare
-                video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ"
-                buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
-              />
-
-              {/* Per page selector */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Per page:</label>
-                <select
-                  className="px-2 py-1 border border-gray-300 rounded-md text-sm"
-                  value={pagination.limit}
-                  onChange={(e) => {
-                    const newLimit = parseInt(e.target.value, 10);
-                    setPagination((prev) => ({
-                      ...prev,
-                      limit: newLimit,
-                      page: 1,
-                    }));
-                    setCurrentPage(1);
-                  }}
-                >
-                  {[10, 20, 30, pagination.total].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {/* 
-              <button
-                className="px-4 bg-[#3131661A] py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                onClick={() => setShowExport(!showExport)}
-              >
-                Action
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="1" />
-                  <circle cx="12" cy="5" r="1" />
-                  <circle cx="12" cy="19" r="1" />
-                </svg>
-              </button> */}
-
-              {showExport && (
-                <div className="absolute right-0 mt-12 w-48 bg-white rounded-md shadow-lg  z-40 border border-gray-200">
-                  <div
-                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                    onClick={handleExport}
-                  >
-                    {selectedCustomers.length > 0
-                      ? "Export Selected"
-                      : "Export All"}
-                  </div>
-                </div>
-              )}
-            </div>
+    <div className="app-page">
+      <div className="app-page-shell">
+        <div className="app-panel grid grid-cols-1 overflow-hidden xl:grid-cols-[320px_minmax(0,1fr)]">
+          <div className="min-w-0 border-b border-gray-100 xl:border-b-0 xl:border-r">
+            <FilterPanel
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              timeFilterMode="dateRange"
+              appliedFiltersCount={appliedFiltersCount}
+              clearAllFilters={clearAllFilters}
+              onFilteredDataChange={setFilteredData}
+            />
           </div>
 
-          <CustomerList
-            customers={filteredData}
-            loading={loading}
-            selectedCustomers={selectedCustomers}
-            toggleCustomerSelection={toggleCustomerSelection}
-            toggleAllCustomers={toggleAllCustomers}
-            pagination={pagination}
-            currentPage={currentPage}
-            onPageChange={setCurrentPage}
-          />
+          <div className="min-w-0 p-4 sm:p-5 lg:p-6">
+            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <h1 className="text-xl font-semibold text-[#313166]">
+                Customer List ({pagination.total})
+              </h1>
+
+              <div className="relative flex flex-wrap items-center gap-3" ref={dropdownRef}>
+                <VideoPopupWithShare
+                  video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ"
+                  buttonCss="flex items-center text-sm gap-2 px-4 py-2 text-gray-700 bg-white rounded hover:text-gray-500"
+                />
+
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Per page:</label>
+                  <select
+                    className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                    value={pagination.limit}
+                    onChange={(e) => {
+                      const newLimit = parseInt(e.target.value, 10);
+                      setPagination((prev) => ({
+                        ...prev,
+                        limit: newLimit,
+                        page: 1,
+                      }));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    {[10, 20, 30, pagination.total].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {showExport && (
+                  <div className="absolute right-0 top-full z-40 mt-3 w-48 rounded-md border border-gray-200 bg-white shadow-lg">
+                    <div
+                      className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={handleExport}
+                    >
+                      {selectedCustomers.length > 0
+                        ? "Export Selected"
+                        : "Export All"}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <CustomerList
+              customers={filteredData}
+              loading={loading}
+              selectedCustomers={selectedCustomers}
+              toggleCustomerSelection={toggleCustomerSelection}
+              toggleAllCustomers={toggleAllCustomers}
+              pagination={pagination}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         </div>
       </div>
     </div>

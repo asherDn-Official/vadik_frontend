@@ -272,9 +272,10 @@ const Notification = () => {
   }
 
   return (
-    <div className="flex flex-col md:flex-row bg-gray-50 min-h-screen">
+    <div className="app-page">
+      <div className="app-page-shell lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
       {/* Main Content */}
-      <div className="flex-1 p-6">
+      <div className="min-w-0 rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm sm:p-5 lg:p-6">
         {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-center">
@@ -514,8 +515,8 @@ const Notification = () => {
       </div>
 
       {/* Calendar Sidebar */}
-      <div className="w-full md:w-80 lg:w-96 bg-white border-l p-6">
-        <div className="sticky top-6">
+      <div className="min-w-0 rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm sm:p-5 lg:sticky lg:top-5 lg:p-6">
+        <div>
           <h2 className="text-xl font-bold text-gray-900 mb-4">Calendar</h2>
           
           <Calendar 
@@ -566,6 +567,7 @@ const Notification = () => {
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -169,7 +169,7 @@ function Layout() {
 
   return (
     <SecurityPopupProvider>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen overflow-x-clip bg-[#F4F5F9]">
         <WhatsAppAlertPopup />
         {currentTour && isDemo && !isTourComplete && (
           <TourModal
@@ -193,17 +193,18 @@ function Layout() {
           )}
 
         <Sidebar onOpenTour={setActiveTour} />
-        <main className="flex flex-1 flex-col overflow-hidden bg-[#F4F5F9] pb-20 md:pb-0">
-          <div className="bg-white px-3 py-3 shadow-sm sm:px-4">
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#F4F5F9] pb-[88px] md:pb-0">
+          <div className="bg-white px-3 py-3 shadow-sm sm:px-4 lg:px-5 xl:px-6">
             <header
               className="
-                grid grid-cols-1 gap-3
-                px-1 py-1
-                sm:px-4
-                md:grid-cols-[minmax(180px,1fr)_minmax(280px,560px)_auto]
+                mx-auto grid max-w-[1680px] grid-cols-1 gap-3
+                px-0 py-1
+                md:grid-cols-[minmax(180px,1fr)_minmax(240px,520px)_auto]
                 md:items-center
-                md:gap-5
+                md:gap-4
+                lg:grid-cols-[minmax(220px,1fr)_minmax(280px,560px)_auto]
                 xl:grid-cols-[minmax(260px,1fr)_minmax(420px,700px)_minmax(220px,1fr)]
+                xl:gap-5
               "
             >
               {/* LEFT */}
@@ -407,7 +408,7 @@ function Layout() {
               </div>
             </header>
           </div>
-          <div className="mx-auto flex min-h-0 w-full max-w-[1700px] flex-1 flex-col">
+          <div className="flex min-h-0 w-full flex-1 flex-col">
             <Outlet />
           </div>
         </main>

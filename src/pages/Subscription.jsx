@@ -2,9 +2,11 @@ import SubscriptionPage from "../components/settings/subscription/SubscriptionPa
 
 const Subscription = () => {
   return (
-    <div className="h-full p-2 md:p-4 bg-[#F4F5F9]">
-      <div className="h-full p-4 md:p-8 bg-white rounded-[20px] shadow-sm overflow-auto">
-        <SubscriptionPage />
+    <div className="app-page">
+      <div className="app-page-shell">
+        <div className="app-panel min-w-0 overflow-hidden p-4 sm:p-5 lg:p-6">
+          <SubscriptionPage />
+        </div>
       </div>
     </div>
   );

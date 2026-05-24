@@ -9,8 +9,9 @@ export default function UsageTable({ data }) {
   const isDataLoading = !data;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200">
-      <table className="w-full">
+    <div className="overflow-hidden rounded-xl border border-gray-200">
+      <div className="app-table-scroll">
+      <table className="app-table min-w-[560px]">
         <thead>
           <tr className="bg-gradient-to-r from-indigo-900 to-indigo-800">
             <th className="text-left py-3 px-4 text-white font-medium">Features</th>
@@ -66,6 +67,7 @@ export default function UsageTable({ data }) {
           </tr> */}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

@@ -146,8 +146,9 @@ const CustomerList = () => {
   ];
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-transparent">
-      <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+    <div className="app-page">
+      <div className="app-page-shell">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="space-y-4">
           {/* Top Header */}
           <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
@@ -273,7 +274,7 @@ const CustomerList = () => {
                 </div>
 
                 {/* Source Filter */}
-                <div className="min-w-[210px]">
+                <div className="w-full min-w-0 xl:w-[240px]">
                   <Select
                     options={sourceOptions}
                     defaultValue={sourceOptions[0]}
@@ -625,6 +626,7 @@ const CustomerList = () => {
             </div>
           </div>
         )}
+      </div>
       </div>
       <BulkImportModal
         isOpen={showBulkImport}

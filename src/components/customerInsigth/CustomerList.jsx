@@ -214,10 +214,10 @@ const CustomerList = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="overflow-x-auto">
+    <div className="rounded-lg bg-white shadow-sm">
+      <div className="app-table-scroll">
         <div className="overflow-y-auto">
-          <table className="w-full">
+          <table className="app-table min-w-[960px]">
             <thead className="bg-[#ECEDF3] sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-3 text-left">
@@ -280,13 +280,13 @@ const CustomerList = ({
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+        <div className="flex flex-col gap-3 border-t border-gray-200 bg-gray-50 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="text-sm text-gray-700">
             Showing {(currentPage - 1) * pagination.limit + 1} to{" "}
             {Math.min(currentPage * pagination.limit, pagination.total)} of{" "}
             {pagination.total} customers
           </div>
-          <div className="flex items-center">
+          <div className="flex flex-wrap items-center gap-y-2">
             <button
               onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
               disabled={currentPage === 1}

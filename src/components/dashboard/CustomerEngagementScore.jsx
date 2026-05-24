@@ -58,9 +58,9 @@ function CustomerEngagementScore() {
       : "No engagement data available";
 
   return (
-    <div className="dashboard-card flex h-full min-h-[210px] flex-col justify-between sm:min-h-[220px] lg:min-h-[210px] xl:min-h-[220px]">
+    <div className="dashboard-card flex h-full min-h-[260px] flex-col justify-between sm:min-h-[280px] xl:min-h-[300px]">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start sm:gap-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:gap-4">
         <div className="min-w-0">
           <h2 className="dashboard-card-title">
             Customer Engagement
@@ -68,22 +68,22 @@ function CustomerEngagementScore() {
         </div>
 
         {/* Percentage */}
-        <div className="shrink-0 sm:text-right">
-          <div className="text-4xl font-bold leading-none text-[#1F1C5C]">
+        <div className="min-w-[92px] shrink-0 rounded-2xl bg-[#F7F8FE] px-3 py-2 text-right sm:min-w-[104px] sm:px-4">
+          <div className="text-[1.8rem] font-bold leading-none tracking-[-0.04em] text-[#1F1C5C] sm:text-[2rem] xl:text-[2.15rem]">
             {loading ? "--" : hasData ? `${safeScore}%` : "--"}
           </div>
 
-          <div className="mt-1 text-xs font-medium text-[#7E85A8]">
-            Engagement Score
+          <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7E85A8] sm:text-[11px]">
+            Score
           </div>
         </div>
       </div>
 
       {/* Progress Section */}
-      <div className="mt-6 lg:mt-5 xl:mt-6">
+      <div className="mt-5">
         <div
           className="
-          relative h-4 overflow-hidden sm:h-5
+          relative h-3.5 overflow-hidden sm:h-4
           rounded-full bg-[#EEF1FF]
         "
           data-tooltip-id="engagementTooltip"
@@ -109,7 +109,7 @@ function CustomerEngagementScore() {
         </div>
 
         {/* Scale Labels */}
-        <div className="mt-3 flex justify-between text-xs font-medium text-[#7E85A8]">
+        <div className="mt-2.5 flex justify-between text-[11px] font-semibold text-[#98A0C1]">
           <span>0%</span>
           <span>50%</span>
           <span>100%</span>
@@ -117,25 +117,25 @@ function CustomerEngagementScore() {
       </div>
 
       {/* Footer Stats */}
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:mt-4 lg:gap-3">
+      <div className="mt-auto grid grid-cols-2 gap-3 pt-5 sm:gap-4">
         {/* Responded */}
-        <div className="dashboard-stat-panel">
-          <div className="dashboard-stat-label">
+        <div className="dashboard-stat-panel flex min-h-[92px] flex-col justify-between">
+          <div className="text-sm font-medium leading-5 text-[#4C5685]">
             Responded Customers
           </div>
 
-          <div className="dashboard-stat-value">
+          <div className="mt-2 text-[2rem] font-bold leading-none tracking-[-0.04em] text-[#1F1C5C] sm:text-[2.15rem]">
             {loading ? "--" : respondedCustomers ?? "--"}
           </div>
         </div>
 
         {/* Total */}
-        <div className="dashboard-stat-panel">
-          <div className="dashboard-stat-label">
+        <div className="dashboard-stat-panel flex min-h-[92px] flex-col justify-between">
+          <div className="text-sm font-medium leading-5 text-[#4C5685]">
             Total Customers
           </div>
 
-          <div className="dashboard-stat-value">
+          <div className="mt-2 text-[2rem] font-bold leading-none tracking-[-0.04em] text-[#1F1C5C] sm:text-[2.15rem]">
             {loading ? "--" : totalCustomers ?? "--"}
           </div>
         </div>

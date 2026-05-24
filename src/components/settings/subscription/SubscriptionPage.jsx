@@ -622,18 +622,18 @@ export default function SubscriptionPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 relative">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-8">
+    <div className="relative">
+      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
+        <h1 className="text-2xl font-semibold text-gray-800">
           My Subscription
         </h1>
 
         {/* Current Plan Details */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5 lg:p-6">
           {currentPlans ? (
             <>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
+              <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-wrap items-center gap-3">
                   <span className="text-gray-700 font-medium capitalize">
                     {currentPlans.subscription?.plan} Plan :
                   </span>
@@ -727,9 +727,9 @@ export default function SubscriptionPage() {
         )} */}
 
         {/* Tabs */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between border-b border-gray-200">
-            <div className="flex gap-6">
+        <div className="mb-1">
+          <div className="border-b border-gray-200">
+            <div className="app-tabs-row gap-6">
               <button
                 onClick={() => setActiveTab("subscription")}
                 className={`pb-3 px-1 font-medium transition-colors relative ${
@@ -770,7 +770,7 @@ export default function SubscriptionPage() {
         </div>
 
         {activeTab === "subscription" ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-6">
             {subscription.map((plan) => {
               const currentPlanId = subscriptionDetails?.plan?._id;
               const currentPlanName = currentPlans?.subscription?.plan;
@@ -831,7 +831,7 @@ export default function SubscriptionPage() {
             })}
           </div>
         ) : activeTab === "addon" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+          <div className="grid max-w-5xl grid-cols-1 gap-4 md:grid-cols-2 xl:gap-6">
             {addons.map((addon) => {
               const features = [
                 addon.extraCustomers > 0 &&
@@ -889,10 +889,10 @@ export default function SubscriptionPage() {
               selectedPlan._id !== subscriptionDetails?.plan?._id)) ||
             (selectedAddons.length > 0 &&
               (currentPlans?.subscription || selectedPlan))) && (
-            <div className="fixed bottom-6 left-2/3 transform -translate-x-1/2">
+            <div className="fixed bottom-4 left-1/2 z-30 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 sm:bottom-6 sm:w-auto">
               <button
                 onClick={() => setShowConfirmation(true)}
-                className="bg-pink-700 text-white px-8 py-3 rounded-lg font-medium shadow-lg hover:bg-pink-800 transition-colors animate-zoom"
+                className="w-full rounded-xl bg-pink-700 px-6 py-3 text-white shadow-lg transition-colors hover:bg-pink-800 sm:px-8 animate-zoom"
               >
                 Proceed to Payment
               </button>

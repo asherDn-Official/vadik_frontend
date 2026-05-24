@@ -24,10 +24,11 @@ const CustomerOpportunities = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F7FB]">
+    <div className="app-page">
+      <div className="app-page-shell">
       {/* Header Section */}
-      <div className="px-4 md:px-6 xl:px-8 py-5">
-        <div className="relative overflow-visible bg-white rounded-3xl border border-gray-100 shadow-sm p-5 md:p-6 max-w-7xl mx-auto">
+      <div>
+        <div className="relative overflow-visible rounded-3xl border border-gray-100 bg-white p-5 shadow-sm md:p-6">
           {/* Top Header */}
           <div className="text-center max-w-4xl mx-auto mb-6">
             <h1 className="text-3xl md:text-4xl font-bold text-[#313166]">
@@ -57,7 +58,7 @@ const CustomerOpportunities = () => {
           </div>
 
           {/* Top Navigation Tabs */}
-          <div className="relative z-20 max-w-6xl mx-auto overflow-visible">
+          <div className="relative z-20 mx-auto max-w-6xl overflow-visible">
             <div className="flex justify-center overflow-visible">
               <div className="flex max-w-full flex-wrap items-center justify-center gap-1 overflow-visible rounded-xl bg-gray-100 p-1 shadow-inner">
                 <TopTab
@@ -134,7 +135,7 @@ const CustomerOpportunities = () => {
       </div>
 
       {/* Content Section */}
-      <div className="px-4 md:px-6 xl:px-8 pb-6">
+      <div className="pb-2">
         {activeTab === "engagement" && (
           <div className="max-w-7xl mx-auto">
             <EngagementActivities />
@@ -187,6 +188,7 @@ const CustomerOpportunities = () => {
             <PerformanceTracking />
           </div>
         )}
+      </div>
       </div>
     </div>
   );

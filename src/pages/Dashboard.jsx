@@ -8,34 +8,33 @@ import CustomerSatisfactionScore from "../components/dashboard/CustomerSatisfact
 
 function Dashboard() {
   return (
-    <div className="h-full min-h-0 bg-[#F4F5F9]">
-      <div className="mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-col px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-4 xl:px-6">
-        <div className="grid grid-cols-1 items-stretch gap-3 sm:gap-4 lg:grid-cols-2 xl:grid-cols-4 xl:gap-4 2xl:gap-5">
-          <div className="min-w-0 lg:col-span-2 xl:col-span-2">
+    <div className="app-page">
+      <div className="app-page-shell gap-4 lg:gap-5">
+        <div className="grid grid-cols-1 items-stretch gap-4 lg:gap-5 xl:grid-cols-12">
+          <div className="min-w-0 xl:col-span-7">
             <CustomerProfileCollection />
           </div>
 
-          <div className="min-w-0 h-full">
+          <div className="min-w-0 grid gap-4 sm:grid-cols-2 lg:gap-5 xl:col-span-5">
             <CustomerProfileOverview />
-          </div>
-
-          <div className="min-w-0 h-full">
             <CustomerRetentionRate />
           </div>
+        </div>
 
-          <div className="min-w-0 h-full">
+        <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:gap-5 xl:grid-cols-6 2xl:grid-cols-12">
+          <div className="min-w-0 xl:col-span-2 2xl:col-span-3">
             <ChurnRate />
           </div>
 
-          <div className="min-w-0 h-full">
+          <div className="min-w-0 xl:col-span-2 2xl:col-span-3">
             <CustomerEngagementScore />
           </div>
 
-          <div className="min-w-0 h-full">
+          <div className="min-w-0 xl:col-span-2 2xl:col-span-3">
             <OptInOptOut />
           </div>
 
-          <div className="min-w-0 h-full">
+          <div className="min-w-0 xl:col-span-6 2xl:col-span-3">
             <CustomerSatisfactionScore />
           </div>
         </div>
