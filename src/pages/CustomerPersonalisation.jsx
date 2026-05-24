@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
-import FilterPanel from "../../src/components/customerInsigth/FilterPanel";
-import CustomerList from "../../src/components/customerInsigth/CustomerList";
-import * as XLSX from "xlsx";
+import React, { useEffect, useState } from "react";
+import FilterPanel from "../components/customerInsigth/FilterPanel";
+import CustomerList from "../components/customerInsigth/CustomerList";
 import api from "../api/apiconfig";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 
@@ -9,10 +8,8 @@ const CustomerPersonalisation = () => {
   const [filters, setFilters] = useState({});
   const [selectedCustomers, setSelectedCustomers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showExport, setShowExport] = useState(false);
   const [appliedFiltersCount, setAppliedFiltersCount] = useState(0);
   const [filteredData, setFilteredData] = useState([]);
-  const dropdownRef = useRef(null);
 
   const [pagination, setPagination] = useState({
     page: 1,
@@ -105,19 +102,6 @@ const CustomerPersonalisation = () => {
     fetchCustomers();
   }, [currentPage, filters, pagination.limit]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowExport(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
   const handleFilterChange = (key, value) => {
     setFilters((prev) => {
       const newFilters = { ...prev, [key]: value };
@@ -135,29 +119,6 @@ const CustomerPersonalisation = () => {
     setFilters({});
     setAppliedFiltersCount(0);
     setCurrentPage(1);
-  };
-
-  const handleExport = () => {
-    // If customers are selected, export only those, otherwise export all filtered customers
-    const dataToExport =
-      selectedCustomers.length > 0
-        ? filteredData.filter((customer) =>
-            selectedCustomers.includes(customer._id),
-          )
-        : filteredData;
-
-    // Create a worksheet
-    const ws = XLSX.utils.json_to_sheet(dataToExport);
-
-    // Create a workbook
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Customers");
-
-    // Generate Excel file and trigger download
-    XLSX.writeFile(wb, "customers_export.xlsx");
-
-    // Hide the export option after download
-    setShowExport(false);
   };
 
   // Toggle customer selection
@@ -187,8 +148,8 @@ const CustomerPersonalisation = () => {
   return (
     <div className="app-page">
       <div className="app-page-shell">
-        <div className="app-panel grid grid-cols-1 overflow-hidden xl:grid-cols-[320px_minmax(0,1fr)]">
-          <div className="min-w-0 border-b border-gray-100 xl:border-b-0 xl:border-r">
+        <div className="app-panel grid grid-cols-1 overflow-visible p-0 xl:h-[calc(100dvh-132px)] xl:grid-cols-[320px_minmax(0,1fr)] xl:overflow-hidden 2xl:grid-cols-[340px_minmax(0,1fr)]">
+          <div className="min-w-0 border-b border-gray-100 bg-white xl:min-h-0 xl:border-b-0 xl:border-r xl:overflow-hidden">
             <FilterPanel
               filters={filters}
               onFilterChange={handleFilterChange}
@@ -199,22 +160,27 @@ const CustomerPersonalisation = () => {
             />
           </div>
 
-          <div className="min-w-0 p-4 sm:p-5 lg:p-6">
-            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <h1 className="text-xl font-semibold text-[#313166]">
-                Customer List ({pagination.total})
-              </h1>
+          <div className="min-w-0 bg-[#FCFCFF] p-4 sm:p-5 lg:p-6 xl:min-h-0 xl:overflow-y-auto">
+            <div className="mb-5 flex flex-col gap-4 xl:mb-6 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0">
+                <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-[#313166]">
+                  Customer List
+                </h2>
+                <p className="mt-1 text-sm text-[#7E85A8]">
+                  {pagination.total} profiles match the current personalisation filters.
+                </p>
+              </div>
 
-              <div className="relative flex flex-wrap items-center gap-3" ref={dropdownRef}>
+              <div className="relative flex flex-wrap items-center gap-3">
                 <VideoPopupWithShare
                   video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ"
-                  buttonCss="flex items-center text-sm gap-2 px-4 py-2 text-gray-700 bg-white rounded hover:text-gray-500"
+                  buttonCss="inline-flex h-11 items-center gap-2 rounded-xl border border-[#E4E8F6] bg-white px-4 text-sm font-medium text-[#313166] shadow-sm transition hover:bg-[#F8F9FF]"
                 />
 
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Per page:</label>
+                <div className="flex h-11 items-center gap-2 rounded-xl border border-[#E4E8F6] bg-white px-3 shadow-sm">
+                  <label className="text-sm font-medium text-[#5C628B]">Per page</label>
                   <select
-                    className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                    className="rounded-lg border border-[#E4E8F6] bg-[#F8F9FF] px-3 py-2 text-sm font-medium text-[#313166] outline-none transition focus:border-[#313166]/20"
                     value={pagination.limit}
                     onChange={(e) => {
                       const newLimit = parseInt(e.target.value, 10);
@@ -228,24 +194,12 @@ const CustomerPersonalisation = () => {
                   >
                     {[10, 20, 30, pagination.total].map((size) => (
                       <option key={size} value={size}>
-                        {size}
+                        {size === pagination.total ? "All" : size}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                {showExport && (
-                  <div className="absolute right-0 top-full z-40 mt-3 w-48 rounded-md border border-gray-200 bg-white shadow-lg">
-                    <div
-                      className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={handleExport}
-                    >
-                      {selectedCustomers.length > 0
-                        ? "Export Selected"
-                        : "Export All"}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 

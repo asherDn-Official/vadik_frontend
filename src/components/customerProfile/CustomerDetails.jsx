@@ -777,10 +777,10 @@ const CustomerDetails = ({
   };
 
   return (
-    <div className="flex h-full min-w-0 flex-1 flex-col bg-transparent">
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-4">
-        <form onSubmit={onSubmit}>
-          <div className="space-y-3">
+    <div className="flex h-full min-w-0 flex-1 flex-col bg-transparent xl:overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-visible px-3 py-3 sm:px-4 xl:h-0 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:px-4 xl:py-4 xl:pr-4 2xl:px-5">
+        <form onSubmit={onSubmit} className="min-h-full">
+          <div className="space-y-3 xl:space-y-4">
             {/* Profile Header */}
             <div
               className="
@@ -795,6 +795,8 @@ const CustomerDetails = ({
 
     px-4 py-4
     sm:px-5
+    lg:px-6 lg:py-5
+    xl:px-7 xl:py-6
 
     shadow-[0_4px_20px_rgba(49,49,102,0.06)]
   "
@@ -805,12 +807,13 @@ const CustomerDetails = ({
     flex flex-col gap-5
 
     lg:flex-row
-    lg:items-start
+    lg:items-center
+    xl:gap-6
   "
                 >
-                  <div className="relative mx-auto shrink-0 lg:mx-0">
+                  <div className="relative mx-auto shrink-0 lg:mx-0 lg:self-center">
                     <div
-                      className={`absolute right-2 top-2 flex items-center gap-2 rounded-full border px-3 py-1 shadow-sm ${statusBadgeClasses}`}
+                      className={`absolute right-3 top-3 z-10 flex items-center gap-2 rounded-full border border-white/80 px-3 py-1 shadow-sm backdrop-blur-sm ${statusBadgeClasses}`}
                     >
                       <span
                         className={`h-2.5 w-2.5 rounded-full ${statusIndicatorColor}`}
@@ -819,37 +822,43 @@ const CustomerDetails = ({
                         {statusLabel}
                       </span>
                     </div>
-                    <img
-                      src={
-                        transformedCustomer?.profileImage
-                          ? transformedCustomer.profileImage
-                          : transformedCustomer?.gender === "male"
-                          ? defaultImage.menDefaultImgUrl
-                          : transformedCustomer?.gender === "female"
-                            ? defaultImage.femaleDefaultImgUrl
-                            : transformedCustomer?.gender === "others"
-                              ? defaultImage.menDefaultImgUrl
-                              : defaultImage.menDefaultImgUrl
-                      }
-                      alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
+                    <div
                       className="
-  h-[180px]
-  w-[180px]
-  sm:h-[200px]
-  sm:w-[200px]
-
-  rounded-2xl
-
+  rounded-[28px]
   border border-[#EEF1FF]
-
-  object-cover
-
-  shadow-[0_10px_30px_rgba(49,49,102,0.08)]
+  bg-[linear-gradient(180deg,#FCFCFF_0%,#F4F6FD_100%)]
+  p-3
+  shadow-[0_12px_32px_rgba(49,49,102,0.07)]
 "
-                    />
+                    >
+                      <img
+                        src={
+                          transformedCustomer?.profileImage
+                            ? transformedCustomer.profileImage
+                            : transformedCustomer?.gender === "male"
+                              ? defaultImage.menDefaultImgUrl
+                              : transformedCustomer?.gender === "female"
+                                ? defaultImage.femaleDefaultImgUrl
+                                : transformedCustomer?.gender === "others"
+                                  ? defaultImage.menDefaultImgUrl
+                                  : defaultImage.menDefaultImgUrl
+                        }
+                        alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
+                        className="
+  h-[150px]
+  w-[150px]
+  rounded-[22px]
+  object-cover
+  sm:h-[168px]
+  sm:w-[168px]
+  xl:h-[176px]
+  xl:w-[176px]
+"
+                      />
+                    </div>
                   </div>
                   {/* Basic Details Sections */}
-                  <div className="min-w-0 flex-1 lg:pt-1">
+                  <div className="min-w-0 flex-1 lg:pt-0">
                     <div
                       className="
     flex flex-col gap-4
@@ -859,8 +868,8 @@ const CustomerDetails = ({
     sm:justify-between
   "
                     >
-                      <div>
-                        <h1 className="text-[24px] font-bold text-[#1F1C5C] sm:text-[28px]">
+                      <div className="min-w-0">
+                        <h1 className="truncate text-[24px] font-bold text-[#1F1C5C] sm:text-[28px] xl:text-[30px]">
                           {customerName || "Customer Profile"}
                         </h1>
                         <p className="mt-1 text-sm text-[#8B90B2]">
@@ -909,6 +918,7 @@ const CustomerDetails = ({
 
     md:grid-cols-2
     2xl:grid-cols-3
+    xl:gap-4
   "
                     >
                       <div
@@ -1147,31 +1157,6 @@ const CustomerDetails = ({
                       {tab}
                     </button>
                   ))}
-                  <div className="ml-auto hidden lg:flex items-center">
-                    {activeTab !== "Customer Journey" && (
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab("Customer Journey")}
-                        className="mr-3 flex h-10 items-center rounded-xl bg-[#313166] px-4 text-sm font-medium text-white shadow-[0_8px_18px_rgba(49,49,102,0.18)] transition-all duration-200 hover:bg-[#27275a]"
-                      >
-                        Customer Journey
-                      </button>
-                    )}
-                    {!isEditing && (
-                      <button
-                        type="button"
-                        onClick={onEdit}
-                        className="flex h-10 items-center rounded-xl border border-[#31316680] px-4 text-sm font-medium text-[#313166] transition-all duration-200 hover:bg-[#F8F9FF]"
-                      >
-                        <img
-                          src={EditIcon}
-                          className="w-4 h-4 mr-2"
-                          alt="Edit"
-                        />
-                        Edit
-                      </button>
-                    )}
-                  </div>
                 </nav>
               </div>
 

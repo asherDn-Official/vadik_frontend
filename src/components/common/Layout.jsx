@@ -199,52 +199,35 @@ function Layout() {
               className="
                 mx-auto grid max-w-[1680px] grid-cols-1 gap-3
                 px-0 py-1
-                md:grid-cols-[minmax(180px,1fr)_minmax(240px,520px)_auto]
+                md:grid-cols-[minmax(120px,1fr)_minmax(300px,640px)_minmax(180px,1fr)]
                 md:items-center
                 md:gap-4
-                lg:grid-cols-[minmax(220px,1fr)_minmax(280px,560px)_auto]
-                xl:grid-cols-[minmax(260px,1fr)_minmax(420px,700px)_minmax(220px,1fr)]
+                lg:grid-cols-[minmax(160px,1fr)_minmax(360px,680px)_minmax(220px,1fr)]
                 xl:gap-5
+                2xl:grid-cols-[minmax(220px,1fr)_minmax(420px,760px)_minmax(260px,1fr)]
+                2xl:gap-6
               "
             >
-              {/* LEFT */}
-              <div className="min-w-0 md:justify-self-start">
-                <h1
-                  className="
-                    truncate
-                    font-[Poppins]
-                    text-[24px]
-                    font-medium
-                    leading-[114%]
-                    text-[#313166]
-                  "
-                >
-                  Welcome, {profileName}
-                </h1>
-
-                <p className="mt-1 hidden text-sm text-gray-500 lg:block">
-                  Manage your customers and business insights
-                </p>
-              </div>
+              <div className="hidden md:block" aria-hidden="true" />
 
               {/* CENTER SEARCH */}
-              <div className="w-full md:justify-self-center">
+              <div className="order-2 w-full min-w-0 md:order-1 md:col-start-2 md:justify-self-center">
                 <div
                   className="
-                    flex h-11 w-full items-center
-                    rounded-full border border-gray-100
-                    bg-[#F7F8FC]
+                    mx-auto flex h-12 w-full max-w-[620px] items-center
+                    rounded-full border border-[#E7EBF5]
+                    bg-white
                     px-4 sm:px-5
-                    md:h-12
-                    shadow-sm
-                    transition-all
-
-                    focus-within:border-[#313166]/20
-                    focus-within:bg-white
-                    focus-within:shadow-md
+                    md:h-[54px]
+                    shadow-[0_2px_10px_rgba(15,23,42,0.05)]
+                    transition-all duration-200
+                    hover:shadow-[0_4px_14px_rgba(15,23,42,0.08)]
+                    focus-within:border-[#DADFED]
+                    focus-within:shadow-[0_6px_18px_rgba(15,23,42,0.10)]
+                    md:max-w-none
                   "
                 >
-                  <FiSearch className="mr-3 h-4 w-4 shrink-0 text-gray-500" />
+                  <FiSearch className="mr-3 h-4 w-4 shrink-0 text-[#7E85A8]" />
 
                   <input
                     type="text"
@@ -254,16 +237,17 @@ function Layout() {
                     onKeyDown={handleSearchSubmit}
                     className="
                       h-full w-full bg-transparent
-                      text-sm text-[#313166]
+                      text-[15px] text-[#313166]
                       outline-none
-                      placeholder:text-gray-400
+                      placeholder:font-normal
+                      placeholder:text-[#9AA3C7]
                     "
                   />
                 </div>
               </div>
 
               {/* RIGHT */}
-              <div className="flex items-center justify-end gap-3 md:justify-self-end">
+              <div className="order-1 flex min-w-0 items-center justify-end gap-2 md:order-1 md:col-start-3 md:justify-self-end lg:gap-3">
                 {/* Notification */}
                 <button
                   type="button"
@@ -300,7 +284,7 @@ function Layout() {
         absolute
         -top-1
         -right-1
-        z-50
+        layer-dropdown
         flex
         min-h-[20px]
         min-w-[20px]
@@ -324,11 +308,11 @@ function Layout() {
                 <div className="relative" ref={dropdownRef}>
                   <div
                     className="
-                      flex cursor-pointer items-center gap-3
-                      rounded-full border border-gray-100 bg-[#F8F9FD]
+                      flex min-w-0 cursor-pointer items-center gap-2
+                      rounded-full border border-[#E7EBF5] bg-white
                       py-1.5 pl-1.5 pr-2
                       transition-all
-                      hover:bg-[#EEF1FA]
+                      hover:bg-[#F8F9FD]
                       hover:shadow-sm
                     "
                     onClick={() => setShowDropdown((prev) => !prev)}
@@ -345,7 +329,7 @@ function Layout() {
                       </div>
                     )}
 
-                    <div className="hidden max-w-[140px] pr-1 sm:block">
+                    <div className="hidden min-w-0 pr-1 xl:block xl:max-w-[148px]">
                       <p className="truncate text-sm font-medium text-[#313166]">
                         {profileName}
                       </p>
@@ -355,7 +339,7 @@ function Layout() {
                   </div>
 
                   {showDropdown && (
-                    <div className="absolute right-0 z-50 mt-3 w-72 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl">
+                    <div className="layer-dropdown absolute right-0 mt-3 w-72 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl">
                       <div className="flex items-center gap-3 border-b border-gray-100 bg-[#F8F9FD] p-4">
                         {profileData?.profilePicture ? (
                           <img

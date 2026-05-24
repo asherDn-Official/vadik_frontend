@@ -281,6 +281,10 @@ const CustomerList = () => {
                     onChange={(selected) => setSource(selected?.value || "")}
                     isSearchable={false}
                     className="text-sm"
+                    menuPortalTarget={
+                      typeof document !== "undefined" ? document.body : null
+                    }
+                    menuPosition="fixed"
                     styles={{
                       control: (base, state) => ({
                         ...base,
@@ -306,7 +310,12 @@ const CustomerList = () => {
                         overflow: "hidden",
                         border: "1px solid #EEF1FF",
                         boxShadow: "0 12px 32px rgba(49,49,102,0.12)",
-                        zIndex: 9999,
+                        zIndex: "var(--z-dropdown)",
+                      }),
+
+                      menuPortal: (base) => ({
+                        ...base,
+                        zIndex: "var(--z-dropdown)",
                       }),
 
                       menuList: (base) => ({

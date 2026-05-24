@@ -99,36 +99,47 @@ const CustomerProfile = () => {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-transparent">
-      <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+    <div className="flex h-full min-h-0 flex-col bg-transparent xl:overflow-hidden">
+      <div
+        className="
+        flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4
+        xl:mx-auto xl:h-[calc(100dvh-114px)] xl:max-h-[calc(100dvh-114px)] xl:w-full xl:max-w-[1680px] xl:overflow-hidden xl:px-5 xl:pb-5
+      "
+      >
         <div
           className="
           flex min-h-0 flex-1 flex-col overflow-hidden
-          rounded-2xl
+          rounded-[28px]
           border border-[#EEF1FF]
           bg-white/95
           shadow-[0_4px_20px_rgba(49,49,102,0.06)]
           backdrop-blur-sm
+          xl:h-full xl:min-h-0 xl:max-h-full
         "
         >
           <div
             className="
             flex min-h-0 flex-1 flex-col
-            xl:flex-row
+            xl:grid xl:grid-cols-[304px_minmax(0,1fr)]
+            2xl:grid-cols-[320px_minmax(0,1fr)]
+            xl:h-full xl:min-h-0 xl:max-h-full
           "
           >
             <div
               className="
+              min-h-0
               shrink-0
               border-[#EEF1FF]
-              xl:w-[330px]
+              bg-white
+              xl:h-full xl:min-h-0 xl:max-h-full
+              xl:overflow-hidden
               xl:border-r
             "
             >
               <CustomerSidebar />
             </div>
 
-            <div className="min-h-0 min-w-0 flex-1">
+            <div className="min-h-0 min-w-0 flex-1 bg-[#FCFCFF] xl:h-full xl:min-h-0 xl:max-h-full xl:overflow-hidden">
               <CustomerDetails
                 customer={selectedCustomer}
                 activeTab={activeTab}

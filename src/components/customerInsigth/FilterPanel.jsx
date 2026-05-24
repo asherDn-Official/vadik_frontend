@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import {
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   Search,
   Plus,
   Minus,
@@ -25,6 +27,77 @@ import ReactSlider from "react-slider";
 import api from "../../api/apiconfig";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+
+const renderModernDateHeader = ({
+  date,
+  decreaseMonth,
+  increaseMonth,
+  changeMonth,
+  changeYear,
+  prevMonthButtonDisabled,
+  nextMonthButtonDisabled,
+}) => {
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 21 }, (_, index) => currentYear - 10 + index);
+  const months = Array.from({ length: 12 }, (_, index) => ({
+    value: index,
+    label: new Date(2024, index, 1).toLocaleString("en-US", { month: "short" }),
+  }));
+
+  return (
+    <div className="border-b border-[#EEF1FF] px-3 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={decreaseMonth}
+          disabled={prevMonthButtonDisabled}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E4E8F6] bg-white text-[#5C628B] transition hover:bg-[#F8F9FF] disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Previous month"
+        >
+          <ChevronLeft size={16} />
+        </button>
+
+        <div className="grid flex-1 grid-cols-2 gap-2">
+          <select
+            value={date.getMonth()}
+            onChange={(event) => changeMonth(Number(event.target.value))}
+            className="rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] px-3 py-2 text-sm font-medium text-[#313166] outline-none transition focus:border-[#313166]/20"
+            aria-label="Select month"
+          >
+            {months.map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={date.getFullYear()}
+            onChange={(event) => changeYear(Number(event.target.value))}
+            className="rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] px-3 py-2 text-sm font-medium text-[#313166] outline-none transition focus:border-[#313166]/20"
+            aria-label="Select year"
+          >
+            {years.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          type="button"
+          onClick={increaseMonth}
+          disabled={nextMonthButtonDisabled}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E4E8F6] bg-white text-[#5C628B] transition hover:bg-[#F8F9FF] disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Next month"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const FilterPanel = ({
   filters,
@@ -308,9 +381,9 @@ const FilterPanel = ({
     } else if (filterConfig?.type === "date") {
       return (
         <div className="mt-2 relative ">
-          <DatePicker
-            selected={
-              filters[filterKey]
+            <DatePicker
+              selected={
+                filters[filterKey]
                 ? (typeof filters[filterKey] === "string"
                     ? parseYMDToLocalDate(filters[filterKey])
                     : filters[filterKey] instanceof Date
@@ -321,10 +394,18 @@ const FilterPanel = ({
             onChange={(date) => onFilterChange(filterKey, date ? formatDateToYMD(date) : '')}
             dateFormat="dd/MM/yyyy"
             placeholderText="Select date"
-            className=" w-full p-2 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
-            maxDate={new Date()}
-            isClearable={false}
-          />
+            className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10"
+              wrapperClassName="modern-datepicker-field"
+              popperClassName="modern-datepicker-popper"
+              calendarClassName="modern-datepicker-calendar"
+              dayClassName={() => "modern-datepicker-day"}
+              showPopperArrow={false}
+              portalId="root"
+              popperPlacement="bottom-start"
+              renderCustomHeader={renderModernDateHeader}
+              maxDate={new Date()}
+              isClearable={false}
+            />
 
           {filters[filterKey] && (
             <button
@@ -447,15 +528,15 @@ const FilterPanel = ({
     const toDate = filters.toDate ? parseYMDToLocalDate(filters.toDate) : null;
 
     return (
-      <div className="p-4 border-b mb-2">
-        <div className="flex items-center gap-2 mb-3">
+      <div className="border-b border-[#EEF1FF] px-4 py-4 sm:px-5">
+        <div className="mb-3 flex items-center gap-2">
           <Calendar size={18} className="text-[#313166]" />
-          <h3 className="text-sm font-medium text-[#313166]">Date Range</h3>
+          <h3 className="text-sm font-semibold text-[#313166]">Date Range</h3>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-[0.08em] text-[#8B90B2]">
               From
             </label>
             <DatePicker
@@ -465,14 +546,22 @@ const FilterPanel = ({
               }
               dateFormat="dd/MM/yyyy"
               placeholderText="Select start date"
-              className="w-full p-2 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
+              className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10"
+              wrapperClassName="modern-datepicker-field"
+              popperClassName="modern-datepicker-popper"
+              calendarClassName="modern-datepicker-calendar"
+              dayClassName={() => "modern-datepicker-day"}
+              showPopperArrow={false}
+              portalId="root"
+              popperPlacement="bottom-start"
+              renderCustomHeader={renderModernDateHeader}
               maxDate={toDate || new Date()}
               isClearable={false}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="mb-1 block text-xs font-medium uppercase tracking-[0.08em] text-[#8B90B2]">
               To
             </label>
             <DatePicker
@@ -482,7 +571,15 @@ const FilterPanel = ({
               }
               dateFormat="dd/MM/yyyy"
               placeholderText="Select end date"
-              className="w-full p-2 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
+              className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10"
+              wrapperClassName="modern-datepicker-field"
+              popperClassName="modern-datepicker-popper"
+              calendarClassName="modern-datepicker-calendar"
+              dayClassName={() => "modern-datepicker-day"}
+              showPopperArrow={false}
+              portalId="root"
+              popperPlacement="bottom-start"
+              renderCustomHeader={renderModernDateHeader}
               minDate={fromDate || null}
               maxDate={new Date()}
               isClearable={false}
@@ -492,7 +589,7 @@ const FilterPanel = ({
 
         {(filters.fromDate || filters.toDate) && (
           <button
-            className="mt-3 text-xs text-red-600 hover:underline"
+            className="mt-3 text-xs font-medium text-[#D64045] transition hover:underline"
             onClick={() => {
               onFilterChange("fromDate", "");
               onFilterChange("toDate", "");
@@ -611,13 +708,15 @@ const FilterPanel = ({
   
 
   return (
-    <div className="flex min-h-0 h-full flex-col overflow-hidden bg-white">
+    <div className="flex h-full min-h-0 flex-col overflow-visible bg-white">
       {/* Filter Header with Applied Count & Clear */}
 
-      <div className="flex items-center justify-between p-4 border-b">
-        <h2 className="font-semibold">Filter</h2>
+      <div className="flex items-center justify-between gap-3 border-b border-[#EEF1FF] px-4 py-4 sm:px-5">
+        <div>
+          <h2 className="text-[20px] font-semibold text-[#313166]">Filters</h2>
+        </div>
         <div className="flex gap-1">
-          <div className="flex items-center bg-[#3131661A] font-[500] px-2 py-1 rounded-[5px] text-[#313166] text-[12px]">
+          <div className="flex items-center rounded-xl bg-[#F3F5FF] px-3 py-2 text-[12px] font-semibold text-[#313166]">
             <span className="mr-2">{appliedFiltersCount} applied</span>
             <button
               onClick={() => {
@@ -627,7 +726,7 @@ const FilterPanel = ({
                   onFilteredDataChange([]);
                 }
               }}
-              className="text-[#313166] text-[14px] font-[700] hover:text-gray-800 focus:outline-none"
+              className="text-[#313166] transition hover:text-gray-800 focus:outline-none"
               aria-label="Clear filters"
             >
               <X size={16} />
@@ -641,14 +740,14 @@ const FilterPanel = ({
       ) : (
         <>
           {/* Period Selection */}
-          <div className="p-4 border-b mb-2">
-            <div className="flex gap-2 h-8 w-full justify-between mb-3">
+          <div className="border-b border-[#EEF1FF] px-4 py-4 sm:px-5">
+            <div className="mb-3 grid h-auto w-full grid-cols-1 gap-2 sm:grid-cols-3">
               {["Yearly", "Quarterly", "Monthly"].map((period) => (
                 <button
                   key={period}
-                  className={`px-1.5 py-1 rounded text-[13px] transition-colors ${selectedPeriod === period
+                  className={`rounded-xl px-2 py-2 text-[13px] font-medium transition-colors ${selectedPeriod === period
                     ? "bg-[#313166] text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    : "bg-[#F8F9FF] text-[#5C628B] hover:bg-[#EEF1FF]"
                     }`}
                   onClick={() => {
                     onPeriodChange(period);
@@ -664,7 +763,7 @@ const FilterPanel = ({
 
             <div className="w-full">
               <button
-                className="w-full rounded-lg text-[14px] text-[#313166] flex items-center justify-center gap-2 hover:bg-gray-50 px-3 py-2 border border-[#313166] bg-white transition-colors font-medium"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] px-3 py-2.5 text-[14px] font-medium text-[#313166] transition-colors hover:bg-[#F8F9FF]"
                 onClick={() => setShowPeriodPicker(true)}
                 title={`Select ${selectedPeriod} Period`}
               >
@@ -675,12 +774,12 @@ const FilterPanel = ({
 
           {/* Period Picker Modal */}
           {showPeriodPicker && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-4 rounded-lg">
+            <div className="layer-modal fixed inset-0 flex items-center justify-center bg-black/50 p-4">
+              <div className="w-full max-w-md rounded-2xl bg-white p-4 shadow-[0_24px_60px_rgba(0,0,0,0.18)]">
                 {renderPeriodPicker()}
-                <div className="text-right mt-2">
+                <div className="mt-2 text-right">
                   <button
-                    className="px-2 py-0 text-sm bg-[#313166] text-white rounded"
+                    className="rounded-lg bg-[#313166] px-3 py-1.5 text-sm text-white"
                     onClick={() => setShowPeriodPicker(false)}
                   >
                     Close
@@ -693,11 +792,11 @@ const FilterPanel = ({
       )}
 
       {/* Filter Groups */}
-      <div className="space-y-2 flex-1 min-h-0 overflow-y-auto scroll-m-3">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {false ? (
           <></>
         ) : (
-          <div className="min-h-full max-h-10">
+          <div className="min-h-full">
             {renderFilterItems()}
           </div>
         )}
@@ -708,20 +807,20 @@ const FilterPanel = ({
 
 const FilterItem = ({ name, expanded, onToggle, children, icon, isActive }) => {
   return (
-    <div className={`border-b border-gray-200 last:border-b-0 p-4 pt-2 mt-0 ${isActive ? 'bg-[#f5f5ff]' : ''}`}>
+    <div className={`border-b border-[#EEF1FF] px-4 py-3 last:border-b-0 sm:px-5 ${isActive ? 'bg-[#FAFBFF]' : ''}`}>
       <button
-        className="w-full flex justify-between outline-none items-center py-2 text-[14px] font-[400] text-[#313166]"
+        className="flex w-full items-center justify-between gap-3 py-2 text-[14px] font-medium text-[#313166] outline-none"
         onClick={onToggle}
       >
-        <div className="flex items-center capitalize">
+        <div className="min-w-0 flex items-center capitalize">
           {/* {icon && <span className=\"mr-2\">{icon}</span>} */}
-          <span className={`${isActive ? 'font-semibold text-[#313166]' : ''}`}>{name}</span>
+          <span className={`break-words ${isActive ? 'font-semibold text-[#313166]' : ''}`}>{name}</span>
         </div>
         <span className={`text-[#313166] ${isActive ? 'font-semibold' : ''}`}>
           {expanded ? <Minus size={16} /> : <Plus size={16} />}
         </span>
       </button>
-      {expanded && <div>{children}</div>}
+      {expanded && <div className="pt-1">{children}</div>}
     </div>
   );
 };
