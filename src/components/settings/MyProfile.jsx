@@ -28,7 +28,7 @@ const MyProfile = () => {
       phone: "",
       email: "",
       storeName: "",
-      role: "Retailer",
+      role: "Business Owner",
       address: "",
       retentionPeriod: 30,
       loyalCustomerPeriodDays: 120,
@@ -397,7 +397,7 @@ const MyProfile = () => {
                 <label className="block text-sm text-[#31316680]">Role</label>
                 <input
                   type="text"
-                  value={auth.data.role=="retailer"?"Business Admin":auth.data.role}
+                  value={auth.data.role=="retailer"?"Business Owner":auth.data.role}
                   className="w-full p-2 border border-gray-300 rounded text-[#313166] bg-gray-100"
                   disabled
                 />

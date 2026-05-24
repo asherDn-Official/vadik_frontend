@@ -319,7 +319,7 @@ const Login = () => {
                   : "text-white/70"
               }`}
             >
-              Business Admin
+              Business Owner
             </button>
 
             <button
@@ -433,7 +433,7 @@ const Login = () => {
                   name="email"
                   value={credentials.email}
                   onChange={handleLoginChange}
-                  placeholder="Business admin email"
+                  placeholder="Business owner email"
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 placeholder-white/60 focus:outline-none"
                   required
                 />

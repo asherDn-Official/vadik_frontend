@@ -124,7 +124,7 @@ const KYCPage = () => {
         setOrderHistory([]);
         setClaimedCoupons([]);
         setTotalPages(1);
-        setError("Customer not found for this retailer");
+        setError("Customer not found for this business");
         return;
       }
       setError(null);
@@ -140,7 +140,7 @@ const KYCPage = () => {
       setOrderHistory([]);
       setClaimedCoupons([]);
       setTotalPages(1);
-      setError("Customer not found for this retailer");
+      setError("Customer not found for this business");
     } finally {
       setLoading(false);
     }
@@ -396,7 +396,7 @@ const KYCPage = () => {
         <div className="p-4 mb-6 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
           <SearchX className="w-5 h-5 text-red-700" />
           <div className="text-red-700">
-            Customer not found for this retailer
+            Customer not found for this business
           </div>
         </div>
       )}

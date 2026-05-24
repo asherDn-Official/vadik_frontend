@@ -234,7 +234,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
       }
 
       data.append("email", formData.email);
-      data.append("notes", "Updated retailer information");
+      data.append("notes", "Updated business information");
       data.append("onboarding", true);
       data.append("onboardingCompleted", true);
 
