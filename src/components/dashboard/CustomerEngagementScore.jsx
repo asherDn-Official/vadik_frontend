@@ -40,7 +40,7 @@ function CustomerEngagementScore() {
     : 0;
 
   return (
-    <div className="dashboard-card flex min-h-[230px] flex-col justify-between">
+    <div className="dashboard-card flex h-full min-h-[220px] flex-col justify-between sm:min-h-[230px]">
       {/* Header */}
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start sm:gap-4">
         <div className="min-w-0">

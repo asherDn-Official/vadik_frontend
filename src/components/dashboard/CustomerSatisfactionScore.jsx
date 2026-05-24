@@ -63,7 +63,7 @@ drop-shadow-[0_2px_8px_rgba(245,179,1,0.35)] text-[22px] sm:text-[25px]"
   };
 
   return (
-    <div className="dashboard-card flex min-h-[300px] flex-col justify-between">
+    <div className="dashboard-card flex h-full min-h-[280px] flex-col justify-between sm:min-h-[300px]">
       {/* Header */}
       <div>
         <h2 className="dashboard-card-title">

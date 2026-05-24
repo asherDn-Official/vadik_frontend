@@ -27,11 +27,11 @@ body {
 
   /* Dashboard Components */
   .dashboard-card {
-    @apply rounded-2xl border border-[#E7EAF7] bg-white p-4 shadow-[0_10px_30px_rgba(49,49,102,0.07)] sm:p-5 lg:p-6;
+    @apply rounded-2xl border border-[#E7EAF7] bg-white p-4 shadow-[0_10px_30px_rgba(49,49,102,0.07)] transition-[transform,box-shadow] duration-300 sm:p-5 lg:p-6;
   }
 
   .dashboard-card-title {
-    @apply text-lg font-semibold leading-tight text-[#1F1C5C] sm:text-xl;
+    @apply text-[1.05rem] font-semibold leading-tight text-[#1F1C5C] sm:text-xl;
   }
 
   .dashboard-card-description {
@@ -39,7 +39,7 @@ body {
   }
 
   .dashboard-stat-panel {
-    @apply rounded-xl bg-[#F7F8FE] px-3 py-3 sm:px-4;
+    @apply rounded-xl bg-[#F7F8FE] px-3 py-3 sm:px-4 sm:py-3.5;
   }
 
   .dashboard-stat-label {

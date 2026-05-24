@@ -91,7 +91,7 @@ function CustomerRetentionRate() {
   };
 
   return (
-    <div className="dashboard-card flex min-h-[300px] flex-col justify-between">
+    <div className="dashboard-card flex h-full min-h-[280px] flex-col justify-between sm:min-h-[300px]">
       {/* Header */}
       <div>
         <h2 className="dashboard-card-title text-center">

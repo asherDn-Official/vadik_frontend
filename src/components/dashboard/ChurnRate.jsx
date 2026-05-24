@@ -91,7 +91,7 @@ function ChurnRate() {
   };
 
   return (
-    <div className="dashboard-card min-h-[280px]">
+    <div className="dashboard-card flex h-full min-h-[250px] flex-col sm:min-h-[280px]">
       <h2 className="dashboard-card-title">
         Churn Rate
       </h2>
@@ -99,7 +99,7 @@ function ChurnRate() {
         Customer loss analytics overview
       </p>
 
-      <div className="relative mt-4 flex h-[190px] items-center justify-center sm:h-[220px]">
+      <div className="relative mt-4 flex h-[170px] items-center justify-center sm:h-[200px] lg:h-[220px]">
         {
           <>
             <Doughnut ref={chartRef} data={data} options={options} />

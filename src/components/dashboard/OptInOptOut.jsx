@@ -40,7 +40,7 @@ function OptInOptOut() {
     : 0;
 
   return (
-    <div className="dashboard-card flex min-h-[280px] flex-col justify-between">
+    <div className="dashboard-card flex h-full min-h-[260px] flex-col justify-between sm:min-h-[280px]">
       {/* Header */}
       <div>
         <h2 className="dashboard-card-title">

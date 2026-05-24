@@ -91,7 +91,7 @@ function CustomerProfileCollection() {
   );
 
   return (
-    <div className="dashboard-card">
+    <div className="dashboard-card flex h-full flex-col">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -115,7 +115,7 @@ function CustomerProfileCollection() {
         </span>
       </div>
       {/* Bar Graph */}
-      <div className="mt-6 flex h-40 items-end justify-between gap-2 sm:h-48 sm:gap-3">
+      <div className="mt-6 flex h-36 items-end justify-between gap-2 sm:h-44 sm:gap-3 lg:h-48">
         {data.map(({ date, newCustomers, retentionCustomers }, index) => {
           const totalHeight = newCustomers + retentionCustomers;
           const retentionHeight =

@@ -22,35 +22,42 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] xl:gap-5 2xl:gap-6">
-          <section className="min-w-0 space-y-3">
-            {/* <h2 className="px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7E85A8]">
-              Customer Analytics
-            </h2> */}
-            <div className="grid grid-cols-1 gap-4 xl:gap-5 2xl:gap-6">
+        <div className="space-y-3 sm:space-y-4 xl:space-y-5 2xl:space-y-6">
+          <div className="grid grid-cols-1 items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.18fr)] xl:gap-5 2xl:gap-6">
+            <div className="min-w-0 h-full">
               <CustomerProfileCollection />
-              <ChurnRate />
             </div>
-          </section>
 
-          <section className="min-w-0 space-y-3">
-            {/* <h2 className="px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7E85A8]">
-              Engagement Insights
-            </h2> */}
-            <div className="grid grid-cols-1 gap-4 xl:gap-5 2xl:gap-6">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:gap-5 2xl:gap-6">
+            <div className="grid min-w-0 h-full grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:gap-5 2xl:gap-6">
+              <div className="min-w-0 h-full">
                 <CustomerProfileOverview />
+              </div>
+
+              <div className="min-w-0 h-full">
                 <CustomerRetentionRate />
               </div>
-
-              <CustomerEngagementScore />
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:gap-5 2xl:gap-6">
-                <OptInOptOut />
-                <CustomerSatisfactionScore />
-              </div>
             </div>
-          </section>
+          </div>
+
+          <div className="grid grid-cols-1 items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.18fr)] xl:gap-5 2xl:gap-6">
+            <div className="min-w-0 h-full">
+              <ChurnRate />
+            </div>
+
+            <div className="min-w-0 h-full">
+              <CustomerEngagementScore />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 items-stretch gap-3 sm:gap-4 lg:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1.18fr)] xl:gap-5 2xl:gap-6">
+            <div className="min-w-0 h-full">
+              <OptInOptOut />
+            </div>
+
+            <div className="min-w-0 h-full">
+              <CustomerSatisfactionScore />
+            </div>
+          </div>
         </div>
       </div>
     </div>
