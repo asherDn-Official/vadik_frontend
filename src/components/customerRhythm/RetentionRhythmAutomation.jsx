@@ -937,7 +937,7 @@ function RetentionBuilderView({
                   />
                 </label>
 
-                <div className="grid gap-3 md:grid-cols-3">
+                {/* <div className="grid gap-3 md:grid-cols-3">
                   {journeyOptions.map((option) => (
                     <button
                       key={option.id}
@@ -958,7 +958,7 @@ function RetentionBuilderView({
                       </div>
                     </button>
                   ))}
-                </div>
+                </div> */}
               </div>
             )}
 

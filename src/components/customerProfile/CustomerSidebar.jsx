@@ -1,12 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/apiconfig";
 import profileIcon from "/assets/user-in-cp.png";
 import { formatIndianMobile } from "./formatIndianMobile";
 
+const INITIAL_RENDER_COUNT = 10;
+const RENDER_STEP = 8;
+
 const CustomerSidebar = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [customers, setCustomers] = useState([]);
+  const [renderedCount, setRenderedCount] = useState(INITIAL_RENDER_COUNT);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -22,6 +26,7 @@ const CustomerSidebar = () => {
   const navigate = useNavigate();
   const { customerId } = useParams();
   const listRef = useRef(null);
+  const loadMoreRef = useRef(null);
   const skeletonItems = Array.from({ length: 6 });
 
   // Fetch customers data
@@ -46,6 +51,11 @@ const CustomerSidebar = () => {
 
       setCustomers((prevCustomers) =>
         append ? [...prevCustomers, ...data] : data,
+      );
+      setRenderedCount((prevCount) =>
+        append
+          ? prevCount
+          : Math.min(data.length, INITIAL_RENDER_COUNT),
       );
       setPagination(paginationData);
 
@@ -82,12 +92,32 @@ const CustomerSidebar = () => {
     return () => clearTimeout(debounceTimer);
   }, [searchTerm, retailerId]);
 
+  useEffect(() => {
+    if (!customerId) return;
+
+    const currentCustomer = customers.find((customer) => customer._id === customerId);
+    if (currentCustomer) {
+      setSelectedCustomer(currentCustomer);
+      const selectedIndex = customers.findIndex(
+        (customer) => customer._id === customerId,
+      );
+      if (selectedIndex >= 0) {
+        setRenderedCount((prevCount) =>
+          Math.max(
+            prevCount,
+            Math.min(customers.length, selectedIndex + 1 + RENDER_STEP),
+          ),
+        );
+      }
+    }
+  }, [customerId, customers]);
+
   const handleCustomerSelect = (customer) => {
     setSelectedCustomer(customer);
     navigate(`/customers/customer-profile/${customer._id}`);
   };
 
-  const loadMoreCustomers = () => {
+  const loadMoreCustomers = useCallback(() => {
     if (
       pagination.currentPage < pagination.totalPages &&
       !loading &&
@@ -95,40 +125,72 @@ const CustomerSidebar = () => {
     ) {
       fetchCustomers(pagination.currentPage + 1, searchTerm, true);
     }
-  };
+  }, [
+    pagination.currentPage,
+    pagination.totalPages,
+    loading,
+    isLoadingMore,
+    searchTerm,
+  ]);
 
-  const handleScroll = (event) => {
-    const { scrollTop, scrollHeight, clientHeight } = event.target;
-    if (scrollHeight - scrollTop <= clientHeight + 50) {
-      loadMoreCustomers();
-    }
-  };
+  useEffect(() => {
+    const root = listRef.current;
+    const target = loadMoreRef.current;
+
+    if (!root || !target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setRenderedCount((prevCount) => {
+            if (prevCount < customers.length) {
+              return Math.min(customers.length, prevCount + RENDER_STEP);
+            }
+
+            return prevCount;
+          });
+
+          if (renderedCount >= customers.length) {
+            loadMoreCustomers();
+          }
+        }
+      },
+      {
+        root,
+        rootMargin: "0px 0px 180px 0px",
+        threshold: 0.1,
+      },
+    );
+
+    observer.observe(target);
+
+    return () => observer.disconnect();
+  }, [customers.length, loadMoreCustomers, renderedCount]);
 
   // Format customer name
   const formatName = (customer) => {
     return `${customer.firstname} ${customer.lastname}`.trim();
   };
 
+  const visibleCustomers = customers.slice(0, renderedCount);
+
   return (
     <div
       className="
-      h-auto
-      max-h-[36vh]
-      bg-transparent
-
-      xl:h-full
-      xl:max-h-none
-
-      flex flex-col
+      flex min-h-0 flex-col bg-transparent
+      max-h-[min(34rem,52vh)]
+      lg:max-h-[min(38rem,58vh)]
+      xl:h-full xl:min-h-0 xl:max-h-full xl:overflow-hidden
     "
     >
       {/* Header */}
       <div
         className="
-        border-b border-[#EEF1FF]
-
+        shrink-0 border-b border-[#EEF1FF]
+        bg-white
         px-4 sm:px-5
         py-4
+        xl:sticky xl:top-0 xl:z-10
       "
       >
         <div className="flex items-center justify-between gap-3">
@@ -219,13 +281,12 @@ const CustomerSidebar = () => {
       {/* Customer List */}
       <div
         ref={listRef}
-        onScroll={handleScroll}
         className="
-        flex-1 overflow-y-auto
-
-        px-3 py-3
-
         customer-sidebar-scroll
+        h-0 min-h-0 flex-1 overflow-y-auto overscroll-contain xl:[scrollbar-gutter:stable]
+        px-3 py-3
+        sm:px-4
+        xl:px-3 xl:pb-4
       "
       >
         {loading ? (
@@ -286,8 +347,8 @@ const CustomerSidebar = () => {
           </div>
         ) : (
           <>
-            <div className="space-y-2">
-              {customers.map((customer) => {
+            <div className="space-y-1.5 xl:space-y-2">
+              {visibleCustomers.map((customer) => {
                 const isActive = selectedCustomer?._id === customer._id;
 
                 return (
@@ -424,6 +485,16 @@ const CustomerSidebar = () => {
                 ))}
               </div>
             )}
+
+            <div
+              ref={loadMoreRef}
+              className="flex h-8 w-full items-center justify-center"
+              aria-hidden="true"
+            >
+              {(renderedCount < customers.length || isLoadingMore) && (
+                <div className="h-1.5 w-16 rounded-full bg-[#E7EBF5]" />
+              )}
+            </div>
           </>
         )}
       </div>

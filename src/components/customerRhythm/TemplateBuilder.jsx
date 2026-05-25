@@ -16,6 +16,7 @@ import {
   Info
 } from "lucide-react";
 import api from "../../api/apiconfig";
+import Loader from "../../utils/Loader";
 import { toast } from "react-toastify";
 
 const buildCopyName = (name) => {
@@ -294,10 +295,7 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
                 ) : (
                   <div className="bg-gray-100 min-h-[120px] rounded flex flex-col items-center justify-center text-gray-400 overflow-hidden">
                     {mediaLoading ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-6 h-6 border-2 border-[#313166] border-t-transparent animate-spin rounded-full"></div>
-                        <span className="text-[10px] text-[#313166] font-bold">Uploading...</span>
-                      </div>
+                      <Loader text="Uploading..." size="sm" fullHeight={false} />
                     ) : header.mediaUrl ? (
                        header.format === "IMAGE" ? (
                         <img src={header.mediaUrl} alt="Preview" className="w-full h-full object-cover" />
@@ -400,7 +398,7 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
                     onChange={handleNameChange}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {checkingName && <div className="w-4 h-4 border-2 border-[#313166] border-t-transparent animate-spin rounded-full"></div>}
+                    {checkingName && <Loader size="sm" />}
                     {nameAvailable === true && <Check size={16} className="text-green-500" />}
                     {nameAvailable === false && <AlertCircle size={16} className="text-red-500" />}
                   </div>
@@ -579,7 +577,7 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
                                 >
                                   {mediaLoading ? (
                                     <>
-                                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent animate-spin rounded-full"></div>
+                                      <Loader size="sm" />
                                       Uploading...
                                     </>
                                   ) : (

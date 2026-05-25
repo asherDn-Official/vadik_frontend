@@ -15,7 +15,7 @@ import Template from "../components/settings/Template";
   const { auth } = useAuth();
   const location = useLocation();
   const [soon, setSoon] = useState();
-  const [activeSection, setActiveSection] = useState("templates");
+  const [activeSection, setActiveSection] = useState("live_chat");
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [templateToCopy, setTemplateToCopy] = useState(null);
 
@@ -39,18 +39,19 @@ import Template from "../components/settings/Template";
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#F4F5F9]">
+    <div className="app-page">
+      <div className="app-page-shell min-h-0">
       {/* Top Header with Section Options */}
       {!isCreatingTemplate && (
-        <div className="bg-white px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 z-10">
+        <div className="sticky top-0 z-10 flex flex-col gap-4 rounded-[24px] border border-gray-100 bg-white px-4 py-4 shadow-sm sm:px-5 lg:flex-row lg:items-center lg:justify-between lg:px-6">
           
           <div className="flex items-center gap-2 ">
             <Zap className="text-[#313166] w-6 h-6" />
             <h1 className="text-xl  font-semibold text-[#313166]">Customer Rhythm</h1>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="flex bg-gray-100 p-1  rounded-xl shadow-inner overflow-x-auto">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="app-tabs-row rounded-xl bg-gray-100 p-1 shadow-inner">
               <button
                 onClick={() => setActiveSection("live_chat")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
@@ -115,7 +116,7 @@ import Template from "../components/settings/Template";
                 }`}
               >
                 <Target size={18} />
-                Rhythm Report
+                Report
               </button>
             </div>
             <VideoPopupWithShare
@@ -128,7 +129,7 @@ import Template from "../components/settings/Template";
       )}
 
       {/* Main Content Area */}
-      <div className={`flex-1 overflow-auto ${isCreatingTemplate ? '' : 'p-6'}`}>
+      <div className={`min-h-0 flex-1 overflow-auto ${isCreatingTemplate ? '' : 'rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm sm:p-5 lg:p-6'}`}>
         {activeSection === "live_chat" && (
           <LiveChat />
         )}
@@ -174,6 +175,7 @@ import Template from "../components/settings/Template";
         {activeSection === "engagement" && (
           <EngagementDashboard />
         )}
+      </div>
       </div>
     </div>
   );

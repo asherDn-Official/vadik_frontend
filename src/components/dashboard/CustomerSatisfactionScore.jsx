@@ -13,7 +13,6 @@ function CustomerSatisfactionScore() {
           "api/dashboard/customerSatifactionScore",
         );
         const data = response.data;
-        console.log("data of customer retension rate", data);
         setCustomers(data.data.user_ratings_total);
         setStarCount(data.data.rating);
       } catch (error) {
@@ -63,45 +62,41 @@ drop-shadow-[0_2px_8px_rgba(245,179,1,0.35)] text-[22px] sm:text-[25px]"
   };
 
   return (
-    <div className="dashboard-card flex min-h-[300px] flex-col justify-between">
+    <div className="dashboard-card flex h-full min-h-[260px] flex-col sm:min-h-[280px] xl:min-h-[300px]">
       {/* Header */}
       <div>
         <h2 className="dashboard-card-title">
           Customer Satisfaction
         </h2>
-
-        <p className="dashboard-card-description">
-          Customer review and satisfaction analytics
-        </p>
       </div>
 
       {/* Main Rating Section */}
-      <div className="flex flex-col items-center justify-center py-6">
+      <div className="flex flex-1 flex-col items-center justify-center py-5">
         {/* Rating */}
-        <div className="text-5xl font-bold leading-none text-[#1F1C5C] sm:text-[54px]">
+        <div className="text-[2.75rem] font-bold leading-none tracking-[-0.04em] text-[#1F1C5C] sm:text-[3rem] xl:text-[3.2rem]">
           {safeStarCount}
         </div>
 
         {/* Stars */}
-        <div className="mt-4 flex items-center gap-1">
+        <div className="mt-3 flex items-center gap-1">
           {renderStars()}
         </div>
 
         {/* Customer Count */}
-        <p className="mt-4 text-center text-sm font-medium leading-5 text-[#7E85A8]">
+        <p className="mt-3 text-center text-sm font-medium leading-5 text-[#7E85A8]">
           Based on {customers} customer reviews
         </p>
       </div>
 
       {/* Footer Stats */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+      <div className="mt-auto grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2 sm:gap-4">
         {/* Satisfaction */}
-        <div className="rounded-xl bg-[#FFF9EB] px-3 py-3 sm:px-4">
+        <div className="dashboard-stat-panel bg-[#FFF9EB]">
           <div className="text-xs font-medium uppercase tracking-wide text-[#A56F00]">
             Satisfaction
           </div>
 
-          <div className="mt-2 truncate text-xl font-bold leading-none text-[#1F1C5C] sm:text-2xl">
+          <div className="mt-2 text-xl font-bold leading-none text-[#1F1C5C] sm:text-[1.45rem] xl:text-[1.65rem]">
             Excellent
           </div>
         </div>

@@ -12,6 +12,8 @@ import { API_BASE_URL } from "../../api/apiconfig.js";
 
 import PropTypes from 'prop-types';
 
+import Loader from "../../utils/Loader";
+
 const STANDARD_TEMPLATES = [
   { 
     id: 'customer_otp', 
@@ -547,7 +549,7 @@ const Template = () => {
     );
   }, [templates, searchTerm]);
 
-  if (loading) return <div className="flex justify-center items-center h-64"><RefreshCw className="animate-spin text-[#313166]" /></div>;
+  if (loading) return <Loader text="Loading templates..." fullHeight={false} />;
 
   const isUsingOwn = config?.isUsingOwnWhatsapp;
   const role = selectedRole ? STANDARD_TEMPLATES.find(r => r.id === selectedRole) : null;
@@ -1001,7 +1003,7 @@ const Template = () => {
                         </>
                       ) : (
                         <>
-                          <RefreshCw className="animate-spin text-[#db3b76]" size={18} />
+                          <Loader size="sm" />
                           Active Deployment...
                         </>
                       )}
@@ -1283,7 +1285,7 @@ const Template = () => {
                 onClick={handleQuickCreate}
                 className="flex-[2] py-4 px-6 bg-[#313166] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#25254d] transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? <RefreshCw className="animate-spin" size={20} /> : <Send size={20} />}
+                {loading ? <Loader size="sm" /> : <Send size={20} />}
                 <span>Request Meta Approval</span>
               </button>
             </div>

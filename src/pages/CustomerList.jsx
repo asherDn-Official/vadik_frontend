@@ -8,6 +8,8 @@ import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 import BulkImportModal from "../components/customerProfile/BulkImportModal";
 import { formatIndianMobile } from "../components/customerProfile/formatIndianMobile";
 
+import Loader from "../utils/Loader";
+
 const CustomerList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [customers, setCustomers] = useState([]);
@@ -144,8 +146,9 @@ const CustomerList = () => {
   ];
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-transparent">
-      <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+    <div className="app-page">
+      <div className="app-page-shell">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="space-y-4">
           {/* Top Header */}
           <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
@@ -271,13 +274,17 @@ const CustomerList = () => {
                 </div>
 
                 {/* Source Filter */}
-                <div className="min-w-[210px]">
+                <div className="w-full min-w-0 xl:w-[240px]">
                   <Select
                     options={sourceOptions}
                     defaultValue={sourceOptions[0]}
                     onChange={(selected) => setSource(selected?.value || "")}
                     isSearchable={false}
                     className="text-sm"
+                    menuPortalTarget={
+                      typeof document !== "undefined" ? document.body : null
+                    }
+                    menuPosition="fixed"
                     styles={{
                       control: (base, state) => ({
                         ...base,
@@ -303,7 +310,12 @@ const CustomerList = () => {
                         overflow: "hidden",
                         border: "1px solid #EEF1FF",
                         boxShadow: "0 12px 32px rgba(49,49,102,0.12)",
-                        zIndex: 9999,
+                        zIndex: "var(--z-dropdown)",
+                      }),
+
+                      menuPortal: (base) => ({
+                        ...base,
+                        zIndex: "var(--z-dropdown)",
                       }),
 
                       menuList: (base) => ({
@@ -402,9 +414,7 @@ const CustomerList = () => {
             "
           >
             {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-              </div>
+              <Loader text="Fetching customers..." fullHeight={false} />
             ) : (
               <>
                 {customers.length === 0 ? (
@@ -625,6 +635,7 @@ const CustomerList = () => {
             </div>
           </div>
         )}
+      </div>
       </div>
       <BulkImportModal
         isOpen={showBulkImport}

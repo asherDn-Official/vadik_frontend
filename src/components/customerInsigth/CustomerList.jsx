@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import api from "../../api/apiconfig";
+import Loader from "../../utils/Loader";
 
 import { formatIndianMobile } from "../customerProfile/formatIndianMobile";
 
@@ -20,13 +21,12 @@ const CustomerList = ({
     "gender",
     "firstVisit",
     "source",
+    "loyaltyPoints",
     "isActive",
   ]);
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
   });
-
-  console.log(customers.isOptedIn,); // null  //false
 
   // Function to safely get nested values from customer object
   const getNestedValue = (obj, path) => {
@@ -82,6 +82,7 @@ const CustomerList = ({
             "gender",
             "firstVisit",
             "source",
+            "loyaltyPoints",
             "isActive",
             ...keysArray,
           ]),
@@ -119,6 +120,8 @@ const CustomerList = ({
         return customer.source
           ? customer.source.charAt(0).toUpperCase() + customer.source.slice(1)
           : "";
+      case "loyaltyPoints":
+        return customer.loyaltyPoints ?? 0;
       case "isActive":
         return customer.isActive ? "Active" : "InActive";
       default:
@@ -197,11 +200,7 @@ const CustomerList = ({
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#7E57C2]"></div>
-      </div>
-    );
+    return <Loader text="Loading customer data..." fullHeight={false} />;
   }
 
   if (customers.length === 0) {
@@ -213,11 +212,11 @@ const CustomerList = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-      <div className="overflow-x-auto">
+    <div className="overflow-hidden rounded-[24px] border border-[#E8ECF7] bg-white shadow-[0_8px_24px_rgba(49,49,102,0.06)]">
+      <div className="app-table-scroll">
         <div className="overflow-y-auto">
-          <table className="w-full">
-            <thead className="bg-[#ECEDF3] sticky top-0 z-10">
+          <table className="app-table min-w-[960px]">
+            <thead className="sticky top-0 z-10 bg-[#F4F6FB]">
               <tr>
                 <th className="px-4 py-3 text-left">
                   <input
@@ -230,19 +229,19 @@ const CustomerList = ({
                 {tableHeaders.map((header) => (
                   <th
                     key={header}
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap"
+                    className="whitespace-nowrap px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7E85A8]"
                   >
                     {formatHeaderName(header)}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-[#EEF1FF]">
               {customers.map((customer) => {
                 return (
                   <tr
                     key={customer._id}
-                    className={`hover:bg-gray-50 transition-colors ${
+                    className={`transition-colors hover:bg-[#FAFBFF] ${
                       customer.isOptedIn !== true ? "opacity-50" : ""
                     }`}
                     title={
@@ -264,7 +263,7 @@ const CustomerList = ({
                     {tableHeaders.map((header) => (
                       <td
                         key={`${customer._id}-${header}`}
-                        className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap"
+                        className="whitespace-nowrap px-4 py-3.5 text-sm text-[#4B5275]"
                       >
                         {renderCellContent(customer, header)}
                       </td>
@@ -279,20 +278,20 @@ const CustomerList = ({
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-700">
+        <div className="flex flex-col gap-3 border-t border-[#EEF1FF] bg-[#FAFBFF] px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="text-sm text-[#5C628B]">
             Showing {(currentPage - 1) * pagination.limit + 1} to{" "}
             {Math.min(currentPage * pagination.limit, pagination.total)} of{" "}
             {pagination.total} customers
           </div>
-          <div className="flex items-center">
+          <div className="flex flex-wrap items-center gap-y-2">
             <button
               onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className={`p-1 rounded ${
+              className={`rounded-lg p-2 ${
                 currentPage === 1
                   ? "text-gray-400 cursor-not-allowed"
-                  : "text-gray-600 hover:bg-gray-100"
+                  : "text-[#5C628B] hover:bg-white"
               }`}
             >
               <ChevronLeft size={18} />
@@ -306,10 +305,10 @@ const CustomerList = ({
                 onPageChange(currentPage + 1)
               }
               disabled={currentPage === pagination.totalPages}
-              className={`p-1 rounded ${
+              className={`rounded-lg p-2 ${
                 currentPage === pagination.totalPages
                   ? "text-gray-400 cursor-not-allowed"
-                  : "text-gray-600 hover:bg-gray-100"
+                  : "text-[#5C628B] hover:bg-white"
               }`}
             >
               <ChevronRight size={18} />

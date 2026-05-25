@@ -1,9 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 import api from "../../api/apiconfig";
-import { updateToken } from "./utils/updateTokan";
+import { useAuth } from "../../context/AuthContext";
 
 const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviousStep }) => {
+  const { checkAuth } = useAuth();
   const [errors, setErrors] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -233,18 +234,16 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
       }
 
       data.append("email", formData.email);
-      data.append("notes", "Updated retailer information");
+      data.append("notes", "Updated business information");
       data.append("onboarding", true);
+      data.append("onboardingCompleted", true);
 
       await api.patch(`api/retailer/${retailerId}`, data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-
-      const email = localStorage.getItem("email");
-      const password = sessionStorage.getItem("password");
-      await updateToken(password, email);
+      await checkAuth();
 
       // console.log("Registration successful:", response.data);
       goToNextStep();

@@ -6,9 +6,7 @@ import RevenueChart from "../components/PerformanceTracking/RevenueChart";
 import CartValueCards from "../components/PerformanceTracking/CartValueCards";
 import CLVCard from "../components/PerformanceTracking/CLVCard";
 import CustomerTable from "../components/PerformanceTracking/CustomerTable";
-import { Users, MessageSquare, Mouse, MessageCircle } from "lucide-react";
 import api from "../api/apiconfig";
-import { set } from "react-hook-form";
 const PerformanceTracking: React.FC = () => {
 const [interactionRate, setInteractionRate] = useState(24); // %
 const [whatsappOpened, setWhatsappOpened] = useState(310);
@@ -94,17 +92,17 @@ useEffect(() => {
 }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="w-full">
+      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
         {/* Header */}
-        <div className="mb-8">
+        <div>
           <h1 className="text-xl font-semibold text-[#313166]">
             Performance Tracking
           </h1>
         </div>
 
         {/* Top Row - 4 Metric Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 xl:gap-6">
           <MetricCard
             // icon={Users}
             icon="../assets/per-1.png" // Path to your PNG file
@@ -136,7 +134,7 @@ useEffect(() => {
         </div>
 
         {/* Second Row - Activities Table & Conversion Chart */}
-        <div className="grid grid-cols-2 lg:grid-cols-10 gap-6 text-[#313166]">
+        <div className="grid grid-cols-1 gap-4 text-[#313166] xl:grid-cols-10 xl:gap-6">
           {/* <div className="lg:col-span-7"> */}
           <CampaignTable />
           {/* </div> */}
@@ -146,7 +144,7 @@ useEffect(() => {
         </div>
 
         {/* Third Row - Revenue Growth & Cart Value | CLV Section */}
-        <div className="hidden grid grid-cols-2 lg:grid-cols-2 gap-6">
+        <div className="hidden grid-cols-1 gap-4 xl:grid xl:grid-cols-2 xl:gap-6">
           {/* Left Column */}
           <div className="space-y-6">
              <div className="bg-white p-6 rounded-[10px]">

@@ -15,6 +15,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import api from "../../api/apiconfig";
 import ExcelImport from "./ExcelImport";
 import VideoPopupWithShare from "../common/VideoPopupWithShare";
+import Loader from "../../utils/Loader";
 
 const DailyBillingUpdate = () => {
   const [retailerId, setRetailerId] = useState(() => {
@@ -309,9 +310,7 @@ const DailyBillingUpdate = () => {
         )}
 
         {loading ? (
-          <div className="flex justify-center items-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-pink-500"></div>
-          </div>
+          <Loader fullHeight />
         ) : (
           <>
             <div className="overflow-x-auto">

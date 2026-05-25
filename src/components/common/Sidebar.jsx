@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { LogOut } from "lucide-react";
+import { CreditCard, LogOut } from "lucide-react";
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import UnsavedChangesModal from "./UnsavedChangesModal";
 import { useUnsavedChanges } from "../../context/UnsavedChangesContext";
@@ -11,7 +11,6 @@ import personalisationIcon from "/assets/fluent-insights.png";
 import customerOpportunitiesIcon from "/assets/user-check-icon.png";
 import integrationIcon from "/assets/integration-icon.png";
 import rhytmIcon from "/assets/ix_customer.png";
-import subscriptionIcon from "/assets/crown-icon.png";
 import { QrCode } from "lucide-react";
 
 function Sidebar() {
@@ -112,7 +111,8 @@ function Sidebar() {
     {
       path: "/subscription",
       module: "Settings",
-      icon: subscriptionIcon,
+      icon: null,
+      lucideIcon: CreditCard,
       label: "Subscription",
     },
 
@@ -175,14 +175,14 @@ function Sidebar() {
         onCancel={() => setShowUnsavedModal(false)}
       />
 
-      <aside className="fixed inset-x-0 bottom-0 z-40 flex h-[74px] w-full flex-col border-t border-white/10 bg-[#313166]/95 text-white shadow-[0_-10px_30px_rgba(49,49,102,0.18)] backdrop-blur md:sticky md:left-0 md:top-0 md:h-screen md:w-64 md:shrink-0 md:border-r md:border-t-0 md:border-white/10 md:bg-[#313166] md:shadow-none">
-        <div className="hidden px-5 pb-4 pt-5 md:block">
+      <aside className="layer-sidebar fixed inset-x-0 bottom-0 flex h-[78px] w-full flex-col border-t border-white/10 bg-[#313166]/95 text-white shadow-[0_-10px_30px_rgba(49,49,102,0.18)] backdrop-blur md:sticky md:left-0 md:top-0 md:h-screen md:w-[248px] md:shrink-0 md:border-r md:border-t-0 md:border-white/10 md:bg-[#313166] md:shadow-none lg:w-[264px]">
+        <div className="hidden px-4 pb-4 pt-5 md:block lg:px-5">
           <div className="flex items-center justify-center rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
             <img className="w-36" src="/vadik_ai_log_.png" alt="Vadik Logo" />
           </div>
         </div>
         {/* <div className="my-3">{userRole === "retailer" && <ToggleBadge />}</div> */}
-        <nav className="flex h-full items-center gap-1 overflow-x-auto px-2 py-2 md:h-auto md:flex-1 md:flex-col md:items-stretch md:gap-1.5 md:overflow-y-auto md:overflow-x-hidden md:px-4 md:pb-4 md:pt-1">
+        <nav className="flex h-full items-center gap-1 overflow-x-auto px-2 py-2 md:h-auto md:flex-1 md:flex-col md:items-stretch md:gap-1.5 md:overflow-y-auto md:overflow-x-hidden md:px-3 md:pb-4 md:pt-1 lg:px-4">
           {sidebarItems.map((item) => {
             if (!canAccess(item.module)) return null;
             const active = isActive(item.path);
@@ -192,7 +192,7 @@ function Sidebar() {
                 key={item.path}
                 to={item.path}
                 onClick={(e) => handleNavigation(e, item.path)}
-                className={`group relative flex h-full min-w-[76px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 text-white/75 no-underline transition-all hover:bg-white/10 hover:text-white md:h-auto md:min-w-0 md:flex-row md:justify-start md:gap-3 md:px-4 md:py-[14px] ${
+                className={`group relative flex h-full min-w-[78px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 text-white/75 no-underline transition-all hover:bg-white/10 hover:text-white md:h-auto md:min-w-0 md:flex-row md:justify-start md:gap-3 md:px-4 md:py-3.5 ${
                   active
                     ? "bg-white/12 text-white backdrop-blur-md ring-1 ring-white/10"
                     : "text-white/75 hover:bg-white/10 hover:text-white"
@@ -218,7 +218,7 @@ function Sidebar() {
                     }`}
                   />
                 )}
-                <span className="line-clamp-2 max-w-[68px] text-center text-[11px] font-medium leading-tight md:max-w-none md:text-left md:text-sm">
+                <span className="line-clamp-2 max-w-[70px] text-center text-[11px] font-medium leading-tight md:max-w-none md:text-left md:text-[13px] lg:text-sm">
                   {item.label}
                 </span>
               </NavLink>
@@ -227,7 +227,7 @@ function Sidebar() {
 
           <button
             onClick={(e) => handleLogout(e)}
-            className="group flex h-full min-w-[76px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 text-white/75 transition-all hover:bg-white/10 hover:text-white md:mt-auto md:h-auto md:min-w-0 md:flex-row md:justify-start md:gap-3 md:px-4 md:py-[14px]"
+            className="group flex h-full min-w-[78px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 text-white/75 transition-all hover:bg-white/10 hover:text-white md:mt-auto md:h-auto md:min-w-0 md:flex-row md:justify-start md:gap-3 md:px-4 md:py-3.5"
           >
             <LogOut size={16} className="h-5 w-5 shrink-0 md:h-6 md:w-6" />
             <span className="text-[11px] font-medium md:text-sm">Logout</span>

@@ -16,6 +16,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { useForm } from "react-hook-form";
 import { Search, SearchX, Copy } from "lucide-react";
 import { formatIndianMobile } from "../components/customerProfile/formatIndianMobile";
+import Loader from "../utils/Loader";
 
 const KYCPage = () => {
   const [searchType, setSearchType] = useState("phone");
@@ -123,7 +124,7 @@ const KYCPage = () => {
         setOrderHistory([]);
         setClaimedCoupons([]);
         setTotalPages(1);
-        setError("Customer not found for this retailer");
+        setError("Customer not found for this business");
         return;
       }
       setError(null);
@@ -139,7 +140,7 @@ const KYCPage = () => {
       setOrderHistory([]);
       setClaimedCoupons([]);
       setTotalPages(1);
-      setError("Customer not found for this retailer");
+      setError("Customer not found for this business");
     } finally {
       setLoading(false);
     }
@@ -389,13 +390,13 @@ const KYCPage = () => {
         </form>
       </div>
 
-      {loading && <SkeletonLoader />}
+      {loading && <Loader text="Searching customer..." fullHeight={false} />}
 
       {error && (
         <div className="p-4 mb-6 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
           <SearchX className="w-5 h-5 text-red-700" />
           <div className="text-red-700">
-            Customer not found for this retailer
+            Customer not found for this business
           </div>
         </div>
       )}
@@ -1060,77 +1061,5 @@ const KYCPage = () => {
     </div>
   );
 };
-
-const SkeletonLoader = () => (
-  <div className="space-y-6">
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[...Array(3)].map((_, i) => (
-          <div key={i}>
-            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-            <div className="space-y-3">
-              {[...Array(4)].map((_, j) => (
-                <div key={j} className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <div className="bg-white rounded-lg shadow-sm p-4">
-      <div className="flex justify-between">
-        <div className="h-10 bg-gray-200 rounded w-32"></div>
-        <div className="flex items-center gap-2">
-          <div className="h-4 bg-gray-200 rounded w-24"></div>
-          <div className="h-10 bg-gray-200 rounded w-20"></div>
-        </div>
-      </div>
-    </div>
-
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="p-6">
-        <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                {[...Array(6)].map((_, i) => (
-                  <th key={i} className="px-6 py-3">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {[...Array(3)].map((_, i) => (
-                <tr key={i}>
-                  {[...Array(6)].map((_, j) => (
-                    <td key={j} className="px-6 py-4">
-                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
-          <div className="h-10 bg-gray-200 rounded w-24"></div>
-          <div className="flex gap-2">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="w-10 h-10 bg-gray-200 rounded-full"></div>
-            ))}
-          </div>
-          <div className="h-10 bg-gray-200 rounded w-24"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
 
 export default KYCPage;

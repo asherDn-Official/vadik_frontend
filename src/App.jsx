@@ -27,7 +27,6 @@ import CustomerOpportunities from "./pages/CustomerOpportunities";
 import { useAuth } from "./context/AuthContext";
 import CustomerAdd from "./pages/CustomerAdd";
 import QRGenerator from "./pages/QRGenerator";
-import api from "./api/apiconfig";
 import Notification from "./pages/Notification";
 import ForgotPassword from "./pages/ForgotPassword";
 import Subscription from "./pages/Subscription";
@@ -36,11 +35,12 @@ import RolesAndPermissions from "./components/settings/RolesAndPermissions";
 import MyProfile from "./components/settings/MyProfile";
 import SearchPage from "./components/common/SearchPage";
 import CustomerProfilePage from "./components/common/CustomerProfilePage";
+import Loader from "./utils/Loader";
 
 function App() {
   // console.log("APP COMPONENT RUNNING");
   
-  const { auth, loading, checkAuth } = useAuth();
+  const { auth, loading } = useAuth();
 // console.log("AUTH:", auth);
  useEffect(() => {
 
@@ -68,9 +68,6 @@ function App() {
   }
 
 }, [auth]);
-  const [onboardingDone, setOnboardingDone] = useState(true); // assume true until checked
-  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
-
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -94,27 +91,11 @@ function App() {
     setFormData((prev) => ({ ...prev, ...newData }));
   };
 
-  useEffect(() => {
-    const fetchOnboardingStatus = async () => {
-      if (!auth) {
-        setCheckingOnboarding(false);
-        return;
-      }
-      try {
-        const res = await checkAuth();
-        setOnboardingDone(res.data.data.onboarding === true); // adjust based on backend meaning
-      } catch (err) {
-        console.error("Error fetching onboarding status", err);
-      } finally {
-        setCheckingOnboarding(false);
-      }
-    };
+  const onboardingDone =
+    auth?.data?.onboardingCompleted === true || auth?.data?.onboarding === true;
 
-    fetchOnboardingStatus();
-  }, []);
-
-  if (loading || checkingOnboarding) {
-    return <div>Loading...</div>;
+  if (loading) {
+    return <Loader fullHeight={true} text="Initializing application..." />;
   }
 
 

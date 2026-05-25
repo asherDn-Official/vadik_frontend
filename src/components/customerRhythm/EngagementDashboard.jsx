@@ -9,6 +9,7 @@ import {
   BarChart2, PieChart as PieChartIcon, Activity, Repeat, History
 } from "lucide-react";
 import api from "../../api/apiconfig";
+import Loader from "../../utils/Loader";
 import { toast } from "react-toastify";
 import moment from "moment";
 import { getWhatsappErrorDescription } from "../../utils/whatsappErrorCodes";
@@ -227,7 +228,7 @@ const EngagementDashboard = () => {
   }, [individualPage, totalIndividualPages]);
 
   const renderOverview = () => {
-    if (!analytics) return <div className="p-8 text-center text-gray-500">Loading analytics...</div>;
+    if (!analytics) return <Loader text="Loading analytics..." fullHeight={false} />;
 
     const { statusStats, typeStats, trendStats, isDaily } = analytics;
     const totalRead = statusStats.find(s => s._id === 'read')?.count || 0;
@@ -414,7 +415,7 @@ const EngagementDashboard = () => {
   };
 
   const renderRetryReport = () => {
-    if (retryLoading) return <div className="p-12 text-center"><RefreshCw className="animate-spin mx-auto text-[#313166]" /></div>;
+    if (retryLoading) return <Loader text="Loading retry data..." fullHeight={false} />;
     if (!retryStats) return <div className="p-12 text-center text-gray-500">No retry data available</div>;
 
     return (
@@ -574,9 +575,7 @@ const EngagementDashboard = () => {
 
               <div className="flex-1 space-y-3 overflow-y-auto pr-1 min-h-0">
                 {individualLoading ? (
-                  <div className="rounded-2xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500 bg-white">
-                    Loading individual analytics...
-                  </div>
+                  <Loader text="Loading individual analytics..." fullHeight={false} />
                 ) : filteredItems.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500 bg-white">
                     No individual analytics found for this filter.
@@ -812,7 +811,7 @@ const EngagementDashboard = () => {
                     <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden">
                       <div className="max-h-[320px] overflow-y-auto">
                         {selectedItemLogsLoading ? (
-                          <div className="p-8 text-center text-sm text-gray-500">Loading item logs...</div>
+                          <Loader text="Loading item logs..." fullHeight={false} />
                         ) : selectedItemLogs.length === 0 ? (
                           <div className="p-8 text-center text-sm text-gray-500">No message history found for this item.</div>
                         ) : (
@@ -1030,7 +1029,9 @@ const EngagementDashboard = () => {
                 <tbody className="divide-y divide-gray-100">
                   {loading && logs.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-12 text-center text-gray-400">Loading messages...</td>
+                      <td colSpan="6" className="px-6 py-12">
+                        <Loader text="Loading messages..." fullHeight={false} />
+                      </td>
                     </tr>
                   ) : logs.length === 0 ? (
                     <tr>

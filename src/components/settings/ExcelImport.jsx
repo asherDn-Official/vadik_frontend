@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Upload, FileSpreadsheet, X, Download } from "lucide-react";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
+import Loader from "../../utils/Loader";
 
 const ExcelImport = ({ retailerId, onImportSuccess, onClose }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -383,7 +384,7 @@ const ExcelImport = ({ retailerId, onImportSuccess, onClose }) => {
             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             <Upload size={16} />
-            {isUploading ? "Processing..." : "Import Orders"}
+            {isUploading ? <Loader size="sm" /> : "Import Orders"}
           </button>
         </div>
       </div>

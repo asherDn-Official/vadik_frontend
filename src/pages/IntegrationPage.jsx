@@ -320,8 +320,8 @@ const IntegrationDashboard = () => {
 
   if (activeView === "detail") {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="app-page">
+        <div className="mx-auto w-full max-w-5xl">
           <IntegrationDetail
             integration={selectedIntegration}
             onBack={handleBackToList}
@@ -332,7 +332,8 @@ const IntegrationDashboard = () => {
   }
 
   return (
-    <div className="p-8">
+    <div className="app-page">
+      <div className="app-page-shell">
       <div className="mb-8">
         <h1 className="text-[20px] font-[500] mb-2 text-[#313166]">
           Integration Management
@@ -343,8 +344,8 @@ const IntegrationDashboard = () => {
         </p>
       </div>
 
-      <div className="flex justify-between items-center mb-8 border-b border-[#3131661A] pb-8">
-        <div className="relative w-1/3">
+      <div className="mb-8 flex flex-col gap-4 border-b border-[#3131661A] pb-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative w-full max-w-xl">
           <Search
             className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
             size={20}
@@ -386,6 +387,7 @@ const IntegrationDashboard = () => {
         })}
         onIntegrationClick={handleIntegrationClick}
       />
+      </div>
     </div>
   );
 };

@@ -60,26 +60,22 @@ function CustomerProfileOverview() {
   };
 
   return (
-    <div className="dashboard-card flex min-h-[300px] flex-col justify-between">
+    <div className="dashboard-card flex h-full min-h-[260px] flex-col justify-between sm:min-h-[280px] xl:min-h-[300px]">
       {/* Title */}
       <div>
         <h2 className="dashboard-card-title text-center">
           Customer Profile Overview
         </h2>
-
-        <p className="dashboard-card-description text-center">
-          Active vs inactive customer analytics
-        </p>
       </div>
 
       {/* Chart */}
       <div className="flex items-center justify-center py-4">
-        <div className="relative h-[170px] w-[170px] sm:h-[200px] sm:w-[200px]">
+        <div className="relative h-[148px] w-[148px] sm:h-[180px] sm:w-[180px] xl:h-[168px] xl:w-[168px]">
           <Doughnut data={data} options={options} />
 
           {/* Center Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-4xl font-bold leading-none text-[#1F1C5C] sm:text-[40px]">
+            <span className="text-[2.3rem] font-bold leading-none tracking-[-0.04em] text-[#1F1C5C] sm:text-[2.5rem] xl:text-[2.7rem]">
               {loading ? "..." : total}
             </span>
 
@@ -91,7 +87,7 @@ function CustomerProfileOverview() {
       </div>
 
       {/* Stats Footer */}
-      <div className="mt-2 grid grid-cols-2 gap-3 sm:gap-4">
+      <div className="mt-2 grid grid-cols-2 gap-3 sm:gap-4 lg:gap-3">
         {/* Active */}
         <div className="dashboard-stat-panel">
           <div className="flex items-center gap-2">

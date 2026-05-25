@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../../api/apiconfig";
+import Loader from "../../utils/Loader";
 
 const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
   const retailerId = localStorage.getItem("retailerId");
@@ -111,7 +112,7 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
       >
         {loading && (
           <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center rounded-xl z-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#313166]"></div>
+            <Loader text="Uploading..." size="sm" fullHeight={false} />
           </div>
         )}
         <button
@@ -208,8 +209,8 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
         </div>
         <div className="text-xs text-gray-500 mt-1">
-          Required columns: First Name, Last Name, Mobile Number, Country Code,
-          Source, Gender, First Visit (DD-MM-YYYY)
+          Required columns: First Name, Mobile Number, Country Code, Source,
+          Gender, First Visit (DD-MM-YYYY). Last Name is optional.
         </div>
         {summary && (
           <div className="mb-4 flex gap-4 text-sm">

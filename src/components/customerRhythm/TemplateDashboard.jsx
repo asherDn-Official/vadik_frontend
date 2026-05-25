@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Plus, RefreshCw, Search, Trash2, AlertCircle, CheckCircle2, Clock, PauseCircle, Copy } from "lucide-react";
+import { Plus, RefreshCw, Search, Trash2, AlertCircle, CheckCircle2, Clock, PauseCircle, Copy, Eye } from "lucide-react";
 import api from "../../api/apiconfig";
+import Loader from "../../utils/Loader";
 import { toast } from "react-toastify";
+import TemplatePreviewModal from "./TemplatePreviewModal";
 
 const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
   const [templates, setTemplates] = useState([]);
@@ -10,6 +12,8 @@ const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const fetchTemplates = async () => {
     try {
@@ -154,7 +158,9 @@ const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-400">Loading templates...</td>
+                  <td colSpan="6" className="px-6 py-12">
+                    <Loader text="Loading templates..." fullHeight={false} />
+                  </td>
                 </tr>
               ) : filteredTemplates.length === 0 ? (
                 <tr>
@@ -166,7 +172,15 @@ const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
                 filteredTemplates.map((template) => (
                   <tr key={template._id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-[#313166]">{template.name}</div>
+                      <button 
+                        onClick={() => {
+                          setSelectedTemplate(template);
+                          setIsPreviewOpen(true);
+                        }}
+                        className="font-semibold text-[#313166] hover:text-[#3d3b83] transition-colors text-left"
+                      >
+                        {template.name}
+                      </button>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-xs font-medium text-[#313166] bg-gray-100 px-2 py-1 rounded-lg">
@@ -186,6 +200,16 @@ const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => {
+                            setSelectedTemplate(template);
+                            setIsPreviewOpen(true);
+                          }}
+                          className="p-2 text-[#313166] hover:bg-[#313166]/10 rounded-lg transition-colors"
+                          title="View Template"
+                        >
+                          <Eye size={16} />
+                        </button>
                         <button 
                           onClick={() => onCopyTemplate?.(template)}
                           className="p-2 text-[#313166] hover:bg-[#313166]/10 rounded-lg transition-colors"
@@ -209,6 +233,14 @@ const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
           </table>
         </div>
       </div>
+      <TemplatePreviewModal 
+        template={selectedTemplate}
+        isOpen={isPreviewOpen}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setSelectedTemplate(null);
+        }}
+      />
     </div>
   );
 };

@@ -15,6 +15,7 @@ import { X } from "lucide-react";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 import showToast from "../../utils/ToastNotification";
 import VideoPopupWithShare from "../common/VideoPopupWithShare";
+import Loader from "../../utils/Loader";
 
 const CustomerFieldPreferences = () => {
   const [activeTab, setActiveTab] = useState("Advance Details");
@@ -288,14 +289,9 @@ const CustomerFieldPreferences = () => {
     }
   };
 
-  // if (isLoading || isCreatingPreference) {
-  //   return (
-  //     <div className="p-6 text-center">
-  //       <p>Loading preferences...</p>
-  //       {isCreatingPreference && <p>Creating new preference set...</p>}
-  //     </div>
-  //   );
-  // }
+  if (isLoading || isCreatingPreference) {
+    return <Loader fullHeight />;
+  }
 
   if (error) {
     return (

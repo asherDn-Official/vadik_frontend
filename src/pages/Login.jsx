@@ -8,6 +8,7 @@ import "react-phone-input-2/lib/style.css";
 import api from "../api/apiconfig";
 import { useAuth } from "../context/AuthContext";
 import { getModulePath } from "../utils/getModulePath";
+import Loader from "../utils/Loader";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -158,7 +159,9 @@ const Login = () => {
 
       setRetailerView("verifyOtp");
 
-      setSuccessMessage("Verification OTP sent to your email.");
+      setSuccessMessage(
+        "Verification OTP sent to your email. After verification, sign in with the same password you created.",
+      );
     } catch (err) {
       setError(getErrorMessage(err, "Registration failed. Please try again."));
     } finally {
@@ -191,7 +194,9 @@ const Login = () => {
 
       setRetailerView("login");
 
-      setSuccessMessage("Email verified successfully. Please sign in.");
+      setSuccessMessage(
+        "Email verified successfully. Please sign in with the password you created.",
+      );
     } catch (err) {
       setError(getErrorMessage(err, "OTP verification failed."));
     } finally {
@@ -218,11 +223,13 @@ const Login = () => {
       });
 
       const data = response.data;
+      const retailerOnboardingCompleted =
+        data.retailer?.onboardingCompleted === true ||
+        data.retailer?.onboarding === true;
 
       if (data.token) {
         if (activePortal === "retailer") {
           localStorage.setItem("email", credentials.email);
-          sessionStorage.setItem("password", credentials.password);
         }
         localStorage.setItem("token", data.token);
 
@@ -231,7 +238,7 @@ const Login = () => {
         if (activePortal === "retailer" && data.retailer?._id) {
           localStorage.setItem("retailerId", data.retailer._id);
 
-          if (data.retailer.onboarding) {
+          if (retailerOnboardingCompleted) {
             navigate("/dashboard");
           } else {
             navigate(`/register/basic/${data.retailer._id}`);
@@ -279,7 +286,12 @@ const Login = () => {
     },
   };
   return (
-    <div className="login-bg flex items-center justify-center min-h-screen p-4">
+    <div className="login-bg flex items-center justify-center min-h-screen p-4 relative">
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl">
+          <Loader text="Please wait..." fullHeight={false} />
+        </div>
+      )}
       <motion.div
         layout
         transition={{
@@ -307,7 +319,7 @@ const Login = () => {
                   : "text-white/70"
               }`}
             >
-              Business Admin
+              Business Owner
             </button>
 
             <button
@@ -394,7 +406,7 @@ const Login = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] py-3 rounded-xl font-medium"
                 >
-                  {loading ? "Signing In..." : "Sign In"}
+                  Sign In
                 </button>
               </form>
             </motion.div>
@@ -421,7 +433,7 @@ const Login = () => {
                   name="email"
                   value={credentials.email}
                   onChange={handleLoginChange}
-                  placeholder="Business admin email"
+                  placeholder="Business owner email"
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 placeholder-white/60 focus:outline-none"
                   required
                 />
@@ -465,7 +477,7 @@ const Login = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] py-3 rounded-xl font-medium"
                 >
-                  {loading ? "Signing In..." : "Sign In"}
+                  Sign In
                 </button>
               </form>
 
@@ -631,7 +643,7 @@ const Login = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] py-3 rounded-xl font-medium"
                 >
-                  {loading ? "Creating Account..." : "Create Account"}
+                  Create Account
                 </button>
               </form>
 
@@ -687,7 +699,7 @@ const Login = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-[#CB376D] to-[#A72962] py-3 rounded-xl font-medium"
                 >
-                  {loading ? "Verifying..." : "Verify Email"}
+                  Verify Email
                 </button>
               </form>
 

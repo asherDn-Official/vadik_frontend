@@ -57,6 +57,23 @@ const PersonalizationCampaign = () => {
   const [unresolvedImports, setUnresolvedImports] = useState([]); // rows we couldn't map to an existing customer
   const [resolvableImportedIds, setResolvableImportedIds] = useState([]); // unique list of resolvable IDs from import
 
+  const hasFilterValue = (value) => {
+    if (value === "" || value === null || value === undefined) {
+      return false;
+    }
+
+    if (typeof value === "object") {
+      return Object.values(value).every(
+        (nestedValue) =>
+          nestedValue !== "" &&
+          nestedValue !== null &&
+          nestedValue !== undefined,
+      );
+    }
+
+    return true;
+  };
+
   // Fetch activities data on component mount
   useEffect(() => {
     const fetchActivities = async () => {
@@ -108,14 +125,23 @@ const PersonalizationCampaign = () => {
       const filtersArray = Object.entries(filters)
         .filter(([name, value]) => {
           // Exclude periodValue and any other period-related fields
-          return (
-            value !== "" &&
-            value !== null &&
-            value !== undefined &&
-            name !== "periodValue"
-          );
+          return hasFilterValue(value) && name !== "periodValue";
         })
-        .map(([name, value]) => ({ name, value }));
+        .map(([name, value]) => ({
+          name,
+          value:
+            typeof value === "string"
+              ? value.trim()
+              : typeof value === "object" && value !== null
+                ? {
+                    ...value,
+                    value:
+                      typeof value.value === "string"
+                        ? value.value.trim()
+                        : value.value,
+                  }
+                : value,
+        }));
 
       // Prepare the request payload
       const payload = {
@@ -164,8 +190,8 @@ const PersonalizationCampaign = () => {
     setFilters((prev) => {
       const newFilters = { ...prev, [key]: value };
       // Calculate applied filters count
-      const count = Object.values(newFilters).filter(
-        (v) => v !== undefined && v !== ""
+      const count = Object.values(newFilters).filter((v) =>
+        hasFilterValue(v)
       ).length;
       setAppliedFiltersCount(count);
       return newFilters;
@@ -669,6 +695,13 @@ const PersonalizationCampaign = () => {
               <h1 className="text-xl font-semibold text-[#313166]">
                 Customer List ({pagination.total})
               </h1>
+                  <button
+          onClick={handlePreCheckAndOpenModal}
+          className="px-8 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors disabled:opacity-60"
+          disabled={checking || isLowCredits}
+        >
+          {checking ? "Checking..." : "Check & Send"}
+        </button>
             </div>
           </div>
 
@@ -956,13 +989,7 @@ const PersonalizationCampaign = () => {
             ⚠️ You have low WhatsApp credits. Please top up your credits in the subscription page to continue using Vadik's default WhatsApp account.
           </p>
         )}
-        <button
-          onClick={handlePreCheckAndOpenModal}
-          className="px-8 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors disabled:opacity-60"
-          disabled={checking || isLowCredits}
-        >
-          {checking ? "Checking..." : "Check & Send"}
-        </button>
+    
       </div>
     </div>
   );

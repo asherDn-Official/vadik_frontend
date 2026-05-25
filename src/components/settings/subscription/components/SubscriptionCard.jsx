@@ -132,7 +132,7 @@ export default function SubscriptionCard({
   if (variant === 'secondary') {
     return (
       <div 
-        className={`rounded-2xl shadow-lg flex flex-col border-2 cursor-pointer transition-all ${
+        className={`min-w-0 rounded-2xl shadow-lg flex flex-col border-2 cursor-pointer transition-all ${
           isSelected ? 'border-pink-700 border-2' : 'border-gray-200'
         } ${cardStyles}`}
         onClick={(e) => {
@@ -236,7 +236,7 @@ export default function SubscriptionCard({
 
   return (
     <div 
-      className={`rounded-2xl p-6 shadow-lg flex flex-col cursor-pointer transition-all ${
+      className={`min-w-0 rounded-2xl p-5 shadow-lg flex flex-col cursor-pointer transition-all sm:p-6 ${
         isSelected ? 'ring-2 ring-white ring-opacity-50' : ''
       } ${cardStyles}`}
       onClick={(e) => {
@@ -309,7 +309,7 @@ export default function SubscriptionCard({
       {/* Quantity Selector for Addons */}
       {isAddon && isSelected && !isCurrentPlanFreeTrial && (
         <div className="mb-4" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-col items-center justify-center gap-3 text-center sm:flex-row sm:text-left">
             <span className={`text-sm ${variant === 'primary' ? 'text-white' : 'text-gray-700'}`}>
               Quantity:
             </span>
@@ -340,7 +340,7 @@ export default function SubscriptionCard({
                 +
               </button>
             </div>
-            <span className={`text-sm ${variant === 'primary' ? 'text-white/80' : 'text-gray-500'}`}>
+            <span className={`break-words text-sm ${variant === 'primary' ? 'text-white/80' : 'text-gray-500'}`}>
               × Rs. {price.toLocaleString()} = Rs. {(price * quantity).toLocaleString()}
             </span>
           </div>

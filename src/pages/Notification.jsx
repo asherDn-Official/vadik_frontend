@@ -10,6 +10,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import api from '../api/apiconfig';
 import showToast from '../utils/ToastNotification';
+import Loader from '../utils/Loader';
 
 const Notification = () => {
   // State management
@@ -267,41 +268,14 @@ const Notification = () => {
 
   // Loading skeleton
   if (loading.notifications || loading.calendar) {
-    return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="flex space-x-4">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-10 bg-gray-200 rounded-md w-24"></div>
-            ))}
-          </div>
-          <div className="space-y-6 mt-8">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="p-4 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                </div>
-                <div className="mt-4 flex space-x-2">
-                  <div className="h-8 bg-gray-200 rounded w-24"></div>
-                  <div className="h-8 bg-gray-200 rounded w-32"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+    return <Loader text="Loading notifications..." fullHeight={true} />;
   }
 
   return (
-    <div className="flex flex-col md:flex-row bg-gray-50 min-h-screen">
+    <div className="app-page">
+      <div className="app-page-shell lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
       {/* Main Content */}
-      <div className="flex-1 p-6">
+      <div className="min-w-0 rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm sm:p-5 lg:p-6">
         {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-center">
@@ -541,8 +515,8 @@ const Notification = () => {
       </div>
 
       {/* Calendar Sidebar */}
-      <div className="w-full md:w-80 lg:w-96 bg-white border-l p-6">
-        <div className="sticky top-6">
+      <div className="min-w-0 rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm sm:p-5 lg:sticky lg:top-5 lg:p-6">
+        <div>
           <h2 className="text-xl font-bold text-gray-900 mb-4">Calendar</h2>
           
           <Calendar 
@@ -593,6 +567,7 @@ const Notification = () => {
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

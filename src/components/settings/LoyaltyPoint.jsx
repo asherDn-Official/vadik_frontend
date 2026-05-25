@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import api from "../../api/apiconfig";
+import Loader from "../../utils/Loader";
 import showToast from "../../utils/ToastNotification";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 import VideoPopupWithShare from "../common/VideoPopupWithShare";
@@ -111,11 +112,7 @@ function LoyaltyPoint() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <Loader text="Loading loyalty rules..." />;
   }
 
   return (

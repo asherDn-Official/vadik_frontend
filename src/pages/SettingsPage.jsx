@@ -70,78 +70,78 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full p-2 md:p-4 gap-4 bg-[#F4F5F9]">
-      <UnsavedChangesModal 
-        isOpen={showModal}
-        onConfirm={() => proceedWithTabChange(pendingTab)}
-        onCancel={() => {
-          setShowModal(false);
-          setPendingTab(null);
-        }}
-      />
-      
-      {/* Settings Sidebar */}
-      <div className="w-full md:w-64 border-r border-gray-200 bg-white rounded-[20px] shadow-sm flex-shrink-0">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-xl font-medium text-[#313166]">Settings</h1>
-        </div>
-        <div className="py-2 md:py-4 flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible no-scrollbar">
-          <SettingsTab
-            icon={<FiUser />}
-            text="My Profile"
-            isActive={activeTab === "my-profile"}
-            onClick={() => handleTabChange("my-profile")}
-          />
-          <SettingsTab
-            icon={<FiUsers />}
-            text="Customer Preferences"
-            isActive={activeTab === "customer-preferences"}
-            onClick={() => handleTabChange("customer-preferences")}
-          />
-          <SettingsTab
-            icon={<FiSettings />}
-            text="Roles & Permissions"
-            isActive={activeTab === "roles-permissions"}
-            onClick={() => handleTabChange("roles-permissions")}
-          />
-          <SettingsTab
-            icon={<LuTicketPercent />}
-            text="Coupons"
-            isActive={activeTab === "coupon"}
-            onClick={() => handleTabChange("coupon")}
-          />
-          <SettingsTab
-            icon={<FaCoins />}
-            text="Loyalty Points"
-            isActive={activeTab === "loyalty"}
-            onClick={() => handleTabChange("loyalty")}
-          />
-          <SettingsTab
-            icon={<FiRepeat />}
-            text="Retry Automation"
-            isActive={activeTab === "retry-automation"}
-            onClick={() => handleTabChange("retry-automation")}
-          />
-        </div>
-      </div>
+    <div className="app-page">
+      <div className="app-page-shell">
+        <UnsavedChangesModal
+          isOpen={showModal}
+          onConfirm={() => proceedWithTabChange(pendingTab)}
+          onCancel={() => {
+            setShowModal(false);
+            setPendingTab(null);
+          }}
+        />
 
-      {/* Main Content Area */}
-      <div className="flex-1 p-4 md:p-8 bg-white rounded-[20px] shadow-sm overflow-auto">
-        {activeTab === "my-profile" && (
-          <MyProfile />
-        )}
-        {activeTab === "inventory" && !showAddProduct && (
-          <Inventory onAddProduct={handleAddProduct} />
-        )}
-        {activeTab === "inventory" && showAddProduct && (
-          <AddProduct onBack={() => setShowAddProduct(false)} />
-        )}
-        {activeTab === "daily-billing" && <DailyBillingUpdate />}
-        {activeTab === "customer-preferences" && <CustomerFieldPreferences />}
-        {activeTab === "roles-permissions" && <RolesAndPermissions />}
-        {activeTab === "coupon" && <Coupon />}
-        {activeTab === "loyalty" && <LoyaltyPoint />}
-        {activeTab === "retry-automation" && <RetryAutomationSettings />}
+        <div className="app-panel flex flex-col overflow-hidden lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
+          <div className="border-b border-gray-200 lg:border-b-0 lg:border-r">
+            <div className="border-b border-gray-200 p-5 sm:p-6">
+              <h1 className="text-xl font-medium text-[#313166]">Settings</h1>
+            </div>
+            <div className="app-tabs-row px-2 py-2 md:px-3 md:py-4 lg:block lg:space-y-1 lg:overflow-visible lg:px-0">
+              <SettingsTab
+                icon={<FiUser />}
+                text="My Profile"
+                isActive={activeTab === "my-profile"}
+                onClick={() => handleTabChange("my-profile")}
+              />
+              <SettingsTab
+                icon={<FiUsers />}
+                text="Customer Preferences"
+                isActive={activeTab === "customer-preferences"}
+                onClick={() => handleTabChange("customer-preferences")}
+              />
+              <SettingsTab
+                icon={<FiSettings />}
+                text="Roles & Permissions"
+                isActive={activeTab === "roles-permissions"}
+                onClick={() => handleTabChange("roles-permissions")}
+              />
+              <SettingsTab
+                icon={<LuTicketPercent />}
+                text="Coupons"
+                isActive={activeTab === "coupon"}
+                onClick={() => handleTabChange("coupon")}
+              />
+              <SettingsTab
+                icon={<FaCoins />}
+                text="Loyalty Points"
+                isActive={activeTab === "loyalty"}
+                onClick={() => handleTabChange("loyalty")}
+              />
+              <SettingsTab
+                icon={<FiRepeat />}
+                text="Retry Automation"
+                isActive={activeTab === "retry-automation"}
+                onClick={() => handleTabChange("retry-automation")}
+              />
+            </div>
+          </div>
+
+          <div className="min-w-0 overflow-x-hidden p-4 sm:p-5 lg:p-6">
+            {activeTab === "my-profile" && <MyProfile />}
+            {activeTab === "inventory" && !showAddProduct && (
+              <Inventory onAddProduct={handleAddProduct} />
+            )}
+            {activeTab === "inventory" && showAddProduct && (
+              <AddProduct onBack={() => setShowAddProduct(false)} />
+            )}
+            {activeTab === "daily-billing" && <DailyBillingUpdate />}
+            {activeTab === "customer-preferences" && <CustomerFieldPreferences />}
+            {activeTab === "roles-permissions" && <RolesAndPermissions />}
+            {activeTab === "coupon" && <Coupon />}
+            {activeTab === "loyalty" && <LoyaltyPoint />}
+            {activeTab === "retry-automation" && <RetryAutomationSettings />}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -150,7 +150,7 @@ const SettingsPage = () => {
 const SettingsTab = ({ icon, text, isActive, onClick }) => {
   return (
     <div
-      className={`flex items-center px-4 md:px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors duration-200 whitespace-nowrap md:whitespace-normal ${isActive ? "bg-[#F5F5F7] border-b-2 md:border-b-0 md:border-l-4 border-[#313166]" : ""
+      className={`flex min-w-max items-center rounded-xl px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors duration-200 whitespace-nowrap md:min-w-0 md:px-5 lg:mx-2 ${isActive ? "bg-[#F5F5F7] border-b-2 md:border-b-0 lg:border-l-4 border-[#313166]" : ""
         }`}
       onClick={onClick}
     >
