@@ -38,7 +38,7 @@ const renderModernDateHeader = ({
   nextMonthButtonDisabled,
 }) => {
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 21 }, (_, index) => currentYear - 10 + index);
+  const years = Array.from({ length: 121 }, (_, index) => currentYear - 110 + index);
   const months = Array.from({ length: 12 }, (_, index) => ({
     value: index,
     label: new Date(2024, index, 1).toLocaleString("en-US", { month: "short" }),
@@ -185,7 +185,7 @@ const FilterPanel = ({
           lastname: { type: "string" },
           countryCode: { type: "string" },
           mobileNumber: { type: "number" },
-          gender: ["Male", "Female", "Others"],
+          gender: ["male", "female", "others"],
           firstVisit: { type: "date" },
           source: getSource?.data?.data,
           loyaltyPoints: { type: "number" },
@@ -285,13 +285,19 @@ const FilterPanel = ({
                 placeholder="From"
                 className="w-full p-2 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
                 value={loyaltyFilter.value || ""}
-                onChange={(e) =>
+                onChange={(e) => {
+                  let val = e.target.value;
+                  if (val !== "") {
+                    const numVal = parseInt(val);
+                    if (numVal < 0) val = "0";
+                    if (numVal > max) val = max.toString();
+                  }
                   onFilterChange(filterKey, {
                     operator: "between",
-                    value: e.target.value,
+                    value: val,
                     valueTo: loyaltyFilter.valueTo || "",
-                  })
-                }
+                  });
+                }}
               />
             </div>
             <span className="text-gray-400">to</span>
@@ -299,19 +305,29 @@ const FilterPanel = ({
               <input
                 type="number"
                 min="0"
+                max={max}
                 placeholder="To"
                 className="w-full p-2 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
                 value={loyaltyFilter.valueTo || ""}
-                onChange={(e) =>
+                onChange={(e) => {
+                  let val = e.target.value;
+                  if (val !== "") {
+                    const numVal = parseInt(val);
+                    if (numVal < 0) val = "0";
+                    if (numVal > max) val = max.toString();
+                  }
                   onFilterChange(filterKey, {
                     operator: "between",
                     value: loyaltyFilter.value || "",
-                    valueTo: e.target.value,
-                  })
-                }
+                    valueTo: val,
+                  });
+                }}
               />
             </div>
           </div>
+          {loyaltyFilter.value && loyaltyFilter.valueTo && parseInt(loyaltyFilter.value) > parseInt(loyaltyFilter.valueTo) && (
+            <p className="text-[10px] text-red-500 mt-1">"From" value should be less than "To" value</p>
+          )}
           {hasFilterValue(loyaltyFilter) && (
             <button
               className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
@@ -338,7 +354,7 @@ const FilterPanel = ({
                   }`}
                 onClick={() => onFilterChange(filterKey, option)}
               >
-                {option}
+                {option.charAt(0).toUpperCase() + option.slice(1)}
               </button>
             );
           })}
@@ -390,7 +406,11 @@ const FilterPanel = ({
               .toLowerCase()}`}
             className="w-full p-2 pl-8 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
             value={filters[filterKey] || ""}
-            onChange={(e) => onFilterChange(filterKey, e.target.value)}
+            onChange={(e) => {
+              let val = e.target.value;
+              if (val !== "" && parseInt(val) < 0) val = "0";
+              onFilterChange(filterKey, val);
+            }}
             min="0"
           />
           <Search
