@@ -1010,6 +1010,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { QRCodeSVG } from "qrcode.react";
+import { jsPDF } from "jspdf";
 import { 
   QrCode, 
   UserPlus, 
@@ -1024,7 +1025,8 @@ import {
   Check,
   ShieldCheck,
   LayoutDashboard,
-  Database
+  Database,
+  FileText
 } from "lucide-react";
 import api from "../api/apiconfig";
 import showToast from "../utils/ToastNotification";
@@ -1143,6 +1145,7 @@ const QRGenerator = () => {
   const [selectedDynamicQR, setSelectedDynamicQR] = useState(null);
   const [fgColor, setFgColor] = useState("#000000");
   const [bgColor, setBgColor] = useState("#ffffff");
+  const [cardBgColor, setCardBgColor] = useState("#ffffff");
   const [brandingName, setBrandingName] = useState("");
   const [logo, setLogo] = useState(null);
   const [logoOpacity, setLogoOpacity] = useState(1);
@@ -1283,6 +1286,7 @@ const QRGenerator = () => {
         logoSize,
         logoOpacity,
         qrSubtitle,
+        cardBgColor,
       };
 
       let response;
@@ -1328,6 +1332,7 @@ const QRGenerator = () => {
     setLogoSize(Math.min(qr.logoSize || 40, 80));
     setLogoOpacity(qr.logoOpacity || 1);
     setQrSubtitle(qr.qrSubtitle || "");
+    setCardBgColor(qr.cardBgColor || "#ffffff");
     setIsDynamic(true);
     setIsPreferenceDropdownOpen(new Array(qr.selectedPreferences?.length || 0).fill(false));
   };
@@ -1420,9 +1425,9 @@ const QRGenerator = () => {
   const generatedUrl = getGeneratedUrl();
   const effectiveLogo = resolvedLogo || logo;
 
-  const downloadQR = async () => {
+  const generateQRCanvas = async () => {
     const svg = document.getElementById("qr-code-svg");
-    if (!svg) return;
+    if (!svg) return null;
     try {
       const svgClone = svg.cloneNode(true);
       const canRenderLogoInCanvas = canUseLogoInCanvas(effectiveLogo);
@@ -1480,7 +1485,7 @@ const QRGenerator = () => {
       const cardHeight = canvas.height;
 
       // Background
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = cardBgColor;
       ctx.beginPath();
       ctx.roundRect(0, 0, cardWidth, cardHeight, borderRadius);
       ctx.fill();
@@ -1533,6 +1538,18 @@ const QRGenerator = () => {
         drawWrappedText(ctx, statementMeasure.lines, cardWidth / 2, currentY + statementFontSize, statementLineHeight);
       }
 
+      return canvas;
+    } catch (error) {
+      console.error("Error generating QR canvas:", error);
+      return null;
+    }
+  };
+
+  const downloadQR = async () => {
+    try {
+      const canvas = await generateQRCanvas();
+      if (!canvas) return;
+
       const pngFile = canvas.toDataURL("image/png");
       const downloadLink = document.createElement("a");
       downloadLink.download = `QR_${new Date().getTime()}.png`;
@@ -1541,6 +1558,26 @@ const QRGenerator = () => {
     } catch (error) {
       console.error("Error downloading QR:", error);
       showToast("Could not prepare QR download", "error");
+    }
+  };
+
+  const downloadPDF = async () => {
+    try {
+      const canvas = await generateQRCanvas();
+      if (!canvas) return;
+
+      const imgData = canvas.toDataURL("image/png", 1.0);
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+        unit: "px",
+        format: [canvas.width, canvas.height],
+      });
+
+      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+      pdf.save(`QR_${new Date().getTime()}.pdf`);
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      showToast("Could not prepare PDF download", "error");
     }
   };
 
@@ -1904,6 +1941,20 @@ const QRGenerator = () => {
                         <span className="text-xs font-mono text-gray-600">{bgColor}</span>
                       </div>
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Card Background
+                      </label>
+                      <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                        <input
+                          type="color"
+                          value={cardBgColor}
+                          onChange={(e) => setCardBgColor(e.target.value)}
+                          className="w-8 h-8 rounded cursor-pointer border-0"
+                        />
+                        <span className="text-xs font-mono text-gray-600">{cardBgColor}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -2007,6 +2058,7 @@ const QRGenerator = () => {
                           setQrSubtitle("");
                           setFgColor("#000000");
                           setBgColor("#ffffff");
+                          setCardBgColor("#ffffff");
                         }}
                         className={`group p-3 rounded-xl border-2 border-dashed transition-all cursor-pointer flex items-center justify-center gap-2 ${
                           !selectedDynamicQR 
@@ -2110,9 +2162,10 @@ const QRGenerator = () => {
               <div className="bg-gray-50/50 p-4 rounded-2xl mb-6 w-full flex flex-col items-center justify-center border border-gray-100">
                 {generatedUrl ? (
                   <div
-                    className="w-full max-w-[320px] bg-white border border-gray-100 rounded-3xl shadow-sm p-6 flex flex-col items-center"
+                    className="w-full max-w-[320px] border border-gray-100 rounded-3xl shadow-sm p-6 flex flex-col items-center"
                     style={{
                       boxShadow: "0 10px 25px rgba(0, 0, 0, 0.05)",
+                      backgroundColor: cardBgColor
                     }}
                   >
                     {effectiveLogo && (
@@ -2191,14 +2244,24 @@ const QRGenerator = () => {
                   </a>
                 </div>
 
-                <button
-                  disabled={!generatedUrl}
-                  onClick={downloadQR}
-                  className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Download className="w-4 h-4" />
-                  Download PNG
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    disabled={!generatedUrl}
+                    onClick={downloadQR}
+                    className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Download className="w-4 h-4" />
+                    PNG
+                  </button>
+                  <button
+                    disabled={!generatedUrl}
+                    onClick={downloadPDF}
+                    className="w-full py-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed border border-indigo-200"
+                  >
+                    <FileText className="w-4 h-4" />
+                    PDF (HQ)
+                  </button>
+                </div>
               </div>
 
               <div className="mt-6 p-3 bg-blue-50/50 rounded-xl border border-blue-100 flex gap-2">

@@ -63,7 +63,7 @@ const PersonalizationCampaign = () => {
     }
 
     if (typeof value === "object") {
-      return Object.values(value).every(
+      return Object.values(value).some(
         (nestedValue) =>
           nestedValue !== "" &&
           nestedValue !== null &&
@@ -139,6 +139,10 @@ const PersonalizationCampaign = () => {
                       typeof value.value === "string"
                         ? value.value.trim()
                         : value.value,
+                    valueTo:
+                      typeof value.valueTo === "string"
+                        ? value.valueTo.trim()
+                        : value.valueTo,
                   }
                 : value,
         }));

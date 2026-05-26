@@ -244,52 +244,82 @@ const FilterPanel = ({
   const renderFilterInput = (filterKey, filterConfig) => {
     if (filterKey === "loyaltyPoints" && filterConfig?.type === "number") {
       const loyaltyFilter = filters[filterKey] || {};
+      const min = 0;
+      const max = 10000;
+
+      const value = [
+        parseInt(loyaltyFilter.value) || min,
+        parseInt(loyaltyFilter.valueTo) || max
+      ];
 
       return (
-        <div className="mt-2 space-y-2">
-          <select
-            className="w-full p-2 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
-            value={loyaltyFilter.operator || "eq"}
-            onChange={(e) =>
+        <div className="mt-2 space-y-4 px-2">
+          <ReactSlider
+            className="loyalty-slider"
+            thumbClassName="loyalty-slider-thumb"
+            trackClassName="loyalty-slider-track"
+            value={value}
+            min={min}
+            max={max}
+            onChange={(val) => {
               onFilterChange(filterKey, {
-                operator: e.target.value,
-                value: loyaltyFilter.value || "",
-              })
-            }
-          >
-            <option value="gt">Greater Than</option>
-            <option value="lt">Less Than</option>
-            <option value="eq">Equal To</option>
-          </select>
-
-          <div className="relative">
-            <input
-              type="number"
-              min="0"
-              placeholder="Enter loyalty points"
-              className="w-full p-2 pl-8 pr-10 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
-              value={loyaltyFilter.value || ""}
-              onChange={(e) =>
-                onFilterChange(filterKey, {
-                  operator: loyaltyFilter.operator || "eq",
-                  value: e.target.value,
-                })
-              }
-            />
-            <Search
-              size={16}
-              className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            {hasFilterValue(loyaltyFilter) && (
-              <button
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                onClick={() => onFilterChange(filterKey, "")}
-                aria-label={`Clear ${filterKey}`}
-              >
-                <X size={14} />
-              </button>
+                operator: "between",
+                value: val[0].toString(),
+                valueTo: val[1].toString(),
+              });
+            }}
+            pearling
+            minDistance={10}
+            renderThumb={(props, state) => (
+              <div {...props}>
+                <div className="loyalty-slider-value">{state.valueNow}</div>
+              </div>
             )}
+          />
+
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                type="number"
+                min="0"
+                placeholder="From"
+                className="w-full p-2 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
+                value={loyaltyFilter.value || ""}
+                onChange={(e) =>
+                  onFilterChange(filterKey, {
+                    operator: "between",
+                    value: e.target.value,
+                    valueTo: loyaltyFilter.valueTo || "",
+                  })
+                }
+              />
+            </div>
+            <span className="text-gray-400">to</span>
+            <div className="relative flex-1">
+              <input
+                type="number"
+                min="0"
+                placeholder="To"
+                className="w-full p-2 border rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#2e2d5f] focus:border-transparent"
+                value={loyaltyFilter.valueTo || ""}
+                onChange={(e) =>
+                  onFilterChange(filterKey, {
+                    operator: "between",
+                    value: loyaltyFilter.value || "",
+                    valueTo: e.target.value,
+                  })
+                }
+              />
+            </div>
           </div>
+          {hasFilterValue(loyaltyFilter) && (
+            <button
+              className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
+              onClick={() => onFilterChange(filterKey, "")}
+            >
+              <X size={12} /> Clear Range
+            </button>
+          )}
         </div>
       );
     }

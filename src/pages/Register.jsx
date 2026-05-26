@@ -164,10 +164,7 @@ const Register = ({ formData, updateFormData }) => {
       case 4:
         return setupState.whatsappChoice === "default" || setupState.isUsingOwnWhatsapp === true;
       case 5:
-        return (
-          setupState.templateSetupCompleted === true ||
-          setupState.whatsappChoice === "default"
-        );
+        return setupState.templateSetupCompleted === true;
       case 6:
         return (
           setupState.googleReviewSetupCompleted === true ||
@@ -316,7 +313,7 @@ const Register = ({ formData, updateFormData }) => {
                   updateSetupState({
                     whatsappChoice: "default",
                     isUsingOwnWhatsapp: false,
-                    templateSetupCompleted: true,
+                    templateSetupCompleted: false,
                     googleReviewSetupCompleted: false,
                     googleReviewSkipped: false,
                   });

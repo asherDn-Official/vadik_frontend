@@ -100,6 +100,37 @@ body {
     @apply flex items-center gap-2 px-[3rem] py-[1rem] text-white hover:bg-opacity-25 hover:bg-white transition-all text-[18px];
   }
 
+  /* React Slider Styles */
+  .loyalty-slider {
+    @apply h-6 w-full mt-4 mb-8 flex items-center;
+  }
+
+  .loyalty-slider-track {
+    @apply h-1.5 rounded-full bg-[#E4E8F6];
+  }
+
+  .loyalty-slider-track-0 {
+    @apply bg-[#E4E8F6];
+  }
+
+  .loyalty-slider-track-1 {
+    @apply bg-[#313166];
+  }
+
+  .loyalty-slider-thumb {
+    @apply h-5 w-5 rounded-full bg-white border-2 border-[#313166] cursor-grab shadow-md focus:outline-none flex items-center justify-center;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .loyalty-slider-thumb:active {
+    @apply cursor-grabbing;
+  }
+
+  .loyalty-slider-value {
+    @apply absolute -top-8 text-[10px] font-semibold bg-[#313166] text-white px-2 py-0.5 rounded-md;
+  }
+
   .sidebar-active {
     @apply bg-gradient-to-r from-[#CB376D] to-[#A72962];
   }
