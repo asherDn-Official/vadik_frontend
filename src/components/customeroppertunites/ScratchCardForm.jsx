@@ -294,6 +294,18 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
     }
   };
 
+  const onCouponCreated = (newCoupon) => {
+    // Add to coupons list if not already there
+    setCoupons((prev) => {
+      if (prev.some((c) => c._id === newCoupon._id)) return prev;
+      return [newCoupon, ...prev];
+    });
+    // Select it
+    setValue("couponId", newCoupon._id);
+    clearErrors("couponId");
+    setIsCouponPopupOpen(false);
+  };
+
   const onSubmit = async (data) => {
     let isoDate = null;
 
@@ -543,7 +555,10 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
             className="bg-white rounded-lg  w-full max-w-2xl max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <CouponPopup onClose={() => setIsCouponPopupOpen(false)} />
+            <CouponPopup
+              onClose={() => setIsCouponPopupOpen(false)}
+              onSelect={onCouponCreated}
+            />
           </div>
         </div>
       )}

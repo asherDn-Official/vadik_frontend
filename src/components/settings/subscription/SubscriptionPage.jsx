@@ -698,7 +698,10 @@ export default function SubscriptionPage() {
                 </div>
               )}
 
-              <UsageTable data={currentPlans?.data} />
+              <UsageTable 
+                data={currentPlans?.data} 
+                isUsingOwnWhatsapp={auth?.data?.isUsingOwnWhatsapp}
+              />
             </>
           ) : (
             <div className="text-center py-8">

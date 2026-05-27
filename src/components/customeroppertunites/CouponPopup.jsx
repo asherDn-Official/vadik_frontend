@@ -18,7 +18,7 @@ import {
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 
-const CouponPopup = ({ onClose }) => {
+const CouponPopup = ({ onClose, onSelect }) => {
     const [coupons, setCoupons] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -55,7 +55,8 @@ const CouponPopup = ({ onClose }) => {
         condition: false,
         conditionType: "greater",
         conditionValue: 0,
-        productId: ""
+        productImage: "",
+        productNames: "",
     };
 
     const [couponData, setCouponData] = useState(initialCouponData);
@@ -119,7 +120,8 @@ const CouponPopup = ({ onClose }) => {
             condition: coupon.condition || false,
             conditionType: coupon.conditionType || "greater",
             conditionValue: coupon.conditionValue || 0,
-            productId: coupon.productId || ""
+            productImage: coupon.productImage || "",
+            productNames: typeof coupon.productNames === "string" ? coupon.productNames : "",
         });
         setFormError(null);
     };
@@ -133,10 +135,41 @@ const CouponPopup = ({ onClose }) => {
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
+        
+        if (name === "code") {
+            setCouponData((prev) => ({
+                ...prev,
+                [name]: value.toUpperCase(),
+            }));
+            return;
+        }
+
         setCouponData((prev) => ({
             ...prev,
             [name]: type === "checkbox" ? checked : value,
         }));
+    };
+
+    const handleProductImageChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Check file size (limit to 1MB)
+        const maxSize = 1 * 1024 * 1024;
+        if (file.size > maxSize) {
+            showToast("Image size must be less than 1MB", "error");
+            e.target.value = "";
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setCouponData((prev) => ({
+                ...prev,
+                productImage: reader.result?.toString() || "",
+            }));
+        };
+        reader.readAsDataURL(file);
     };
 
     const validateCoupon = () => {
@@ -164,8 +197,12 @@ const CouponPopup = ({ onClose }) => {
             return "Percentage discount cannot exceed 100%";
         }
 
-        if (couponData.couponType === "product" && !couponData.productId) {
-            return "Product ID is required for product coupons";
+        if (couponData.couponType === "product" && !couponData.productNames) {
+            return "Product name is required for product coupons";
+        }
+
+        if (couponData.couponType === "product" && couponData.productNames.length > 15) {
+            return "Product name cannot exceed 15 characters";
         }
 
         if (couponData.condition && couponData.conditionValue <= 0) {
@@ -187,14 +224,32 @@ const CouponPopup = ({ onClose }) => {
         setFormError(null);
 
         try {
+            // Prepare the payload
+            const payload = {
+                ...couponData,
+                // Ensure conditionValue is 0 if condition is false
+                conditionValue: couponData.condition ? couponData.conditionValue : 0,
+                // Ensure productNames is empty if not a product coupon
+                productNames: couponData.couponType === "product" ? couponData.productNames : "",
+                productImage: couponData.couponType === "product" ? couponData.productImage || "" : "",
+                // Ensure discount is 0 if product coupon
+                discount: couponData.couponType === "product" ? 0 : couponData.discount
+            };
+
             if (editingCouponId) {
                 // Update existing coupon
-                await api.put(`/api/coupons/coupon/${editingCouponId}`, couponData);
+                await api.put(`/api/coupons/coupon/${editingCouponId}`, payload);
                 showToast("Coupon updated successfully", "success");
             } else {
                 // Create new coupon
-                await api.post("/api/coupons/", couponData);
+                const response = await api.post("/api/coupons/", payload);
+                const newCoupon = response.data?.data;
                 showToast("Coupon created successfully", "success");
+                
+                if (onSelect && newCoupon) {
+                    onSelect(newCoupon);
+                    return; // Don't fetch and close, as onSelect handles it
+                }
             }
 
             fetchCoupons();
@@ -362,21 +417,23 @@ const CouponPopup = ({ onClose }) => {
                                 </div>
 
                                 {/* Discount */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Discount *
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="discount"
-                                        value={couponData.discount}
-                                        onChange={handleInputChange}
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                        placeholder="e.g., 50 or 10"
-                                        min="0"
-                                        step={couponData.couponType === "percentage" ? "0.1" : "1"}
-                                    />
-                                </div>
+                                {couponData.couponType !== "product" && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Discount *
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="discount"
+                                            value={couponData.discount}
+                                            onChange={handleInputChange}
+                                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                            placeholder="e.g., 50 or 10"
+                                            min="0"
+                                            step={couponData.couponType === "percentage" ? "0.1" : "1"}
+                                        />
+                                    </div>
+                                )}
 
                                 {/* Expiry Date */}
                                 <div>
@@ -410,21 +467,72 @@ const CouponPopup = ({ onClose }) => {
                                     </select>
                                 </div>
 
-                                {/* Product ID (only for product coupons) */}
+                                {/* Product Names (only for product coupons) */}
                                 {couponData.couponType === "product" && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Product ID *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="productId"
-                                            value={couponData.productId}
-                                            onChange={handleInputChange}
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                            placeholder="Enter product ID"
-                                        />
-                                    </div>
+                                    <>
+                                        <div className="col-span-1 md:col-span-2">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Product Name *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                name="productNames"
+                                                value={couponData.productNames}
+                                                onChange={handleInputChange}
+                                                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                placeholder="Enter product name"
+                                            />
+                                        </div>
+                                        <div className="col-span-1 md:col-span-2">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Product Image
+                                            </label>
+                                            <div className="space-y-2">
+                                                <input
+                                                    type="text"
+                                                    name="productImage"
+                                                    value={couponData.productImage}
+                                                    onChange={handleInputChange}
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                    placeholder="Image URL or data URL"
+                                                />
+                                                <div className="flex items-center gap-3">
+                                                    <label className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 cursor-pointer hover:bg-gray-50">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="hidden"
+                                                            onChange={handleProductImageChange}
+                                                        />
+                                                        Upload Image
+                                                    </label>
+                                                    {couponData.productImage && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setCouponData((prev) => ({
+                                                                    ...prev,
+                                                                    productImage: "",
+                                                                }))
+                                                            }
+                                                            className="px-4 py-2 text-sm text-red-600 border border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                {couponData.productImage && (
+                                                    <div className="flex items-center gap-3">
+                                                        <img
+                                                            src={couponData.productImage}
+                                                            alt="Product"
+                                                            className="h-16 w-16 rounded-lg object-cover border"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </>
                                 )}
 
                                 {/* Active Status */}
@@ -817,7 +925,15 @@ const CouponPopup = ({ onClose }) => {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex gap-1">
+                                        <div className="flex gap-1 items-center">
+                                            {onSelect && (
+                                                <button
+                                                    onClick={() => onSelect(coupon)}
+                                                    className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium mr-2"
+                                                >
+                                                    Select
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => openEditCouponModal(coupon)}
                                                 className="flex-shrink-0 p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"

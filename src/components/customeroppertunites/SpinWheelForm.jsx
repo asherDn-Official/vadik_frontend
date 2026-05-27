@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Gift } from "lucide-react";
 import SpinWheelPreview from "./SpinWheelPreview";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import Quiz from "./Quiz";
+import CouponPopup from "./CouponPopup";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format } from "date-fns";
@@ -15,6 +16,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const [quizzes, setQuizzes] = useState([]);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [isQuizePopupOpen, setIsQuizePopupOpen] = useState(false);
+  const [isCouponPopupOpen, setIsCouponPopupOpen] = useState(false);
+  const [activeSegmentForCoupon, setActiveSegmentForCoupon] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isFullyRandom, setIsFullyRandom] = useState(true);
 
@@ -284,6 +287,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
               productName: data.name || "",
               offer: String(data.discount ?? "0"),
               couponType: data.couponType,
+              image: data.productImage || s.image || null,
             }
           : s
       );
@@ -310,6 +314,22 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     }
   };
 
+  const onCouponCreated = async (newCoupon) => {
+    // Add to coupons list if not already there
+    setCoupons((prev) => {
+      if (prev.some((c) => c._id === newCoupon._id)) return prev;
+      return [newCoupon, ...prev];
+    });
+    
+    // Select it for the active segment
+    if (activeSegmentForCoupon) {
+      await handleCouponSelect(activeSegmentForCoupon, newCoupon._id);
+    }
+    
+    setIsCouponPopupOpen(false);
+    setActiveSegmentForCoupon(null);
+  };
+
   const handleTargetedCouponChange = (couponId, isChecked) => {
     const currentValues = getValues("targetedCoupons") || [];
     let updatedValues;
@@ -334,6 +354,25 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
     }
   };
   
+
+  const handleImageUpload = (segmentId, file) => {
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) {
+      showToast("Image size must be less than 1MB", "error");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result;
+      const updatedSegments = formData.segments.map((s) =>
+        s.id === segmentId ? { ...s, image: base64String } : s
+      );
+      setValue("segments", updatedSegments);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const onSubmit = async (data) => {
     // Additional validation for segments
@@ -369,6 +408,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       name: data.name.trim(),
       noOfSpins: Number(data.noOfSpins),
       couponOptions: validCouponIds,
+      segments: data.segments,
       targetedCoupons: isFullyRandom ? [] : data.targetedCoupons,
       isActive: data.isActive,
       allocatedQuizCampainId: data.allocatedQuizCampainId || "",
@@ -574,6 +614,9 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                     Coupon
                   </th>
                   <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
+                    Image
+                  </th>
+                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
                     Product Name
                   </th>
                   <th className="border border-gray-200 px-4 py-3 text-left text-sm font-medium text-gray-700">
@@ -596,21 +639,74 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                           Loading coupons...
                         </div>
                       ) : (
-                        <select
-                          value={segment.couponId}
-                          onChange={(e) =>
-                            handleCouponSelect(segment.id, e.target.value)
-                          }
-                          className="w-full cursor-pointer px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
-                        >
-                          <option value="">Select Coupon</option>
-                          {coupons?.map((coupon) => (
-                            <option key={coupon._id} value={coupon._id}>
-                              {coupon.name} ({coupon.code})
-                            </option>
-                          ))}
-                        </select>
+                        <div className="flex flex-col gap-1">
+                          <select
+                            value={segment.couponId}
+                            onChange={(e) =>
+                              handleCouponSelect(segment.id, e.target.value)
+                            }
+                            className="w-full cursor-pointer px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
+                          >
+                            <option value="">Select Coupon</option>
+                            {coupons?.map((coupon) => (
+                              <option key={coupon._id} value={coupon._id}>
+                                {coupon.name} ({coupon.code})
+                              </option>
+                            ))}
+                          </select>
+                          <div
+                            className="text-[10px] text-blue-900 cursor-pointer text-end underline"
+                            onClick={() => {
+                              setActiveSegmentForCoupon(segment.id);
+                              setIsCouponPopupOpen(true);
+                            }}
+                          >
+                            Create Coupon
+                          </div>
+                        </div>
                       )}
+                    </td>
+                    <td className="border border-gray-200 px-4 py-3">
+                      <div className="flex flex-col items-center gap-2">
+                        {segment.image ? (
+                          <div className="relative w-12 h-12">
+                            <img
+                              src={segment.image}
+                              alt="Preview"
+                              className="w-12 h-12 object-cover rounded border border-gray-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updatedSegments = formData.segments.map((s) =>
+                                  s.id === segment.id ? { ...s, image: null } : s
+                                );
+                                setValue("segments", updatedSegments);
+                              }}
+                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 border-2 border-dashed border-gray-300 rounded flex items-center justify-center bg-gray-50">
+                            <Gift className="w-6 h-6 text-gray-400" />
+                          </div>
+                        )}
+                        {segment.couponId && (
+                          <label className="cursor-pointer text-[10px] text-pink-600 hover:text-pink-700 underline">
+                            Upload Image
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={(e) =>
+                                handleImageUpload(segment.id, e.target.files[0])
+                              }
+                            />
+                          </label>
+                        )}
+                      </div>
                     </td>
                     <td className="border border-gray-200 px-4 py-3">
                       <input
@@ -836,6 +932,23 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
             <Quiz
               backButton={true}
               onClose={() => setIsQuizePopupOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {isCouponPopupOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setIsCouponPopupOpen(false)}
+        >
+          <div
+            className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CouponPopup
+              onClose={() => setIsCouponPopupOpen(false)}
+              onSelect={onCouponCreated}
             />
           </div>
         </div>

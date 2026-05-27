@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { Camera, User, X } from "lucide-react";
 import PhoneInput, {
   isValidPhoneNumber,
   parsePhoneNumber,
@@ -16,6 +17,30 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
   const [sources, setSources] = React.useState([]);
   const [showSourcePopup, setShowSourcePopup] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [profilePreview, setProfilePreview] = useState(null);
+  const [profileFile, setProfileFile] = useState(null);
+
+  const fileInputRef = React.useRef(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeProfilePicture = () => {
+    setProfileFile(null);
+    setProfilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const sanitizeSourceName = React.useCallback(
     (value = "") => value.trim().toLowerCase(),
@@ -190,6 +215,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
       countryCode,
       mobileNumber,
       firstVisit: formattedFirstVisit,
+      profilePicture: profileFile,
     });
   };
 
@@ -236,6 +262,72 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
         onSubmit={handleSubmit(onFormSubmit)}
         className="flex flex-col gap-8"
       >
+        {/* Profile Picture Upload */}
+        <div className="flex flex-col items-center justify-center gap-4 py-4">
+          <div className="relative group">
+            <div
+              className={`
+                w-32 h-32 rounded-full overflow-hidden
+                border-2 border-dashed border-[#E8ECF8]
+                bg-[#F8F9FF] flex items-center justify-center
+                transition-all duration-200
+                group-hover:border-[#313166]/40
+              `}
+            >
+              {profilePreview ? (
+                <img
+                  src={profilePreview}
+                  alt="Profile Preview"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User size={48} className="text-[#8B90B2]" />
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="
+                absolute bottom-0 right-0
+                p-2 rounded-full bg-white
+                border border-[#EEF1FF]
+                text-[#313166] shadow-lg
+                hover:bg-[#F8F9FF] transition-all
+              "
+            >
+              <Camera size={18} />
+            </button>
+
+            {profilePreview && (
+              <button
+                type="button"
+                onClick={removeProfilePicture}
+                className="
+                  absolute top-0 right-0
+                  p-1.5 rounded-full bg-red-50
+                  border border-red-100
+                  text-red-500 shadow-sm
+                  hover:bg-red-100 transition-all
+                "
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            className="hidden"
+          />
+          <div className="text-center">
+            <p className="text-sm font-medium text-[#313166]">Customer Picture</p>
+            <p className="text-xs text-[#8B90B2] mt-1">PNG, JPG up to 5MB</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <div className="space-y-2">
             <label

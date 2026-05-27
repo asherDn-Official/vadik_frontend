@@ -139,6 +139,9 @@ const SpinWheelPreview = ({ segments = [] }) => {
                 const textX = 100 + 50 * Math.cos((textAngle * Math.PI) / 180);
                 const textY = 100 + 50 * Math.sin((textAngle * Math.PI) / 180);
 
+                const imageX = 100 + 65 * Math.cos((textAngle * Math.PI) / 180);
+                const imageY = 100 + 65 * Math.sin((textAngle * Math.PI) / 180);
+
                 return (
                   <g key={segment.id || index}>
                     <defs>
@@ -165,23 +168,34 @@ const SpinWheelPreview = ({ segments = [] }) => {
                       filter={`url(#shadow-${index})`}
                       className="drop-shadow-lg"
                     />
-                    <text
-                      x={textX}
-                      y={textY}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fill="white"
-                      fontWeight="bold"
-                      transform={`rotate(${textAngle + 90}, ${textX}, ${textY})`}
-                      className="drop-shadow-md"
-                      style={{
-                        textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
-                        fontSize: `${getFontSize()}px`,
-                        pointerEvents: "none",
-                      }}
-                    >
-                      {getDisplayText(segment)}
-                    </text>
+                    {segment.image ? (
+                      <image
+                        href={segment.image}
+                        x={imageX - 10}
+                        y={imageY - 10}
+                        height="20"
+                        width="20"
+                        transform={`rotate(${textAngle + 90}, ${imageX}, ${imageY})`}
+                      />
+                    ) : (
+                      <text
+                        x={textX}
+                        y={textY}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill="white"
+                        fontWeight="bold"
+                        transform={`rotate(${textAngle + 90}, ${textX}, ${textY})`}
+                        className="drop-shadow-md"
+                        style={{
+                          textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
+                          fontSize: `${getFontSize()}px`,
+                          pointerEvents: "none",
+                        }}
+                      >
+                        {getDisplayText(segment)}
+                      </text>
+                    )}
                   </g>
                 );
               })}

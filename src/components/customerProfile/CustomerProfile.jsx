@@ -57,12 +57,38 @@ const CustomerProfile = () => {
     try {
       setIsLoading(true);
 
+      const formData = new FormData();
+      
+      // Separate profilePicture from the rest of apiData
+      const { profilePicture, ...otherData } = apiData;
+
       // Convert date strings in the payload
-      const payload = convertDateObjectToISO(apiData);
+      const payload = convertDateObjectToISO(otherData);
+
+      // Append data to FormData
+      Object.keys(payload).forEach(key => {
+        const value = payload[key];
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'object' && !(value instanceof Date)) {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, value);
+          }
+        }
+      });
+
+      if (profilePicture) {
+        formData.append('profilePicture', profilePicture);
+      }
 
       const response = await api.patch(
         `/api/customers/${selectedCustomer._id}`,
-        payload,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       );
       showToast("Customer data updated successfully!", "success");
       const updatedCustomer = response.data;
@@ -70,7 +96,7 @@ const CustomerProfile = () => {
       setIsEditing(false);
     } catch (error) {
       showToast(
-        error.response?.data?.message || "Error updating customer",
+        error.response?.data?.error || error.response?.data?.message || "Error updating customer",
         "error",
       );
     } finally {

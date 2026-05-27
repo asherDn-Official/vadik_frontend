@@ -81,22 +81,38 @@ const CustomerAdd = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (customerData) => {
-    const apiData = {
-      ...customerData,
-      retailerId: retailerId,
-    };
+    const formData = new FormData();
+    
+    // Append top-level fields
+    Object.keys(customerData).forEach(key => {
+      if (key === 'profilePicture' && customerData[key]) {
+        formData.append('profilePicture', customerData[key]);
+      } else if (customerData[key] !== undefined && customerData[key] !== null) {
+        if (typeof customerData[key] === 'object' && !(customerData[key] instanceof Date)) {
+          formData.append(key, JSON.stringify(customerData[key]));
+        } else {
+          formData.append(key, customerData[key]);
+        }
+      }
+    });
+
+    formData.append('retailerId', retailerId);
 
     setIsSubmitting(true);
 
     try {
-      const response = await api.post("/api/customers", apiData);
+      const response = await api.post("/api/customers", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       const newCustomer = response.data;
       showToast("Customer added successfully!", "success");
 
       navigate(`/customers/customer-profile/${newCustomer._id}`);
     } catch (error) {
-      console.error(error.response.data.error);
-      showToast(error.response.data.error, "error");
+      console.error(error.response?.data?.error || error.message);
+      showToast(error.response?.data?.error || "Error adding customer", "error");
     } finally {
       setIsSubmitting(false);
     }
