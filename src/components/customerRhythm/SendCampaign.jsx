@@ -142,17 +142,42 @@ const SendCampaign = () => {
   const fetchCustomers = async () => {
     try {
       setFetchingCustomers(true);
-      // Prepare filters array - exclude period-related filters
       const filtersArray = Object.entries(filters)
         .filter(([name, value]) => {
+          const hasValue = (val) => {
+            if (val === "" || val === null || val === undefined) return false;
+            if (typeof val === "object") {
+              return Object.values(val).some(
+                (nested) => nested !== "" && nested !== null && nested !== undefined
+              );
+            }
+            return true;
+          };
+
           return (
-            value !== "" &&
-            value !== null &&
-            value !== undefined &&
+            hasValue(value) &&
             name !== "periodValue"
           );
         })
-        .map(([name, value]) => ({ name, value }));
+        .map(([name, value]) => ({
+          name,
+          value:
+            typeof value === "string"
+              ? value.trim()
+              : typeof value === "object" && value !== null
+              ? {
+                  ...value,
+                  value:
+                    typeof value.value === "string"
+                      ? value.value.trim()
+                      : value.value,
+                  valueTo:
+                    typeof value.valueTo === "string"
+                      ? value.valueTo.trim()
+                      : value.valueTo,
+                }
+              : value,
+        }));
 
       const payload = {
         page: currentPage,

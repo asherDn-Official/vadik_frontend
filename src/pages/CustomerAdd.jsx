@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import api from "../api/apiconfig";
 import showToast from "../utils/ToastNotification";
 import { usePlan } from "../context/PlanContext";
+import Loader from "../utils/Loader";
 
 const CustomerAdd = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const CustomerAdd = () => {
   const [retailerId, setRetailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
   });
+  const [isPreferenceLoading, setIsPreferenceLoading] = useState(true);
 
   // Fetch WhatsApp configuration
   useEffect(() => {
@@ -32,6 +34,44 @@ const CustomerAdd = () => {
     fetchWhatsappConfig();
     refreshPlans();
   }, []);
+
+  // Check for customer preferences existence
+  useEffect(() => {
+    if (!retailerId) return;
+
+    let intervalId;
+    let isMounted = true;
+
+    const checkPreferences = async () => {
+      try {
+        const response = await api.get(`/api/customer-preferences/${retailerId}`);
+        if (response.status === 200 && isMounted) {
+          setIsPreferenceLoading(false);
+          if (intervalId) clearInterval(intervalId);
+        }
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          // Keep polling if not found
+          if (isMounted) setIsPreferenceLoading(true);
+        } else {
+          console.error("Error checking preferences:", error);
+          // On other errors, we might want to stop to avoid infinite loop of errors,
+          // but usually this means something is wrong with the API.
+          // For now, let's keep polling or stop if it's a fatal error.
+          if (isMounted) setIsPreferenceLoading(false);
+          if (intervalId) clearInterval(intervalId);
+        }
+      }
+    };
+
+    checkPreferences();
+    intervalId = setInterval(checkPreferences, 3000); // Check every 3 seconds
+
+    return () => {
+      isMounted = false;
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [retailerId]);
 
   const isLowCredits =
     whatsappConfig &&
@@ -171,11 +211,24 @@ const CustomerAdd = () => {
           shadow-[0_10px_40px_rgba(49,49,102,0.08)]
         "
         >
-          <CustomerForm
-            onSubmit={handleSubmit}
-            resetForm={resetForm}
-            isSubmitting={isSubmitting}
-          />
+          {isPreferenceLoading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader
+                text="Setting up your customer workspace..."
+                fullHeight={false}
+              />
+              <p className="mt-4 text-center text-sm text-[#8B90B2]">
+                We're creating your customer preference data based on your store
+                type. This will only take a moment.
+              </p>
+            </div>
+          ) : (
+            <CustomerForm
+              onSubmit={handleSubmit}
+              resetForm={resetForm}
+              isSubmitting={isSubmitting}
+            />
+          )}
         </div>
       </div>
     </div>

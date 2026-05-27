@@ -25,7 +25,7 @@ const CustomerPersonalisation = () => {
     }
 
     if (typeof value === "object") {
-      return Object.values(value).every(
+      return Object.values(value).some(
         (nestedValue) =>
           nestedValue !== "" &&
           nestedValue !== null &&
@@ -65,6 +65,10 @@ const CustomerPersonalisation = () => {
                       typeof value.value === "string"
                         ? value.value.trim()
                         : value.value,
+                    valueTo:
+                      typeof value.valueTo === "string"
+                        ? value.valueTo.trim()
+                        : value.valueTo,
                   }
                 : value,
         }));

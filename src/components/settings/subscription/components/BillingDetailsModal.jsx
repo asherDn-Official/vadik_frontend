@@ -35,15 +35,15 @@ export default function BillingDetailsModal({
           <div className="border-t border-gray-200 pt-4 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Subtotal:</span>
-              <span className="text-gray-800 font-medium">₹{subtotal.toLocaleString()}</span>
+              <span className="text-gray-800 font-medium">₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600">GST (18%):</span>
-              <span className="text-gray-800 font-medium">₹{gstAmount.toLocaleString()}</span>
+              <span className="text-gray-800 font-medium">₹{gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="border-t pt-3 flex justify-between items-center bg-pink-50 -mx-6 px-6 py-3">
               <span className="text-gray-800 font-semibold text-lg">Total Amount:</span>
-              <span className="text-pink-700 font-bold text-2xl">₹{totalAmount.toLocaleString()}</span>
+              <span className="text-pink-700 font-bold text-2xl">₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
 

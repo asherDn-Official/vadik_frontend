@@ -46,12 +46,20 @@ const BASE_TEMPLATES = [
     usedIn: "Used in double opt-in confirmation flows.",
   },
   {
+    id: "opt_out_confirmation",
+    label: "Opt-out Confirmation Request",
+    category: "UTILITY",
+    defaultText: "Hi {{1}}, are you sure you want to stop receiving updates from {{2}}? To confirm, click STOP below or reply STOP.",
+    vars: ["Name", "Store Name"],
+    usedIn: "Sent when a customer first requests to opt-out, to confirm their decision.",
+  },
+  {
     id: "opt_out_acknowledged",
     label: "Opt-out Acknowledged",
-    category: "MARKETING",
+    category: "UTILITY",
     defaultText: "Hi {{1}}, you have been successfully unsubscribed from {{2}} updates.",
     vars: ["Name", "Store Name"],
-    usedIn: "Sent after a customer unsubscribes from updates.",
+    usedIn: "Sent after a customer confirms they want to STOP receiving updates.",
   },
   {
     id: "birthday_greeting",
@@ -239,26 +247,39 @@ const TemplateSetup = ({
         );
 
         if (!existing) {
-          const variableCount = getVariableCount(template.text);
+          const components = [
+            {
+              type: "BODY",
+              text: template.text.trim(),
+              example:
+                variableCount > 0
+                  ? {
+                      body_text: [
+                        Array.from({ length: variableCount }, (_, index) => `Sample${index + 1}`),
+                      ],
+                    }
+                  : undefined,
+            },
+          ];
+
+          if (template.id === "opt_out_confirmation") {
+            components.push({
+              type: "BUTTONS",
+              buttons: [
+                {
+                  type: "QUICK_REPLY",
+                  text: "STOP",
+                },
+              ],
+            });
+          }
+
           const payload = {
             templateData: {
               name: sanitizedName,
               category: template.category,
               language: "en_US",
-              components: [
-                {
-                  type: "BODY",
-                  text: template.text.trim(),
-                  example:
-                    variableCount > 0
-                      ? {
-                          body_text: [
-                            Array.from({ length: variableCount }, (_, index) => `Sample${index + 1}`),
-                          ],
-                        }
-                      : undefined,
-                },
-              ],
+              components,
             },
           };
 
@@ -305,55 +326,38 @@ const TemplateSetup = ({
     goToNextStep();
   };
 
-  if (!isUsingOwnWhatsapp) {
-    return (
-      <div className="space-y-8">
-        <div className="step-container">
-          <h2 className="step-header">Template Review</h2>
-          <p className="step-description">
-            You chose Vadik&apos;s default WhatsApp account, so Vadik&apos;s managed templates will be used automatically for now.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm space-y-4">
-          <h3 className="text-2xl font-bold text-[#313166]">Default template setup is already handled</h3>
-          <p className="text-sm text-gray-600 leading-7">
-            When you continue, your business will use Vadik&apos;s default WhatsApp account and its standard approved templates. You can connect your own account later from Integration Management whenever you&apos;re ready.
-          </p>
-        </div>
-
-        <div className="flex justify-center gap-4">
-          <button
-            type="button"
-            onClick={goToPreviousStep}
-            className="min-w-[150px] text-[#CB376D] py-2 px-4 rounded-[10px] bg-white border-2 border-[#CB376D] hover:bg-gray-50 transition-colors"
-          >
-            Back
-          </button>
-          <button
-            type="button"
-            onClick={() => runTemplateProvisioning(true)}
-            className="min-w-[180px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962] hover:opacity-95 transition-opacity"
-          >
-            Finish setup
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       <div className="step-container">
-        <h2 className="step-header">Review WhatsApp Templates</h2>
+        <h2 className="step-header">
+          {isUsingOwnWhatsapp ? "Review WhatsApp Templates" : "Default Templates"}
+        </h2>
         <p className="step-description">
-          These are the templates Vadik will create in your own Meta account. You can edit the content and template name now, but keep the variables unchanged.
+          {isUsingOwnWhatsapp
+            ? "These are the templates Vadik will create in your own Meta account. You can edit the content and template name now, but keep the variables unchanged."
+            : "Vadik uses these standard approved templates to handle your business communications automatically through our default account."}
         </p>
       </div>
 
-      <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-800">
-        Each variable badge shows data that Vadik fills automatically during campaigns and automations. You can change the wording around the variables, but do not change the variable numbers.
-      </div>
+      {!isUsingOwnWhatsapp && (
+        <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm space-y-4">
+          <h3 className="text-2xl font-bold text-[#313166]">
+            Default template setup is already handled
+          </h3>
+          <p className="text-sm text-gray-600 leading-7">
+            When you continue, your business will use Vadik&apos;s default WhatsApp account and its standard
+            approved templates. You can connect your own account later from Integration Management whenever
+            you&apos;re ready.
+          </p>
+        </div>
+      )}
+
+      {isUsingOwnWhatsapp && (
+        <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-800">
+          Each variable badge shows data that Vadik fills automatically during campaigns and automations.
+          You can change the wording around the variables, but do not change the variable numbers.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         {templates.map((template, index) => {
@@ -379,12 +383,16 @@ const TemplateSetup = ({
                   <input
                     type="text"
                     value={template.customName}
+                    readOnly={!isUsingOwnWhatsapp}
                     onChange={(event) => {
+                      if (!isUsingOwnWhatsapp) return;
                       const next = [...templates];
                       next[index].customName = event.target.value;
                       setTemplates(next);
                     }}
-                    className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-[#CB376D]"
+                    className={`w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-[#CB376D] ${
+                      !isUsingOwnWhatsapp ? "bg-gray-50 cursor-not-allowed" : ""
+                    }`}
                   />
                 </div>
 
@@ -394,14 +402,16 @@ const TemplateSetup = ({
                   </label>
                   <textarea
                     value={template.text}
+                    readOnly={!isUsingOwnWhatsapp}
                     onChange={(event) => {
+                      if (!isUsingOwnWhatsapp) return;
                       const next = [...templates];
                       next[index].text = event.target.value;
                       setTemplates(next);
                     }}
                     className={`w-full min-h-[140px] border rounded-2xl px-4 py-3 text-sm outline-none ${
                       validation.valid ? "border-gray-200 focus:border-[#CB376D]" : "border-red-300"
-                    }`}
+                    } ${!isUsingOwnWhatsapp ? "bg-gray-50 cursor-not-allowed" : ""}`}
                   />
                   {!validation.valid && (
                     <p className="text-xs text-red-600 mt-2">{validation.reason}</p>
@@ -458,22 +468,34 @@ const TemplateSetup = ({
         >
           Back
         </button>
-        <button
-          type="button"
-          onClick={() => runTemplateProvisioning(true)}
-          disabled={submitting}
-          className="min-w-[220px] text-[#313166] py-2 px-4 rounded-[10px] bg-[#F3F4F6] hover:bg-[#E5E7EB] transition-colors disabled:opacity-60"
-        >
-          {submitting ? "Creating templates..." : "Skip edits and use default content"}
-        </button>
-        <button
-          type="button"
-          onClick={() => runTemplateProvisioning(false)}
-          disabled={submitting || invalidTemplates.length > 0}
-          className="min-w-[220px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962] hover:opacity-95 transition-opacity disabled:opacity-60"
-        >
-          {submitting ? "Creating templates..." : "Create templates and finish"}
-        </button>
+        {!isUsingOwnWhatsapp ? (
+          <button
+            type="button"
+            onClick={() => runTemplateProvisioning(true)}
+            className="min-w-[180px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962] hover:opacity-95 transition-opacity"
+          >
+            Finish setup
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => runTemplateProvisioning(true)}
+              disabled={submitting}
+              className="min-w-[220px] text-[#313166] py-2 px-4 rounded-[10px] bg-[#F3F4F6] hover:bg-[#E5E7EB] transition-colors disabled:opacity-60"
+            >
+              {submitting ? "Creating templates..." : "Skip edits and use default content"}
+            </button>
+            <button
+              type="button"
+              onClick={() => runTemplateProvisioning(false)}
+              disabled={submitting || invalidTemplates.length > 0}
+              className="min-w-[220px] text-white py-2 px-4 rounded-[10px] bg-gradient-to-r from-[#CB376D] to-[#A72962] hover:opacity-95 transition-opacity disabled:opacity-60"
+            >
+              {submitting ? "Creating templates..." : "Create templates and finish"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

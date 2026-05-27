@@ -1,27 +1,28 @@
 export const GST_PERCENTAGE = 18;
 
 export const calculateGST = (amount) => {
-  const gst = Math.round((amount * GST_PERCENTAGE) / 100);
-  return gst;
+  const gst = (amount * GST_PERCENTAGE) / 100;
+  return Math.round(gst * 100) / 100;
 };
 
 export const calculateTotalWithGST = (subtotal) => {
   const gstAmount = calculateGST(subtotal);
   return {
-    subtotal,
+    subtotal: Math.round(subtotal * 100) / 100,
     gstAmount,
     gstPercentage: GST_PERCENTAGE,
-    totalAmount: subtotal + gstAmount,
+    totalAmount: Math.round((subtotal + gstAmount) * 100) / 100,
   };
 };
 
 export const calculateGSTFromInclusiveTotal = (totalAmount) => {
   const numericTotal = Number(totalAmount) || 0;
-  const subtotal = Math.round(numericTotal / (1 + GST_PERCENTAGE / 100));
-  const gstAmount = numericTotal - subtotal;
+  const subtotal = numericTotal / (1 + GST_PERCENTAGE / 100);
+  const roundedSubtotal = Math.round(subtotal * 100) / 100;
+  const gstAmount = Math.round((numericTotal - roundedSubtotal) * 100) / 100;
 
   return {
-    subtotal,
+    subtotal: roundedSubtotal,
     gstAmount,
     gstPercentage: GST_PERCENTAGE,
     totalAmount: numericTotal,
@@ -29,7 +30,9 @@ export const calculateGSTFromInclusiveTotal = (totalAmount) => {
 };
 
 export const formatPrice = (amount) => {
-  return amount ? `Rs. ${amount.toLocaleString()}` : 'Rs. 0';
+  return amount !== undefined && amount !== null 
+    ? `Rs. ${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+    : 'Rs. 0.00';
 };
 
 export const downloadBill = (subscriptionId, type = 'subscription') => {

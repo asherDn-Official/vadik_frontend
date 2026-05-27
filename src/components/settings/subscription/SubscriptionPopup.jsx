@@ -841,24 +841,24 @@ const SubscriptionPopup = ({
                             <span>Subtotal: </span>
                             {totalOriginal && (
                               <span className="text-xs text-gray-400 line-through mr-1">
-                                ₹{calculateTotalWithGST(planOrig).subtotal.toLocaleString()}
+                                ₹{calculateTotalWithGST(planOrig).subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             )}
-                            <span className="font-medium">₹{billing.subtotal.toLocaleString()}</span>
+                            <span className="font-medium">₹{billing.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
                           <div className="text-gray-600 text-sm">
                             <span>GST (18%): </span>
-                            <span className="font-medium">₹{billing.gstAmount.toLocaleString()}</span>
+                            <span className="font-medium">₹{billing.gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
                           <div className="text-gray-700 font-medium">
                             <span>Total: </span>
                             {totalOriginal && totalOriginal > billing.totalAmount && (
                               <span className="text-sm text-gray-400 line-through mr-2">
-                                ₹{totalOriginal.toLocaleString()}
+                                ₹{totalOriginal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             )}
                             <span className="text-xl font-bold text-pink-700">
-                              ₹{billing.totalAmount.toLocaleString()}
+                              ₹{billing.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                         </div>

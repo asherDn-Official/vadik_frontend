@@ -163,10 +163,10 @@ export default function SubscriptionCard({
         <div className="p-6 flex flex-col flex-grow">
           <div className="text-center mb-6 flex flex-col items-center">
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-gray-800">Rs. {price.toLocaleString()}</span>
+              <span className="text-4xl font-bold text-gray-800">Rs. {price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               {originalPrice && (
                 <span className="text-xl text-gray-400 line-through">
-                  Rs. {originalPrice.toLocaleString()}
+                  Rs. {originalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               )}
             </div>
@@ -285,10 +285,10 @@ export default function SubscriptionCard({
 
       <div className="text-center mb-6 flex flex-col items-center">
         <div className="flex items-baseline gap-2">
-          <span className={`text-4xl font-bold ${textColor}`}>Rs. {price.toLocaleString()}</span>
+          <span className={`text-4xl font-bold ${textColor}`}>Rs. {price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           {originalPrice && (
             <span className={`text-xl line-through ${variant === 'primary' ? 'text-white/60' : 'text-gray-400'}`}>
-              Rs. {originalPrice.toLocaleString()}
+              Rs. {originalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           )}
         </div>
@@ -341,7 +341,7 @@ export default function SubscriptionCard({
               </button>
             </div>
             <span className={`break-words text-sm ${variant === 'primary' ? 'text-white/80' : 'text-gray-500'}`}>
-              × Rs. {price.toLocaleString()} = Rs. {(price * quantity).toLocaleString()}
+              × Rs. {price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = Rs. {(price * quantity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         </div>
