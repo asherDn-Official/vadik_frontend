@@ -46,12 +46,20 @@ const BASE_TEMPLATES = [
     usedIn: "Used in double opt-in confirmation flows.",
   },
   {
+    id: "opt_out_confirmation",
+    label: "Opt-out Confirmation Request",
+    category: "UTILITY",
+    defaultText: "Hi {{1}}, are you sure you want to stop receiving updates from {{2}}? To confirm, click STOP below or reply STOP.",
+    vars: ["Name", "Store Name"],
+    usedIn: "Sent when a customer first requests to opt-out, to confirm their decision.",
+  },
+  {
     id: "opt_out_acknowledged",
     label: "Opt-out Acknowledged",
-    category: "MARKETING",
+    category: "UTILITY",
     defaultText: "Hi {{1}}, you have been successfully unsubscribed from {{2}} updates.",
     vars: ["Name", "Store Name"],
-    usedIn: "Sent after a customer unsubscribes from updates.",
+    usedIn: "Sent after a customer confirms they want to STOP receiving updates.",
   },
   {
     id: "birthday_greeting",
@@ -239,26 +247,39 @@ const TemplateSetup = ({
         );
 
         if (!existing) {
-          const variableCount = getVariableCount(template.text);
+          const components = [
+            {
+              type: "BODY",
+              text: template.text.trim(),
+              example:
+                variableCount > 0
+                  ? {
+                      body_text: [
+                        Array.from({ length: variableCount }, (_, index) => `Sample${index + 1}`),
+                      ],
+                    }
+                  : undefined,
+            },
+          ];
+
+          if (template.id === "opt_out_confirmation") {
+            components.push({
+              type: "BUTTONS",
+              buttons: [
+                {
+                  type: "QUICK_REPLY",
+                  text: "STOP",
+                },
+              ],
+            });
+          }
+
           const payload = {
             templateData: {
               name: sanitizedName,
               category: template.category,
               language: "en_US",
-              components: [
-                {
-                  type: "BODY",
-                  text: template.text.trim(),
-                  example:
-                    variableCount > 0
-                      ? {
-                          body_text: [
-                            Array.from({ length: variableCount }, (_, index) => `Sample${index + 1}`),
-                          ],
-                        }
-                      : undefined,
-                },
-              ],
+              components,
             },
           };
 
