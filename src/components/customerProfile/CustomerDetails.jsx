@@ -947,7 +947,7 @@ const CustomerDetails = ({
                           </button>
                           <button
                             type="submit"
-                            className="h-10 rounded-xl bg-[#313166] px-4 text-sm font-medium text-white transition hover:bg-[#27275a]"
+                            className="h-10 rounded-xl bg-pink-700 px-4 text-sm font-medium text-white transition hover:bg-[#b11a63]"
                           >
                             Update Changes
                           </button>

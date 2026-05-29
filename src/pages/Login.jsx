@@ -289,7 +289,7 @@ const Login = () => {
     <div className="login-bg flex items-center justify-center min-h-screen p-4 relative">
       {loading && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl">
-          <Loader text="Please wait..." fullHeight={false} />
+          <Loader text="Please wait..." fullHeight={false} variant="white" />
         </div>
       )}
       <motion.div
