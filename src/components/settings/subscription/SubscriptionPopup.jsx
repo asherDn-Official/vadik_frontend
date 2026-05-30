@@ -198,7 +198,7 @@ const SubscriptionPopup = ({
       }
 
       const billing = verificationResponse.data?.billing;
-      console.log("✅ Payment Verified:", {
+      console.log("Payment Verified:", {
         subscriptionId: verificationResponse.data?.subscription?._id,
         plan: verificationResponse.data?.subscription?.plan?.name,
         autoPay: verificationResponse.data?.subscription?.autoPay,
@@ -257,7 +257,7 @@ const SubscriptionPopup = ({
       }
 
       const billing = verificationResponse.data?.billing;
-      console.log("✅ Credits Added:", {
+      console.log("Credits Added:", {
         subscriptionId: verificationResponse.data?.data?.subscription?._id,
         creditsAdded: verificationResponse.data?.data?.creditsAdded,
         newTotals: verificationResponse.data?.data?.newTotals,
@@ -313,7 +313,7 @@ const SubscriptionPopup = ({
         throw new Error("❌ No response data from trial subscription");
       }
 
-      console.log("✅ Trial Activated:", {
+      console.log("Trial Activated:", {
         subscriptionId:
           trialResponse.data.subscriptionData?._id || trialResponse.data._id,
         plan: plan.name,

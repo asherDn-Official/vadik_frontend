@@ -107,13 +107,16 @@ const CouponPopup = ({ onClose, onSelect }) => {
     };
 
     const openEditCouponModal = (coupon) => {
+        const d = new Date(coupon.expiryDate);
+        const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        
         setShowModal(true);
         setEditingCouponId(coupon._id);
         setCouponData({
             name: coupon.name,
             code: coupon.code,
             discount: coupon.discount,
-            expiryDate: new Date(coupon.expiryDate).toISOString().split('T')[0],
+            expiryDate: localDate,
             couponType: coupon.couponType,
             description: coupon.description,
             isActive: coupon.isActive,
@@ -446,7 +449,10 @@ const CouponPopup = ({ onClose, onSelect }) => {
                                         value={couponData.expiryDate}
                                         onChange={handleInputChange}
                                         className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                        min={new Date().toISOString().split('T')[0]}
+                                        min={(() => {
+                                            const d = new Date();
+                                            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                                        })()}
                                     />
                                 </div>
 
