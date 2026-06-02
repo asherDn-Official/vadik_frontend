@@ -235,6 +235,7 @@ const TemplateSetup = ({
     for (const template of sourceTemplates) {
       const sanitizedName = sanitizeTemplateName(template.customName || template.id);
       const validation = validateVariableStructure(template.text, template.vars.length);
+      const variableCount = getVariableCount(template.text);
 
       if (!validation.valid) {
         nextResults.push({ name: template.label, status: "error", message: validation.reason });
@@ -480,6 +481,23 @@ const TemplateSetup = ({
           <>
             <button
               type="button"
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Are you sure you want to skip template setup? Some features may not work until templates are created in your Meta account."
+                  )
+                ) {
+                  markTemplateSetupComplete();
+                  goToNextStep();
+                }
+              }}
+              disabled={submitting}
+              className="min-w-[150px] text-gray-500 py-2 px-4 rounded-[10px] bg-white border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-60"
+            >
+              Skip for now
+            </button>
+            <button
+              type="button"
               onClick={() => runTemplateProvisioning(true)}
               disabled={submitting}
               className="min-w-[220px] text-[#313166] py-2 px-4 rounded-[10px] bg-[#F3F4F6] hover:bg-[#E5E7EB] transition-colors disabled:opacity-60"
@@ -494,6 +512,19 @@ const TemplateSetup = ({
             >
               {submitting ? "Creating templates..." : "Create templates and finish"}
             </button>
+            {results.some((r) => r.status === "error") && (
+              <button
+                type="button"
+                onClick={() => {
+                  toast.info("Proceeding with incomplete template setup.");
+                  markTemplateSetupComplete();
+                  goToNextStep();
+                }}
+                className="min-w-[200px] text-[#CB376D] py-2 px-4 rounded-[10px] bg-white border-2 border-[#CB376D] hover:bg-gray-50 transition-colors"
+              >
+                Continue anyway
+              </button>
+            )}
           </>
         )}
       </div>

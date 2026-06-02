@@ -192,7 +192,7 @@ const CouponPopup = ({ onClose, onSelect }) => {
             return "Expiry date is required";
         }
 
-        if (couponData.discount <= 0) {
+        if (couponData.couponType !== "product" && couponData.discount <= 0) {
             return "Discount must be greater than 0";
         }
 
