@@ -171,6 +171,8 @@ const EngagementDashboard = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
+      case "replied":
+        return <MessageSquare size={16} className="text-purple-500" />;
       case "read":
         return <CheckCircle2 size={16} className="text-blue-500" />;
       case "delivered":
@@ -184,7 +186,7 @@ const EngagementDashboard = () => {
     }
   };
 
-  const COLORS = ['#313166', '#4CAF50', '#2196F3', '#FFC107', '#F44336'];
+  const COLORS = ['#313166', '#4CAF50', '#2196F3', '#9C27B0', '#FFC107', '#F44336'];
 
   const sourceTypeOptions = [
     { value: "all", label: "All" },
@@ -231,23 +233,24 @@ const EngagementDashboard = () => {
     if (!analytics) return <Loader text="Loading analytics..." fullHeight={false} />;
 
     const { statusStats, typeStats, trendStats, isDaily } = analytics;
-    const totalRead = statusStats.find(s => s._id === 'read')?.count || 0;
+    const totalReplied = statusStats.find(s => s._id === 'replied')?.count || 0;
+    const totalRead = (statusStats.find(s => s._id === 'read')?.count || 0) + totalReplied;
     const totalDelivered = (statusStats.find(s => s._id === 'delivered')?.count || 0) + totalRead;
     const totalSent = statusStats.reduce((acc, curr) => acc + curr.count, 0);
 
-    // Format data for charts - Merge READ into DELIVERED for the pie chart to avoid double counting
+    // Format data for charts - Merge READ and REPLIED into DELIVERED for the pie chart to avoid double counting
     const pieData = [];
     statusStats.forEach(stat => {
-      if (stat._id === 'read') return; // Skip read to merge into delivered
+      if (stat._id === 'read' || stat._id === 'replied') return; // Skip read and replied to merge into delivered
       if (stat._id === 'delivered') {
         pieData.push({ name: 'DELIVERED', value: totalDelivered });
       } else {
         pieData.push({ name: stat._id.toUpperCase(), value: stat.count });
       }
     });
-    // If we have read but no delivered entries, add a DELIVERED entry
-    if (totalRead > 0 && !pieData.find(p => p.name === 'DELIVERED')) {
-      pieData.push({ name: 'DELIVERED', value: totalRead });
+    // If we have read/replied but no delivered entries, add a DELIVERED entry
+    if ((totalRead > 0 || totalReplied > 0) && !pieData.find(p => p.name === 'DELIVERED')) {
+      pieData.push({ name: 'DELIVERED', value: totalDelivered });
     }
 
     // Process trend stats for line chart
@@ -267,15 +270,17 @@ const EngagementDashboard = () => {
           total: 0,
           delivered: 0,
           read: 0,
+          replied: 0,
           failed: 0
         };
       }
       trendGroups[key].total += stat.count;
-      // In trend chart, Delivered should also be cumulative (delivered + read)
-      if (stat._id.status === 'delivered' || stat._id.status === 'read') {
+      // In trend chart, Delivered should also be cumulative (delivered + read + replied)
+      if (stat._id.status === 'delivered' || stat._id.status === 'read' || stat._id.status === 'replied') {
         trendGroups[key].delivered += stat.count;
       }
-      if (stat._id.status === 'read') trendGroups[key].read += stat.count;
+      if (stat._id.status === 'read' || stat._id.status === 'replied') trendGroups[key].read += stat.count;
+      if (stat._id.status === 'replied') trendGroups[key].replied += stat.count;
       if (stat._id.status === 'failed') trendGroups[key].failed += stat.count;
     });
 
@@ -286,7 +291,7 @@ const EngagementDashboard = () => {
     return (
       <div className="space-y-6">
         {/* Stats Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
             <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
               <Mail size={24} />
@@ -321,13 +326,24 @@ const EngagementDashboard = () => {
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+            <div className="p-3 bg-green-50 rounded-xl text-green-600">
+              <MessageSquare size={24} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Replied</p>
+              <h3 className="text-2xl font-bold text-gray-900">
+                {totalReplied}
+              </h3>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
             <div className="p-3 bg-purple-50 rounded-xl text-purple-600">
               <Activity size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Read Rate</p>
+              <p className="text-sm text-gray-500 font-medium">Response Rate</p>
               <h3 className="text-2xl font-bold text-gray-900">
-                {Math.round((totalRead / (totalSent || 1)) * 100)}%
+                {Math.round((totalReplied / (totalSent || 1)) * 100)}%
               </h3>
             </div>
           </div>
@@ -363,6 +379,7 @@ const EngagementDashboard = () => {
                   <Legend />
                   <Line type="monotone" dataKey="total" stroke="#313166" strokeWidth={2} />
                   <Line type="monotone" dataKey="read" stroke="#2196F3" strokeWidth={2} />
+                  <Line type="monotone" dataKey="replied" stroke="#4CAF50" strokeWidth={2} />
                   <Line type="monotone" dataKey="failed" stroke="#F44336" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
@@ -506,6 +523,7 @@ const EngagementDashboard = () => {
           { name: "Sent", value: selectedItem.sent || 0 },
           { name: "Delivered", value: selectedItem.delivered || 0 },
           { name: "Read", value: selectedItem.read || 0 },
+          { name: "Replied", value: selectedItem.replied || 0 },
           { name: "Failed", value: selectedItem.failed || 0 },
         ]
       : [];
@@ -514,6 +532,7 @@ const EngagementDashboard = () => {
       ? [
           { name: "Delivered Rate", rate: selectedItem.deliveredRate || 0 },
           { name: "Read Rate", rate: selectedItem.readRate || 0 },
+          { name: "Replied Rate", rate: selectedItem.repliedRate || 0 },
           ...(selectedItem.activityStats
             ? [
                 { name: "Open Rate", rate: selectedItem.activityStats.openRate || 0 },
@@ -606,14 +625,18 @@ const EngagementDashboard = () => {
                         </span>
                       </div>
 
-                      <div className="mt-4 grid grid-cols-2 gap-2">
-                        <div className="rounded-xl bg-[#F8F9FD] px-3 py-2">
-                          <div className="text-[10px] uppercase tracking-wide text-gray-400">Delivered</div>
-                          <div className="text-sm font-bold text-gray-900">{item.deliveredRate}%</div>
+                      <div className="mt-4 grid grid-cols-3 gap-2">
+                        <div className="rounded-xl bg-[#F8F9FD] px-2 py-2 text-center">
+                          <div className="text-[9px] uppercase tracking-wide text-gray-400">Delivered</div>
+                          <div className="text-xs font-bold text-gray-900">{item.deliveredRate}%</div>
                         </div>
-                        <div className="rounded-xl bg-[#F8F9FD] px-3 py-2">
-                          <div className="text-[10px] uppercase tracking-wide text-gray-400">Read</div>
-                          <div className="text-sm font-bold text-gray-900">{item.readRate}%</div>
+                        <div className="rounded-xl bg-[#F8F9FD] px-2 py-2 text-center">
+                          <div className="text-[9px] uppercase tracking-wide text-gray-400">Read</div>
+                          <div className="text-xs font-bold text-gray-900">{item.readRate}%</div>
+                        </div>
+                        <div className="rounded-xl bg-[#F8F9FD] px-2 py-2 text-center">
+                          <div className="text-[9px] uppercase tracking-wide text-gray-400">Replied</div>
+                          <div className="text-xs font-bold text-gray-900">{item.repliedRate}%</div>
                         </div>
                       </div>
                     </button>
@@ -673,7 +696,7 @@ const EngagementDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="rounded-2xl bg-white p-4 border border-gray-100">
                       <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Sent</div>
                       <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.sent}</div>
@@ -685,6 +708,10 @@ const EngagementDashboard = () => {
                     <div className="rounded-2xl bg-white p-4 border border-gray-100">
                       <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Read Rate</div>
                       <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.readRate}%</div>
+                    </div>
+                    <div className="rounded-2xl bg-white p-4 border border-gray-100">
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Replied Rate</div>
+                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.repliedRate}%</div>
                     </div>
                     <div className="rounded-2xl bg-white p-4 border border-gray-100">
                       <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Failed</div>

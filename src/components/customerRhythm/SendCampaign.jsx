@@ -474,6 +474,9 @@ const SendCampaign = () => {
                 <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Campaign Name</th>
                 <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Template</th>
                 <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sent Date</th>
+                <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Audience</th>
+                <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Delivered</th>
+                <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Replied</th>
                 <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Action</th>
               </tr>
@@ -497,6 +500,15 @@ const SendCampaign = () => {
                       <Clock size={12} />
                       {new Date(camp.createdAt).toLocaleDateString()}
                     </div>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="text-sm font-bold text-gray-700">{camp.audienceSize || 0}</span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="text-sm font-bold text-emerald-600">{camp.delivered || 0}</span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="text-sm font-bold text-purple-600">{camp.replied || 0}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
