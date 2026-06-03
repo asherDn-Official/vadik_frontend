@@ -151,7 +151,7 @@ const handleConfirmTopup = async () => {
           );
 
           if (verifyResponse.data.status) {
-            showToast("✅ Top-up successful", "success");
+            showToast("Top-up successful", "success");
             fetchBalance();
             fetchHistory();
           } else {
@@ -212,7 +212,7 @@ const handleConfirmTopup = async () => {
 
   //           if (verifyResponse.data.status) {
   //             const billingInfo = verifyResponse.data?.billing;
-  //             showToast(`✅ Top-up successful! Invoice #${billingInfo?.billNumber}`, "success");
+  //             showToast(`Top-up successful! Invoice #${billingInfo?.billNumber}`, "success");
   //             fetchBalance();
   //             fetchHistory();
   //           } else {

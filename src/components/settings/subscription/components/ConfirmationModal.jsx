@@ -63,7 +63,7 @@ export default function ConfirmationModal({
                 <div className="flex justify-between items-center">
                   <span className="font-medium">{selectedPlan.name}</span>
                   <span className="text-pink-700 font-semibold">
-                    Rs. {selectedPlan.price.toLocaleString()}
+                    Rs. {selectedPlan.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 mt-1">
@@ -87,7 +87,7 @@ export default function ConfirmationModal({
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">{addon.name}</span>
                         <span className="text-pink-700 font-semibold">
-                          Rs. {addonTotal.toLocaleString()}
+                          Rs. {addonTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                       
@@ -119,7 +119,7 @@ export default function ConfirmationModal({
                         </div>
                         <div className="text-left sm:text-right">
                           <div className="text-sm text-gray-500">
-                            Rs. {addon.price.toLocaleString()} × {quantity}
+                            Rs. {addon.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × {quantity}
                           </div>
                         </div>
                       </div>
@@ -139,15 +139,15 @@ export default function ConfirmationModal({
                 <div className="border-t pt-4 mt-4 space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Subtotal:</span>
-                    <span className="text-gray-800 font-medium">Rs. {billing.subtotal.toLocaleString()}</span>
+                    <span className="text-gray-800 font-medium">Rs. {billing.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">{gstLabel}:</span>
-                    <span className="text-gray-800 font-medium">Rs. {billing.gstAmount.toLocaleString()}</span>
+                    <span className="text-gray-800 font-medium">Rs. {billing.gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between items-center text-lg font-semibold border-t pt-3">
                     <span>Total Amount:</span>
-                    <span className="text-pink-700">Rs. {billing.totalAmount.toLocaleString()}</span>
+                    <span className="text-pink-700">Rs. {billing.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               );

@@ -464,7 +464,7 @@ function AutomationDashboardView({
                     </span>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
                     <div className="rounded-xl bg-[#F4F5F9] p-3">
                       <div className="text-xs uppercase text-gray-400">Audience</div>
                       <div className="mt-1 font-semibold text-[#313166]">{automation.audienceSize || 0}</div>
@@ -472,6 +472,10 @@ function AutomationDashboardView({
                     <div className="rounded-xl bg-[#F4F5F9] p-3">
                       <div className="text-xs uppercase text-gray-400">Delivered</div>
                       <div className="mt-1 font-semibold text-[#313166]">{automation.delivered || 0}</div>
+                    </div>
+                    <div className="rounded-xl bg-[#F4F5F9] p-3">
+                      <div className="text-xs uppercase text-gray-400">Replied</div>
+                      <div className="mt-1 font-semibold text-[#313166]">{automation.replied || 0}</div>
                     </div>
                   </div>
 
@@ -1726,6 +1730,7 @@ export default function RetentionRhythmAutomation() {
           sent: editingAutomation?.sent || 0,
           delivered: editingAutomation?.delivered || 0,
           read: editingAutomation?.read || 0,
+          replied: editingAutomation?.replied || 0,
           failed: editingAutomation?.failed || 0,
         },
       };
@@ -1771,7 +1776,7 @@ export default function RetentionRhythmAutomation() {
       delete copyPayload.updatedAt;
       copyPayload.name = `${automation.name} (Copy)`;
       copyPayload.status = "draft";
-      copyPayload.analyticsSummary = { audienceSize: 0, sent: 0, delivered: 0, read: 0, failed: 0 };
+      copyPayload.analyticsSummary = { audienceSize: 0, sent: 0, delivered: 0, read: 0, replied: 0, failed: 0 };
 
       await api.post("/api/retention-automations", copyPayload);
       await fetchRetentionData();

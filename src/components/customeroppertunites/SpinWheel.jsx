@@ -78,19 +78,31 @@ const SpinWheel = () => {
 
       // Transform the spin wheel data into your editing format
       const validCouponIds = spineWheelSingledata.couponOptions.filter((couponId) => !!couponDetails[couponId]?.name);
-      const transformedData = {
-        ...spineWheelSingledata,
-        segments: validCouponIds.map((couponId, index) => ({
-          id: `segment-${index}`, // or use actual segment IDs if available
+      
+      let segments = [];
+      if (spineWheelSingledata.segments && spineWheelSingledata.segments.length > 0) {
+        segments = spineWheelSingledata.segments.map((s, index) => ({
+          ...s,
+          id: s.id || `segment-${index}`,
+          couponType: couponDetails[s.couponId]?.couponType,
+          offer: s.offer || String(couponDetails[s.couponId]?.discount ?? "0"),
+          productName: s.productName || couponDetails[s.couponId]?.name || "",
+        }));
+      } else {
+        segments = validCouponIds.map((couponId, index) => ({
+          id: `segment-${index}`,
           couponId,
           productName: couponDetails[couponId]?.name || "",
           offer: String(couponDetails[couponId]?.discount ?? "0"),
           couponType: couponDetails[couponId]?.couponType,
-          color: colors[index % colors.length], // Assign a single color based on index
-          isTargeted: spineWheelSingledata.targetedCoupons?.includes(couponId) || false,
-          couponDetail: couponDetails[couponId] || null, // full coupon response object for the segment
-          // Add other segment properties as needed
-        }))
+          color: colors[index % colors.length],
+          image: couponDetails[couponId]?.productImage || null,
+        }));
+      }
+
+      const transformedData = {
+        ...spineWheelSingledata,
+        segments
       };
 
       console.log('transformedData', transformedData);

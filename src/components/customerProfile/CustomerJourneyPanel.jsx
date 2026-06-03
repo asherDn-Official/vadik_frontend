@@ -415,9 +415,9 @@ const CustomerJourneyPanel = ({ customerId, isActive }) => {
                       </span>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[#4A4F74]">
-                      <p>Runs: {automation.runCount || 0}</p>
-                      <p>Read: {automation.read || 0}</p>
                       <p>Sent: {automation.sent || 0}</p>
+                      <p>Read: {automation.read || 0}</p>
+                      <p>Replied: {automation.replied || 0}</p>
                       <p>Failed: {automation.failed || 0}</p>
                     </div>
                     <p className="mt-3 text-xs text-[#8B90B2]">

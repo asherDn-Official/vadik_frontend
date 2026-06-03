@@ -463,8 +463,17 @@ const CustomerList = () => {
                             "
                             onClick={() => handleCustomerClick(customer._id)}
                           >
-                            <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
-                              {customer.firstname}
+                            <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C]">
+                              <div className="flex items-center justify-center gap-3">
+                                {customer.profilePictureUrl && (
+                                  <img
+                                    src={customer.profilePictureUrl}
+                                    alt=""
+                                    className="h-8 w-8 rounded-full object-cover"
+                                  />
+                                )}
+                                <span>{customer.firstname}</span>
+                              </div>
                             </td>
                             <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               {customer.lastname || "-"}

@@ -199,7 +199,7 @@ function Sidebar() {
                 }`}
               >
                 <span
-                  className={`hidden h-10 w-[3px] rounded-full bg-gradient-to-b from-[#FF4D8D] to-[#EC396F] md:absolute md:left-0 md:block ${
+                  className={`hidden h-10 w-[3px] rounded-full bg-gradient-to-b from-[#ff3b93] to-[#ff3b93] md:absolute md:left-0 md:block ${
                     active ? "opacity-100" : "opacity-0"
                   }`}
                 />

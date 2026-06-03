@@ -19,6 +19,9 @@ export default function SubscriptionCard({
   loading = false,
   isCurrentPlanFreeTrial = false,
   activeSubscriptionId = null,
+  customButtonText = null,
+  customButtonDisabled = false,
+  showPrice = true,
 }) {
   const cardStyles = variant === 'primary'
     ? 'bg-gradient-to-b from-pink-700 to-purple-800'
@@ -47,6 +50,7 @@ export default function SubscriptionCard({
   };
 
   const getButtonText = () => {
+    if (customButtonText) return customButtonText;
     if (isCurrentPlan && !isAddon) {
       return 'Subscribed';
     }
@@ -162,14 +166,20 @@ export default function SubscriptionCard({
 
         <div className="p-6 flex flex-col flex-grow">
           <div className="text-center mb-6 flex flex-col items-center">
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-gray-800">Rs. {price.toLocaleString()}</span>
-              {originalPrice && (
-                <span className="text-xl text-gray-400 line-through">
-                  Rs. {originalPrice.toLocaleString()}
-                </span>
-              )}
-            </div>
+            {showPrice ? (
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-gray-800">Rs. {price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                {originalPrice && (
+                  <span className="text-xl text-gray-400 line-through">
+                    Rs. {originalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-gray-800">Custom Pricing</span>
+              </div>
+            )}
             <span className="text-sm text-gray-500">/{period}</span>
           </div>
 
@@ -207,9 +217,9 @@ export default function SubscriptionCard({
                   </button>
                 ) : (
                 <button 
-                  disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
+                  disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial) || customButtonDisabled}
                   onClick={handleCardClick}
-                  className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
+                  className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()} ${customButtonDisabled ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                   {loading ? 'Processing...' : getButtonText()}
                   </button>
@@ -284,14 +294,20 @@ export default function SubscriptionCard({
       </div>
 
       <div className="text-center mb-6 flex flex-col items-center">
-        <div className="flex items-baseline gap-2">
-          <span className={`text-4xl font-bold ${textColor}`}>Rs. {price.toLocaleString()}</span>
-          {originalPrice && (
-            <span className={`text-xl line-through ${variant === 'primary' ? 'text-white/60' : 'text-gray-400'}`}>
-              Rs. {originalPrice.toLocaleString()}
-            </span>
-          )}
-        </div>
+        {showPrice ? (
+          <div className="flex items-baseline gap-2">
+            <span className={`text-4xl font-bold ${textColor}`}>Rs. {price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            {originalPrice && (
+              <span className={`text-xl line-through ${variant === 'primary' ? 'text-white/60' : 'text-gray-400'}`}>
+                Rs. {originalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-baseline gap-2">
+            <span className={`text-3xl font-bold ${textColor}`}>Custom Pricing</span>
+          </div>
+        )}
         {period && <span className={`text-sm ${variant === 'primary' ? 'text-white/80' : 'text-gray-500'}`}>/{period}</span>}
       </div>
 
@@ -341,7 +357,7 @@ export default function SubscriptionCard({
               </button>
             </div>
             <span className={`break-words text-sm ${variant === 'primary' ? 'text-white/80' : 'text-gray-500'}`}>
-              × Rs. {price.toLocaleString()} = Rs. {(price * quantity).toLocaleString()}
+              × Rs. {price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = Rs. {(price * quantity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         </div>
@@ -378,9 +394,9 @@ export default function SubscriptionCard({
               </button>
             ) : (
             <button 
-              disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial)}
+              disabled={(isCurrentPlan && !isAddon) || (hasActiveSubscription && !isAddon && !isCurrentPlan) || loading || (isAddon && isCurrentPlanFreeTrial) || customButtonDisabled}
               onClick={handleCardClick}
-              className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()}`}
+              className={`w-full py-3 rounded-lg font-medium transition-colors ${getButtonStyles()} ${customButtonDisabled ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
                 {loading ? 'Processing...' : getButtonText()}
               </button>

@@ -209,7 +209,10 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
   const formatDateForInput = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toISOString().split("T")[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
   // Fetch dropdown data
@@ -292,6 +295,18 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
         });
       }
     }
+  };
+
+  const onCouponCreated = (newCoupon) => {
+    // Add to coupons list if not already there
+    setCoupons((prev) => {
+      if (prev.some((c) => c._id === newCoupon._id)) return prev;
+      return [newCoupon, ...prev];
+    });
+    // Select it
+    setValue("couponId", newCoupon._id);
+    clearErrors("couponId");
+    setIsCouponPopupOpen(false);
   };
 
   const onSubmit = async (data) => {
@@ -543,7 +558,10 @@ const ScratchCardForm = ({ campaign, onSave, onCancel, onRefresh }) => {
             className="bg-white rounded-lg  w-full max-w-2xl max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <CouponPopup onClose={() => setIsCouponPopupOpen(false)} />
+            <CouponPopup
+              onClose={() => setIsCouponPopupOpen(false)}
+              onSelect={onCouponCreated}
+            />
           </div>
         </div>
       )}

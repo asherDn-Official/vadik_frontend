@@ -26,7 +26,7 @@ export default function TopupConfirmationModal({
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex justify-between items-center">
                 <span className="text-lg font-medium text-gray-800">Credits</span>
-                <span className="text-2xl font-bold text-pink-600">₹ {amount.toLocaleString()}</span>
+                <span className="text-2xl font-bold text-pink-600">₹ {amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
@@ -34,15 +34,15 @@ export default function TopupConfirmationModal({
           <div className="border-t pt-4 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Subtotal:</span>
-              <span className="text-gray-800 font-medium">₹ {billing.subtotal.toLocaleString()}</span>
+              <span className="text-gray-800 font-medium">₹ {billing.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600">GST ({billing.gstPercentage}%):</span>
-              <span className="text-gray-800 font-medium">₹ {billing.gstAmount.toLocaleString()}</span>
+              <span className="text-gray-800 font-medium">₹ {billing.gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex justify-between items-center text-lg font-semibold border-t pt-3">
               <span>Total Amount:</span>
-              <span className="text-pink-600">₹ {billing.totalAmount.toLocaleString()}</span>
+              <span className="text-pink-600">₹ {billing.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
 

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { XCircle, CheckCircle, List, BarChart } from "lucide-react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { XCircle, CheckCircle, List, BarChart, Camera, User, X } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -375,6 +375,30 @@ const CustomerDetails = ({
   onInputChange,
   isLoading,
 }) => {
+  const [profilePreview, setProfilePreview] = useState(null);
+  const [profileFile, setProfileFile] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Reset profile state when editing is cancelled or saved
+  useEffect(() => {
+    if (!isEditing) {
+      setProfilePreview(null);
+      setProfileFile(null);
+    }
+  }, [isEditing]);
+
   // Transform customer data to handle new nested structure
   const transformedCustomer = useMemo(
     () => transformCustomerData(customer),
@@ -758,7 +782,7 @@ const CustomerDetails = ({
       const formattedData = transformFormDataToAPI(formData, customer);
 
       // Call the parent save handler with formatted data
-      onSave(formattedData);
+      onSave({ ...formattedData, profilePicture: profileFile });
     } catch (err) {
       if (err instanceof yup.ValidationError) {
         const newErrors = {};
@@ -824,6 +848,7 @@ const CustomerDetails = ({
                     </div>
                     <div
                       className="
+  relative
   rounded-[28px]
   border border-[#EEF1FF]
   bg-[linear-gradient(180deg,#FCFCFF_0%,#F4F6FD_100%)]
@@ -833,15 +858,13 @@ const CustomerDetails = ({
                     >
                       <img
                         src={
-                          transformedCustomer?.profileImage
-                            ? transformedCustomer.profileImage
-                            : transformedCustomer?.gender === "male"
-                              ? defaultImage.menDefaultImgUrl
-                              : transformedCustomer?.gender === "female"
-                                ? defaultImage.femaleDefaultImgUrl
-                                : transformedCustomer?.gender === "others"
-                                  ? defaultImage.menDefaultImgUrl
-                                  : defaultImage.menDefaultImgUrl
+                          profilePreview || 
+                          transformedCustomer?.profilePictureUrl || 
+                          (transformedCustomer?.gender === "male"
+                            ? defaultImage.menDefaultImgUrl
+                            : transformedCustomer?.gender === "female"
+                              ? defaultImage.femaleDefaultImgUrl
+                              : defaultImage.menDefaultImgUrl)
                         }
                         alt={`${transformedCustomer?.firstname} ${transformedCustomer?.lastname}`}
                         className="
@@ -854,6 +877,29 @@ const CustomerDetails = ({
   xl:h-[176px]
   xl:w-[176px]
 "
+                      />
+                      {isEditing && (
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="
+                            absolute bottom-4 right-4
+                            p-2 rounded-xl bg-white/90
+                            border border-[#EEF1FF]
+                            text-[#313166] shadow-sm
+                            hover:bg-white transition-all
+                            backdrop-blur-sm
+                          "
+                        >
+                          <Camera size={18} />
+                        </button>
+                      )}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="hidden"
                       />
                     </div>
                   </div>
@@ -901,7 +947,7 @@ const CustomerDetails = ({
                           </button>
                           <button
                             type="submit"
-                            className="h-10 rounded-xl bg-[#313166] px-4 text-sm font-medium text-white transition hover:bg-[#27275a]"
+                            className="h-10 rounded-xl bg-pink-700 px-4 text-sm font-medium text-white transition hover:bg-[#b11a63]"
                           >
                             Update Changes
                           </button>

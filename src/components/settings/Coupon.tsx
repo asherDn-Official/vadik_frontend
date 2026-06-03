@@ -269,12 +269,15 @@ const CouponManagement = () => {
   const startEditingCoupon = (coupon) => {
     setIsAddingCoupon(true);
     setEditingCouponId(coupon._id);
-    setExpiryDate(new Date(coupon.expiryDate));
+    const d = new Date(coupon.expiryDate);
+    setExpiryDate(d);
+    const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
     const editData = {
       name: coupon.name,
       code: coupon.code,
       discount: coupon.discount,
-      expiryDate: new Date(coupon.expiryDate).toISOString().split("T")[0],
+      expiryDate: localDate,
       couponType: coupon.couponType,
       description: coupon.description,
       isActive: coupon.isActive,

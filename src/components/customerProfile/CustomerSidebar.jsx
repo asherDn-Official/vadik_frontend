@@ -396,7 +396,7 @@ const CustomerSidebar = () => {
                       "
                       >
                         <img
-                          src={profileIcon}
+                          src={customer.profilePictureUrl || profileIcon}
                           alt={formatName(customer)}
                           className="
                           h-9 w-9 rounded-lg object-cover

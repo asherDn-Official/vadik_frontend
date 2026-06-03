@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import SubscriptionCard from "./components/SubscriptionCard";
+import EnterprisePlanModal from "./components/EnterprisePlanModal";
 import UsageTable from "./components/UsageTable";
 import ConfirmationModal from "./components/ConfirmationModal";
 import CancelConfirmationModal from "./components/CancelConfirmationModal";
@@ -17,6 +18,8 @@ export default function SubscriptionPage() {
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+  const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
+  const [enterpriseRequest, setEnterpriseRequest] = useState(null);
   const [loading, setLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [activeSubscriptionId, setActiveSubscriptionId] = useState(null);
@@ -92,6 +95,15 @@ export default function SubscriptionPage() {
       setAddons(response.data.data);
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  const getEnterpriseRequest = async () => {
+    try {
+      const response = await api.get("/api/enterprise-requests/my-request");
+      setEnterpriseRequest(response.data.data);
+    } catch (error) {
+      console.log("Error fetching enterprise request:", error);
     }
   };
 
@@ -178,7 +190,7 @@ export default function SubscriptionPage() {
       });
 
       showToast(
-        `✅ Payment successful! Invoice #${billing?.billNumber}. We will invoice you through mail.`,
+        `Payment successful! Invoice #${billing?.billNumber}. We will invoice you through mail.`,
         "success",
       );
 
@@ -234,7 +246,7 @@ export default function SubscriptionPage() {
       });
 
       showToast(
-        `✅ Credits added! Invoice #${billing?.billNumber}. We will invoice you through mail.`,
+        `Credits added! Invoice #${billing?.billNumber}. We will invoice you through mail.`,
         "success",
       );
 
@@ -619,6 +631,7 @@ export default function SubscriptionPage() {
     getSubscriptionPlans();
     getAddons();
     getActiveSubscription();
+    getEnterpriseRequest();
   }, []);
 
   return (
@@ -698,7 +711,10 @@ export default function SubscriptionPage() {
                 </div>
               )}
 
-              <UsageTable data={currentPlans?.data} />
+              <UsageTable 
+                data={currentPlans?.data} 
+                isUsingOwnWhatsapp={auth?.data?.isUsingOwnWhatsapp}
+              />
             </>
           ) : (
             <div className="text-center py-8">
@@ -771,7 +787,19 @@ export default function SubscriptionPage() {
 
         {activeTab === "subscription" ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 xl:gap-6">
-            {subscription.map((plan) => {
+            {(Array.isArray(subscription) ? subscription : []).concat(
+              // Add enterprise plan if it doesn't exist in the list
+              !subscription?.some(p => p.name.toLowerCase() === 'enterprise' || p.isEnterprise) ? [{
+                _id: 'enterprise-plan',
+                name: 'Enterprise',
+                price: enterpriseRequest?.price || 0,
+                description: 'Custom plan for your business',
+                customerLimit: enterpriseRequest?.customerLimit || 0,
+                activityLimit: enterpriseRequest?.activityLimit || 0,
+                durationInDays: 30,
+                isEnterprise: true
+              }] : []
+            ).map((plan) => {
               const currentPlanId = subscriptionDetails?.plan?._id;
               const currentPlanName = currentPlans?.subscription?.plan;
               const isCurrentPlan = currentPlanId
@@ -780,13 +808,19 @@ export default function SubscriptionPage() {
                   currentPlanName.toLowerCase() === plan.name.toLowerCase();
               const hasActiveSubscription = !!subscriptionDetails;
 
-              const features = [
-                plan.customerLimit > 0 && `${plan.customerLimit} Customers`,
-                plan.activityLimit > 0 && `${plan.activityLimit} Activities`,
-                plan.whatsappActivityLimit > 0 &&
-                  `₹ ${plan.whatsappActivityLimit} WhatsApp Credits`,
-                plan.isFreeTrial ? "Free Trial Available" : "Full Access",
-              ].filter(Boolean);
+              const isEnterprise = plan.name.toLowerCase() === 'enterprise' || plan.isEnterprise;
+              const isRequestPending = isEnterprise && enterpriseRequest?.status === 'pending';
+              const isApproved = isEnterprise && enterpriseRequest?.status === 'approved';
+
+              const features = isEnterprise && !isApproved 
+                ? ["Custom Customer Limit", "Custom Activity Limit", "Dedicated Support", "Custom Pricing"]
+                : [
+                  plan.customerLimit > 0 && `${plan.customerLimit} Customers`,
+                  plan.activityLimit > 0 && `${plan.activityLimit} Activities`,
+                  plan.whatsappActivityLimit > 0 &&
+                    `₹ ${plan.whatsappActivityLimit} WhatsApp Credits`,
+                  plan.isFreeTrial ? "Free Trial Available" : "Full Access",
+                ].filter(Boolean);
 
               const transformedPlan = {
                 title: plan.name,
@@ -796,12 +830,9 @@ export default function SubscriptionPage() {
                   plan.origianalPrice ||
                   plan["  originalPrice"] ||
                   null,
-                period: `${plan.durationInDays} days`,
+                period: plan.durationInDays ? `${plan.durationInDays} days` : "30 days",
                 features,
-                variant:
-                  plan.name.toLowerCase() === "enterprise"
-                    ? "primary"
-                    : "secondary",
+                variant: isEnterprise ? "primary" : "secondary",
                 recommended: plan.name.toLowerCase() === "starter",
                 isFreeTrial: plan.isFreeTrial,
               };
@@ -821,11 +852,14 @@ export default function SubscriptionPage() {
                   hasActiveSubscription={hasActiveSubscription}
                   isAddon={false}
                   isSelected={selectedPlan?._id === plan._id}
-                  onSelect={handlePlanSelect}
+                  onSelect={isEnterprise && !isApproved ? () => setShowEnterpriseModal(true) : handlePlanSelect}
                   onTrial={handleTrialSubscription}
                   onCancel={openCancelConfirmation}
                   activeSubscriptionId={activeSubscriptionId}
                   loading={loading}
+                  customButtonText={isRequestPending ? "Request Pending" : (isEnterprise && !isApproved ? "Contact Sales" : null)}
+                  customButtonDisabled={isRequestPending}
+                  showPrice={isEnterprise ? (isApproved && plan.price > 0) : true}
                 />
               );
             })}
@@ -924,6 +958,11 @@ export default function SubscriptionPage() {
           onClose={() => setShowCancelConfirmation(false)}
           onConfirm={handleCancelSubscription}
           loading={cancelLoading}
+        />
+
+        <EnterprisePlanModal
+          isOpen={showEnterpriseModal}
+          onClose={() => setShowEnterpriseModal(false)}
         />
       </div>
     </div>
