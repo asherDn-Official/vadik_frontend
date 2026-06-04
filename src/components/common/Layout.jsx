@@ -33,6 +33,7 @@ function Layout() {
     fullName: "",
     profilePicture: "",
   });
+  const [profileCompletion, setProfileCompletion] = useState(100);
 
   async function getProfileData() {
     try {
@@ -45,6 +46,43 @@ function Layout() {
           fullName: retailerData.fullName || "",
           profilePicture: retailerData.storeImage || "",
         });
+
+        const requiredFields = [
+          retailerData.fullName,
+          retailerData.email,
+          retailerData.phone,
+          retailerData.storeName,
+          retailerData.storeType,
+          retailerData.storeAddress,
+          retailerData.storeOwnerName,
+          retailerData.storeContactNumber,
+          retailerData.storeCity,
+          retailerData.storePincode,
+          retailerData.GSTNumber,
+          retailerData.storeImage,
+        ];
+
+        const completedFields =
+          requiredFields.filter(
+            field =>
+              field !== null &&
+              field !== undefined &&
+              field !== ""
+          ).length;
+
+        const percentage = Math.round(
+          (completedFields / requiredFields.length) * 100
+        );
+
+        setProfileCompletion(
+          percentage
+        );
+
+        console.log(
+          "PROFILE COMPLETION:",
+          percentage
+        );
+
       }
     } catch (error) {
       console.log("Profile fetch error:", error);
@@ -317,17 +355,27 @@ function Layout() {
                     "
                     onClick={() => setShowDropdown((prev) => !prev)}
                   >
-                    {profileData?.profilePicture ? (
-                      <img
-                        src={profileData.profilePicture}
-                        alt={profileName}
-                        className="h-10 w-10 rounded-full object-cover border border-white shadow-sm"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-sm font-semibold uppercase text-white shadow-sm">
-                        {profileInitial}
-                      </div>
-                    )}
+                    <div className="relative">
+
+                      {profileData?.profilePicture ? (
+                        <img
+                          src={profileData.profilePicture}
+                          alt={profileName}
+                          className="h-10 w-10 rounded-full object-cover border border-white shadow-sm"
+                        />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-sm font-semibold uppercase text-white shadow-sm">
+                          {profileInitial}
+                        </div>
+                      )}
+
+                      {profileCompletion < 100 && (
+                        <span
+                          className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white"
+                        />
+                      )}
+
+                    </div>
 
                     <div className="hidden min-w-0 pr-1 xl:block xl:max-w-[148px]">
                       <p className="truncate text-sm font-medium text-[#313166]">

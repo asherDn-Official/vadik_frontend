@@ -36,6 +36,17 @@ const Notification = () => {
   const notificationRefs = useRef({});
   const [viewModal, setViewModal] = useState({ open: false, item: null });
 
+  const filteredNotifications =
+  activeTab === "all"
+    ? notifications
+    : activeTab === "events"
+    ? notifications.filter(
+        (n) => n.notificationType === "event_reminder"
+      )
+    : notifications.filter(
+        (n) => n.notificationType !== "event_reminder"
+      );
+
   // Create intersection observer to detect when notifications are viewed
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -375,7 +386,7 @@ const Notification = () => {
               <p className="mt-1 text-gray-500">You'll see important updates here.</p>
             </div>
           ) : (
-            notifications.map(notification => (
+            filteredNotifications.map(notification => (
               console.log("notification", notification),
               <div 
                 key={notification._id}
