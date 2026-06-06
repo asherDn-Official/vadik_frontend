@@ -42,6 +42,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       allocatedQuizCampainId: "",
       isActive: true,
       segments: [],
+      imageSize: 20,
+      textSize: 8,
     },
     mode: "onChange",
   });
@@ -175,6 +177,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       setValue("expiryDate", expiryDate ? new Date(expiryDate) : null);
       setValue("allocatedQuizCampainId", allocatedQuizCampainId ?? "");
       setValue("segments", Array.isArray(segments) ? segments : []);
+      setValue("imageSize", campaign.imageSize ?? 20);
+      setValue("textSize", campaign.textSize ?? 8);
       setValue("_id", _id);
     }
   }, [campaign, setValue]);
@@ -413,6 +417,8 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       isActive: data.isActive,
       allocatedQuizCampainId: data.allocatedQuizCampainId || "",
       expiryDate: expiryIso,
+      imageSize: data.imageSize,
+      textSize: data.textSize,
     };
 
     try {
@@ -446,7 +452,11 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Preview */}
           <div>
-            <SpinWheelPreview segments={formData.segments} />
+            <SpinWheelPreview
+              segments={formData.segments}
+              imageSize={formData.imageSize}
+              textSize={formData.textSize}
+            />
           </div>
 
           {/* Right Column - Form */}
@@ -514,6 +524,33 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                   {errors.noOfSpins.message}
                 </p>
               )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Image Size ({formData.imageSize}px)
+                </label>
+                <input
+                  type="range"
+                  min="10"
+                  max="40"
+                  {...register("imageSize", { valueAsNumber: true })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Text Size ({formData.textSize}px)
+                </label>
+                <input
+                  type="range"
+                  min="4"
+                  max="16"
+                  {...register("textSize", { valueAsNumber: true })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                />
+              </div>
             </div>
 
             <div>

@@ -773,6 +773,9 @@ const CustomerDetails = ({
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    console.log("CustomerDetails onSubmit called");
+    console.log("Current formData:", formData);
+    console.log("Current profileFile:", profileFile);
 
     try {
       // Validate basic fields
@@ -780,10 +783,12 @@ const CustomerDetails = ({
 
       // Transform the form data back to API format
       const formattedData = transformFormDataToAPI(formData, customer);
+      console.log("Formatted data for API:", formattedData);
 
       // Call the parent save handler with formatted data
       onSave({ ...formattedData, profilePicture: profileFile });
     } catch (err) {
+      console.error("Validation error in onSubmit:", err);
       if (err instanceof yup.ValidationError) {
         const newErrors = {};
         err.inner.forEach((error) => {

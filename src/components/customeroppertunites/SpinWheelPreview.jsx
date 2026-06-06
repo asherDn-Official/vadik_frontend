@@ -33,7 +33,7 @@ const getDisplayText = (segment) => {
   return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
 };
 
-const SpinWheelPreview = ({ segments = [] }) => {
+const SpinWheelPreview = ({ segments = [], imageSize = 20, textSize = 8 }) => {
   const totalSegments = Array.isArray(segments) ? segments.length : 0;
   const segmentAngle = totalSegments > 0 ? 360 / totalSegments : 0;
   const [rotation, setRotation] = useState(0);
@@ -136,8 +136,8 @@ const SpinWheelPreview = ({ segments = [] }) => {
                 ].join(" ");
 
                 const textAngle = (startAngle + endAngle) / 2;
-                const textX = 100 + 50 * Math.cos((textAngle * Math.PI) / 180);
-                const textY = 100 + 50 * Math.sin((textAngle * Math.PI) / 180);
+                const textX = 100 + 45 * Math.cos((textAngle * Math.PI) / 180);
+                const textY = 100 + 45 * Math.sin((textAngle * Math.PI) / 180);
 
                 const imageX = 100 + 65 * Math.cos((textAngle * Math.PI) / 180);
                 const imageY = 100 + 65 * Math.sin((textAngle * Math.PI) / 180);
@@ -168,34 +168,35 @@ const SpinWheelPreview = ({ segments = [] }) => {
                       filter={`url(#shadow-${index})`}
                       className="drop-shadow-lg"
                     />
-                    {segment.image ? (
+                    {segment.image && (
                       <image
                         href={segment.image}
-                        x={imageX - 10}
-                        y={imageY - 10}
-                        height="20"
-                        width="20"
+                        x={imageX - imageSize / 2}
+                        y={imageY - imageSize / 2}
+                        height={imageSize}
+                        width={imageSize}
                         transform={`rotate(${textAngle + 90}, ${imageX}, ${imageY})`}
                       />
-                    ) : (
-                      <text
-                        x={textX}
-                        y={textY}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fill="white"
-                        fontWeight="bold"
-                        transform={`rotate(${textAngle + 90}, ${textX}, ${textY})`}
-                        className="drop-shadow-md"
-                        style={{
-                          textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
-                          fontSize: `${getFontSize()}px`,
-                          pointerEvents: "none",
-                        }}
-                      >
-                        {getDisplayText(segment)}
-                      </text>
                     )}
+                    <text
+                      x={segment.image ? textX : (textX + imageX) / 2}
+                      y={segment.image ? textY : (textY + imageY) / 2}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill="white"
+                      fontWeight="bold"
+                      transform={`rotate(${textAngle + 90}, ${
+                        segment.image ? textX : (textX + imageX) / 2
+                      }, ${segment.image ? textY : (textY + imageY) / 2})`}
+                      className="drop-shadow-md"
+                      style={{
+                        textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
+                        fontSize: `${textSize || getFontSize()}px`,
+                        pointerEvents: "none",
+                      }}
+                    >
+                      {getDisplayText(segment)}
+                    </text>
                   </g>
                 );
               })}

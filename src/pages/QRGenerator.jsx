@@ -1150,6 +1150,7 @@ const QRGenerator = () => {
   const [logo, setLogo] = useState(null);
   const [logoOpacity, setLogoOpacity] = useState(1);
   const [logoSize, setLogoSize] = useState(40);
+  const [logoPlacement, setLogoPlacement] = useState("top"); // top | inside
   const [qrSubtitle, setQrSubtitle] = useState("");
   const [resolvedLogo, setResolvedLogo] = useState(null);
 
@@ -1242,8 +1243,9 @@ const QRGenerator = () => {
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        showToast("Logo size should be less than 2MB", "error");
+      const MAX_SIZE = 1 * 1024 * 1024; // 1MB
+      if (file.size > MAX_SIZE) {
+        showToast("Logo image is too large. Please upload an image smaller than 1MB for optimal performance.", "error");
         return;
       }
       const reader = new FileReader();
@@ -1256,8 +1258,33 @@ const QRGenerator = () => {
   };
 
   const handleSaveQR = async () => {
-    if (!qrName) {
-      showToast("Please enter a name for this QR", "error");
+    if (!qrName || qrName.trim().length < 3) {
+      showToast("Please enter a valid QR name (min 3 characters)", "error");
+      return;
+    }
+
+    if (qrName.length > 50) {
+      showToast("QR name is too long (max 50 characters)", "error");
+      return;
+    }
+
+    if (qrType === "activity" && !selectedActivityId) {
+      showToast("Please select an activity for this QR type", "error");
+      return;
+    }
+
+    if (brandingName && (brandingName.trim().length < 2 || brandingName.length > 50)) {
+      showToast("Branding name must be between 2 and 50 characters", "error");
+      return;
+    }
+
+    if (qrSubtitle && qrSubtitle.length > 100) {
+      showToast("Branding subtitle must be less than 100 characters", "error");
+      return;
+    }
+
+    if (qrStatement && qrStatement.length > 100) {
+      showToast("Static statement must be less than 100 characters", "error");
       return;
     }
 
@@ -1285,6 +1312,7 @@ const QRGenerator = () => {
         logo,
         logoSize,
         logoOpacity,
+        logoPlacement,
         qrSubtitle,
         cardBgColor,
       };
@@ -1303,8 +1331,9 @@ const QRGenerator = () => {
         setSelectedDynamicQR(response.data.data);
         setIsDynamic(true);
       }
-    } catch {
-      showToast("Failed to save QR", "error");
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || "Failed to save QR. Please try again.";
+      showToast(errorMsg, "error");
     } finally {
       setLoading(false);
     }
@@ -1331,6 +1360,7 @@ const QRGenerator = () => {
     setLogo(qr.logo || null);
     setLogoSize(Math.min(qr.logoSize || 40, 80));
     setLogoOpacity(qr.logoOpacity || 1);
+    setLogoPlacement(qr.logoPlacement || "top");
     setQrSubtitle(qr.qrSubtitle || "");
     setCardBgColor(qr.cardBgColor || "#ffffff");
     setIsDynamic(true);
@@ -1441,7 +1471,7 @@ const QRGenerator = () => {
         `data:image/svg+xml;base64,${window.btoa(unescape(encodeURIComponent(svgData)))}`
       );
       const topLogoImage =
-        effectiveLogo && canRenderLogoInCanvas
+        effectiveLogo && logoPlacement === "top" && canRenderLogoInCanvas
           ? await loadImage(effectiveLogo)
           : null;
       
@@ -1614,7 +1644,7 @@ const QRGenerator = () => {
           {/* Left Column: Configuration */}
           <div className="lg:col-span-2 space-y-6">
             {/* Card 1: QR Type Selection */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 transition-all">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 transition-all hover:shadow-md">
               <h2 className="text-lg font-semibold text-gray-800 mb-5 flex items-center gap-2">
                 <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">1</span>
                 Select QR Type
@@ -1658,7 +1688,7 @@ const QRGenerator = () => {
             </div>
 
             {/* Card 2: Customization Options */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 transition-all">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 transition-all hover:shadow-md">
               <h2 className="text-lg font-semibold text-gray-800 mb-5 flex items-center gap-2">
                 <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">2</span>
                 Customize Options
@@ -1815,13 +1845,15 @@ const QRGenerator = () => {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Static Statement on QR Image
                   </label>
+                  <p className="text-[11px] text-gray-500 mb-2">Message displayed below the QR code (max 100 chars)</p>
                   <input
                     type="text"
                     value={qrStatement}
                     onChange={(e) => setQrStatement(e.target.value)}
+                    maxLength={100}
                     placeholder="E.g., Scan to earn rewards"
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition-all text-gray-700"
                   />
@@ -1831,7 +1863,7 @@ const QRGenerator = () => {
 
             {/* Card 3: Activity Details (conditional) */}
             {qrType === "activity" && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 transition-all">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 transition-all hover:shadow-md">
                 <h2 className="text-lg font-semibold text-gray-800 mb-5 flex items-center gap-2">
                   <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">3</span>
                   Activity Details
@@ -1880,7 +1912,7 @@ const QRGenerator = () => {
             )}
 
             {/* Card 4: Styling & Branding */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 transition-all">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 transition-all hover:shadow-md">
               <h2 className="text-lg font-semibold text-gray-800 mb-5 flex items-center gap-2">
                 <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">4</span>
                 Styling & Branding
@@ -1888,25 +1920,29 @@ const QRGenerator = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Branding Name
                     </label>
+                    <p className="text-[11px] text-gray-500 mb-2">Display name for your QR (2-50 chars)</p>
                     <input
                       type="text"
                       value={brandingName}
                       onChange={(e) => setBrandingName(e.target.value)}
+                      maxLength={50}
                       placeholder="Your brand name"
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Branding Subtitle
                     </label>
+                    <p className="text-[11px] text-gray-500 mb-2">Optional tagline (max 100 chars)</p>
                     <input
                       type="text"
                       value={qrSubtitle}
                       onChange={(e) => setQrSubtitle(e.target.value)}
+                      maxLength={100}
                       placeholder="E.g., Your tagline or business type"
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition-all"
                     />
@@ -1960,9 +1996,10 @@ const QRGenerator = () => {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Upload Logo
                     </label>
+                    <p className="text-[11px] text-gray-500 mb-2">Maximum size 1MB. PNG or JPG recommended.</p>
                     <div className="flex items-center gap-4">
                       <div className="flex-1">
                         <input
@@ -1995,33 +2032,63 @@ const QRGenerator = () => {
                   </div>
                   
                   {logo && (
-                    <div className="grid grid-cols-2 gap-4 border-t border-gray-50 pt-4">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">
-                          Size ({logoSize}px)
-                        </label>
-                        <input
-                          type="range"
-                          min="20"
-                          max="80"
-                          value={logoSize}
-                          onChange={(e) => setLogoSize(parseInt(e.target.value))}
-                          className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                        />
+                    <div className="space-y-4 border-t border-gray-50 pt-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">
+                            Size ({logoSize}px)
+                          </label>
+                          <input
+                            type="range"
+                            min="20"
+                            max="80"
+                            value={logoSize}
+                            onChange={(e) => setLogoSize(parseInt(e.target.value))}
+                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">
+                            Opacity ({logoOpacity})
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            value={logoOpacity}
+                            onChange={(e) => setLogoOpacity(parseFloat(e.target.value))}
+                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                          />
+                        </div>
                       </div>
+                      
                       <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">
-                          Opacity ({logoOpacity})
+                        <label className="block text-xs font-medium text-gray-500 mb-2">
+                          Logo Placement
                         </label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.1"
-                          value={logoOpacity}
-                          onChange={(e) => setLogoOpacity(parseFloat(e.target.value))}
-                          className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                        />
+                        <div className="flex gap-2 p-1 bg-gray-100/50 rounded-lg">
+                          <button
+                            onClick={() => setLogoPlacement("top")}
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+                              logoPlacement === "top"
+                                ? "bg-white text-indigo-600 shadow-sm"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
+                          >
+                            Top of Card
+                          </button>
+                          <button
+                            onClick={() => setLogoPlacement("inside")}
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+                              logoPlacement === "inside"
+                                ? "bg-white text-indigo-600 shadow-sm"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
+                          >
+                            Inside QR
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -2030,7 +2097,7 @@ const QRGenerator = () => {
             </div>
 
             {/* Card 5: Save & Manage */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 transition-all">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 transition-all hover:shadow-md">
               <h2 className="text-lg font-semibold text-gray-800 mb-5 flex items-center gap-2">
                 <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">5</span>
                 Save & Manage
@@ -2156,118 +2223,137 @@ const QRGenerator = () => {
 
           {/* Right Column: Preview Panel */}
           <div className="lg:col-span-1">
-            <div className="sticky top-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 flex flex-col items-center">
-              <h2 className="text-lg font-semibold text-gray-800 mb-6 w-full text-center">QR Preview</h2>
+            <div className="sticky top-6 bg-white rounded-[2rem] border border-gray-200 shadow-xl p-6 md:p-8 flex flex-col items-center transition-all hover:shadow-2xl">
+              <h2 className="text-xl font-bold text-gray-800 mb-6 w-full text-center">QR Preview</h2>
               
-              <div className="bg-gray-50/50 p-4 rounded-2xl mb-6 w-full flex flex-col items-center justify-center border border-gray-100">
+              <div className="bg-gray-50/80 p-6 rounded-[2.5rem] mb-8 w-full flex flex-col items-center justify-center border border-gray-100 shadow-inner">
                 {generatedUrl ? (
                   <div
-                    className="w-full max-w-[320px] border border-gray-100 rounded-3xl shadow-sm p-6 flex flex-col items-center"
+                    className="w-full max-w-[280px] sm:max-w-[320px] border border-gray-100 rounded-[2rem] shadow-lg p-6 flex flex-col items-center"
                     style={{
-                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.05)",
+                      boxShadow: "0 20px 50px rgba(0, 0, 0, 0.1)",
                       backgroundColor: cardBgColor
                     }}
                   >
-                    {effectiveLogo && (
+                    {effectiveLogo && logoPlacement === "top" && (
                       <img
                         src={effectiveLogo}
                         alt="Brand Logo"
-                        className="h-12 w-12 object-contain rounded-lg mb-4"
+                        className="h-14 w-14 object-contain rounded-xl mb-4"
                         style={{ opacity: logoOpacity }}
                       />
                     )}
 
                     {brandingName && (
-                      <div className="text-center mb-1">
-                        <p className="font-bold text-gray-800 text-lg leading-tight">
+                      <div className="text-center mb-1 w-full px-2">
+                        <p className="font-extrabold text-gray-800 text-xl leading-tight break-words">
                           {brandingName}
                         </p>
                         {qrSubtitle && (
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-[11px] font-medium text-gray-400 mt-1 uppercase tracking-wider">
                             {qrSubtitle}
                           </p>
                         )}
                       </div>
                     )}
 
-                    <div className="my-6 p-2 bg-gray-50/50 rounded-2xl border border-gray-100">
+                    <div className="my-6 p-4 bg-white rounded-2xl border border-gray-50 shadow-md">
                       <QRCodeSVG
                         id="qr-code-svg"
                         value={generatedUrl}
-                        size={200}
+                        size={180}
                         level="H"
-                        includeMargin={true}
+                        includeMargin={false}
                         fgColor={fgColor}
                         bgColor={bgColor}
+                        imageSettings={
+                          effectiveLogo && logoPlacement === "inside"
+                            ? {
+                                src: effectiveLogo,
+                                height: logoSize,
+                                width: logoSize,
+                                excavate: true,
+                                opacity: logoOpacity,
+                              }
+                            : undefined
+                        }
                       />
                     </div>
 
                     {qrStatement && (
-                      <p className="text-sm font-semibold text-gray-600 text-center leading-relaxed max-w-[220px]">
+                      <p className="text-sm font-bold text-gray-700 text-center leading-relaxed max-w-[200px] break-words">
                         {qrStatement}
                       </p>
                     )}
                   </div>
                 ) : (
-                  <div className="w-[180px] h-[180px] flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl text-gray-400 text-center p-4 text-sm">
+                  <div className="w-[180px] h-[180px] flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-3xl text-gray-400 text-center p-6 text-sm gap-3">
+                    <QrCode className="w-8 h-8 opacity-20" />
                     Complete setup to see preview
                   </div>
                 )}
               </div>
 
-              <div className="w-full space-y-4">
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Target URL</p>
-                  <p className="text-xs font-medium text-gray-600 break-all line-clamp-2">
+              <div className="w-full space-y-5">
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Target URL</p>
+                    {generatedUrl && (
+                       <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-600 rounded font-bold uppercase">Ready</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] font-semibold text-gray-500 break-all line-clamp-3 leading-relaxed">
                     {generatedUrl || "---"}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <button
                     disabled={!generatedUrl}
                     onClick={copyToClipboard}
-                    className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 transition-all gap-1 disabled:opacity-50"
+                    className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white border border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all gap-1.5 disabled:opacity-50 group"
                   >
-                    <Copy className="w-4 h-4 text-gray-500" />
-                    <span className="text-xs font-medium text-gray-600">Copy Link</span>
+                    <Copy className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+                    <span className="text-[11px] font-bold text-gray-500 group-hover:text-indigo-700">Copy Link</span>
                   </button>
 
                   <a
                     href={generatedUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 transition-all gap-1 ${!generatedUrl ? "pointer-events-none opacity-50" : ""}`}
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl bg-white border border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all gap-1.5 ${!generatedUrl ? "pointer-events-none opacity-50" : "group"}`}
                   >
-                    <ExternalLink className="w-4 h-4 text-gray-500" />
-                    <span className="text-xs font-medium text-gray-600">Test Link</span>
+                    <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+                    <span className="text-[11px] font-bold text-gray-500 group-hover:text-indigo-700">Test Link</span>
                   </a>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <button
                     disabled={!generatedUrl}
                     onClick={downloadQR}
-                    className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Download className="w-4 h-4" />
-                    PNG
+                    <Download className="w-5 h-5" />
+                    Download PNG
                   </button>
                   <button
                     disabled={!generatedUrl}
                     onClick={downloadPDF}
-                    className="w-full py-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed border border-indigo-200"
+                    className="w-full py-4 rounded-2xl bg-white hover:bg-gray-50 text-indigo-600 font-bold flex items-center justify-center gap-2 transition-all border-2 border-indigo-50 hover:border-indigo-100 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FileText className="w-4 h-4" />
-                    PDF (HQ)
+                    <FileText className="w-5 h-5" />
+                    HQ PDF
                   </button>
                 </div>
               </div>
 
-              <div className="mt-6 p-3 bg-blue-50/50 rounded-xl border border-blue-100 flex gap-2">
-                <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700 leading-relaxed">
-                  When scanned, customers will register via WhatsApp OTP before {qrType === "registration" ? "registration" : "playing"}.
+              <div className="mt-8 p-4 bg-indigo-50 rounded-2xl border border-indigo-100/50 flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                  <Info className="w-4 h-4 text-indigo-600" />
+                </div>
+                <p className="text-[11px] text-indigo-700/80 leading-relaxed font-medium">
+                  Scan this QR to preview the customer flow. Registration and activities will be {qrType === "registration" ? "direct" : "activity-based"}.
                 </p>
               </div>
             </div>

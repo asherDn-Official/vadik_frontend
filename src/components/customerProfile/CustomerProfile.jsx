@@ -41,10 +41,18 @@ const CustomerProfile = () => {
     const result = {};
 
     for (const [key, value] of Object.entries(dateObject)) {
-      if (typeof value === "string" && value.includes("/")) {
+      // Only attempt conversion for string values that match DD/MM/YYYY format
+      if (typeof value === "string" && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value)) {
         const [day, month, year] = value.split("/");
         const date = new Date(year, month - 1, day);
-        result[key] = date.toISOString();
+        
+        // Check if the date is valid
+        if (!isNaN(date.getTime())) {
+          result[key] = date.toISOString();
+        } else {
+          console.warn(`Invalid date detected for key ${key}: ${value}`);
+          result[key] = value;
+        }
       } else {
         result[key] = value;
       }
@@ -54,6 +62,7 @@ const CustomerProfile = () => {
   }
 
   const handleSave = async (apiData) => {
+    console.log("handleSave called with apiData:", apiData);
     try {
       setIsLoading(true);
 
@@ -61,9 +70,12 @@ const CustomerProfile = () => {
       
       // Separate profilePicture from the rest of apiData
       const { profilePicture, ...otherData } = apiData;
+      console.log("profilePicture:", profilePicture);
+      console.log("otherData:", otherData);
 
       // Convert date strings in the payload
       const payload = convertDateObjectToISO(otherData);
+      console.log("payload after ISO conversion:", payload);
 
       // Append data to FormData
       Object.keys(payload).forEach(key => {
@@ -95,6 +107,11 @@ const CustomerProfile = () => {
       setSelectedCustomer(updatedCustomer);
       setIsEditing(false);
     } catch (error) {
+      console.error("Error in handleSave:", error);
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+      }
       showToast(
         error.response?.data?.error || error.response?.data?.message || "Error updating customer",
         "error",
