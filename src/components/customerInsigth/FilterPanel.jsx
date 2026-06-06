@@ -113,6 +113,7 @@ const FilterPanel = ({
   const [showPeriodPicker, setShowPeriodPicker] = useState(false);
   const [apiFilterOptions, setApiFilterOptions] = useState(null);
   const [dynamicFilterData, setDynamicFilterData] = useState(null);
+  const [maxLoyaltyPoints, setMaxLoyaltyPoints] = useState(10000);
   // const [loading, setLoading] = useState(true);
   const [filteredData, setFilteredData] = useState([]); // Local state for filtered data
   const [retailerId, setRetailerId] = useState(() => {
@@ -169,6 +170,10 @@ const FilterPanel = ({
         const getSource = await api.get('/api/retailer/getSource');
 
         const apiData = response.data;
+
+        if (apiData.maxLoyaltyPoints) {
+          setMaxLoyaltyPoints(apiData.maxLoyaltyPoints);
+        }
 
         const mergedData = {
           allData: [
@@ -241,11 +246,34 @@ const FilterPanel = ({
     return true;
   };
 
+  const handleDateRawChange = (e) => {
+    let value = e.target.value;
+    // Remove all non-numeric characters
+    value = value.replace(/\D/g, "");
+
+    // Limit to 8 digits
+    if (value.length > 8) value = value.slice(0, 8);
+
+    // Add slashes automatically
+    let formattedValue = "";
+    if (value.length > 0) {
+      formattedValue = value.slice(0, 2);
+      if (value.length > 2) {
+        formattedValue += "/" + value.slice(2, 4);
+        if (value.length > 4) {
+          formattedValue += "/" + value.slice(4, 8);
+        }
+      }
+    }
+
+    e.target.value = formattedValue;
+  };
+
   const renderFilterInput = (filterKey, filterConfig) => {
     if (filterKey === "loyaltyPoints" && filterConfig?.type === "number") {
       const loyaltyFilter = filters[filterKey] || {};
       const min = 0;
-      const max = 10000;
+      const max = maxLoyaltyPoints;
 
       const value = [
         parseInt(loyaltyFilter.value) || min,
@@ -441,7 +469,14 @@ const FilterPanel = ({
                       : null)
                 : null
             }
-            onChange={(date) => onFilterChange(filterKey, date ? formatDateToYMD(date) : '')}
+            onChange={(date, event) => {
+              if (date instanceof Date && !isNaN(date)) {
+                onFilterChange(filterKey, formatDateToYMD(date));
+              } else if (event?.target?.value === "") {
+                onFilterChange(filterKey, "");
+              }
+            }}
+            onChangeRaw={handleDateRawChange}
             dateFormat="dd/MM/yyyy"
             placeholderText="Select date"
             className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10"
@@ -591,9 +626,14 @@ const FilterPanel = ({
             </label>
             <DatePicker
               selected={fromDate}
-              onChange={(date) =>
-                onFilterChange("fromDate", date ? formatDateToYMD(date) : "")
-              }
+              onChange={(date, event) => {
+                if (date instanceof Date && !isNaN(date)) {
+                  onFilterChange("fromDate", formatDateToYMD(date));
+                } else if (event?.target?.value === "") {
+                  onFilterChange("fromDate", "");
+                }
+              }}
+              onChangeRaw={handleDateRawChange}
               dateFormat="dd/MM/yyyy"
               placeholderText="Select start date"
               className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10"
@@ -616,9 +656,14 @@ const FilterPanel = ({
             </label>
             <DatePicker
               selected={toDate}
-              onChange={(date) =>
-                onFilterChange("toDate", date ? formatDateToYMD(date) : "")
-              }
+              onChange={(date, event) => {
+                if (date instanceof Date && !isNaN(date)) {
+                  onFilterChange("toDate", formatDateToYMD(date));
+                } else if (event?.target?.value === "") {
+                  onFilterChange("toDate", "");
+                }
+              }}
+              onChangeRaw={handleDateRawChange}
               dateFormat="dd/MM/yyyy"
               placeholderText="Select end date"
               className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10"
