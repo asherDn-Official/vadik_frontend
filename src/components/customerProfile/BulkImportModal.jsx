@@ -62,6 +62,7 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
         }, 1500);
       }
     } catch (err) {
+      console.error("Upload error:", err);
       alert(err?.response?.data?.error || "Upload failed");
     } finally {
       setLoading(false);
