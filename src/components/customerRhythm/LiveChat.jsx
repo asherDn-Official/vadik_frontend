@@ -300,6 +300,15 @@ const LiveChat = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Client-side size check
+    const isVideo = file.type.startsWith('video/');
+    const maxSize = isVideo ? 16 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error(`File too large. Max ${maxSize / (1024 * 1024)}MB allowed.`);
+      event.target.value = "";
+      return;
+    }
+
     try {
       setMediaLibraryLoading(true);
       const formData = new FormData();
@@ -315,7 +324,8 @@ const LiveChat = () => {
         toast.error(res.data?.message || "Upload failed");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Upload failed");
+      const errorMsg = error.response?.data?.message || error.message || "Upload failed";
+      toast.error(errorMsg);
     } finally {
       setMediaLibraryLoading(false);
       event.target.value = "";

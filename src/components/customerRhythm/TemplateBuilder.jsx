@@ -563,7 +563,8 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
                                         updateComponent(idx, { mediaUrl: res.data.url });
                                       }
                                     } catch (err) {
-                                      toast.error("Upload failed: " + (err.response?.data?.message || err.message));
+                                      const errorMsg = err.response?.data?.message || err.message || "Upload failed";
+                                      toast.error(errorMsg);
                                     } finally {
                                       setMediaLoading(false);
                                     }

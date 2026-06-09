@@ -312,7 +312,8 @@ const SendCampaign = () => {
         toast.success("Media uploaded successfully");
       }
     } catch (err) {
-      toast.error("Upload failed");
+      const errorMsg = err.response?.data?.message || err.message || "Upload failed";
+      toast.error(errorMsg);
     } finally {
       setUploadingMedia(false);
     }

@@ -782,7 +782,8 @@ function RetentionBuilderView({
       }
     } catch (error) {
       console.error("Error uploading template media:", error);
-      showToast("Failed to upload media", "error");
+      const errorMsg = error.response?.data?.message || error.message || "Failed to upload media";
+      showToast(errorMsg, "error");
     } finally {
       setUploadingMedia(false);
       event.target.value = "";
