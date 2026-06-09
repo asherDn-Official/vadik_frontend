@@ -39,6 +39,10 @@ const CustomerList = ({
     enabledCustomers.every((c) => selectedCustomers.includes(c._id));
 
   const handleToggleAll = () => {
+    if (toggleAllCustomers) {
+      toggleAllCustomers();
+      return;
+    }
     if (allSelected) {
       // Deselect all enabled customers
       enabledCustomers.forEach((customer) => {

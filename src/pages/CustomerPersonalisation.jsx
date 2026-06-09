@@ -136,16 +136,23 @@ const CustomerPersonalisation = () => {
 
   // Toggle all customers on current page
   const toggleAllCustomers = () => {
-    const allCurrentPageCustomerIds = filteredData.map(
-      (customer) => customer._id,
-    );
-    if (
-      selectedCustomers.length === filteredData.length &&
-      selectedCustomers.every((id) => allCurrentPageCustomerIds.includes(id))
-    ) {
-      setSelectedCustomers([]);
+    const enabledCustomers = filteredData.filter(c => c.isOptedIn === true);
+    const enabledIds = enabledCustomers.map(c => c._id);
+    
+    const allEnabledOnPageSelected = enabledIds.length > 0 && enabledIds.every(id => selectedCustomers.includes(id));
+
+    if (allEnabledOnPageSelected) {
+      setSelectedCustomers(prev => prev.filter(id => !enabledIds.includes(id)));
     } else {
-      setSelectedCustomers(allCurrentPageCustomerIds);
+      setSelectedCustomers(prev => {
+        const newSelected = [...prev];
+        enabledIds.forEach(id => {
+          if (!newSelected.includes(id)) {
+            newSelected.push(id);
+          }
+        });
+        return newSelected;
+      });
     }
   };
 

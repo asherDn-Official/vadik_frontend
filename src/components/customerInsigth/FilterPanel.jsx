@@ -177,9 +177,9 @@ const FilterPanel = ({
 
         const mergedData = {
           allData: [
-            ...apiData?.additionalData,
-            ...apiData?.advancedDetails,
-            ...apiData?.advancedPrivacyDetails,
+            ...(apiData?.additionalData || []).map(item => ({ ...item, fieldKey: `additionalData.${item.key}` })),
+            ...(apiData?.advancedDetails || []).map(item => ({ ...item, fieldKey: `advancedDetails.${item.key}` })),
+            ...(apiData?.advancedPrivacyDetails || []).map(item => ({ ...item, fieldKey: `advancedPrivacyDetails.${item.key}` })),
           ],
         };
 
@@ -200,7 +200,7 @@ const FilterPanel = ({
         // Process dynamic filters from mergedData.allData
         if (mergedData.allData && Array.isArray(mergedData.allData)) {
           mergedData.allData.forEach((item) => {
-            const filterKey = getFilterKey(item.key);
+            const filterKey = item.fieldKey;
 
             if (item.type === "options" && item.options) {
               // Add "All" option at the beginning for multi-select filters
@@ -765,20 +765,21 @@ const FilterPanel = ({
 
     // Define the order of static filters
     const staticFilters = [
-      { key: "firstname", name: "firstname", iconName: "person" },
-      { key: "lastname", name: "lastname", iconName: "person" },
-      { key: "mobileNumber", name: "mobileNumber", iconName: "phone" },
-      { key: "gender", name: "gender", iconName: "person" },
-      { key: "firstVisit", name: "firstVisit", iconName: "calendar" },
-      { key: "source", name: "source", iconName: "location" },
-      { key: "loyaltyPoints", name: "loyaltyPoints", iconName: "gift" },
-      { key: "isActive", name: "isActive", iconName: "activity" }
+      { key: "firstname", name: "firstname", label: "First Name", iconName: "person" },
+      { key: "lastname", name: "lastname", label: "Last Name", iconName: "person" },
+      { key: "mobileNumber", name: "mobileNumber", label: "Mobile Number", iconName: "phone" },
+      { key: "gender", name: "gender", label: "Gender", iconName: "person" },
+      { key: "firstVisit", name: "firstVisit", label: "First Visit", iconName: "calendar" },
+      { key: "source", name: "source", label: "Source", iconName: "location" },
+      { key: "loyaltyPoints", name: "loyaltyPoints", label: "Loyalty Points", iconName: "gift" },
+      { key: "isActive", name: "isActive", label: "Active Status", iconName: "activity" }
     ];
 
     // Get dynamic filters from API data
     const dynamicFilters = dynamicFilterData.map((item) => ({
-      key: getFilterKey(item.key),
-      name: item.key,
+      key: item.fieldKey,
+      name: item.fieldKey,
+      label: item.key,
       iconName: item.iconName || "filter",
     }));
 
@@ -787,10 +788,10 @@ const FilterPanel = ({
     // Combine static filters with dynamic filters
     const allFilters = [...staticFilters, ...dynamicFilters];
 
-    return allFilters.map(({ key, name, iconName }) => (
+    return allFilters.map(({ key, name, label, iconName }) => (
       <FilterItem
         key={key}
-        name={name}
+        name={label || name}
         // icon={getIconComponent(iconName)}
         expanded={expandedFilter === key}
         onToggle={() => toggleFilter(key)}

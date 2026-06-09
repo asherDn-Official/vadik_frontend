@@ -271,17 +271,18 @@ const SendCampaign = () => {
   };
 
   const selectAllLoaded = () => {
-    const allIds = customers.map(c => c._id);
+    const enabledCustomers = customers.filter(c => c.isOptedIn === true);
+    const enabledIds = enabledCustomers.map(c => c._id);
     const selectedIds = campaignData.audience.map(c => c._id);
-    const allLoadedSelected = allIds.every(id => selectedIds.includes(id));
+    const allLoadedSelected = enabledIds.length > 0 && enabledIds.every(id => selectedIds.includes(id));
 
     if (allLoadedSelected) {
       setCampaignData({
         ...campaignData,
-        audience: campaignData.audience.filter(c => !allIds.includes(c._id))
+        audience: campaignData.audience.filter(c => !enabledIds.includes(c._id))
       });
     } else {
-      const newToSelect = customers.filter(c => !selectedIds.includes(c._id));
+      const newToSelect = enabledCustomers.filter(c => !selectedIds.includes(c._id));
       setCampaignData({
         ...campaignData,
         audience: [...campaignData.audience, ...newToSelect]
