@@ -27,7 +27,6 @@ import CustomerOpportunities from "./pages/CustomerOpportunities";
 import { useAuth } from "./context/AuthContext";
 import CustomerAdd from "./pages/CustomerAdd";
 import QRGenerator from "./pages/QRGenerator";
-import DialogueFlow from "./pages/DialogueFlow";
 import Notification from "./pages/Notification";
 import ForgotPassword from "./pages/ForgotPassword";
 import Subscription from "./pages/Subscription";
@@ -317,16 +316,6 @@ function App() {
               element={
                 onboardingDone ? (
                   <QRGenerator />
-                ) : (
-                  <Navigate to="/register" replace />
-                )
-              }
-            />
-            <Route
-              path="dialogue-flow"
-              element={
-                onboardingDone ? (
-                  <DialogueFlow />
                 ) : (
                   <Navigate to="/register" replace />
                 )

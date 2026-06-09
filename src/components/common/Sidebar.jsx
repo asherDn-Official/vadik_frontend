@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { CreditCard, LogOut, MessageSquare } from "lucide-react";
+import { CreditCard, LogOut } from "lucide-react";
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import UnsavedChangesModal from "./UnsavedChangesModal";
 import { useUnsavedChanges } from "../../context/UnsavedChangesContext";
@@ -100,13 +100,6 @@ function Sidebar() {
       module: "Customer Rhythm",
       icon: rhytmIcon,
       label: "Customer Rhythm",
-    },
-    {
-      path: "/dialogue-flow",
-      module: "Customer Rhythm",
-      icon: null,
-      lucideIcon: MessageSquare,
-      label: "Dialogue Flow",
     },
         {
       path: "/qr-generator",
