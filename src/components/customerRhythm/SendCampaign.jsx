@@ -312,6 +312,89 @@ const SendCampaign = () => {
     }
   };
 
+  const clearSelection = () => {
+    setCampaignData({
+      ...campaignData,
+      audience: []
+    });
+  };
+
+  const selectAllMatching = async () => {
+    try {
+      setLoading(true);
+      const filtersArray = Object.entries(filters)
+        .filter(([name, value]) => {
+          const hasValue = (val) => {
+            if (val === "" || val === null || val === undefined) return false;
+            if (typeof val === "object") {
+              return Object.values(val).some(
+                (nested) => nested !== "" && nested !== null && nested !== undefined
+              );
+            }
+            return true;
+          };
+
+          return (
+            hasValue(value) &&
+            name !== "periodValue"
+          );
+        })
+        .map(([name, value]) => ({
+          name,
+          value:
+            typeof value === "string"
+              ? value.trim()
+              : typeof value === "object" && value !== null
+              ? {
+                  ...value,
+                  value:
+                    typeof value.value === "string"
+                      ? value.value.trim()
+                      : value.value,
+                  valueTo:
+                    typeof value.valueTo === "string"
+                      ? value.valueTo.trim()
+                      : value.valueTo,
+                }
+              : value,
+        }));
+
+      const payload = {
+        page: 1,
+        limit: 10000, // Large enough to get all matches for a typical retailer
+        filters: filtersArray.length > 0 ? filtersArray : undefined,
+        ...(selectedPeriod === "Yearly" &&
+          filters.periodValue && {
+            year: parseInt(filters.periodValue),
+          }),
+        ...(selectedPeriod === "Monthly" &&
+          filters.periodValue && {
+            year: new Date().getFullYear(),
+            month: parseInt(filters.periodValue),
+          }),
+        ...(selectedPeriod === "Quarterly" &&
+          filters.periodValue && {
+            year: new Date().getFullYear(),
+            quarter: filters.periodValue,
+          }),
+      };
+
+      const response = await api.post("/api/personilizationInsights", payload);
+      const allMatching = response.data.data.filter(c => c.isOptedIn === true);
+      
+      setCampaignData({
+        ...campaignData,
+        audience: allMatching
+      });
+      toast.success(`Selected all ${allMatching.length} matching customers`);
+    } catch (error) {
+      console.error("Error selecting all matching customers:", error);
+      toast.error("Failed to select all customers");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleMediaUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -779,13 +862,54 @@ const SendCampaign = () => {
                         Advanced Filters
                         {appliedFiltersCount > 0 && <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] flex items-center justify-center animate-in zoom-in">{appliedFiltersCount}</span>}
                       </button>
-                      <span className="text-xs font-bold text-[#313166] bg-[#313166]/5 px-3 py-1.5 rounded-full">
-                         {campaignData.audience.length} Selected
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-[#313166] bg-[#313166]/5 px-3 py-1.5 rounded-full">
+                           {campaignData.audience.length} Selected
+                        </span>
+                        {pagination.total > 0 && campaignData.audience.length < pagination.total && (
+                          <button 
+                            onClick={selectAllMatching}
+                            className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors uppercase tracking-wider"
+                          >
+                            Select All Matching ({pagination.total})
+                          </button>
+                        )}
+                        {campaignData.audience.length > 0 && (
+                          <button 
+                            onClick={clearSelection}
+                            className="text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-wider"
+                          >
+                            Clear Selection
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex-1 overflow-hidden flex flex-col gap-4">
+                    {(() => {
+                      const enabledOnPage = customers.filter(c => c.isOptedIn === true);
+                      const selectedOnPage = enabledOnPage.filter(c => campaignData.audience.find(sc => sc._id === c._id));
+                      const allOnPageSelected = enabledOnPage.length > 0 && enabledOnPage.length === selectedOnPage.length;
+                      const hasMoreToSelect = pagination.total > enabledOnPage.length && campaignData.audience.length < pagination.total;
+
+                      if (allOnPageSelected && hasMoreToSelect) {
+                        return (
+                          <div className="bg-indigo-50 border border-indigo-100 p-2 rounded-xl text-center animate-in slide-in-from-top-2 duration-300">
+                            <p className="text-xs text-indigo-700 font-medium">
+                              All {enabledOnPage.length} customers on this page are selected. 
+                              <button 
+                                onClick={selectAllMatching}
+                                className="ml-2 font-bold underline hover:text-indigo-900"
+                              >
+                                Select all {pagination.total} matching customers
+                              </button>
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                     <CustomerList
                       customers={customers}
                       loading={fetchingCustomers}

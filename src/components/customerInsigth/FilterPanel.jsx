@@ -305,7 +305,9 @@ const FilterPanel = ({
   };
 
   const handleDateRawChange = (e) => {
-    let value = e.target.value;
+    let value = e.target?.value;
+    if (!value) return;
+    
     // Remove all non-numeric characters
     value = value.replace(/\D/g, "");
 

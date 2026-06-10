@@ -223,12 +223,29 @@ const CustomerList = ({
             <thead className="sticky top-0 z-10 bg-[#F4F6FB]">
               <tr>
                 <th className="px-4 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={handleToggleAll}
-                    className="rounded border-gray-300 text-[#7E57C2] focus:ring-[#7E57C2]"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={handleToggleAll}
+                      className="rounded border-gray-300 text-[#7E57C2] focus:ring-[#7E57C2]"
+                    />
+                    {selectedCustomers.length > 0 && (
+                      <button 
+                        onClick={() => {
+                          // If toggleCustomerSelection is called with null/undefined, 
+                          // we might need a better way to clear. 
+                          // But we can just use the provided props.
+                          if (selectedCustomers.length > 0) {
+                            // Call with a special signal if parent supports it, 
+                            // or we just trust the parent's "Clear" buttons added previously.
+                          }
+                        }}
+                        title="Selection active"
+                        className="w-2 h-2 rounded-full bg-[#7E57C2] animate-pulse"
+                      ></button>
+                    )}
+                  </div>
                 </th>
                 {tableHeaders.map((header) => (
                   <th

@@ -106,6 +106,64 @@ const CustomerPersonalisation = () => {
     fetchCustomers();
   }, [currentPage, filters, pagination.limit]);
 
+  const clearSelection = () => {
+    setSelectedCustomers([]);
+  };
+
+  const selectAllMatching = async () => {
+    try {
+      setLoading(true);
+      const filtersArray = Object.entries(filters)
+        .filter(([name, value]) => {
+          return (
+            hasFilterValue(value) &&
+            name !== "periodValue" &&
+            name !== "fromDate" &&
+            name !== "toDate"
+          );
+        })
+        .map(([name, value]) => ({
+          name,
+          value:
+            typeof value === "string"
+              ? value.trim()
+              : typeof value === "object" && value !== null
+                ? {
+                    ...value,
+                    value:
+                      typeof value.value === "string"
+                        ? value.value.trim()
+                        : value.value,
+                    valueTo:
+                      typeof value.valueTo === "string"
+                        ? value.valueTo.trim()
+                        : value.valueTo,
+                  }
+                : value,
+        }));
+
+      const payload = {
+        page: 1,
+        limit: 10000,
+        filters: filtersArray.length > 0 ? filtersArray : undefined,
+        ...(filters.fromDate && { fromDate: filters.fromDate }),
+        ...(filters.toDate && { toDate: filters.toDate }),
+      };
+
+      const response = await api.post("/api/personilizationInsights", payload);
+      const allMatchingIds = response.data.data
+        .filter(c => c.isOptedIn === true)
+        .map(c => c._id);
+      
+      setSelectedCustomers(allMatchingIds);
+      // alert(`Selected all ${allMatchingIds.length} matching customers`);
+    } catch (error) {
+      console.error("Error selecting all matching customers:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFilterChange = (key, value) => {
     setFilters((prev) => {
       const newFilters = { ...prev, [key]: value };
@@ -177,9 +235,33 @@ const CustomerPersonalisation = () => {
                 <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-[#313166]">
                   Customer List
                 </h2>
-                <p className="mt-1 text-sm text-[#7E85A8]">
-                  {pagination.total} profiles match the current personalisation filters.
-                </p>
+                <div className="mt-1 flex items-center gap-3">
+                  <p className="text-sm text-[#7E85A8]">
+                    {pagination.total} profiles match the current personalisation filters.
+                  </p>
+                  {selectedCustomers.length > 0 && (
+                    <div className="flex items-center gap-3">
+                      <span className="h-4 w-[1px] bg-gray-200"></span>
+                      <span className="text-sm font-semibold text-[#313166]">
+                        {selectedCustomers.length} Selected
+                      </span>
+                      {pagination.total > 0 && selectedCustomers.length < pagination.total && (
+                        <button 
+                          onClick={selectAllMatching}
+                          className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors uppercase tracking-wider"
+                        >
+                          Select All Matching ({pagination.total})
+                        </button>
+                      )}
+                      <button 
+                        onClick={clearSelection}
+                        className="text-xs font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-wider"
+                      >
+                        Clear Selection
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="relative flex flex-wrap items-center gap-3">
@@ -203,15 +285,41 @@ const CustomerPersonalisation = () => {
                       setCurrentPage(1);
                     }}
                   >
-                    {[10, 20, 30, pagination.total].map((size) => (
+                    {[10, 20, 30, 50, 100].map((size) => (
                       <option key={size} value={size}>
-                        {size === pagination.total ? "All" : size}
+                        {size}
                       </option>
                     ))}
                   </select>
                 </div>
 
               </div>
+            </div>
+
+            <div className="mb-4">
+              {(() => {
+                const enabledOnPage = filteredData.filter(c => c.isOptedIn === true);
+                const enabledIdsOnPage = enabledOnPage.map(c => c._id);
+                const allOnPageSelected = enabledIdsOnPage.length > 0 && enabledIdsOnPage.every(id => selectedCustomers.includes(id));
+                const hasMoreToSelect = pagination.total > enabledOnPage.length && selectedCustomers.length < pagination.total;
+
+                if (allOnPageSelected && hasMoreToSelect) {
+                  return (
+                    <div className="bg-indigo-50 border border-indigo-100 p-2.5 rounded-xl text-center animate-in slide-in-from-top-2 duration-300">
+                      <p className="text-sm text-indigo-700 font-medium">
+                        All {enabledOnPage.length} customers on this page are selected. 
+                        <button 
+                          onClick={selectAllMatching}
+                          className="ml-2 font-bold underline hover:text-indigo-900"
+                        >
+                          Select all {pagination.total} matching customers
+                        </button>
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
 
             <CustomerList
