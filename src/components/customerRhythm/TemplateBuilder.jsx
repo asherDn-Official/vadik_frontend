@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { 
   ArrowLeft, 
+  ChevronDown,
+  ChevronUp,
   Plus, 
+  Search,
+  Smile,
   Trash2, 
   Type, 
   Image as ImageIcon, 
@@ -88,6 +92,49 @@ const buildSampleValuesFromTemplate = (source) => {
   return samplesMap;
 };
 
+const META_FORMATTING_TOOLS = [
+  { key: "bold", label: "Bold", sample: "bold text", wrap: ["*", "*"] },
+  { key: "italic", label: "Italic", sample: "italic text", wrap: ["_", "_"] },
+  { key: "strike", label: "Strike", sample: "strikethrough", wrap: ["~", "~"] },
+  { key: "mono", label: "Mono", sample: "code", wrap: ["```", "```"] },
+];
+
+const EMOJI_GROUPS = {
+  Smileys: ["😀", "😁", "😂", "🤣", "😊", "😍", "😘", "😎", "🤩", "🥳", "🤗", "😇", "😉", "😌", "🤔", "😴", "🤯", "🥺"],
+  People: ["👍", "👎", "👏", "🙌", "👌", "🙏", "💪", "🤝", "👋", "🔥", "💯", "✅", "❌", "⚡", "🎯", "💬", "🫶", "🤞"],
+  Nature: ["🌟", "✨", "🌈", "☀️", "🌙", "⭐", "🌸", "🌹", "🍀", "🌿", "🌴", "🌊", "🎄", "🌍", "🪴"],
+  Food: ["🍔", "🍕", "🍟", "🌮", "🍩", "🍫", "🍪", "🍿", "🍓", "🍉", "🍋", "🥭", "🍽️", "☕", "🍵", "🥤"],
+  Travel: ["🚗", "🛵", "✈️", "🚀", "🛍️", "🎁", "📦", "🏠", "🏝️", "🏖️", "🎡", "🎢", "🗺️", "🧳", "⛽", "🛒"],
+  Objects: ["📱", "💻", "⌚", "📷", "🎥", "🎧", "🔔", "🔒", "💡", "📌", "📎", "📝", "📢", "🎟️", "🧾", "💳"],
+  Symbols: ["❤️", "💙", "💚", "🖤", "💜", "💛", "🤍", "⭐", "✔️", "➕", "➖", "➡️", "⬅️", "⬆️", "⬇️", "‼️", "❓", "💥"],
+};
+
+const QUICK_EMOJIS = ["😀", "😍", "🔥", "🎉", "✅", "📦", "💬", "✨"];
+
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+const renderMetaFormattedText = (text = "", sampleValues = {}) => {
+  let formatted = escapeHtml(text);
+
+  const vars = text.match(/\{\{(\d+)\}\}/g) || [];
+  vars.forEach((variable) => {
+    const safeVariable = variable.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const replacement = escapeHtml(sampleValues[variable] || variable);
+    formatted = formatted.replace(new RegExp(safeVariable, "g"), `<span class="text-blue-600 font-bold">${replacement}</span>`);
+  });
+
+  formatted = formatted.replace(/```([\s\S]+?)```/g, '<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.95em] text-slate-700">$1</code>');
+  formatted = formatted.replace(/\*([^*\n]+)\*/g, "<strong>$1</strong>");
+  formatted = formatted.replace(/_([^_\n]+)_/g, "<em>$1</em>");
+  formatted = formatted.replace(/~([^~\n]+)~/g, "<span class=\"line-through\">$1</span>");
+
+  return formatted.replace(/\n/g, "<br/>");
+};
+
 const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
   const [template, setTemplate] = useState(() => normalizeTemplateForBuilder(initialTemplate));
 
@@ -96,6 +143,10 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
   const [mediaLoading, setMediaLoading] = useState(false);
   const [nameAvailable, setNameAvailable] = useState(null);
   const [checkingName, setCheckingName] = useState(false);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [emojiSearch, setEmojiSearch] = useState("");
+  const [activeEmojiCategory, setActiveEmojiCategory] = useState("Smileys");
+  const bodyInputRefs = useRef({});
 
   // Character limits
   const LIMITS = {
@@ -110,6 +161,14 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
     setSamples(buildSampleValuesFromTemplate(initialTemplate));
     setNameAvailable(null);
   }, [initialTemplate]);
+
+  const emojiCategories = Object.keys(EMOJI_GROUPS);
+  const normalizedEmojiSearch = emojiSearch.trim().toLowerCase();
+  const filteredEmojiList = normalizedEmojiSearch
+    ? emojiCategories.flatMap((category) =>
+        category.toLowerCase().includes(normalizedEmojiSearch) ? EMOJI_GROUPS[category] : []
+      )
+    : EMOJI_GROUPS[activeEmojiCategory] || [];
 
   useEffect(() => {
     if (template.name.length > 2) {
@@ -161,6 +220,33 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
     const newComponents = [...template.components];
     newComponents[index] = { ...newComponents[index], ...updates };
     setTemplate({ ...template, components: newComponents });
+  };
+
+  const insertIntoBody = (index, insertion, { wrap = false, sample = "" } = {}) => {
+    const input = bodyInputRefs.current[index];
+    const currentText = template.components[index]?.text || "";
+
+    if (!input) {
+      updateComponent(index, { text: `${currentText}${wrap ? `${insertion}${sample}${insertion}` : insertion}` });
+      return;
+    }
+
+    const selectionStart = input.selectionStart ?? currentText.length;
+    const selectionEnd = input.selectionEnd ?? currentText.length;
+    const selectedText = currentText.slice(selectionStart, selectionEnd);
+    const nextText = wrap
+      ? `${currentText.slice(0, selectionStart)}${insertion}${selectedText || sample}${insertion}${currentText.slice(selectionEnd)}`
+      : `${currentText.slice(0, selectionStart)}${insertion}${currentText.slice(selectionEnd)}`;
+
+    updateComponent(index, { text: nextText });
+
+    setTimeout(() => {
+      const nextCursor = wrap
+        ? selectionStart + insertion.length + (selectedText || sample).length + insertion.length
+        : selectionStart + insertion.length;
+      input.focus();
+      input.setSelectionRange(nextCursor, nextCursor);
+    }, 0);
   };
 
   const addVariable = (index) => {
@@ -262,16 +348,6 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
     const footer = template.components.find(c => c.type === "FOOTER");
     const buttons = template.components.find(c => c.type === "BUTTONS")?.buttons || [];
 
-    const formatText = (text) => {
-      if (!text) return "";
-      let formatted = text;
-      const vars = text.match(/\{\{(\d+)\}\}/g) || [];
-      vars.forEach(v => {
-        formatted = formatted.replace(v, `<span class="text-blue-600 font-bold">${samples[v] || v}</span>`);
-      });
-      return formatted.replace(/\n/g, '<br/>');
-    };
-
     return (
       <div className="relative w-full max-w-[320px] mx-auto h-[600px] bg-slate-900 rounded-[3rem] border-[8px] border-slate-800 shadow-2xl flex flex-col overflow-hidden">
         {/* Notch */}
@@ -291,25 +367,40 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
             {header && (
               <div className="p-2 pb-0 font-bold text-sm text-gray-800">
                 {header.format === "TEXT" ? (
-                  <div dangerouslySetInnerHTML={{ __html: formatText(header.text) }} />
+                  <div dangerouslySetInnerHTML={{ __html: renderMetaFormattedText(header.text, samples) }} />
                 ) : (
-                  <div className="bg-gray-100 min-h-[120px] rounded flex flex-col items-center justify-center text-gray-400 overflow-hidden">
+                  <div className="bg-gray-100 min-h-[140px] rounded flex flex-col items-center justify-center text-gray-400 overflow-hidden">
                     {mediaLoading ? (
                       <Loader text="Uploading..." size="sm" fullHeight={false} />
                     ) : header.mediaUrl ? (
-                       header.format === "IMAGE" ? (
+                      header.format === "IMAGE" ? (
                         <img src={header.mediaUrl} alt="Preview" className="w-full h-full object-cover" />
-                       ) : header.format === "VIDEO" ? (
-                        <div className="flex flex-col items-center gap-2">
-                           <Video size={32} />
-                           <span className="text-[10px]">Video Preview Not Available</span>
+                      ) : header.format === "VIDEO" ? (
+                        <video
+                          src={header.mediaUrl}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          className="max-h-[260px] w-full bg-black object-contain"
+                        />
+                      ) : (
+                        <div className="flex w-full items-center gap-3 p-4 text-left text-gray-600">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+                            <FileText size={24} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Document Header</div>
+                            <a
+                              href={header.mediaUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-1 block truncate text-xs text-[#313166] underline"
+                            >
+                              {header.mediaUrl}
+                            </a>
+                          </div>
                         </div>
-                       ) : (
-                        <div className="flex flex-col items-center gap-2 p-4 text-center">
-                           <FileText size={32} />
-                           <span className="text-[10px] break-all">{header.mediaUrl}</span>
-                        </div>
-                       )
+                      )
                     ) : (
                       <>
                         {header.format === "IMAGE" && <ImageIcon size={24} />}
@@ -324,7 +415,7 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
             )}
             
             <div className="p-3 text-sm text-gray-800 leading-relaxed">
-              <div dangerouslySetInnerHTML={{ __html: formatText(body?.text) }} />
+              <div dangerouslySetInnerHTML={{ __html: renderMetaFormattedText(body?.text, samples) }} />
             </div>
 
             {footer && (
@@ -374,7 +465,7 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden lg:flex-row">
         {/* Editor Side */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
           {/* Basic Info Section */}
@@ -607,10 +698,110 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
                   )}
 
                   {comp.type === "BODY" && (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
+                      <div className="rounded-2xl border border-gray-200 bg-white p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {META_FORMATTING_TOOLS.map((tool) => (
+                            <button
+                              key={tool.key}
+                              type="button"
+                              onClick={() => insertIntoBody(idx, tool.wrap[0], { wrap: true, sample: tool.sample })}
+                              className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-[#313166] transition-all hover:border-[#313166] hover:bg-[#313166]/5"
+                              title={`Insert Meta WhatsApp ${tool.label.toLowerCase()} formatting`}
+                            >
+                              {tool.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="mt-3 space-y-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Emojis</span>
+                            {QUICK_EMOJIS.map((emoji) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => insertIntoBody(idx, emoji)}
+                                className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-base transition-all hover:border-[#313166] hover:bg-[#313166]/5"
+                                title={`Insert ${emoji}`}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => setEmojiPickerOpen((current) => !current)}
+                              className="inline-flex h-9 items-center gap-2 rounded-xl border border-gray-200 px-3 text-xs font-semibold text-[#313166] transition-all hover:border-[#313166] hover:bg-[#313166]/5"
+                            >
+                              <Smile size={14} />
+                              Full Emoji Picker
+                              {emojiPickerOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+                          </div>
+
+                          {emojiPickerOpen ? (
+                            <div className="rounded-2xl border border-gray-200 bg-[#FAFBFF] p-3">
+                              <div className="relative">
+                                <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                  type="text"
+                                  value={emojiSearch}
+                                  onChange={(event) => setEmojiSearch(event.target.value)}
+                                  placeholder="Filter by category like smileys, food, travel..."
+                                  className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:outline-none"
+                                />
+                              </div>
+
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {emojiCategories.map((category) => (
+                                  <button
+                                    key={category}
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveEmojiCategory(category);
+                                      setEmojiSearch("");
+                                    }}
+                                    className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
+                                      activeEmojiCategory === category && !normalizedEmojiSearch
+                                        ? "bg-[#313166] text-white"
+                                        : "border border-gray-200 bg-white text-[#313166] hover:border-[#313166]"
+                                    }`}
+                                  >
+                                    {category}
+                                  </button>
+                                ))}
+                              </div>
+
+                              <div className="mt-3 grid grid-cols-8 gap-2 rounded-xl bg-white p-3">
+                                {filteredEmojiList.length > 0 ? (
+                                  filteredEmojiList.map((emoji) => (
+                                    <button
+                                      key={`${activeEmojiCategory}-${emoji}`}
+                                      type="button"
+                                      onClick={() => insertIntoBody(idx, emoji)}
+                                      className="flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-xl transition-all hover:border-[#313166] hover:bg-[#313166]/5"
+                                      title={`Insert ${emoji}`}
+                                    >
+                                      {emoji}
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="col-span-8 rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500">
+                                    No emoji category matched that search. Try `smileys`, `people`, `food`, `travel`, `objects`, or `symbols`.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+
                       <textarea
+                        ref={(node) => {
+                          bodyInputRefs.current[idx] = node;
+                        }}
                         rows="4"
-                        placeholder="Type your message here..."
+                        placeholder="Type your message here. Use *bold*, _italic_, ~strike~, or ```mono``` like Meta WhatsApp templates."
                         className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none bg-white resize-none"
                         maxLength={LIMITS.BODY}
                         value={comp.text}
@@ -618,7 +809,10 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
                       ></textarea>
                       <div className="flex justify-between items-center text-[10px]">
                         <span className="text-gray-400">{comp.text.length} / {LIMITS.BODY}</span>
-                        <button onClick={() => addVariable(idx)} className="text-[#313166] font-bold hover:underline">+ Add Variable</button>
+                        <div className="flex items-center gap-3">
+                          <span className="text-gray-400">Meta supports emoji plus bold, italic, strike, and monospace markers.</span>
+                          <button type="button" onClick={() => addVariable(idx)} className="text-[#313166] font-bold hover:underline">+ Add Variable</button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -729,8 +923,8 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
         </div>
 
         {/* Preview Side */}
-        <div className="w-[450px] bg-gray-50 border-l border-gray-200 p-12 overflow-y-auto hidden lg:flex flex-col items-center custom-scrollbar">
-          <div className="sticky top-12 w-full">
+        <div className="hidden border-t border-gray-200 bg-gray-50 p-6 overflow-y-auto md:flex md:flex-col md:items-center lg:w-[450px] lg:border-l lg:border-t-0 lg:p-12 custom-scrollbar">
+          <div className="w-full lg:sticky lg:top-12">
             <h3 className="text-center text-sm font-bold text-gray-400 uppercase tracking-widest mb-12">
               WhatsApp Real-time Preview
             </h3>

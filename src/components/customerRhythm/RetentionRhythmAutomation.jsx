@@ -7,6 +7,8 @@ import {
   CheckCircle2,
   Copy,
   Eye,
+  FileText,
+  Image as ImageIcon,
   LayoutGrid,
   MessageCircle,
   Pause,
@@ -173,6 +175,9 @@ const getTemplateHeaderMediaType = (template) => {
   const header = template?.components?.find((component) => component.type === "HEADER");
   return header && ["IMAGE", "VIDEO", "DOCUMENT"].includes(header.format) ? header.format : "";
 };
+
+const getTemplateHeaderComponent = (template) =>
+  template?.components?.find((component) => component.type === "HEADER") || null;
 
 const extractTemplateVariables = (template) => {
   const values = [];
@@ -723,6 +728,7 @@ function RetentionBuilderView({
   const dateFields = fields.filter((field) => field.type === "date");
   const templateVariables = extractTemplateVariables(selectedTemplate);
   const templateHeaderMediaType = getTemplateHeaderMediaType(selectedTemplate);
+  const templateHeader = getTemplateHeaderComponent(selectedTemplate);
   const previewText = getTemplatePreviewText(selectedTemplate, form.actionConfig.variableMappings || [], fields);
 
   const updateTemplate = (templateId) => {
@@ -1311,11 +1317,12 @@ function RetentionBuilderView({
 
             {step === 6 && (
               <div className="space-y-8 py-4">
-                <div className="relative flex flex-col gap-8">
-                  {/* Visual Flow Line */}
-                  <div className="absolute left-[27px] top-6 bottom-6 w-0.5 border-l-2 border-dashed border-gray-200 lg:left-1/2 lg:-ml-px lg:border-l-0 lg:border-t-2 lg:top-1/2 lg:w-full lg:h-0" />
+                <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FBFBFE] via-white to-[#F5F6FC] p-4 sm:p-6">
+                  <div className="pointer-events-none absolute left-[27px] top-10 bottom-10 w-0.5 border-l-2 border-dashed border-gray-200 lg:hidden" />
 
                   <div className="relative flex flex-col gap-10 lg:flex-row lg:justify-between lg:gap-4">
+                    <div className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-7 hidden border-t-2 border-dashed border-[#D8DBEC] lg:block" />
+
                     {/* Trigger Node */}
                     <div className="z-10 flex flex-1 flex-col items-center">
                       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm outline outline-4 outline-white">
@@ -1481,9 +1488,56 @@ function RetentionBuilderView({
                     }}
                   >
                     <div className="flex justify-end">
-                      <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-[#005c4b] p-3">
-                        <div className="whitespace-pre-wrap text-sm text-white">{previewText}</div>
-                        <div className="mt-1 text-right text-xs text-white/60">12:00 PM</div>
+                      <div className="max-w-[85%] overflow-hidden rounded-2xl rounded-tr-md bg-[#005c4b]">
+                        {templateHeader?.format === "TEXT" && templateHeader?.text ? (
+                          <div className="border-b border-white/10 px-3 pb-2 pt-3 text-sm font-semibold text-white">
+                            {templateHeader.text}
+                          </div>
+                        ) : null}
+
+                        {templateHeaderMediaType ? (
+                          <div className="border-b border-white/10 bg-black/10">
+                            {form.actionConfig.mediaUrl ? (
+                              templateHeaderMediaType === "IMAGE" ? (
+                                <img
+                                  src={form.actionConfig.mediaUrl}
+                                  alt="Template header preview"
+                                  className="max-h-64 w-full object-cover"
+                                />
+                              ) : templateHeaderMediaType === "VIDEO" ? (
+                                <video
+                                  src={form.actionConfig.mediaUrl}
+                                  controls
+                                  className="max-h-64 w-full bg-black object-contain"
+                                />
+                              ) : (
+                                <div className="flex items-center gap-3 px-3 py-4 text-white">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
+                                    <FileText className="h-5 w-5" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-medium">Document attachment</div>
+                                    <div className="truncate text-xs text-white/70">{form.actionConfig.mediaUrl}</div>
+                                  </div>
+                                </div>
+                              )
+                            ) : (
+                              <div className="flex min-h-[148px] flex-col items-center justify-center gap-2 px-4 py-6 text-center text-white/70">
+                                {templateHeaderMediaType === "IMAGE" && <ImageIcon className="h-7 w-7" />}
+                                {templateHeaderMediaType === "VIDEO" && <Play className="h-7 w-7" />}
+                                {templateHeaderMediaType === "DOCUMENT" && <FileText className="h-7 w-7" />}
+                                <div className="text-xs font-medium">
+                                  {templateHeaderMediaType.toLowerCase()} header will appear here
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+
+                        <div className="p-3">
+                          <div className="whitespace-pre-wrap text-sm text-white">{previewText}</div>
+                          <div className="mt-1 text-right text-xs text-white/60">12:00 PM</div>
+                        </div>
                       </div>
                     </div>
                   </div>
