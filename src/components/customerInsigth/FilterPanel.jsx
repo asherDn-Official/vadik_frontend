@@ -25,8 +25,65 @@ import {
 
 import ReactSlider from "react-slider";
 import api from "../../api/apiconfig";
-import DatePicker from "react-datepicker";
+import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+
+const hasMeaningfulFilterValue = (value) => {
+  if (value === undefined || value === null || value === "") {
+    return false;
+  }
+
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return Object.entries(value).some(([nestedKey, nestedValue]) =>
+      nestedKey !== "operator" && hasMeaningfulFilterValue(nestedValue)
+    );
+  }
+
+  if (Array.isArray(value)) {
+    return value.some((item) => hasMeaningfulFilterValue(item));
+  }
+
+  return true;
+};
+
+const isRecurringDateField = (filterKey = "") => {
+  const normalizedKey = String(filterKey).toLowerCase();
+  return normalizedKey.includes("birthday") || normalizedKey.includes("anniversary");
+};
+
+const normalizeDateFilterValue = (rawValue, filterKey) => {
+  if (!rawValue) {
+    return {
+      mode: "single",
+      from: "",
+      to: "",
+    };
+  }
+
+  if (typeof rawValue === "string") {
+    return {
+      mode: "single",
+      from: rawValue,
+      to: "",
+      isRecurring: isRecurringDateField(filterKey),
+    };
+  }
+
+  if (typeof rawValue === "object") {
+    return {
+      mode: rawValue.operator === "between" ? "range" : "single",
+      from: rawValue.value || "",
+      to: rawValue.valueTo || "",
+      isRecurring: isRecurringDateField(filterKey),
+    };
+  }
+
+  return {
+    mode: "single",
+    from: "",
+    to: "",
+  };
+};
 
 const renderModernDateHeader = ({
   date,
@@ -99,6 +156,25 @@ const renderModernDateHeader = ({
   );
 };
 
+const formatDatePreview = (startDate, endDate) => {
+  const formatDisplay = (date) =>
+    date
+      ? `${String(date.getDate()).padStart(2, "0")}/${String(
+          date.getMonth() + 1
+        ).padStart(2, "0")}/${date.getFullYear()}`
+      : "";
+
+  if (startDate && endDate) {
+    return `${formatDisplay(startDate)} - ${formatDisplay(endDate)}`;
+  }
+
+  if (startDate) {
+    return formatDisplay(startDate);
+  }
+
+  return "";
+};
+
 const FilterPanel = ({
   filters,
   onFilterChange,
@@ -136,14 +212,6 @@ const FilterPanel = ({
     if (!y || !m || !d) return null;
     // Construct local date to avoid UTC offset issues
     return new Date(y, m - 1, d);
-  };
-
-  // Helper function to convert display name to filter key
-  const getFilterKey = (displayName) => {
-    return displayName
-      .toLowerCase()
-      .replace(/\s+/g, "")
-      .replace(/[^a-z0-9]/g, "");
   };
 
   // Initialize defaults on component mount
@@ -203,10 +271,13 @@ const FilterPanel = ({
             const filterKey = item.fieldKey;
 
             if (item.type === "options" && item.options) {
-              // Add "All" option at the beginning for multi-select filters
               processedOptions[filterKey] = [...item.options];
             } else if (item.type === "string") {
               processedOptions[filterKey] = { type: "string" };
+            } else if (item.type === "number" || item.type === "percentage") {
+              processedOptions[filterKey] = { type: "number" };
+            } else if (item.type === "boolean") {
+              processedOptions[filterKey] = ["true", "false"];
             } else if (item.type === "date") {
               processedOptions[filterKey] = { type: "date" };
             }
@@ -230,20 +301,7 @@ const FilterPanel = ({
   };
 
   const hasFilterValue = (value) => {
-    if (value === undefined || value === null || value === "") {
-      return false;
-    }
-
-    if (typeof value === "object") {
-      return Object.values(value).some(
-        (nestedValue) =>
-          nestedValue !== undefined &&
-          nestedValue !== null &&
-          nestedValue !== "",
-      );
-    }
-
-    return true;
+    return hasMeaningfulFilterValue(value);
   };
 
   const handleDateRawChange = (e) => {
@@ -457,49 +515,114 @@ const FilterPanel = ({
         </div>
       );
     } else if (filterConfig?.type === "date") {
-      return (
-        <div className="mt-2 relative ">
-            <DatePicker
-              selected={
-                filters[filterKey]
-                ? (typeof filters[filterKey] === "string"
-                    ? parseYMDToLocalDate(filters[filterKey])
-                    : filters[filterKey] instanceof Date
-                      ? filters[filterKey]
-                      : null)
-                : null
-            }
-            onChange={(date, event) => {
-              if (date instanceof Date && !isNaN(date)) {
-                onFilterChange(filterKey, formatDateToYMD(date));
-              } else if (event?.target?.value === "") {
-                onFilterChange(filterKey, "");
-              }
-            }}
-            onChangeRaw={handleDateRawChange}
-            dateFormat="dd/MM/yyyy"
-            placeholderText="Select date"
-            className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10"
-              wrapperClassName="modern-datepicker-field"
-              popperClassName="modern-datepicker-popper"
-              calendarClassName="modern-datepicker-calendar"
-              dayClassName={() => "modern-datepicker-day"}
-              showPopperArrow={false}
-              portalId="root"
-              popperPlacement="bottom-start"
-              renderCustomHeader={renderModernDateHeader}
-              maxDate={new Date()}
-              isClearable={false}
-            />
+      const normalizedDateFilter = normalizeDateFilterValue(filters[filterKey], filterKey);
+      const isRecurringField = isRecurringDateField(filterKey);
+      const selectedDate = parseYMDToLocalDate(normalizedDateFilter.from);
+      const rangeStartDate = parseYMDToLocalDate(normalizedDateFilter.from);
+      const rangeEndDate = parseYMDToLocalDate(normalizedDateFilter.to);
 
-          {filters[filterKey] && (
-            <button
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-              onClick={() => onFilterChange(filterKey, '')}
-              aria-label={`Clear ${filterKey}`}
-            >
-              <X size={14} />
-            </button>
+      const updateDateFilter = (nextFrom, nextTo = "") => {
+        if (!nextFrom && !nextTo) {
+          onFilterChange(filterKey, "");
+          return;
+        }
+
+        if (isRecurringField) {
+          onFilterChange(filterKey, nextFrom);
+          return;
+        }
+
+        if (nextFrom && nextTo) {
+          onFilterChange(filterKey, {
+            operator: "between",
+            value: nextFrom,
+            valueTo: nextTo,
+          });
+          return;
+        }
+
+        onFilterChange(filterKey, {
+          operator: "on",
+          value: nextFrom,
+          valueTo: "",
+        });
+      };
+
+      return (
+        <div className="mt-2 space-y-3">
+          {isRecurringField ? (
+            <div className="relative">
+              <ReactDatePicker
+                selected={selectedDate}
+                onChange={(date, event) => {
+                  if (date instanceof Date && !isNaN(date)) {
+                    updateDateFilter(formatDateToYMD(date), "");
+                  } else if (event?.target?.value === "") {
+                    updateDateFilter("", "");
+                  }
+                }}
+                onChangeRaw={handleDateRawChange}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Select date"
+                className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10"
+                wrapperClassName="modern-datepicker-field"
+                popperClassName="modern-datepicker-popper"
+                calendarClassName="modern-datepicker-calendar"
+                dayClassName={() => "modern-datepicker-day"}
+                showPopperArrow={false}
+                portalId="root"
+                popperPlacement="bottom-start"
+                renderCustomHeader={renderModernDateHeader}
+                maxDate={new Date()}
+                isClearable={false}
+              />
+              {hasFilterValue(filters[filterKey]) && (
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  onClick={() => onFilterChange(filterKey, "")}
+                  aria-label={`Clear ${filterKey}`}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] px-3 py-2.5 text-sm text-[#313166]">
+                {formatDatePreview(rangeStartDate, rangeEndDate) || "Select date or range"}
+              </div>
+              <div className="overflow-hidden rounded-[20px] border border-[#E4E8F6] shadow-[0_20px_50px_rgba(49,49,102,0.14)]">
+                <ReactDatePicker
+                  inline
+                  selected={rangeStartDate}
+                  startDate={rangeStartDate}
+                  endDate={rangeEndDate}
+                  selectsRange
+                  onChange={(dates) => {
+                    const [start, end] = dates || [];
+                    const startYMD = start instanceof Date && !isNaN(start) ? formatDateToYMD(start) : "";
+                    const endYMD = end instanceof Date && !isNaN(end) ? formatDateToYMD(end) : "";
+                    updateDateFilter(startYMD, endYMD);
+                  }}
+                  calendarClassName="modern-datepicker-calendar modern-datepicker-inline"
+                  dayClassName={() => "modern-datepicker-day"}
+                  renderCustomHeader={renderModernDateHeader}
+                  maxDate={new Date()}
+                  monthsShown={1}
+                />
+              </div>
+              {hasFilterValue(filters[filterKey]) && (
+                <button
+                  type="button"
+                  className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
+                  onClick={() => onFilterChange(filterKey, "")}
+                  aria-label={`Clear ${filterKey}`}
+                >
+                  <X size={12} /> Clear Selection
+                </button>
+              )}
+            </div>
           )}
         </div>
       );
@@ -624,7 +747,7 @@ const FilterPanel = ({
             <label className="mb-1 block text-xs font-medium uppercase tracking-[0.08em] text-[#8B90B2]">
               From
             </label>
-            <DatePicker
+            <ReactDatePicker
               selected={fromDate}
               onChange={(date, event) => {
                 if (date instanceof Date && !isNaN(date)) {
@@ -654,7 +777,7 @@ const FilterPanel = ({
             <label className="mb-1 block text-xs font-medium uppercase tracking-[0.08em] text-[#8B90B2]">
               To
             </label>
-            <DatePicker
+            <ReactDatePicker
               selected={toDate}
               onChange={(date, event) => {
                 if (date instanceof Date && !isNaN(date)) {
@@ -847,9 +970,7 @@ const FilterPanel = ({
                     }`}
                   onClick={() => {
                     onPeriodChange(period);
-                    if (period !== "Yearly") {
-                      onFilterChange("periodValue", "");
-                    }
+                    onFilterChange("periodValue", "");
                   }}
                 >
                   {period}

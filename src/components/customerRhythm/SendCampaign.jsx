@@ -32,6 +32,29 @@ import * as XLSX from "xlsx";
 
 import Loader from "../../utils/Loader";
 
+const hasMeaningfulFilterValue = (value) => {
+  if (value === undefined || value === null || value === "") {
+    return false;
+  }
+
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return Object.entries(value).some(([nestedKey, nestedValue]) =>
+      nestedKey !== "operator" && hasMeaningfulFilterValue(nestedValue)
+    );
+  }
+
+  if (Array.isArray(value)) {
+    return value.some((item) => hasMeaningfulFilterValue(item));
+  }
+
+  return true;
+};
+
+const countAppliedFilters = (activeFilters) =>
+  Object.values(activeFilters).filter((filterValue) =>
+    hasMeaningfulFilterValue(filterValue)
+  ).length;
+
 const SendCampaign = () => {
   // Main View State
   const [view, setView] = useState("dashboard"); // "dashboard" or "wizard"
@@ -91,22 +114,20 @@ const SendCampaign = () => {
     }
   }, [currentPage, filters, pageSize, currentStep, view]);
 
+  useEffect(() => {
+    setAppliedFiltersCount(countAppliedFilters(filters));
+  }, [filters]);
+
   const handleFilterChange = (key, value) => {
-    setFilters((prev) => {
-      const newFilters = { ...prev, [key]: value };
-      // Calculate applied filters count
-      const count = Object.values(newFilters).filter(
-        (v) => v !== undefined && v !== ""
-      ).length;
-      setAppliedFiltersCount(count);
-      return newFilters;
-    });
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
     setCurrentPage(1); // Reset to first page when filters change
   };
 
   const clearAllFilters = () => {
     setFilters({});
-    setAppliedFiltersCount(0);
     setCurrentPage(1);
   };
 
@@ -144,18 +165,8 @@ const SendCampaign = () => {
       setFetchingCustomers(true);
       const filtersArray = Object.entries(filters)
         .filter(([name, value]) => {
-          const hasValue = (val) => {
-            if (val === "" || val === null || val === undefined) return false;
-            if (typeof val === "object") {
-              return Object.values(val).some(
-                (nested) => nested !== "" && nested !== null && nested !== undefined
-              );
-            }
-            return true;
-          };
-
           return (
-            hasValue(value) &&
+            hasMeaningfulFilterValue(value) &&
             name !== "periodValue"
           );
         })
@@ -182,6 +193,7 @@ const SendCampaign = () => {
       const payload = {
         page: currentPage,
         limit: pageSize,
+        dateRangeFieldKey: "firstVisit",
         filters: filtersArray.length > 0 ? filtersArray : undefined,
         ...(selectedPeriod === "Yearly" &&
           filters.periodValue && {
@@ -212,6 +224,16 @@ const SendCampaign = () => {
       setTotalCustomers(response.data.pagination?.total || 0);
     } catch (error) {
       console.error("Error fetching customers:", error);
+      setCustomers([]);
+      setPagination({
+        page: 1,
+        limit: pageSize,
+        total: 0,
+        totalPages: 1,
+      });
+      setTotalPages(1);
+      setTotalCustomers(0);
+      toast.error("Unable to apply the selected filters");
     } finally {
       setFetchingCustomers(false);
     }
@@ -1105,7 +1127,7 @@ const SendCampaign = () => {
                   onClick={() => setShowFilterModal(false)}
                   className="px-8 py-2.5 bg-[#313166] text-white rounded-xl text-sm font-bold shadow-lg shadow-[#313166]/20 hover:bg-[#3d3b83] transition-all"
                 >
-                  Apply Filters
+                  Done
                 </button>
               </div>
             </div>
