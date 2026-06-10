@@ -209,13 +209,16 @@ const MyProfile = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.type.match("image.*")) {
-      setUploadError("Please upload an image file (jpg, png)");
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+      e.target.value = "";
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      setUploadError("File size too large (max 2MB)");
+    if (file.size > 1 * 1024 * 1024) {
+      showToast("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.", "error");
+      e.target.value = "";
       return;
     }
 
@@ -225,7 +228,7 @@ const MyProfile = () => {
       setUploadError("");
     };
     reader.onerror = () => {
-      setUploadError("Error reading file");
+      showToast("Image upload failed. Please verify the file and try again.", "error");
     };
     reader.readAsDataURL(file);
   };

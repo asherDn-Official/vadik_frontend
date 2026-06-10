@@ -11,6 +11,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, isValid } from "date-fns";
 import api from "../../api/apiconfig";
+import showToast from "../../utils/ToastNotification";
 import ManageSourcesPopup from "./components/ManageSourcesPopup.jsx";
 
 const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
@@ -25,6 +26,19 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+        e.target.value = "";
+        return;
+      }
+
+      if (file.size > 1 * 1024 * 1024) {
+        showToast("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.", "error");
+        e.target.value = "";
+        return;
+      }
+
       setProfileFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -324,7 +338,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
           />
           <div className="text-center">
             <p className="text-sm font-medium text-[#313166]">Customer Picture</p>
-            <p className="text-xs text-[#8B90B2] mt-1">PNG, JPG up to 5MB</p>
+            <p className="text-xs text-[#8B90B2] mt-1">PNG, JPG up to 1MB</p>
           </div>
         </div>
 

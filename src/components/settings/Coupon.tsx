@@ -84,10 +84,18 @@ const CouponManagement = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check file format
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+      e.target.value = "";
+      return;
+    }
+
     // Check file size (limit to 1MB)
     const maxSize = 1 * 1024 * 1024; 
     if (file.size > maxSize) {
-      showToast("Image size must be less than 1MB", "error");
+      showToast("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.", "error");
       e.target.value = ""; 
       return;
     }
@@ -98,6 +106,9 @@ const CouponManagement = () => {
         shouldDirty: true,
         shouldValidate: true,
       });
+    };
+    reader.onerror = () => {
+      showToast("Image upload failed. Please verify the file and try again.", "error");
     };
     reader.readAsDataURL(file);
   };

@@ -142,13 +142,14 @@ const AddProduct = ({ onBack, product: editProduct }) => {
     const newImagePreviews = [...imagePreviews];
 
     files.forEach((file) => {
-      if (!file.type.startsWith('image/')) {
-        setError("Only image files are allowed");
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'];
+      if (!allowedTypes.includes(file.type)) {
+        setError("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.");
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        setError("File size should be less than 5MB");
+      if (file.size > 1 * 1024 * 1024) {
+        setError("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.");
         return;
       }
 
@@ -322,7 +323,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                   </p>
                   <p className="text-center text-xs text-gray-400 mt-2">Format</p>
                   <p className="text-center text-xs text-gray-400">
-                    (JPG, PNG or MP4, Max 5MB)
+                    (JPG, PNG or MP4, Max 1MB)
                   </p>
                   <input
                     type="file"
@@ -352,7 +353,7 @@ const AddProduct = ({ onBack, product: editProduct }) => {
                   </p>
                   <p className="text-center text-xs text-gray-400 mt-2">Format</p>
                   <p className="text-center text-xs text-gray-400">
-                    (JPG, PNG or MP4, Max 5MB)
+                    (JPG, PNG or MP4, Max 1MB)
                   </p>
                   <input
                     type="file"

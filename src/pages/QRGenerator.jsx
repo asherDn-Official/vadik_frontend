@@ -1243,15 +1243,27 @@ const QRGenerator = () => {
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check file format
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+        e.target.value = "";
+        return;
+      }
+
       const MAX_SIZE = 1 * 1024 * 1024; // 1MB
       if (file.size > MAX_SIZE) {
-        showToast("Logo image is too large. Please upload an image smaller than 1MB for optimal performance.", "error");
+        showToast("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.", "error");
+        e.target.value = "";
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogo(reader.result);
         setResolvedLogo(reader.result);
+      };
+      reader.onerror = () => {
+        showToast("Image upload failed. Please verify the file and try again.", "error");
       };
       reader.readAsDataURL(file);
     }
@@ -1503,7 +1515,7 @@ const QRGenerator = () => {
 
       const hasHeader = Boolean(brandingName || topLogoImage || qrSubtitle);
       const headerHeight = hasHeader ? 
-        (topLogoImage ? 80 : 0) + 
+        (topLogoImage ? logoSize * 2 : 0) + 
         (brandingName ? brandMeasure.height + 10 : 0) + 
         (qrSubtitle ? subtitleMeasure.height + 10 : 0) + 20
         : 0;
@@ -1529,7 +1541,7 @@ const QRGenerator = () => {
 
       if (hasHeader) {
         if (topLogoImage) {
-          const logoDispSize = 80;
+          const logoDispSize = logoSize * 2;
           ctx.save();
           ctx.globalAlpha = logoOpacity;
           ctx.drawImage(topLogoImage, (cardWidth - logoDispSize) / 2, currentY, logoDispSize, logoDispSize);
@@ -2222,12 +2234,12 @@ const QRGenerator = () => {
           </div>
 
           {/* Right Column: Preview Panel */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-6 bg-white rounded-[2rem] border border-gray-200 shadow-xl p-6 md:p-8 flex flex-col items-center transition-all hover:shadow-2xl">
+          <div className="lg:col-span-1 h-full">
+            <div className="lg:sticky lg:top-8 bg-white rounded-[2rem] border border-gray-200 shadow-xl p-6 md:p-8 flex flex-col items-center transition-all hover:shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto custom-scrollbar">
               <h2 className="text-xl font-bold text-gray-800 mb-6 w-full text-center">QR Preview</h2>
               
               <div className="bg-gray-50/80 p-6 rounded-[2.5rem] mb-8 w-full flex flex-col items-center justify-center border border-gray-100 shadow-inner">
-                {generatedUrl ? (
+                {generatedUrl || qrType === "activity" ? (
                   <div
                     className="w-full max-w-[280px] sm:max-w-[320px] border border-gray-100 rounded-[2rem] shadow-lg p-6 flex flex-col items-center"
                     style={{
@@ -2239,16 +2251,22 @@ const QRGenerator = () => {
                       <img
                         src={effectiveLogo}
                         alt="Brand Logo"
-                        className="h-14 w-14 object-contain rounded-xl mb-4"
-                        style={{ opacity: logoOpacity }}
+                        className="object-contain rounded-xl mb-4"
+                        style={{ 
+                          opacity: logoOpacity,
+                          height: `${logoSize}px`,
+                          width: `${logoSize}px`
+                        }}
                       />
                     )}
 
-                    {brandingName && (
+                    {(brandingName || qrSubtitle) && (
                       <div className="text-center mb-1 w-full px-2">
-                        <p className="font-extrabold text-gray-800 text-xl leading-tight break-words">
-                          {brandingName}
-                        </p>
+                        {brandingName && (
+                          <p className="font-extrabold text-gray-800 text-xl leading-tight break-words">
+                            {brandingName}
+                          </p>
+                        )}
                         {qrSubtitle && (
                           <p className="text-[11px] font-medium text-gray-400 mt-1 uppercase tracking-wider">
                             {qrSubtitle}
@@ -2257,27 +2275,43 @@ const QRGenerator = () => {
                       </div>
                     )}
 
-                    <div className="my-6 p-4 bg-white rounded-2xl border border-gray-50 shadow-md">
-                      <QRCodeSVG
-                        id="qr-code-svg"
-                        value={generatedUrl}
-                        size={180}
-                        level="H"
-                        includeMargin={false}
-                        fgColor={fgColor}
-                        bgColor={bgColor}
-                        imageSettings={
-                          effectiveLogo && logoPlacement === "inside"
-                            ? {
-                                src: effectiveLogo,
-                                height: logoSize,
-                                width: logoSize,
-                                excavate: true,
-                                opacity: logoOpacity,
-                              }
-                            : undefined
-                        }
-                      />
+                    <div className="my-6 p-4 bg-white rounded-2xl border border-gray-50 shadow-md flex items-center justify-center min-w-[212px] min-h-[212px]">
+                      {generatedUrl ? (
+                        <QRCodeSVG
+                          id="qr-code-svg"
+                          value={generatedUrl}
+                          size={180}
+                          level="H"
+                          includeMargin={false}
+                          fgColor={fgColor}
+                          bgColor={bgColor}
+                          imageSettings={
+                            effectiveLogo && logoPlacement === "inside"
+                              ? {
+                                  src: effectiveLogo,
+                                  height: logoSize,
+                                  width: logoSize,
+                                  excavate: true,
+                                  opacity: logoOpacity,
+                                }
+                              : undefined
+                          }
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-gray-400 text-center p-4 gap-3">
+                           <QrCode className="w-12 h-12 opacity-20" />
+                           <div className="space-y-1">
+                             <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                                {qrType === "activity" ? "Activity Selection Required" : "Setup Incomplete"}
+                             </p>
+                             <p className="text-[9px] text-gray-400 font-medium whitespace-pre-line">
+                                {qrType === "activity" 
+                                  ? "Please select an activity to\nview the complete preview" 
+                                  : "Complete all fields to\ngenerate your QR code"}
+                             </p>
+                           </div>
+                        </div>
+                      )}
                     </div>
 
                     {qrStatement && (

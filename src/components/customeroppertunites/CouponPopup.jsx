@@ -147,20 +147,37 @@ const CouponPopup = ({ onClose, onSelect }) => {
             return;
         }
 
-        setCouponData((prev) => ({
-            ...prev,
-            [name]: type === "checkbox" ? checked : value,
-        }));
+        setCouponData((prev) => {
+            const newData = {
+                ...prev,
+                [name]: type === "checkbox" ? checked : value,
+            };
+
+            // Clear product data if type is changed from product to something else
+            if (name === "couponType" && value !== "product") {
+                newData.productImage = "";
+                newData.productNames = "";
+            }
+
+            return newData;
+        });
     };
 
     const handleProductImageChange = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+            e.target.value = "";
+            return;
+        }
+
         // Check file size (limit to 1MB)
         const maxSize = 1 * 1024 * 1024;
         if (file.size > maxSize) {
-            showToast("Image size must be less than 1MB", "error");
+            showToast("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.", "error");
             e.target.value = "";
             return;
         }

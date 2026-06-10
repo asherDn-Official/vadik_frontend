@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 import api from "../../api/apiconfig";
+import showToast from "../../utils/ToastNotification";
 import { useAuth } from "../../context/AuthContext";
 
 const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviousStep }) => {
@@ -44,6 +45,17 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
   const handleFileUpload = useCallback(
     (file) => {
       if (file) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+          return;
+        }
+
+        if (file.size > 1 * 1024 * 1024) {
+          showToast("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.", "error");
+          return;
+        }
+
         updateFormData({ logo: file });
 
         // Create preview
@@ -330,7 +342,7 @@ const AdditionalDetails = ({ formData, updateFormData, goToNextStep, goToPreviou
                 </span>
                 <p className="pl-1">or drag and drop</p>
               </div>
-              <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+              <p className="text-xs text-gray-500">PNG, JPG up to 1MB</p>
             </div>
             <input
               id="logo"

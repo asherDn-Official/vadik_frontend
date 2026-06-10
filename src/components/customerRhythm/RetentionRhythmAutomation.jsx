@@ -766,10 +766,28 @@ function RetentionBuilderView({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const maxSize = templateHeaderMediaType === "VIDEO" ? 64 * 1024 * 1024 : 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      showToast(`File too large. Max ${maxSize / (1024 * 1024)}MB.`, "warning");
-      return;
+    // Validation for images
+    if (templateHeaderMediaType === "IMAGE") {
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+        event.target.value = "";
+        return;
+      }
+      const maxImgSize = 1 * 1024 * 1024; // 1MB for consistency with other modules
+      if (file.size > maxImgSize) {
+        showToast("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.", "error");
+        event.target.value = "";
+        return;
+      }
+    } else {
+      // Validation for other media (VIDEO, DOCUMENT)
+      const maxSize = templateHeaderMediaType === "VIDEO" ? 64 * 1024 * 1024 : 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        showToast(`File too large. Max ${maxSize / (1024 * 1024)}MB.`, "warning");
+        event.target.value = "";
+        return;
+      }
     }
 
     const formData = new FormData();
@@ -791,7 +809,7 @@ function RetentionBuilderView({
       }
     } catch (error) {
       console.error("Error uploading template media:", error);
-      const errorMsg = error.response?.data?.message || error.message || "Failed to upload media";
+      const errorMsg = error.response?.data?.message || "Image upload failed. Please verify the file and try again.";
       showToast(errorMsg, "error");
     } finally {
       setUploadingMedia(false);

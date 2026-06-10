@@ -291,7 +291,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
               productName: data.name || "",
               offer: String(data.discount ?? "0"),
               couponType: data.couponType,
-              image: data.productImage || s.image || null,
+              image: data.couponType === "product" ? data.productImage || null : null,
             }
           : s
       );
@@ -362,8 +362,20 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const handleImageUpload = (segmentId, file) => {
     if (!file) return;
 
-    if (file.size > 1024 * 1024) {
-      showToast("Image size must be less than 1MB", "error");
+    const segment = formData.segments.find((s) => s.id === segmentId);
+    if (segment && segment.couponType !== "product") {
+      showToast("Images can only be uploaded for product coupons.", "error");
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+      return;
+    }
+
+    if (file.size > 1 * 1024 * 1024) {
+      showToast("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.", "error");
       return;
     }
 
@@ -705,61 +717,79 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                     </td>
                     <td className="border border-gray-200 px-4 py-3">
                       <div className="flex flex-col items-center gap-2">
-                        {segment.image ? (
-                          <div className="relative w-12 h-12">
-                            <img
-                              src={segment.image}
-                              alt="Preview"
-                              className="w-12 h-12 object-cover rounded border border-gray-200"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const updatedSegments = formData.segments.map((s) =>
-                                  s.id === segment.id ? { ...s, image: null } : s
-                                );
-                                setValue("segments", updatedSegments);
-                              }}
-                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
+                        {segment.couponType === "product" ? (
+                          <>
+                            {segment.image ? (
+                              <div className="relative w-12 h-12">
+                                <img
+                                  src={segment.image}
+                                  alt="Preview"
+                                  className="w-12 h-12 object-cover rounded border border-gray-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updatedSegments = formData.segments.map(
+                                      (s) =>
+                                        s.id === segment.id
+                                          ? { ...s, image: null }
+                                          : s
+                                    );
+                                    setValue("segments", updatedSegments);
+                                  }}
+                                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="w-12 h-12 border-2 border-dashed border-gray-300 rounded flex items-center justify-center bg-gray-50">
+                                <Gift className="w-6 h-6 text-gray-400" />
+                              </div>
+                            )}
+                            {segment.couponId && (
+                              <label className="cursor-pointer text-[10px] text-pink-600 hover:text-pink-700 underline">
+                                Upload Image
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  onChange={(e) =>
+                                    handleImageUpload(
+                                      segment.id,
+                                      e.target.files[0]
+                                    )
+                                  }
+                                />
+                              </label>
+                            )}
+                          </>
                         ) : (
-                          <div className="w-12 h-12 border-2 border-dashed border-gray-300 rounded flex items-center justify-center bg-gray-50">
-                            <Gift className="w-6 h-6 text-gray-400" />
-                          </div>
-                        )}
-                        {segment.couponId && (
-                          <label className="cursor-pointer text-[10px] text-pink-600 hover:text-pink-700 underline">
-                            Upload Image
-                            <input
-                              type="file"
-                              className="hidden"
-                              accept="image/*"
-                              onChange={(e) =>
-                                handleImageUpload(segment.id, e.target.files[0])
-                              }
-                            />
-                          </label>
+                          <div className="text-xs text-gray-400">N/A</div>
                         )}
                       </div>
                     </td>
                     <td className="border border-gray-200 px-4 py-3">
-                      <input
-                        type="text"
-                        placeholder="Enter Product Name"
-                        value={segment.productName}
-                        onChange={(e) =>
-                          handleSegmentChange(
-                            segment.id,
-                            "productName",
-                            e.target.value
-                          )
-                        }
-                        disabled={true}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
-                      />
+                      {segment.couponType === "product" ? (
+                        <input
+                          type="text"
+                          placeholder="Enter Product Name"
+                          value={segment.productName}
+                          onChange={(e) =>
+                            handleSegmentChange(
+                              segment.id,
+                              "productName",
+                              e.target.value
+                            )
+                          }
+                          disabled={true}
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-sm"
+                        />
+                      ) : (
+                        <div className="text-xs text-gray-400 text-center">
+                          N/A
+                        </div>
+                      )}
                     </td>
 
                     <td className="border border-gray-200 px-4 py-3">

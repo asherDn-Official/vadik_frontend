@@ -399,9 +399,28 @@ const SendCampaign = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const maxSize = campaignData.media.type === "VIDEO" ? 64 * 1024 * 1024 : 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return toast.error(`File too large. Max ${maxSize / (1024 * 1024)}MB.`);
+    // Validation for images
+    if (campaignData.media.type === "IMAGE") {
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.");
+        e.target.value = "";
+        return;
+      }
+      const maxImgSize = 1 * 1024 * 1024; // 1MB for consistency
+      if (file.size > maxImgSize) {
+        toast.error("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.");
+        e.target.value = "";
+        return;
+      }
+    } else {
+      // Validation for other media
+      const maxSize = campaignData.media.type === "VIDEO" ? 64 * 1024 * 1024 : 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error(`File too large. Max ${maxSize / (1024 * 1024)}MB.`);
+        e.target.value = "";
+        return;
+      }
     }
 
     const formData = new FormData();
@@ -418,10 +437,11 @@ const SendCampaign = () => {
         toast.success("Media uploaded successfully");
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.message || err.message || "Upload failed";
+      const errorMsg = err.response?.data?.message || "Image upload failed. Please verify the file and try again.";
       toast.error(errorMsg);
     } finally {
       setUploadingMedia(false);
+      e.target.value = "";
     }
   };
 
