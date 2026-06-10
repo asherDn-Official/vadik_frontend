@@ -26,6 +26,7 @@ import {
   History,
 } from "lucide-react";
 import api from "../../api/apiconfig";
+import ConfirmationDialog from "../common/ConfirmationDialog";
 import showToast from "../../utils/ToastNotification";
 
 const dashboardStats = [
@@ -717,6 +718,7 @@ function RetentionBuilderView({
   const [audienceDraftRule, setAudienceDraftRule] = useState({ fieldKey: "", operator: "", value: "", valueTo: "" });
   const [conditionDraftRule, setConditionDraftRule] = useState({ fieldKey: "", operator: "", value: "", valueTo: "" });
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
   useEffect(() => {
     setForm(normalizeAutomationForForm(initialAutomation));
@@ -730,6 +732,7 @@ function RetentionBuilderView({
   const templateHeaderMediaType = getTemplateHeaderMediaType(selectedTemplate);
   const templateHeader = getTemplateHeaderComponent(selectedTemplate);
   const previewText = getTemplatePreviewText(selectedTemplate, form.actionConfig.variableMappings || [], fields);
+  const isEditingAutomation = Boolean(initialAutomation?._id);
 
   const updateTemplate = (templateId) => {
     const template = templates.find((item) => item._id === templateId);
@@ -856,10 +859,11 @@ function RetentionBuilderView({
       return;
     }
 
-    onSave(form);
+    setShowSaveConfirm(true);
   };
 
   return (
+    <>
     <div className="space-y-6">
       <div className="rounded-[28px] bg-gradient-to-r from-[#313166] to-[#3d3b83] px-6 py-6 text-white shadow-lg">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -868,7 +872,9 @@ function RetentionBuilderView({
               <Zap className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-white/60">Create automation</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-white/60">
+                {isEditingAutomation ? "Edit automation" : "Create automation"}
+              </p>
               <h2 className="mt-1 text-2xl font-semibold">{form.name}</h2>
               <p className="mt-2 max-w-3xl text-sm text-white/75">
                 This builder now uses the real retention APIs, dynamic field registry, and template catalog.
@@ -1452,7 +1458,7 @@ function RetentionBuilderView({
                   disabled={saving}
                   className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
                 >
-                  {saving ? "Saving..." : "Save Automation"}
+                  {saving ? "Saving..." : isEditingAutomation ? "Update Automation" : "Save Automation"}
                 </button>
               )}
             </div>
@@ -1584,6 +1590,25 @@ function RetentionBuilderView({
         )}
       </div>
     </div>
+
+    <ConfirmationDialog
+      isOpen={showSaveConfirm}
+      title={isEditingAutomation ? "Update Automation?" : "Save Automation?"}
+      message={
+        isEditingAutomation
+          ? "Do you want to save these changes to this automation?"
+          : "Do you want to save this automation now?"
+      }
+      confirmLabel={isEditingAutomation ? "Yes, Update" : "Yes, Save"}
+      cancelLabel="No"
+      loading={saving}
+      onCancel={() => setShowSaveConfirm(false)}
+      onConfirm={() => {
+        setShowSaveConfirm(false);
+        onSave(form);
+      }}
+    />
+    </>
   );
 }
 
