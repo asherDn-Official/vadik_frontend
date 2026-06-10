@@ -53,7 +53,7 @@ const normalizeTemplateForBuilder = (source) => {
         type: btn.type || "QUICK_REPLY",
         text: btn.text || "",
         url: btn.url,
-        phoneNumber: btn.phoneNumber
+        phone_number: btn.phone_number
       }));
     }
     return next;
@@ -674,13 +674,16 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
                               />
                             )}
                             {btn.type === "PHONE_NUMBER" && (
-                              <input
-                                type="text"
-                                placeholder="+919999999999"
-                                className="px-3 py-1.5 border-b border-gray-100 text-sm outline-none w-full"
-                                value={btn.phoneNumber || ""}
-                                onChange={(e) => updateButton(bIdx, { phoneNumber: e.target.value })}
-                              />
+                              <div className="space-y-1">
+                                <input
+                                  type="text"
+                                  placeholder="e.g. 919898989898 (with country code, no +)"
+                                  className="px-3 py-1.5 border-b border-gray-100 text-sm outline-none w-full"
+                                  value={btn.phone_number || ""}
+                                  onChange={(e) => updateButton(bIdx, { phone_number: e.target.value.replace(/\D/g, '') })}
+                                />
+                                <p className="text-[10px] text-gray-400 px-3">Enter digits only starting with country code (e.g., 91 for India).</p>
+                              </div>
                             )}
                           </div>
                         ))}
