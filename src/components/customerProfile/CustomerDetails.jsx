@@ -38,6 +38,44 @@ import "react-phone-number-input/style.css";
 import api from "../../api/apiconfig";
 import CustomerJourneyPanel from "./CustomerJourneyPanel";
 
+const LabelSuggestions = ({ currentLabels, onLabelAdd }) => {
+  const [labels, setLabels] = useState([]);
+  const retailerId = localStorage.getItem("retailerId");
+
+  useEffect(() => {
+    const fetchLabels = async () => {
+      try {
+        if (!retailerId) return;
+        const response = await api.get(`/api/customer-preferences/${retailerId}`);
+        if (response.data && response.data.uniqueLabels) {
+          setLabels(response.data.uniqueLabels);
+        }
+      } catch (error) {
+        console.error("Error fetching labels:", error);
+      }
+    };
+    fetchLabels();
+  }, [retailerId]);
+
+  if (labels.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      <span className="text-[10px] text-[#8B90B2] w-full mb-0.5">Quick Add:</span>
+      {labels.map((label) => (
+        <button
+          key={label}
+          type="button"
+          onClick={() => onLabelAdd(label)}
+          className="px-2 py-0.5 text-[10px] bg-[#F3F5FF] text-[#313166] rounded-full border border-[#E8ECF8] hover:bg-[#E8ECF8] transition-colors"
+        >
+          + {label}
+        </button>
+      ))}
+    </div>
+  );
+};
+
 const FieldItem = React.memo(
   ({
     label,
@@ -433,6 +471,9 @@ const CustomerDetails = ({
           optinMessageSent: transformedCustomer?.optinMessageSent ?? null,
           gender: transformedCustomer?.gender || "",
           isActive: transformedCustomer?.isActive || "",
+          labels: Array.isArray(transformedCustomer?.labels) 
+            ? transformedCustomer.labels.join(", ") 
+            : (transformedCustomer?.labels || ""),
         },
         additionalData: transformedCustomer?.additionalData || {},
         advancedDetails: transformedCustomer?.advancedDetails || {},
@@ -453,6 +494,7 @@ const CustomerDetails = ({
         optinMessageSent: null,
         gender: "",
         isActive: false,
+        labels: "",
       },
       additionalData: {},
       advancedDetails: {},
@@ -504,6 +546,9 @@ const CustomerDetails = ({
           optinMessageSent: transformedCustomer?.optinMessageSent ?? null,
           gender: transformedCustomer?.gender || "",
           isActive: transformedCustomer?.isActive || "",
+          labels: Array.isArray(transformedCustomer?.labels) 
+            ? transformedCustomer.labels.join(", ") 
+            : (transformedCustomer?.labels || ""),
         },
         additionalData: transformedCustomer?.additionalData || {},
         advancedDetails: transformedCustomer?.advancedDetails || {},
@@ -1111,6 +1156,65 @@ const CustomerDetails = ({
                         customer={customer}
                         isEditing={isEditing}
                       />
+                      <div
+                        className="
+    group
+    rounded-xl
+    border border-[#EEF1FF]
+    bg-[#FCFCFF]
+    p-4
+    transition-all duration-200
+    hover:border-[#DCE2FF]
+    hover:bg-white
+    hover:shadow-[0_8px_24px_rgba(49,49,102,0.05)]
+  "
+                      >
+                        <p
+                          className="
+    mb-2
+    text-[12px]
+    font-semibold
+    uppercase
+    tracking-[0.08em]
+    text-[#8B90B2]
+  "
+                        >
+                          Labels
+                        </p>
+                        {isEditing ? (
+                          <div className="space-y-3">
+                            <input
+                              type="text"
+                              value={formData?.basic?.labels || ""}
+                              onChange={(e) => handleInputChange("basic", "labels", e.target.value)}
+                              className="h-11 w-full rounded-xl border bg-white px-4 text-sm font-medium text-[#1F1C5C] outline-none transition-all duration-200 focus:border-[#313166]/30 focus:shadow-[0_0_0_4px_rgba(49,49,102,0.06)]"
+                              placeholder="VIP, New, Summer Sale"
+                            />
+                            {sourceOptions && sourceOptions.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {/* Use a separate labels fetch if needed, or if we can get it from preferences */}
+                              </div>
+                            )}
+                            {/* Adding Label Suggestions here */}
+                            <LabelSuggestions 
+                              currentLabels={formData?.basic?.labels || ""} 
+                              onLabelAdd={(newLabel) => {
+                                const current = formData?.basic?.labels || "";
+                                const arr = current.split(",").map(l => l.trim()).filter(l => l !== "");
+                                if (!arr.includes(newLabel)) {
+                                  const newVal = arr.length > 0 ? `${current}, ${newLabel}` : newLabel;
+                                  handleInputChange("basic", "labels", newVal);
+                                }
+                              }}
+                            />
+                            <p className="text-[10px] text-[#8B90B2] mt-1">Comma-separated</p>
+                          </div>
+                        ) : (
+                          <p className="break-words text-[15px] font-semibold text-[#1F1C5C]">
+                            {formData?.basic?.labels || "No labels"}
+                          </p>
+                        )}
+                      </div>
                       <FieldItem
                         label="Gender"
                         name="gender"

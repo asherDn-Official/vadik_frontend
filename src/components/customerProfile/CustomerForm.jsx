@@ -16,6 +16,7 @@ import ManageSourcesPopup from "./components/ManageSourcesPopup.jsx";
 
 const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
   const [sources, setSources] = React.useState([]);
+  const [uniqueLabels, setUniqueLabels] = React.useState([]);
   const [showSourcePopup, setShowSourcePopup] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [profilePreview, setProfilePreview] = useState(null);
@@ -78,14 +79,31 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
       source: "",
       gender: "",
       firstVisit: new Date(),
+      labels: "",
     },
     mode: "onChange",
   });
 
+  const [retailerId] = React.useState(() => localStorage.getItem("retailerId") || "");
+
   // Fetch sources on component mount
   React.useEffect(() => {
     fetchSources();
+    fetchLabels();
   }, []);
+
+  // Fetch unique labels from preferences
+  const fetchLabels = async () => {
+    try {
+      if (!retailerId) return;
+      const response = await api.get(`/api/customer-preferences/${retailerId}`);
+      if (response.data && response.data.uniqueLabels) {
+        setUniqueLabels(response.data.uniqueLabels);
+      }
+    } catch (error) {
+      console.error("Error fetching labels:", error);
+    }
+  };
 
   // Reset form when resetForm prop changes
   React.useEffect(() => {
@@ -580,6 +598,44 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                 {errors.firstVisit.message}
               </p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="mb-2 block text-sm font-medium text-[#313166]">
+              Labels (comma-separated)
+            </label>
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="VIP, New, Summer Sale"
+                {...register("labels")}
+                className={inputStyles}
+              />
+              
+              {uniqueLabels.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs text-[#8B90B2] w-full mb-1">Quick Add:</span>
+                  {uniqueLabels.map((label) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => {
+                        const currentLabels = getValues("labels") || "";
+                        const labelsArray = currentLabels.split(",").map(l => l.trim()).filter(l => l !== "");
+                        if (!labelsArray.includes(label)) {
+                          const newValue = labelsArray.length > 0 ? `${currentLabels}, ${label}` : label;
+                          setValue("labels", newValue);
+                        }
+                      }}
+                      className="px-2 py-1 text-[10px] bg-[#F3F5FF] text-[#313166] rounded-full border border-[#E8ECF8] hover:bg-[#E8ECF8] transition-colors"
+                    >
+                      + {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-[#8B90B2]">Add tags to group and filter customers</p>
           </div>
         </div>
 

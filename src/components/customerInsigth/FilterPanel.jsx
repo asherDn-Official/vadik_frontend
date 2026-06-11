@@ -263,6 +263,7 @@ const FilterPanel = ({
           source: getSource?.data?.data,
           loyaltyPoints: { type: "number" },
           isActive: ['true', 'false'],
+          labels: { type: "string" },
         };
 
         // Process dynamic filters from mergedData.allData
@@ -884,20 +885,27 @@ const FilterPanel = ({
     );
   };
 
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   // Map all filter options to FilterItem components
   const renderFilterItems = () => {
     if (!apiFilterOptions || !dynamicFilterData) return null;
 
-    // Define the order of static filters
-    const staticFilters = [
+    // Define basic filters
+    const basicFilters = [
       { key: "firstname", name: "firstname", label: "First Name", iconName: "person" },
       { key: "lastname", name: "lastname", label: "Last Name", iconName: "person" },
       { key: "mobileNumber", name: "mobileNumber", label: "Mobile Number", iconName: "phone" },
       { key: "gender", name: "gender", label: "Gender", iconName: "person" },
       { key: "firstVisit", name: "firstVisit", label: "First Visit", iconName: "calendar" },
       { key: "source", name: "source", label: "Source", iconName: "location" },
+    ];
+
+    // Define advanced filters
+    const advancedStaticFilters = [
       { key: "loyaltyPoints", name: "loyaltyPoints", label: "Loyalty Points", iconName: "gift" },
-      { key: "isActive", name: "isActive", label: "Active Status", iconName: "activity" }
+      { key: "isActive", name: "isActive", label: "Active Status", iconName: "activity" },
+      { key: "labels", name: "labels", label: "Labels", iconName: "tag" }
     ];
 
     // Get dynamic filters from API data
@@ -908,23 +916,48 @@ const FilterPanel = ({
       iconName: item.iconName || "filter",
     }));
 
-    // console.log(dynamicFilters)
+    const advancedFilters = [...advancedStaticFilters, ...dynamicFilters];
 
-    // Combine static filters with dynamic filters
-    const allFilters = [...staticFilters, ...dynamicFilters];
+    return (
+      <div className="flex flex-col">
+        {basicFilters.map(({ key, name, label, iconName }) => (
+          <FilterItem
+            key={key}
+            name={label || name}
+            expanded={expandedFilter === key}
+            onToggle={() => toggleFilter(key)}
+            isActive={hasFilterValue(filters[name])}
+          >
+            {renderFilterInput(name, apiFilterOptions[key])}
+          </FilterItem>
+        ))}
 
-    return allFilters.map(({ key, name, label, iconName }) => (
-      <FilterItem
-        key={key}
-        name={label || name}
-        // icon={getIconComponent(iconName)}
-        expanded={expandedFilter === key}
-        onToggle={() => toggleFilter(key)}
-        isActive={hasFilterValue(filters[name])}
-      >
-        {renderFilterInput(name, apiFilterOptions[key])}
-      </FilterItem>
-    ));
+        <div className="border-b border-[#EEF1FF]">
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex w-full items-center justify-between px-4 py-4 sm:px-5 text-sm font-semibold text-[#313166] hover:bg-[#F8F9FF] transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Filter size={16} />
+              <span>Advanced Filters</span>
+            </div>
+            {showAdvanced ? <Minus size={16} /> : <Plus size={16} />}
+          </button>
+        </div>
+
+        {showAdvanced && advancedFilters.map(({ key, name, label, iconName }) => (
+          <FilterItem
+            key={key}
+            name={label || name}
+            expanded={expandedFilter === key}
+            onToggle={() => toggleFilter(key)}
+            isActive={hasFilterValue(filters[name])}
+          >
+            {renderFilterInput(name, apiFilterOptions[key])}
+          </FilterItem>
+        ))}
+      </div>
+    );
   };
   
 

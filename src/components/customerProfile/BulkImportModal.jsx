@@ -211,7 +211,7 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
         </div>
         <div className="text-xs text-gray-500 mt-1">
           Required columns: First Name, Mobile Number, Country Code, Source,
-          Gender, First Visit (DD-MM-YYYY). Last Name is optional.
+          Gender, First Visit (DD-MM-YYYY). Last Name and Labels are optional.
         </div>
         {summary && (
           <div className="mb-4 flex gap-4 text-sm">

@@ -21,6 +21,7 @@ const CustomerList = ({
     "gender",
     "firstVisit",
     "source",
+    "labels",
     "loyaltyPoints",
     "isActive",
   ]);
@@ -97,6 +98,7 @@ const CustomerList = ({
             "gender",
             "firstVisit",
             "source",
+            "labels",
             "loyaltyPoints",
             "isActive",
             ...keysArray,
@@ -137,6 +139,8 @@ const CustomerList = ({
           : "";
       case "loyaltyPoints":
         return customer.loyaltyPoints ?? 0;
+      case "labels":
+        return Array.isArray(customer.labels) ? customer.labels.join(", ") : (customer.labels || "");
       case "isActive":
         return customer.isActive ? "Active" : "InActive";
       default:

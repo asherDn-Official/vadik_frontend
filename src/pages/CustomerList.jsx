@@ -447,6 +447,9 @@ const CustomerList = () => {
                             Source
                           </th>
                           <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                            Labels
+                          </th>
+                          <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                             Actions
                           </th>
                         </tr>
@@ -483,6 +486,9 @@ const CustomerList = () => {
                             </td>
                             <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               {customer.source}
+                            </td>
+                            <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
+                              {Array.isArray(customer.labels) ? customer.labels.join(", ") : (customer.labels || "-")}
                             </td>
                             <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               <button
