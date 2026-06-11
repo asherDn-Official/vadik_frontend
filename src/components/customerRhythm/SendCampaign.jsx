@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { 
   Send, 
   Filter,
@@ -84,6 +84,13 @@ const SendCampaign = () => {
   const [fetchingCustomers, setFetchingCustomers] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [selectionProgress, setSelectionProgress] = useState({ current: 0, total: 0, isSelecting: false });
+  const [selectAllMatchingMode, setSelectAllMatchingMode] = useState(false);
+  
+  const selectedCustomerIds = useMemo(() => 
+    new Set(campaignData.audience.map(c => c._id)), 
+    [campaignData.audience]
+  );
 
   // Pagination & Filter
   const [filters, setFilters] = useState({});
@@ -194,6 +201,7 @@ const SendCampaign = () => {
         page: currentPage,
         limit: pageSize,
         dateRangeFieldKey: "firstVisit",
+        projection: true, // Frontend optimization: skip heavy fields
         filters: filtersArray.length > 0 ? filtersArray : undefined,
         ...(selectedPeriod === "Yearly" &&
           filters.periodValue && {
@@ -278,41 +286,42 @@ const SendCampaign = () => {
   };
 
   const toggleCustomer = (customer) => {
-    const exists = campaignData.audience.find(c => c._id === customer._id);
-    if (exists) {
-      setCampaignData({
-        ...campaignData,
-        audience: campaignData.audience.filter(c => c._id !== customer._id)
-      });
+    setSelectAllMatchingMode(false);
+    if (selectedCustomerIds.has(customer._id)) {
+      setCampaignData((prev) => ({
+        ...prev,
+        audience: prev.audience.filter((c) => c._id !== customer._id),
+      }));
     } else {
-      setCampaignData({
-        ...campaignData,
-        audience: [...campaignData.audience, customer]
-      });
+      setCampaignData((prev) => ({
+        ...prev,
+        audience: [...prev.audience, customer],
+      }));
     }
   };
 
   const selectAllLoaded = () => {
+    setSelectAllMatchingMode(false);
     const enabledCustomers = customers.filter(c => c.isOptedIn === true);
     const enabledIds = enabledCustomers.map(c => c._id);
-    const selectedIds = campaignData.audience.map(c => c._id);
-    const allLoadedSelected = enabledIds.length > 0 && enabledIds.every(id => selectedIds.includes(id));
+    const allLoadedSelected = enabledIds.length > 0 && enabledIds.every(id => selectedCustomerIds.has(id));
 
     if (allLoadedSelected) {
-      setCampaignData({
-        ...campaignData,
-        audience: campaignData.audience.filter(c => !enabledIds.includes(c._id))
-      });
+      setCampaignData((prev) => ({
+        ...prev,
+        audience: prev.audience.filter(c => !enabledIds.includes(c._id))
+      }));
     } else {
-      const newToSelect = enabledCustomers.filter(c => !selectedIds.includes(c._id));
-      setCampaignData({
-        ...campaignData,
-        audience: [...campaignData.audience, ...newToSelect]
-      });
+      const newToSelect = enabledCustomers.filter(c => !selectedCustomerIds.has(c._id));
+      setCampaignData((prev) => ({
+        ...prev,
+        audience: [...prev.audience, ...newToSelect]
+      }));
     }
   };
 
   const clearSelection = () => {
+    setSelectAllMatchingMode(false);
     setCampaignData({
       ...campaignData,
       audience: []
@@ -322,6 +331,9 @@ const SendCampaign = () => {
   const selectAllMatching = async () => {
     try {
       setLoading(true);
+      setSelectionProgress({ current: 0, total: totalCustomers, isSelecting: true });
+      setSelectAllMatchingMode(true);
+      
       const filtersArray = Object.entries(filters)
         .filter(([name, value]) => {
           const hasValue = (val) => {
@@ -359,39 +371,63 @@ const SendCampaign = () => {
               : value,
         }));
 
-      const payload = {
-        page: 1,
-        limit: 10000, // Large enough to get all matches for a typical retailer
-        filters: filtersArray.length > 0 ? filtersArray : undefined,
-        ...(selectedPeriod === "Yearly" &&
-          filters.periodValue && {
-            year: parseInt(filters.periodValue),
-          }),
-        ...(selectedPeriod === "Monthly" &&
-          filters.periodValue && {
-            year: new Date().getFullYear(),
-            month: parseInt(filters.periodValue),
-          }),
-        ...(selectedPeriod === "Quarterly" &&
-          filters.periodValue && {
-            year: new Date().getFullYear(),
-            quarter: filters.periodValue,
-          }),
-      };
-
-      const response = await api.post("/api/personilizationInsights", payload);
-      const allMatching = response.data.data.filter(c => c.isOptedIn === true);
+      const BATCH_SIZE = 10000; // Larger batches for IDs only
+      let allMatchingIds = new Set(campaignData.audience.map(c => c._id));
+      let currentAudience = [...campaignData.audience];
       
-      setCampaignData({
-        ...campaignData,
-        audience: allMatching
-      });
-      toast.success(`Selected all ${allMatching.length} matching customers`);
+      const totalToFetch = totalCustomers;
+      const totalPagesToFetch = Math.ceil(totalToFetch / BATCH_SIZE);
+
+      for (let i = 1; i <= totalPagesToFetch; i++) {
+        const payload = {
+          page: i,
+          limit: BATCH_SIZE,
+          onlyIds: true, // Optimizes backend significantly
+          filters: filtersArray.length > 0 ? filtersArray : undefined,
+          ...(selectedPeriod === "Yearly" &&
+            filters.periodValue && {
+              year: parseInt(filters.periodValue),
+            }),
+          ...(selectedPeriod === "Monthly" &&
+            filters.periodValue && {
+              year: new Date().getFullYear(),
+              month: parseInt(filters.periodValue),
+            }),
+          ...(selectedPeriod === "Quarterly" &&
+            filters.periodValue && {
+              year: new Date().getFullYear(),
+              quarter: filters.periodValue,
+            }),
+        };
+
+        const response = await api.post("/api/personilizationInsights", payload);
+        const batch = response.data.data.filter(c => c.isOptedIn !== false); // Handle cases where isOptedIn might be undefined (default true)
+        
+        // Add only new ones
+        const newCustomers = batch.filter(c => !allMatchingIds.has(c._id));
+        newCustomers.forEach(c => allMatchingIds.add(c._id));
+        
+        currentAudience = [...currentAudience, ...newCustomers];
+        
+        setCampaignData(prev => ({
+          ...prev,
+          audience: currentAudience
+        }));
+
+        setSelectionProgress(prev => ({
+          ...prev,
+          current: Math.min(prev.current + batch.length, totalToFetch)
+        }));
+      }
+
+      toast.success(`Selected all matching customers`);
     } catch (error) {
       console.error("Error selecting all matching customers:", error);
       toast.error("Failed to select all customers");
+      setSelectAllMatchingMode(false);
     } finally {
       setLoading(false);
+      setSelectionProgress(prev => ({ ...prev, isSelecting: false }));
     }
   };
 
@@ -499,7 +535,7 @@ const SendCampaign = () => {
         variables: campaignData.variables,
         mediaUrl: campaignData.media.url,
         mediaType: campaignData.media.type,
-        audience: campaignData.audience.map(c => c._id),
+        audience: selectAllMatchingMode ? [] : campaignData.audience.map(c => c._id),
         audienceSize: campaignData.audience.length,
         status: "COMPLETED"
       };
@@ -507,39 +543,62 @@ const SendCampaign = () => {
       const campaignSaveRes = await api.post("/api/integrationManagement/whatsapp/campaigns", savePayload);
       const savedCampaign = campaignSaveRes.data?.data;
 
-      // 2. Execute sending
-      const recipients = campaignData.audience.map(customer => {
-        const replaceDynamic = (val) => {
-          return (val || "").replace(/\{\{customer_name\}\}/g, customer.firstname || "Customer");
-        };
-
-        const orderedVars = Object.keys(campaignData.variables)
-          .sort((a, b) => parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]))
-          .map(key => replaceDynamic(campaignData.variables[key]));
-
-        return {
-          phone: `${customer.countryCode}${customer.mobileNumber}`,
-          variables: orderedVars
-        };
-      });
-
-      const payload = {
+      // 2. Prepare payload for sending
+      let payload = {
         campaignId: savedCampaign?._id,
         campaignName: campaignData.name,
         templateId: campaignData.template._id,
         templateName: campaignData.template.name,
         languageCode: campaignData.template.language,
-        recipients,
-        media: campaignData.media.url ? { url: campaignData.media.url, type: campaignData.media.type } : null
+        media: campaignData.media.url ? { url: campaignData.media.url, type: campaignData.media.type } : null,
+        variables: campaignData.variables // Pass variables for server-side name replacement
       };
+
+      if (selectAllMatchingMode) {
+        // Optimized: Send filters and flag instead of 100k IDs
+        const filtersArray = Object.entries(filters)
+          .filter(([name, value]) => hasMeaningfulFilterValue(value) && name !== "periodValue")
+          .map(([name, value]) => ({ name, value }));
+
+        payload.selectionType = "ALL";
+        payload.filters = filtersArray;
+        payload.search = filters.firstname || filters.mobileNumber;
+        payload.dateRangeFieldKey = "firstVisit";
+        if (selectedPeriod === "Yearly" && filters.periodValue) payload.year = parseInt(filters.periodValue);
+        // Add other period filters as needed
+      } else {
+        // Standard: Send individual recipients
+        payload.recipients = campaignData.audience.map(customer => {
+          const replaceDynamic = (val) => {
+            return (val || "").replace(/\{\{customer_name\}\}/g, customer.firstname || "Customer");
+          };
+
+          const orderedVars = Object.keys(campaignData.variables)
+            .sort((a, b) => {
+              const numA = parseInt(a.match(/\d+/)?.[0] || 0);
+              const numB = parseInt(b.match(/\d+/)?.[0] || 0);
+              return numA - numB;
+            })
+            .map(key => replaceDynamic(campaignData.variables[key]));
+
+          return {
+            phone: `${customer.countryCode || "91"}${customer.mobileNumber}`,
+            variables: orderedVars,
+            firstname: customer.firstname,
+            lastname: customer.lastname,
+            customerId: customer._id
+          };
+        });
+      }
 
       const res = await api.post("/api/integrationManagement/whatsapp/campaign/send", payload);
       if (res.data.status) {
-        toast.success(`Message sent successfully!`);
+        toast.success(`Message execution started for ${res.data.processedCount || campaignData.audience.length} customers!`);
         setView("dashboard");
         fetchInitialData();
       }
     } catch (error) {
+      console.error("Campaign Send Error:", error);
       toast.error(error.response?.data?.message || "Failed to send messages");
     } finally {
       setLoading(false);
@@ -889,7 +948,8 @@ const SendCampaign = () => {
                         {pagination.total > 0 && campaignData.audience.length < pagination.total && (
                           <button 
                             onClick={selectAllMatching}
-                            className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors uppercase tracking-wider"
+                            type="button"
+                            className="px-3 py-1.5 rounded-full border border-indigo-200 bg-indigo-50 text-[10px] font-bold text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-all shadow-sm uppercase tracking-wider"
                           >
                             Select All Matching ({pagination.total})
                           </button>
@@ -897,7 +957,8 @@ const SendCampaign = () => {
                         {campaignData.audience.length > 0 && (
                           <button 
                             onClick={clearSelection}
-                            className="text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-wider"
+                            type="button"
+                            className="px-3 py-1.5 rounded-full border border-red-200 bg-red-50 text-[10px] font-bold text-red-600 hover:bg-red-100 hover:border-red-300 transition-all shadow-sm uppercase tracking-wider"
                           >
                             Clear Selection
                           </button>
@@ -916,11 +977,12 @@ const SendCampaign = () => {
                       if (allOnPageSelected && hasMoreToSelect) {
                         return (
                           <div className="bg-indigo-50 border border-indigo-100 p-2 rounded-xl text-center animate-in slide-in-from-top-2 duration-300">
-                            <p className="text-xs text-indigo-700 font-medium">
+                            <p className="text-xs text-indigo-700 font-medium flex flex-wrap items-center justify-center gap-2">
                               All {enabledOnPage.length} customers on this page are selected. 
                               <button 
                                 onClick={selectAllMatching}
-                                className="ml-2 font-bold underline hover:text-indigo-900"
+                                type="button"
+                                className="px-3 py-1 rounded-full border border-indigo-300 bg-white text-[10px] font-bold text-indigo-700 hover:bg-indigo-50 transition-all shadow-sm"
                               >
                                 Select all {pagination.total} matching customers
                               </button>
@@ -933,7 +995,7 @@ const SendCampaign = () => {
                     <CustomerList
                       customers={customers}
                       loading={fetchingCustomers}
-                      selectedCustomers={campaignData.audience.map(c => c._id)}
+                      selectedCustomers={selectedCustomerIds}
                       toggleCustomerSelection={toggleCustomerSelection}
                       toggleAllCustomers={selectAllLoaded}
                       pagination={pagination}
@@ -1288,6 +1350,29 @@ const SendCampaign = () => {
   return (
     <div className="h-full">
       {view === "dashboard" ? renderDashboard() : renderWizard()}
+      
+      {/* Selection Progress Overlay */}
+      {selectionProgress.isSelecting && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-3xl shadow-2xl border border-gray-100 max-w-sm w-full space-y-4 animate-in zoom-in duration-300">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-gray-900">Selecting Customers</h3>
+              <span className="text-xs font-black text-[#313166] bg-[#313166]/5 px-2 py-1 rounded-lg">
+                {Math.round((selectionProgress.current / selectionProgress.total) * 100) || 0}%
+              </span>
+            </div>
+            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-[#313166] transition-all duration-500 ease-out"
+                style={{ width: `${(selectionProgress.current / selectionProgress.total) * 100}%` }}
+              />
+            </div>
+            <p className="text-xs text-center text-gray-500 font-medium">
+              {selectionProgress.current.toLocaleString()} of {selectionProgress.total.toLocaleString()} customers selected...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

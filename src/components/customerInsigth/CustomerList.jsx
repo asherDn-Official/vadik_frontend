@@ -33,10 +33,21 @@ const CustomerList = ({
     return path.split(".").reduce((o, p) => (o || {})[p], obj);
   };
 
+  const isCustomerSelected = (id) => {
+    if (selectedCustomers instanceof Set) {
+      return selectedCustomers.has(id);
+    }
+    return Array.isArray(selectedCustomers) && selectedCustomers.includes(id);
+  };
+
+  const selectedCount = selectedCustomers instanceof Set 
+    ? selectedCustomers.size 
+    : (Array.isArray(selectedCustomers) ? selectedCustomers.length : 0);
+
   const enabledCustomers = customers.filter((c) => c.isOptedIn === true);
   const allSelected =
     enabledCustomers.length > 0 &&
-    enabledCustomers.every((c) => selectedCustomers.includes(c._id));
+    enabledCustomers.every((c) => isCustomerSelected(c._id));
 
   const handleToggleAll = () => {
     if (toggleAllCustomers) {
@@ -46,14 +57,14 @@ const CustomerList = ({
     if (allSelected) {
       // Deselect all enabled customers
       enabledCustomers.forEach((customer) => {
-        if (selectedCustomers.includes(customer._id)) {
+        if (isCustomerSelected(customer._id)) {
           toggleCustomerSelection(customer._id);
         }
       });
     } else {
       // Select all enabled customers
       enabledCustomers.forEach((customer) => {
-        if (!selectedCustomers.includes(customer._id)) {
+        if (!isCustomerSelected(customer._id)) {
           toggleCustomerSelection(customer._id);
         }
       });
@@ -230,7 +241,7 @@ const CustomerList = ({
                       onChange={handleToggleAll}
                       className="rounded border-gray-300 text-[#7E57C2] focus:ring-[#7E57C2]"
                     />
-                    {selectedCustomers.length > 0 && (
+                    {selectedCount > 0 && (
                       <button 
                         onClick={() => {
                           // If toggleCustomerSelection is called with null/undefined, 
@@ -274,7 +285,7 @@ const CustomerList = ({
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
-                        checked={selectedCustomers.includes(customer._id)}
+                        checked={isCustomerSelected(customer._id)}
                         onChange={() => toggleCustomerSelection(customer._id)}
                         disabled={customer.isOptedIn !== true}
                         className="rounded border-gray-300 text-[#7E57C2] focus:ring-[#7E57C2]"
