@@ -305,31 +305,6 @@ const FilterPanel = ({
     return hasMeaningfulFilterValue(value);
   };
 
-  const handleDateRawChange = (e) => {
-    let value = e.target?.value;
-    if (!value) return;
-    
-    // Remove all non-numeric characters
-    value = value.replace(/\D/g, "");
-
-    // Limit to 8 digits
-    if (value.length > 8) value = value.slice(0, 8);
-
-    // Add slashes automatically
-    let formattedValue = "";
-    if (value.length > 0) {
-      formattedValue = value.slice(0, 2);
-      if (value.length > 2) {
-        formattedValue += "/" + value.slice(2, 4);
-        if (value.length > 4) {
-          formattedValue += "/" + value.slice(4, 8);
-        }
-      }
-    }
-
-    e.target.value = formattedValue;
-  };
-
   const renderFilterInput = (filterKey, filterConfig) => {
     if (filterKey === "loyaltyPoints" && filterConfig?.type === "number") {
       const loyaltyFilter = filters[filterKey] || {};
@@ -564,10 +539,10 @@ const FilterPanel = ({
                     updateDateFilter("", "");
                   }
                 }}
-                onChangeRaw={handleDateRawChange}
+                readOnly
                 dateFormat="dd/MM/yyyy"
                 placeholderText="Select date"
-                className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10"
+                className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10 cursor-pointer"
                 wrapperClassName="modern-datepicker-field"
                 popperClassName="modern-datepicker-popper"
                 calendarClassName="modern-datepicker-calendar"
@@ -759,10 +734,10 @@ const FilterPanel = ({
                   onFilterChange("fromDate", "");
                 }
               }}
-              onChangeRaw={handleDateRawChange}
+              readOnly
               dateFormat="dd/MM/yyyy"
               placeholderText="Select start date"
-              className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10"
+              className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10 cursor-pointer"
               wrapperClassName="modern-datepicker-field"
               popperClassName="modern-datepicker-popper"
               calendarClassName="modern-datepicker-calendar"
@@ -789,10 +764,10 @@ const FilterPanel = ({
                   onFilterChange("toDate", "");
                 }
               }}
-              onChangeRaw={handleDateRawChange}
+              readOnly
               dateFormat="dd/MM/yyyy"
               placeholderText="Select end date"
-              className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10"
+              className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10 cursor-pointer"
               wrapperClassName="modern-datepicker-field"
               popperClassName="modern-datepicker-popper"
               calendarClassName="modern-datepicker-calendar"
