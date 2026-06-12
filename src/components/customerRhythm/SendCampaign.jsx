@@ -84,6 +84,8 @@ const SendCampaign = () => {
   const [fetchingCustomers, setFetchingCustomers] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [excludePreviousReceivers, setExcludePreviousReceivers] = useState(false);
+  const [excludePreviousReaders, setExcludePreviousReaders] = useState(false);
   const [selectionProgress, setSelectionProgress] = useState({ current: 0, total: 0, isSelecting: false });
   const [selectAllMatchingMode, setSelectAllMatchingMode] = useState(false);
   
@@ -119,7 +121,7 @@ const SendCampaign = () => {
     if (view === "wizard" && currentStep === 3) {
       fetchCustomers();
     }
-  }, [currentPage, filters, pageSize, currentStep, view]);
+  }, [currentPage, filters, pageSize, currentStep, view, excludePreviousReceivers, excludePreviousReaders]);
 
   useEffect(() => {
     setAppliedFiltersCount(countAppliedFilters(filters));
@@ -217,6 +219,8 @@ const SendCampaign = () => {
             year: new Date().getFullYear(),
             quarter: filters.periodValue,
           }),
+        excludeTemplateId: campaignData.template?._id,
+        excludeStatus: excludePreviousReaders ? "read" : excludePreviousReceivers ? "sent" : undefined
       };
 
       Object.keys(payload).forEach((key) => {
@@ -258,6 +262,8 @@ const SendCampaign = () => {
       scheduledAt: null
     });
     setIsScheduling(false);
+    setExcludePreviousReceivers(false);
+    setExcludePreviousReaders(false);
     setScheduleDate("");
     setScheduleTime("");
     setCurrentStep(1);
@@ -398,6 +404,8 @@ const SendCampaign = () => {
               year: new Date().getFullYear(),
               quarter: filters.periodValue,
             }),
+          excludeTemplateId: campaignData.template?._id,
+          excludeStatus: excludePreviousReaders ? "read" : excludePreviousReceivers ? "sent" : undefined
         };
 
         const response = await api.post("/api/personilizationInsights", payload);
@@ -564,6 +572,8 @@ const SendCampaign = () => {
         payload.filters = filtersArray;
         payload.search = filters.firstname || filters.mobileNumber;
         payload.dateRangeFieldKey = "firstVisit";
+        payload.excludeTemplateId = campaignData.template?._id;
+        payload.excludeStatus = excludePreviousReaders ? "read" : excludePreviousReceivers ? "sent" : undefined;
         if (selectedPeriod === "Yearly" && filters.periodValue) payload.year = parseInt(filters.periodValue);
         // Add other period filters as needed
       } else {
@@ -941,6 +951,35 @@ const SendCampaign = () => {
                         Advanced Filters
                         {appliedFiltersCount > 0 && <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] flex items-center justify-center animate-in zoom-in">{appliedFiltersCount}</span>}
                       </button>
+
+                      <div className="flex items-center gap-4 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input 
+                            type="checkbox" 
+                            checked={excludePreviousReceivers}
+                            onChange={(e) => {
+                              setExcludePreviousReceivers(e.target.checked);
+                              setCurrentPage(1);
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-[#313166] focus:ring-[#313166]/20"
+                          />
+                          <span className="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 transition-colors uppercase tracking-wider">Exclude Sent</span>
+                        </label>
+                        <div className="w-px h-4 bg-gray-200"></div>
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input 
+                            type="checkbox" 
+                            checked={excludePreviousReaders}
+                            onChange={(e) => {
+                              setExcludePreviousReaders(e.target.checked);
+                              setCurrentPage(1);
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-[#313166] focus:ring-[#313166]/20"
+                          />
+                          <span className="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 transition-colors uppercase tracking-wider">Exclude Seen</span>
+                        </label>
+                      </div>
+
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-bold text-[#313166] bg-[#313166]/5 px-3 py-1.5 rounded-full">
                            {campaignData.audience.length} Selected

@@ -3,16 +3,18 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
 } from 'recharts';
+import { Link } from "react-router-dom";
 import { 
   Search, Filter, Calendar, RefreshCw, CheckCircle2, 
   Clock, AlertCircle, Eye, Mail, MessageSquare, TrendingUp,
-  BarChart2, PieChart as PieChartIcon, Activity, Repeat, History
+  BarChart2, PieChart as PieChartIcon, Activity, Repeat, History, Settings, X, ChevronRight
 } from "lucide-react";
 import api from "../../api/apiconfig";
 import Loader from "../../utils/Loader";
 import { toast } from "react-toastify";
 import moment from "moment";
 import { getWhatsappErrorDescription } from "../../utils/whatsappErrorCodes";
+import RetryAutomationSettings from "./RetryAutomationSettings";
 
 const EngagementDashboard = () => {
   const [logs, setLogs] = useState([]);
@@ -27,6 +29,9 @@ const EngagementDashboard = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedItemLogs, setSelectedItemLogs] = useState([]);
   const [selectedItemLogsLoading, setSelectedItemLogsLoading] = useState(false);
+  const [individualLogFilter, setIndividualLogFilter] = useState({ status: "", reason: "" });
+  const [individualLogPage, setIndividualLogPage] = useState(1);
+  const [individualLogTotalPages, setIndividualLogTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [retryLoading, setRetryLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -36,6 +41,7 @@ const EngagementDashboard = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [showRetrySettings, setShowRetrySettings] = useState(false);
 
   const fetchLogs = async () => {
     try {
@@ -113,17 +119,22 @@ const EngagementDashboard = () => {
     try {
       setSelectedItemLogsLoading(true);
       const params = new URLSearchParams();
-      params.set("page", "1");
+      params.set("page", String(individualLogPage));
       params.set("limit", "8");
       if (startDate) params.set("startDate", startDate);
       if (endDate) params.set("endDate", endDate);
       if (item.sourceType) params.set("sourceType", item.sourceType);
       if (item.sourceId) params.set("sourceId", item.sourceId);
       if (item.sourceType === "template" && item.templateName) params.set("templateName", item.templateName);
+      
+      // Add individual log filters
+      if (individualLogFilter.status) params.set("status", individualLogFilter.status);
+      if (individualLogFilter.reason) params.set("failureReason", individualLogFilter.reason);
 
       const res = await api.get(`/api/whatsappMessage/logs?${params.toString()}`);
       if (res.data.status) {
         setSelectedItemLogs(res.data.data || []);
+        setIndividualLogTotalPages(res.data.pagination?.pages || 1);
       }
     } catch (error) {
       console.error("Error fetching selected item logs:", error);
@@ -161,7 +172,14 @@ const EngagementDashboard = () => {
 
   useEffect(() => {
     fetchSelectedItemLogs(selectedItem);
-  }, [selectedItem, startDate, endDate]);
+  }, [selectedItem, startDate, endDate, individualLogFilter, individualLogPage]);
+
+  useEffect(() => {
+    if (selectedItem) {
+      setIndividualLogFilter({ status: "", reason: "" });
+      setIndividualLogPage(1);
+    }
+  }, [selectedItem]);
 
   useEffect(() => {
     if (activeTab === "retry") {
@@ -438,6 +456,16 @@ const EngagementDashboard = () => {
     return (
       <div className="space-y-6">
         {/* Status Breakdown (Top Summary) */}
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-bold text-gray-900">Retry Performance</h3>
+          <button
+            onClick={() => setShowRetrySettings(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
+          >
+            <Settings size={16} />
+            Retry Settings
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <p className="text-xs text-gray-500 font-medium mb-1">Total Sent</p>
@@ -697,40 +725,119 @@ const EngagementDashboard = () => {
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div className="rounded-2xl bg-white p-4 border border-gray-100">
-                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Sent</div>
+                    <button
+                      onClick={() => {
+                        setIndividualLogFilter({ status: "", reason: "" });
+                        setIndividualLogPage(1);
+                      }}
+                      className={`rounded-2xl p-4 border transition-all text-left ${
+                        !individualLogFilter.status ? "bg-white border-gray-100 shadow-sm" : "bg-gray-50 border-transparent opacity-60 grayscale"
+                      }`}
+                    >
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Attempts</div>
                       <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.sent}</div>
-                    </div>
-                    <div className="rounded-2xl bg-white p-4 border border-gray-100">
-                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Delivered Rate</div>
-                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.deliveredRate}%</div>
-                    </div>
-                    <div className="rounded-2xl bg-white p-4 border border-gray-100">
-                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Read Rate</div>
-                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.readRate}%</div>
-                    </div>
-                    <div className="rounded-2xl bg-white p-4 border border-gray-100">
-                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Replied Rate</div>
-                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.repliedRate}%</div>
-                    </div>
-                    <div className="rounded-2xl bg-white p-4 border border-gray-100">
+                      <div className="text-[10px] text-gray-400 mt-1">(Our side)</div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIndividualLogFilter({ status: "delivered", reason: "" });
+                        setIndividualLogPage(1);
+                      }}
+                      className={`rounded-2xl p-4 border transition-all text-left ${
+                        individualLogFilter.status === "delivered" ? "bg-white border-green-500 shadow-md ring-1 ring-green-500" : "bg-gray-50 border-transparent opacity-60 grayscale"
+                      }`}
+                    >
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Meta Delivered</div>
+                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.delivered}</div>
+                      <div className="text-[10px] text-gray-400 mt-1">(Successful)</div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIndividualLogFilter({ status: "read", reason: "" });
+                        setIndividualLogPage(1);
+                      }}
+                      className={`rounded-2xl p-4 border transition-all text-left ${
+                        individualLogFilter.status === "read" ? "bg-white border-blue-500 shadow-md ring-1 ring-blue-500" : "bg-gray-50 border-transparent opacity-60 grayscale"
+                      }`}
+                    >
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Read</div>
+                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.read}</div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIndividualLogFilter({ status: "replied", reason: "" });
+                        setIndividualLogPage(1);
+                      }}
+                      className={`rounded-2xl p-4 border transition-all text-left ${
+                        individualLogFilter.status === "replied" ? "bg-white border-purple-500 shadow-md ring-1 ring-purple-500" : "bg-gray-50 border-transparent opacity-60 grayscale"
+                      }`}
+                    >
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Replied</div>
+                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.replied}</div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIndividualLogFilter({ status: "failed", reason: "" });
+                        setIndividualLogPage(1);
+                      }}
+                      className={`rounded-2xl p-4 border transition-all text-left ${
+                        individualLogFilter.status === "failed" && !individualLogFilter.reason ? "bg-white border-red-500 shadow-md ring-1 ring-red-500" : "bg-gray-50 border-transparent opacity-60 grayscale"
+                      }`}
+                    >
                       <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Failed</div>
-                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.failed}</div>
-                    </div>
+                      <div className="mt-2 text-2xl font-bold text-red-600">{selectedItem.failed}</div>
+                      <div className="text-[10px] text-gray-400 mt-1">(Meta Errors)</div>
+                    </button>
                   </div>
+
+                  {/* Failure Reasons Breakdown */}
+                  {selectedItem.failed > 0 && selectedItem.failureReasons && (
+                    <div className="bg-red-50 p-5 rounded-2xl border border-red-100">
+                      <h4 className="text-sm font-bold text-red-900 mb-3 flex items-center gap-2">
+                        <AlertCircle size={16} />
+                        Failure Reasons Breakdown
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {Object.entries(selectedItem.failureReasons).map(([reason, count]) => (
+                          <button
+                            key={reason}
+                            onClick={() => {
+                              setIndividualLogFilter({ status: "failed", reason: reason });
+                              setIndividualLogPage(1);
+                            }}
+                            className={`flex items-center justify-between gap-4 p-3 rounded-xl transition-all border ${
+                              individualLogFilter.reason === reason
+                                ? "bg-white border-red-500 shadow-md ring-1 ring-red-500"
+                                : "bg-white/50 border-red-100 hover:bg-white hover:border-red-200"
+                            }`}
+                          >
+                            <div className="text-xs text-red-700 font-medium truncate flex-1 text-left" title={reason}>
+                              {getWhatsappErrorDescription(reason) || reason}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-xs font-bold text-red-900 bg-red-100 px-2 py-0.5 rounded-full">{count}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
                       <h4 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                         <PieChartIcon size={18} className="text-[#313166]" />
-                        Message Distribution
+                        Message Status Distribution
                       </h4>
                       <div className="h-72 flex items-center">
                         <div className="w-1/2 h-full">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
-                                data={itemPerformanceData}
+                                data={[
+                                  { name: "Delivered", value: selectedItem.delivered },
+                                  { name: "Failed", value: selectedItem.failed },
+                                ]}
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={55}
@@ -738,24 +845,29 @@ const EngagementDashboard = () => {
                                 paddingAngle={4}
                                 dataKey="value"
                               >
-                                {itemPerformanceData.map((entry, index) => (
-                                  <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
-                                ))}
+                                <Cell fill="#4CAF50" />
+                                <Cell fill="#F44336" />
                               </Pie>
                               <Tooltip />
+                              <Legend />
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
                         <div className="w-1/2 space-y-3">
-                          {itemPerformanceData.map((entry, index) => (
-                            <div key={entry.name} className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                                <span className="text-sm font-medium text-gray-600">{entry.name}</span>
-                              </div>
-                              <span className="text-sm font-bold text-gray-900">{entry.value}</span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full bg-green-500" />
+                              <span className="text-sm font-medium text-gray-600">Delivered</span>
                             </div>
-                          ))}
+                            <span className="text-sm font-bold text-gray-900">{selectedItem.delivered}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full bg-red-500" />
+                              <span className="text-sm font-medium text-gray-600">Failed</span>
+                            </div>
+                            <span className="text-sm font-bold text-gray-900">{selectedItem.failed}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -763,16 +875,21 @@ const EngagementDashboard = () => {
                     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
                       <h4 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                         <BarChart2 size={18} className="text-[#313166]" />
-                        Performance Rates
+                        Engagement Funnel
                       </h4>
                       <div className="h-72">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={itemRateData}>
+                          <BarChart data={[
+                            { name: "Sent", value: selectedItem.sent },
+                            { name: "Delivered", value: selectedItem.delivered },
+                            { name: "Read", value: selectedItem.read },
+                            { name: "Replied", value: selectedItem.replied },
+                          ]}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
                             <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                            <YAxis domain={[0, 100]} />
-                            <Tooltip formatter={(value) => [`${value}%`, "Rate"]} />
-                            <Bar dataKey="rate" fill="#313166" radius={[8, 8, 0, 0]} />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="value" fill="#313166" radius={[8, 8, 0, 0]} />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -829,44 +946,105 @@ const EngagementDashboard = () => {
                     </div>
                   ) : null}
 
+                  {/* Individual Timeline */}
+                  {selectedItem.timeline && Object.keys(selectedItem.timeline).length > 0 && (
+                    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                      <h4 className="text-sm font-bold text-[#313166] mb-4 flex items-center gap-2">
+                        <History size={18} />
+                        Performance Timeline
+                      </h4>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={Object.entries(selectedItem.timeline)
+                            .map(([date, stats]) => ({ date, ...stats }))
+                            .sort((a, b) => new Date(a.date) - new Date(b.date))
+                          }>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="date" tickFormatter={(val) => moment(val).format("MMM DD")} />
+                            <YAxis />
+                            <Tooltip labelFormatter={(val) => moment(val).format("MMM DD, YYYY")} />
+                            <Legend />
+                            <Area type="monotone" dataKey="sent" name="Attempts" stroke="#313166" fill="#313166" fillOpacity={0.1} />
+                            <Area type="monotone" dataKey="delivered" name="Delivered" stroke="#4CAF50" fill="#4CAF50" fillOpacity={0.1} />
+                            <Area type="monotone" dataKey="failed" name="Failed" stroke="#F44336" fill="#F44336" fillOpacity={0.1} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-4">
-                    <div>
-                      <h4 className="text-base font-bold text-gray-900">Recent Message History</h4>
-                      <p className="text-sm text-gray-500">Latest WhatsApp delivery records for this item only.</p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-base font-bold text-gray-900">Recent Message History</h4>
+                        <p className="text-sm text-gray-500">Latest WhatsApp delivery records for this item only.</p>
+                      </div>
+                      {(individualLogFilter.status || individualLogFilter.reason) && (
+                        <button
+                          onClick={() => {
+                            setIndividualLogFilter({ status: "", reason: "" });
+                            setIndividualLogPage(1);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all border border-gray-200"
+                        >
+                          <X size={14} />
+                          Clear {individualLogFilter.reason ? "Reason" : individualLogFilter.status} Filter
+                        </button>
+                      )}
                     </div>
 
-                    <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden">
-                      <div className="max-h-[320px] overflow-y-auto">
+                    <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm">
+                      <div className="max-h-[480px] overflow-y-auto">
                         {selectedItemLogsLoading ? (
                           <Loader text="Loading item logs..." fullHeight={false} />
                         ) : selectedItemLogs.length === 0 ? (
-                          <div className="p-8 text-center text-sm text-gray-500">No message history found for this item.</div>
+                          <div className="p-12 text-center text-gray-500 flex flex-col items-center gap-3">
+                            <Activity className="w-8 h-8 text-gray-300" />
+                            <div>
+                              <p className="font-semibold">No records found</p>
+                              <p className="text-xs text-gray-400 mt-1">Try clearing the filters to see more results.</p>
+                            </div>
+                          </div>
                         ) : (
                           <div className="divide-y divide-gray-100">
                             {selectedItemLogs.map((log) => (
-                              <div key={log._id} className="p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                                <div>
-                                  <div className="font-semibold text-gray-900">
+                              <div key={log._id} className="p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between hover:bg-gray-50/50 transition-all group">
+                                <div className="flex-1 min-w-0">
+                                  <Link 
+                                    to={`/customers/customer-profile/${log.customerId?._id || log.customerId}`}
+                                    className="font-bold text-gray-900 hover:text-[#313166] hover:underline decoration-2 underline-offset-2 flex items-center gap-2 group-hover:translate-x-1 transition-transform"
+                                  >
                                     {log.firstname || log.lastname ? `${log.firstname} ${log.lastname}` : "Unknown Customer"}
+                                    <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  </Link>
+                                  <div className="text-xs text-gray-500 font-medium flex items-center gap-2 mt-0.5">
+                                    {log.mobileNumber}
+                                    {log.messageCategory && (
+                                      <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] uppercase">{log.messageCategory}</span>
+                                    )}
                                   </div>
-                                  <div className="text-xs text-gray-500">{log.mobileNumber}</div>
                                 </div>
-                                <div className="text-sm text-gray-600 max-w-md truncate" title={log.messageContent}>
-                                  {log.messageContent}
+                                <div className="text-sm text-gray-600 max-w-md truncate md:px-4 italic" title={log.messageContent}>
+                                  "{log.messageContent}"
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
+                                <div className="flex items-center gap-3 shrink-0">
+                                  {log.status === "failed" && (
+                                    <div className="text-[10px] text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100 font-semibold shadow-sm max-w-[200px] truncate" title={getWhatsappErrorDescription(log.failureCode) || log.failureReason}>
+                                      {getWhatsappErrorDescription(log.failureCode) || log.failureReason || "Failed"}
+                                    </div>
+                                  )}
+                                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase shadow-sm ${
                                     log.status === "read"
-                                      ? "bg-blue-50 text-blue-700"
+                                      ? "bg-blue-50 text-blue-700 border border-blue-100"
                                       : log.status === "delivered"
-                                        ? "bg-green-50 text-green-700"
+                                        ? "bg-green-50 text-green-700 border border-green-100"
                                         : log.status === "failed"
-                                          ? "bg-red-50 text-red-700"
-                                          : "bg-gray-100 text-gray-600"
+                                          ? "bg-red-50 text-red-700 border border-red-100"
+                                          : "bg-gray-100 text-gray-600 border border-gray-200"
                                   }`}>
                                     {log.status}
                                   </span>
-                                  <span className="text-xs text-gray-500 whitespace-nowrap">
+                                  <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-100 whitespace-nowrap">
                                     {moment(log.timestamp).format("MMM DD, HH:mm")}
                                   </span>
                                 </div>
@@ -875,6 +1053,31 @@ const EngagementDashboard = () => {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Pagination for Item Logs */}
+                      {individualLogTotalPages > 1 && (
+                        <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                            Page {individualLogPage} of {individualLogTotalPages}
+                          </p>
+                          <div className="flex gap-1.5">
+                            <button
+                              disabled={individualLogPage === 1}
+                              onClick={() => setIndividualLogPage((prev) => Math.max(1, prev - 1))}
+                              className="px-2.5 py-1.5 text-xs font-bold text-gray-500 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all"
+                            >
+                              Prev
+                            </button>
+                            <button
+                              disabled={individualLogPage === individualLogTotalPages}
+                              onClick={() => setIndividualLogPage((prev) => Math.min(individualLogTotalPages, prev + 1))}
+                              className="px-2.5 py-1.5 text-xs font-bold text-gray-500 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-all"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1159,6 +1362,26 @@ const EngagementDashboard = () => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Retry Settings Modal */}
+      {showRetrySettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-[32px] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h3 className="text-xl font-bold text-[#313166]">Retry Automation Settings</h3>
+              <button
+                onClick={() => setShowRetrySettings(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <RetryAutomationSettings />
+            </div>
           </div>
         </div>
       )}
