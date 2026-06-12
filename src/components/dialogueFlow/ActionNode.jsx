@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Zap, Database, Bell, Tag } from 'lucide-react';
+import { Zap, Database, Bell, Tag, Plus } from 'lucide-react';
 
 const ActionNode = ({ data, selected }) => {
   const getActionInfo = (type) => {
@@ -11,6 +11,8 @@ const ActionNode = ({ data, selected }) => {
         return { icon: <Bell size={14} />, label: 'Notify Staff', color: 'bg-amber-500' };
       case 'loyalty':
         return { icon: <Tag size={14} />, label: 'Add Points', color: 'bg-purple-500' };
+      case 'data_exchange':
+        return { icon: <MessageSquare size={14} />, label: 'Meta Data Exchange', color: 'bg-[#CB376D]' };
       default:
         return { icon: <Zap size={14} />, label: 'Generic Action', color: 'bg-emerald-500' };
     }
@@ -19,8 +21,8 @@ const ActionNode = ({ data, selected }) => {
   const info = getActionInfo(data.actionType);
 
   return (
-    <div className={`min-w-[180px] shadow-md rounded-lg bg-white border-2 transition-all ${selected ? 'border-[#CB376D] ring-2 ring-[#CB376D]/20' : 'border-gray-100'}`}>
-      <div className="flex items-center gap-3 p-3">
+    <div className={`min-w-[180px] shadow-md rounded-lg bg-white border-2 transition-all group ${selected ? 'border-[#CB376D] ring-2 ring-[#CB376D]/20' : 'border-gray-100'}`}>
+      <div className="flex items-center gap-3 p-3 relative">
         <div className={`p-2 ${info.color} text-white rounded-lg shadow-sm`}>
           {info.icon}
         </div>
@@ -28,6 +30,12 @@ const ActionNode = ({ data, selected }) => {
           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Action</div>
           <div className="text-sm font-semibold text-gray-800">{data.label || info.label}</div>
         </div>
+        <button 
+          onClick={(e) => { e.stopPropagation(); data.onAddNext(); }}
+          className="absolute -right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-[#CB376D] rounded-full p-0.5 shadow-sm border border-gray-100 z-10"
+        >
+          <Plus size={10} />
+        </button>
       </div>
 
       <Handle

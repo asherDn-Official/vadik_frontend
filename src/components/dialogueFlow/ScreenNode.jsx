@@ -41,13 +41,44 @@ const ScreenNode = ({ data, selected }) => {
 
       <div className="px-3 py-2 bg-gray-50/50 border-t border-gray-100 flex flex-col gap-1">
         <div className="text-[9px] font-bold text-gray-400 uppercase">Transitions</div>
-        <div className="flex items-center justify-between group cursor-pointer hover:bg-white p-1 rounded transition-colors">
-          <span className="text-[11px] text-gray-600">On Submit</span>
+        
+        {/* Branching based on fields with options */}
+        {data.fields?.filter(f => ['radio', 'select', 'checkbox'].includes(f.type)).map((field) => (
+          <div key={field.id} className="space-y-1 mt-1">
+            <div className="text-[8px] text-[#CB376D] font-bold truncate px-1">{field.label}</div>
+            {(field.options || []).map((option, oIdx) => (
+              <div key={oIdx} className="flex items-center justify-between group cursor-pointer hover:bg-white p-1 rounded transition-colors relative">
+                <span className="text-[10px] text-gray-500 truncate pr-4">{option.label}</span>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); data.onAddNext(`choice_${field.id}_${oIdx}`); }}
+                  className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-[#CB376D] rounded-full p-0.5 shadow-sm border border-gray-100 z-10"
+                >
+                  <Plus size={8} />
+                </button>
+                <Handle
+                  type="source"
+                  position={Position.Right}
+                  id={`choice_${field.id}_${oIdx}`}
+                  style={{ top: '50%', right: -8, width: 8, height: 8, background: '#CB376D', transform: 'translateY(-50%)' }}
+                />
+              </div>
+            ))}
+          </div>
+        ))}
+
+        <div className="flex items-center justify-between group cursor-pointer hover:bg-white p-1 rounded transition-colors mt-1 border-t border-gray-100 pt-2 relative">
+          <span className="text-[11px] text-gray-600 font-medium">On Submit</span>
+          <button 
+            onClick={(e) => { e.stopPropagation(); data.onAddNext('submit'); }}
+            className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-gray-600 rounded-full p-0.5 shadow-sm border border-gray-100 z-10"
+          >
+            <Plus size={8} />
+          </button>
           <Handle
             type="source"
             position={Position.Right}
             id="submit"
-            style={{ top: 'auto', right: -8, width: 8, height: 8, background: '#CB376D' }}
+            style={{ top: 'auto', right: -8, width: 8, height: 8, background: '#334155' }}
           />
         </div>
       </div>
