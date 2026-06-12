@@ -14,6 +14,10 @@ import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import ManageSourcesPopup from "./components/ManageSourcesPopup.jsx";
 
+const MAX_PROFILE_PICTURE_SIZE_BYTES = 2 * 1024 * 1024;
+const PROFILE_PICTURE_SIZE_ERROR =
+  "Profile picture must be 2 MB or smaller. Please upload a smaller image.";
+
 const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
   const [sources, setSources] = React.useState([]);
   const [uniqueLabels, setUniqueLabels] = React.useState([]);
@@ -30,12 +34,16 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
         showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+        setProfileFile(null);
+        setProfilePreview(null);
         e.target.value = "";
         return;
       }
 
-      if (file.size > 1 * 1024 * 1024) {
-        showToast("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.", "error");
+      if (file.size > MAX_PROFILE_PICTURE_SIZE_BYTES) {
+        showToast(PROFILE_PICTURE_SIZE_ERROR, "error");
+        setProfileFile(null);
+        setProfilePreview(null);
         e.target.value = "";
         return;
       }
