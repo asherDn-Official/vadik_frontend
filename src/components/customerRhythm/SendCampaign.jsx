@@ -573,16 +573,16 @@ const SendCampaign = () => {
             return (val || "").replace(/\{\{customer_name\}\}/g, customer.firstname || "Customer");
           };
 
-          const orderedVars = Object.keys(campaignData.variables)
+          const orderedVars = campaignData.variables ? Object.keys(campaignData.variables)
             .sort((a, b) => {
               const numA = parseInt(a.match(/\d+/)?.[0] || 0);
               const numB = parseInt(b.match(/\d+/)?.[0] || 0);
               return numA - numB;
             })
-            .map(key => replaceDynamic(campaignData.variables[key]));
+            .map(key => replaceDynamic(campaignData.variables[key])) : [];
 
           return {
-            phone: `${customer.countryCode || "91"}${customer.mobileNumber}`,
+            phone: customer.mobileNumber ? `${customer.countryCode || "91"}${customer.mobileNumber}` : null,
             variables: orderedVars,
             firstname: customer.firstname,
             lastname: customer.lastname,
