@@ -112,7 +112,12 @@ const CustomerAdd = () => {
       navigate(`/customers/customer-profile/${newCustomer._id}`);
     } catch (error) {
       console.error(error.response?.data?.error || error.message);
-      showToast(error.response?.data?.error || "Error adding customer", "error");
+      showToast(
+        error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Error adding customer",
+        "error",
+      );
     } finally {
       setIsSubmitting(false);
     }
