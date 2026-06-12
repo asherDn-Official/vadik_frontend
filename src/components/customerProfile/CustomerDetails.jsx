@@ -30,6 +30,7 @@ import { formatIndianMobile } from "./formatIndianMobile";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import DetailItem from "./components/DetailItem";
+import showToast from "../../utils/ToastNotification";
 import PhoneInput, {
   isValidPhoneNumber,
   parsePhoneNumber,
@@ -37,6 +38,10 @@ import PhoneInput, {
 import "react-phone-number-input/style.css";
 import api from "../../api/apiconfig";
 import CustomerJourneyPanel from "./CustomerJourneyPanel";
+
+const MAX_PROFILE_PICTURE_SIZE_BYTES = 2 * 1024 * 1024;
+const PROFILE_PICTURE_SIZE_ERROR =
+  "Profile picture must be 2 MB or smaller. Please upload a smaller image.";
 
 const LabelSuggestions = ({ currentLabels, onLabelAdd }) => {
   const [labels, setLabels] = useState([]);
@@ -420,6 +425,26 @@ const CustomerDetails = ({
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        showToast(
+          "Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.",
+          "error",
+        );
+        setProfileFile(null);
+        setProfilePreview(null);
+        e.target.value = "";
+        return;
+      }
+
+      if (file.size > MAX_PROFILE_PICTURE_SIZE_BYTES) {
+        showToast(PROFILE_PICTURE_SIZE_ERROR, "error");
+        setProfileFile(null);
+        setProfilePreview(null);
+        e.target.value = "";
+        return;
+      }
+
       setProfileFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
