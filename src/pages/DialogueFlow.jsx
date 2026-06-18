@@ -35,6 +35,7 @@ import FlowList from '../components/dialogueFlow/FlowList';
 import FlowAnalytics from '../components/dialogueFlow/FlowAnalytics';
 import api from '../api/apiconfig';
 import showToast from '../utils/ToastNotification';
+import ComingSoon from '../components/common/ComingSoon';
 
 const nodeTypes = {
   screen: ScreenNode,
@@ -115,6 +116,17 @@ let id = 10;
 const getId = () => `node_${id++}`;
 
 const DialogueFlowInner = () => {
+  const userEmail = localStorage.getItem("email");
+  const isAuthorized = userEmail === "anbumanickam1972@gmail.com";
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <ComingSoon />
+      </div>
+    );
+  }
+
   const reactFlowWrapper = useRef(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
