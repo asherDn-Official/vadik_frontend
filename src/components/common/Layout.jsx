@@ -9,6 +9,7 @@ import api from "../../api/apiconfig.js";
 import SubscriptionPopup from "../settings/subscription/SubscriptionPopup.jsx";
 import { usePlan } from "../../context/PlanContext.jsx";
 import WhatsAppAlertPopup from "./WhatsAppAlertPopup.jsx";
+import CustomerImportNavbarProgress from "./CustomerImportNavbarProgress.jsx";
 import { FiUser, FiUsers } from "react-icons/fi";
 import { FiSearch } from "react-icons/fi";
 import { useLocation } from "react-router-dom";
@@ -286,6 +287,9 @@ function Layout() {
 
               {/* RIGHT */}
               <div className="order-1 flex min-w-0 items-center justify-end gap-2 md:order-1 md:col-start-3 md:justify-self-end lg:gap-3">
+                
+                <CustomerImportNavbarProgress />
+
                 {/* Notification */}
                 <button
                   type="button"

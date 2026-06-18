@@ -63,8 +63,9 @@ const SendCampaign = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [campaignData, setCampaignData] = useState({
     name: "",
-    type: "broadcast", // "broadcast" or "template"
+    type: "broadcast", // "broadcast", "template", or "flow"
     template: null,
+    flow: null,
     audience: [],
     variables: {},
     media: { url: "", type: "" },
@@ -77,6 +78,7 @@ const SendCampaign = () => {
 
   // Data State
   const [templates, setTemplates] = useState([]);
+  const [flows, setFlows] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -148,9 +150,10 @@ const SendCampaign = () => {
   const fetchInitialData = async () => {
     try {
       setFetchingData(true);
-      const [tempRes, campRes] = await Promise.all([
+      const [tempRes, campRes, flowRes] = await Promise.all([
         api.get("/api/integrationManagement/whatsapp/custom-templates"),
-        api.get("/api/integrationManagement/whatsapp/campaigns")
+        api.get("/api/integrationManagement/whatsapp/campaigns"),
+        api.get("/api/whatsappFlow")
       ]);
       
       if (tempRes.data.status) {
@@ -158,6 +161,9 @@ const SendCampaign = () => {
       }
       if (campRes.data.status) {
         setCampaigns(campRes.data.data);
+      }
+      if (flowRes.data) {
+        setFlows(flowRes.data.filter(f => f.status === "PUBLISHED"));
       }
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -250,8 +256,9 @@ const SendCampaign = () => {
   const handleStartNewCampaign = () => {
     setCampaignData({
       name: "",
-      type: "broadcast",
+      type: "flow", // Default to flow since user asked for it prominently
       template: null,
+      flow: null,
       audience: [],
       variables: {},
       media: { url: "", type: "" },
@@ -262,6 +269,18 @@ const SendCampaign = () => {
     setScheduleTime("");
     setCurrentStep(1);
     setView("wizard");
+  };
+
+  const handleFlowSelect = (flow) => {
+    setCampaignData({
+      ...campaignData,
+      flow,
+      template: null,
+      type: "flow",
+      variables: { body: "Please fill this form" }, // Default body for flow message
+      media: { url: "", type: "" }
+    });
+    setCurrentStep(3);
   };
 
   const handleTemplateSelect = (template) => {
@@ -483,6 +502,8 @@ const SendCampaign = () => {
 
   const handleScheduleCampaign = async () => {
     if (campaignData.audience.length === 0) return toast.error("Select at least one customer");
+    if (campaignData.type === "flow" && !campaignData.flow) return toast.error("Please select a flow");
+    if (campaignData.type !== "flow" && !campaignData.template) return toast.error("Please select a template");
     if (!scheduleDate || !scheduleTime) return toast.error("Please select date and time for scheduling");
 
     const scheduledDate = new Date(`${scheduleDate}T${scheduleTime}`);
@@ -492,7 +513,8 @@ const SendCampaign = () => {
     try {
       const payload = {
         name: campaignData.name,
-        templateId: campaignData.template._id,
+        templateId: campaignData.template?._id,
+        flowId: campaignData.flow?._id,
         variables: campaignData.variables,
         mediaUrl: campaignData.media.url,
         mediaType: campaignData.media.type,
@@ -517,6 +539,8 @@ const SendCampaign = () => {
 
   const handleSendMessage = async () => {
     if (campaignData.audience.length === 0) return toast.error("Select at least one customer");
+    if (campaignData.type === "flow" && !campaignData.flow) return toast.error("Please select a flow");
+    if (campaignData.type !== "flow" && !campaignData.template) return toast.error("Please select a template");
     
     // Validate variables
     const missingVars = Object.entries(campaignData.variables).filter(([_, val]) => !val.trim());
@@ -531,7 +555,8 @@ const SendCampaign = () => {
       // 1. Save Campaign record first
       const savePayload = {
         name: campaignData.name,
-        templateId: campaignData.template._id,
+        templateId: campaignData.template?._id,
+        flowId: campaignData.flow?._id,
         variables: campaignData.variables,
         mediaUrl: campaignData.media.url,
         mediaType: campaignData.media.type,
@@ -547,9 +572,10 @@ const SendCampaign = () => {
       let payload = {
         campaignId: savedCampaign?._id,
         campaignName: campaignData.name,
-        templateId: campaignData.template._id,
-        templateName: campaignData.template.name,
-        languageCode: campaignData.template.language,
+        templateId: campaignData.template?._id,
+        templateName: campaignData.template?.name,
+        languageCode: campaignData.template?.language,
+        flowId: campaignData.flow?.remoteFlowId,
         media: campaignData.media.url ? { url: campaignData.media.url, type: campaignData.media.type } : null,
         variables: campaignData.variables // Pass variables for server-side name replacement
       };
@@ -658,7 +684,7 @@ const SendCampaign = () => {
             <thead>
               <tr className="bg-gray-50/50">
                 <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Campaign Name</th>
-                <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Template</th>
+                <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Template / Flow</th>
                 <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sent Date</th>
                 <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Audience</th>
                 <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Delivered</th>
@@ -679,7 +705,7 @@ const SendCampaign = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-xs text-gray-500">{camp.templateId?.name || "N/A"}</span>
+                    <span className="text-xs text-gray-500">{camp.templateId?.name || camp.flowId?.name || "N/A"}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1.5 text-xs text-gray-500">
@@ -793,7 +819,7 @@ const SendCampaign = () => {
               {currentStep === 1 && (
                 <div className="space-y-6 max-w-lg">
                   <div className="space-y-2">
-                    <h3 className="text-xl font-bold text-gray-900">Let's name your campaign</h3>
+                    <h3 className="text-xl font-bold text-gray-900">Let&apos;s name your campaign</h3>
                     <p className="text-sm text-gray-500">This is for your internal reference to track performance.</p>
                   </div>
                   <div className="space-y-1.5">
@@ -829,6 +855,17 @@ const SendCampaign = () => {
                         <Clock className={campaignData.type === "template" ? "text-[#313166]" : "text-gray-400"} />
                         <h4 className="font-bold text-sm mt-3">Scheduled</h4>
                         <p className="text-[10px] text-gray-500 mt-1">Plan your message for a future date and time.</p>
+                      </button>
+                      <button 
+                        className={`flex-1 p-4 rounded-2xl border-2 text-left transition-all ${campaignData.type === "flow" ? "border-[#313166] bg-[#313166]/5" : "border-gray-100 hover:border-gray-200"}`}
+                        onClick={() => {
+                          setCampaignData({ ...campaignData, type: "flow" });
+                          setIsScheduling(false);
+                        }}
+                      >
+                        <Layers className={campaignData.type === "flow" ? "text-[#313166]" : "text-gray-400"} />
+                        <h4 className="font-bold text-sm mt-3">Flow</h4>
+                        <p className="text-[10px] text-gray-500 mt-1">Send an interactive flow to your customers.</p>
                       </button>
                     </div>
 
@@ -869,41 +906,71 @@ const SendCampaign = () => {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <h3 className="text-xl font-bold text-gray-900">Choose a Message Template</h3>
-                      <p className="text-sm text-gray-500">Only approved templates can be used for campaigns.</p>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {campaignData.type === "flow" ? "Choose a WhatsApp Flow" : "Choose a Message Template"}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {campaignData.type === "flow" 
+                          ? "Select a published flow to send to your audience." 
+                          : "Only approved templates can be used for campaigns."}
+                      </p>
                     </div>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                       <input 
                         type="text"
-                        placeholder="Filter templates..."
+                        placeholder={campaignData.type === "flow" ? "Filter flows..." : "Filter templates..."}
                         className="pl-9 pr-4 py-2 bg-gray-50 border-none rounded-xl text-xs focus:ring-1 focus:ring-[#313166]/20 w-48"
                       />
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {templates.map(t => (
-                      <div 
-                        key={t._id}
-                        onClick={() => handleTemplateSelect(t)}
-                        className={`p-4 rounded-2xl border transition-all cursor-pointer group ${campaignData.template?._id === t._id ? "border-[#313166] bg-[#313166]/5 shadow-sm" : "border-gray-100 hover:border-gray-300"}`}
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className={`p-2 rounded-lg ${campaignData.template?._id === t._id ? "bg-[#313166] text-white" : "bg-gray-100 text-gray-400"}`}>
-                            <LayoutTemplate size={16} />
+                    {campaignData.type === "flow" ? (
+                      flows.map(f => (
+                        <div 
+                          key={f._id}
+                          onClick={() => handleFlowSelect(f)}
+                          className={`p-4 rounded-2xl border transition-all cursor-pointer group ${campaignData.flow?._id === f._id ? "border-[#313166] bg-[#313166]/5 shadow-sm" : "border-gray-100 hover:border-gray-300"}`}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className={`p-2 rounded-lg ${campaignData.flow?._id === f._id ? "bg-[#313166] text-white" : "bg-gray-100 text-gray-400"}`}>
+                              <Layers size={16} />
+                            </div>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">FLOW</span>
                           </div>
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t.category}</span>
+                          <h4 className="font-bold text-sm text-gray-900 mb-1">{f.name}</h4>
+                          <p className="text-[10px] text-gray-500 line-clamp-2">
+                            ID: {f.remoteFlowId}
+                          </p>
+                          <div className="mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all text-[#313166] text-[10px] font-bold">
+                            Select Flow <ArrowRight size={12} />
+                          </div>
                         </div>
-                        <h4 className="font-bold text-sm text-gray-900 mb-1">{t.name}</h4>
-                        <p className="text-[10px] text-gray-500 line-clamp-2">
-                          {t.components.find(c => c.type === "BODY")?.text || "No preview available"}
-                        </p>
-                        <div className="mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all text-[#313166] text-[10px] font-bold">
-                          Select Template <ArrowRight size={12} />
+                      ))
+                    ) : (
+                      templates.map(t => (
+                        <div 
+                          key={t._id}
+                          onClick={() => handleTemplateSelect(t)}
+                          className={`p-4 rounded-2xl border transition-all cursor-pointer group ${campaignData.template?._id === t._id ? "border-[#313166] bg-[#313166]/5 shadow-sm" : "border-gray-100 hover:border-gray-300"}`}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className={`p-2 rounded-lg ${campaignData.template?._id === t._id ? "bg-[#313166] text-white" : "bg-gray-100 text-gray-400"}`}>
+                              <LayoutTemplate size={16} />
+                            </div>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t.category}</span>
+                          </div>
+                          <h4 className="font-bold text-sm text-gray-900 mb-1">{t.name}</h4>
+                          <p className="text-[10px] text-gray-500 line-clamp-2">
+                            {t.components.find(c => c.type === "BODY")?.text || "No preview available"}
+                          </p>
+                          <div className="mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all text-[#313166] text-[10px] font-bold">
+                            Select Template <ArrowRight size={12} />
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               )}
@@ -1105,8 +1172,12 @@ const SendCampaign = () => {
                         <p className="text-xl font-black text-[#313166]">{campaignData.audience.length} Customers</p>
                      </div>
                      <div className="bg-gray-50 p-6 rounded-2xl space-y-1">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase">Message Template</p>
-                        <p className="text-sm font-bold text-gray-700 truncate">{campaignData.template?.name}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase">
+                          {campaignData.type === "flow" ? "WhatsApp Flow" : "Message Template"}
+                        </p>
+                        <p className="text-sm font-bold text-gray-700 truncate">
+                          {campaignData.type === "flow" ? campaignData.flow?.name : campaignData.template?.name}
+                        </p>
                      </div>
                   </div>
 
@@ -1287,7 +1358,7 @@ const SendCampaign = () => {
                     <Info size={16} />
                   </div>
                   <p className="text-[10px] text-gray-500 leading-normal">
-                    This preview shows how your message will appear on your customers' devices.
+                    This preview shows how your message will appear on your customers&apos; devices.
                   </p>
                </div>
             </div>

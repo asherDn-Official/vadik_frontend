@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -24,12 +24,15 @@ import {
   ChevronRight,
   Code,
   Eye,
-  X
+  X,
+  ArrowLeft
 } from 'lucide-react';
 
 import ScreenNode from '../components/dialogueFlow/ScreenNode';
 import ActionNode from '../components/dialogueFlow/ActionNode';
 import LabeledEdge from '../components/dialogueFlow/LabeledEdge';
+import FlowList from '../components/dialogueFlow/FlowList';
+import FlowAnalytics from '../components/dialogueFlow/FlowAnalytics';
 import api from '../api/apiconfig';
 import showToast from '../utils/ToastNotification';
 
@@ -122,6 +125,52 @@ const DialogueFlowInner = () => {
   const [activeTab, setActiveTab] = useState('properties'); // 'properties' or 'preview'
   const [activePreviewScreen, setActivePreviewScreen] = useState(null);
   const [previewData, setPreviewData] = useState({});
+  
+  const [view, setView] = useState('list'); // 'list', 'builder', or 'analytics'
+  const [flows, setFlows] = useState([]);
+  const [currentFlowId, setCurrentFlowId] = useState(null);
+  const [flowsLoading, setFlowsLoading] = useState(true);
+  const [defaultFlowId, setDefaultFlowId] = useState(null);
+  const [selectedFlowForAnalytics, setSelectedFlowForAnalytics] = useState(null);
+
+  const fetchFlows = useCallback(async () => {
+    try {
+      setFlowsLoading(true);
+      const response = await api.get('/api/whatsappFlow');
+      setFlows(response.data || []);
+    } catch (error) {
+      console.error('Error fetching flows:', error);
+      showToast('Failed to load flows', 'error');
+    } finally {
+      setFlowsLoading(false);
+    }
+  }, []);
+
+  const fetchDefaultFlow = useCallback(async () => {
+    try {
+      const response = await api.get('/api/whatsappFlow/default/current');
+      setDefaultFlowId(response.data.defaultFlow?._id || response.data.defaultFlow);
+    } catch (error) {
+      console.error('Error fetching default flow:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFlows();
+    fetchDefaultFlow();
+  }, [fetchFlows, fetchDefaultFlow]);
+
+  const onDeleteFlow = async (flowId) => {
+    if (!window.confirm('Are you sure you want to delete this flow?')) return;
+    try {
+      await api.delete(`/api/whatsappFlow/${flowId}`);
+      showToast('Flow deleted successfully', 'success');
+      fetchFlows();
+    } catch (error) {
+      console.error('Error deleting flow:', error);
+      showToast('Failed to delete flow', 'error');
+    }
+  };
 
   const defaultEdgeOptions = {
     animated: true,
@@ -140,7 +189,10 @@ const DialogueFlowInner = () => {
 
   const generateMetaJSON = () => {
     const screens = nodes.filter(n => n.type === 'screen').map(n => {
-      const screenId = n.data.label?.toLowerCase().replace(/\s+/g, '_') || n.id;
+      const screenId = n.data.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || n.id;
+      const outgoingEdges = edges.filter(e => e.source === n.id);
+      const submitEdge = outgoingEdges.find(e => e.sourceHandle === 'submit' || !e.sourceHandle);
+      const targetNode = submitEdge ? nodes.find(node => node.id === submitEdge.target) : null;
       
       const children = [
         {
@@ -157,7 +209,7 @@ const DialogueFlowInner = () => {
               },
               ...(n.data.fields || []).map(f => {
                 const base = {
-                  name: f.name || f.label.toLowerCase().replace(/\s+/g, '_'),
+                  name: f.name || f.label.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
                   label: f.label,
                   required: f.required !== false
                 };
@@ -168,14 +220,43 @@ const DialogueFlowInner = () => {
                     select: 'Dropdown',
                     checkbox: 'CheckboxGroup'
                   };
+
+                  const options = (f.options || []).map((o, oIdx) => {
+                    const optionId = o.value || o.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                    const optionEdge = outgoingEdges.find(e => e.sourceHandle === `choice_${f.id}_${oIdx}`);
+                    
+                    const optionObj = {
+                      id: optionId,
+                      title: o.label
+                    };
+
+                    if (optionEdge && f.type === 'radio') {
+                      const optTargetNode = nodes.find(node => node.id === optionEdge.target);
+                      const targetScreenId = optTargetNode?.data?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || optTargetNode?.id;
+                      if (targetScreenId) {
+                        optionObj.on_click_action = {
+                          name: "navigate",
+                          next: {
+                            type: "screen",
+                            name: targetScreenId
+                          },
+                          payload: n.data.fields?.reduce((acc, field) => {
+                            const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                            acc[fieldName] = `\${form.${fieldName}}`;
+                            return acc;
+                          }, {})
+                        };
+                      }
+                    }
+
+                    return optionObj;
+                  });
+
                   return {
                     type: typeMap[f.type],
                     props: {
                       ...base,
-                      options: (f.options || []).map(o => ({
-                        id: o.value || o.label.toLowerCase().replace(/\s+/g, '_'),
-                        title: o.label
-                      }))
+                      options: options
                     }
                   };
                 }
@@ -194,23 +275,37 @@ const DialogueFlowInner = () => {
                   type: f.type === 'textarea' ? 'TextArea' : 'TextInput',
                   props: base
                 };
-              }),
-              {
-                type: "Footer",
-                props: {
-                  label: n.data.footerLabel || "Submit",
-                  on_click_action: {
-                    name: "data_exchange",
-                    payload: nodes.filter(node => node.type === 'screen').reduce((acc, curr) => {
-                       curr.data.fields?.forEach(field => {
-                         acc[field.name || field.label.toLowerCase().replace(/\s+/g, '_')] = `\${form.${field.name || field.label.toLowerCase().replace(/\s+/g, '_')}}`;
-                       });
-                       return acc;
-                    }, {})
-                  }
-                }
-              }
+              })
             ]
+          }
+        },
+        {
+          type: "Footer",
+          props: {
+            label: n.data.footerLabel || "Submit",
+            on_click_action: (() => {
+              const currentScreenPayload = n.data.fields?.reduce((acc, field) => {
+                const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                acc[fieldName] = `\${form.${fieldName}}`;
+                return acc;
+              }, {}) || {};
+
+              if (submitEdge) {
+                const targetScreenId = targetNode?.data?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || targetNode?.id;
+                return {
+                  name: "navigate",
+                  next: {
+                    type: "screen",
+                    name: targetScreenId
+                  },
+                  payload: currentScreenPayload
+                };
+              }
+              return {
+                name: "complete",
+                payload: currentScreenPayload
+              };
+            })()
           }
         }
       ];
@@ -220,25 +315,24 @@ const DialogueFlowInner = () => {
         layout: {
           type: "SingleColumnLayout",
           children: children
+        },
+        routing_config: {
+          [submitEdge ? "next_screen" : "terminal_state"]: submitEdge ? {
+            name: targetNode?.data?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || targetNode?.id
+          } : {
+            name: "SUCCESS"
+          }
         }
       };
     });
 
-    // Generate routing model
-    const routing_model = {};
-    nodes.filter(n => n.type === 'screen').forEach(n => {
-      const screenId = n.data.label?.toLowerCase().replace(/\s+/g, '_') || n.id;
-      const outgoingEdges = edges.filter(e => e.source === n.id);
-      routing_model[screenId] = outgoingEdges.map(e => {
-        const targetNode = nodes.find(node => node.id === e.target);
-        return targetNode?.data?.label?.toLowerCase().replace(/\s+/g, '_') || targetNode?.id;
-      }).filter(Boolean);
-    });
-
     return JSON.stringify({
-      version: "3.1",
+      version: "3.0",
+      data_api_version: "3.0",
+      routing_config: {
+        entry_screen: screens[0]?.id || "welcome_and_consent"
+      },
       screens: screens,
-      routing_model: routing_model
     }, null, 2);
   };
 
@@ -350,8 +444,16 @@ const DialogueFlowInner = () => {
         },
       };
 
-      const response = await api.post('/whatsappFlow', flowData);
-      showToast('Flow saved successfully!', 'success');
+      let response;
+      if (currentFlowId) {
+        response = await api.put(`/api/whatsappFlow/${currentFlowId}`, flowData);
+        showToast('Flow updated successfully!', 'success');
+      } else {
+        response = await api.post('/api/whatsappFlow', flowData);
+        setCurrentFlowId(response.data._id);
+        showToast('Flow saved successfully!', 'success');
+      }
+      fetchFlows();
       return response.data;
     } catch (error) {
       console.error('Error saving flow:', error);
@@ -359,19 +461,70 @@ const DialogueFlowInner = () => {
     }
   };
 
-  const publishFlow = async () => {
+  const onSelectFlow = (flow) => {
+    if (flow.visualGraph) {
+      setNodes(flow.visualGraph.nodes || initialNodes);
+      setEdges(flow.visualGraph.edges || initialEdges);
+    }
+    setCurrentFlowId(flow._id);
+    setView('builder');
+  };
+
+  const onCreateFlow = () => {
+    setNodes(initialNodes);
+    setEdges(initialEdges);
+    setCurrentFlowId(null);
+    setView('builder');
+  };
+
+  const onSetDefault = async (flowId) => {
     try {
-      const savedFlow = await saveFlow();
-      if (!savedFlow?._id) return;
+      // Toggle if already default
+      const newFlowId = defaultFlowId === flowId ? null : flowId;
+      await api.post('/api/whatsappFlow/default', { flowId: newFlowId });
+      setDefaultFlowId(newFlowId);
+      showToast(newFlowId ? 'Auto-reply flow updated' : 'Auto-reply disabled', 'success');
+    } catch (error) {
+      console.error('Error setting default flow:', error);
+      showToast('Failed to update auto-reply setting', 'error');
+    }
+  };
+
+  const onShowAnalytics = (flow) => {
+    setSelectedFlowForAnalytics(flow);
+    setView('analytics');
+  };
+
+  const publishFlow = async (flow = null) => {
+    try {
+      let flowToPublish = flow;
+      
+      if (!flowToPublish) {
+        // If coming from builder, save first
+        flowToPublish = await saveFlow();
+        if (!flowToPublish?._id) return;
+      }
 
       showToast('Publishing to Meta...', 'info');
       
+      // If we have a flow object from the list, we might need to load its visualGraph to generate JSON
+      // But for simplicity, we'll assume the builder has the latest if no flow passed, 
+      // or we use the metaFlowDefinition if already generated.
+      // However, the current backend expects metaFlowDefinition in the body.
+      
       const payload = {
-        metaFlowDefinition: JSON.parse(generateMetaJSON())
+        metaFlowDefinition: flowToPublish.metaFlowDefinition || JSON.parse(generateMetaJSON())
       };
 
-      const response = await api.post(`/whatsappFlow/${savedFlow._id}/publish`, payload);
+      const flowId = flowToPublish._id || flowToPublish.id;
+      if (!flowId) {
+        showToast('Cannot publish: Flow ID is missing. Please save first.', 'error');
+        return;
+      }
+
+      const response = await api.post(`/api/whatsappFlow/${flowId}/publish`, payload);
       showToast('Flow published successfully!', 'success');
+      fetchFlows();
     } catch (error) {
       console.error('Error publishing flow:', error);
       showToast(error.response?.data?.error || 'Failed to publish flow', 'error');
@@ -478,12 +631,48 @@ const DialogueFlowInner = () => {
     }
   };
 
+  if (view === 'list') {
+    return (
+      <FlowList 
+        flows={flows} 
+        onSelectFlow={onSelectFlow} 
+        onCreateFlow={onCreateFlow} 
+        onDeleteFlow={onDeleteFlow} 
+        onPublishFlow={publishFlow}
+        onShowAnalytics={onShowAnalytics}
+        onSetDefault={onSetDefault}
+        defaultFlowId={defaultFlowId}
+        loading={flowsLoading}
+      />
+    );
+  }
+
+  if (view === 'analytics' && selectedFlowForAnalytics) {
+    return (
+      <FlowAnalytics 
+        flow={selectedFlowForAnalytics} 
+        onBack={() => {
+          setView('list');
+          setSelectedFlowForAnalytics(null);
+        }} 
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-100px)] bg-gray-50 rounded-xl overflow-hidden border border-gray-200">
       <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
-        <div>
-          <h1 className="text-xl font-bold text-gray-800">WhatsApp Flow Builder</h1>
-          <p className="text-sm text-gray-500">Design interactive conversational flows for your customers</p>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setView('list')}
+            className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-gray-800">WhatsApp Flow Builder</h1>
+            <p className="text-sm text-gray-500">Design interactive conversational flows for your customers</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => setShowJsonPreview(true)} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">

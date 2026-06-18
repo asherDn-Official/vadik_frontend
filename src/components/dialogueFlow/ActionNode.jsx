@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Zap, Database, Bell, Tag, Plus } from 'lucide-react';
+import { Zap, Database, Bell, Tag, Plus, MessageSquare } from 'lucide-react';
 
 const ActionNode = ({ data, selected }) => {
   const getActionInfo = (type) => {
