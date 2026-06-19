@@ -206,6 +206,10 @@ const DialogueFlowInner = () => {
       const submitEdge = outgoingEdges.find(e => e.sourceHandle === 'submit' || !e.sourceHandle);
       const targetNode = submitEdge ? nodes.find(node => node.id === submitEdge.target) : null;
       
+      // If there's branching (multiple choice handles) or target is an action node, use data_exchange
+      const isBranching = outgoingEdges.some(e => e.sourceHandle?.startsWith('choice_'));
+      const isActionTarget = targetNode?.type === 'action';
+
       const children = [
         {
           type: "Header",
@@ -282,10 +286,6 @@ const DialogueFlowInner = () => {
               acc[fieldName] = `\${form.${fieldName}}`;
               return acc;
             }, {}) || {};
-
-            // If there's branching (multiple choice handles) or target is an action node, use data_exchange
-            const isBranching = outgoingEdges.some(e => e.sourceHandle?.startsWith('choice_'));
-            const isActionTarget = targetNode?.type === 'action';
 
             if (isBranching || isActionTarget) {
               return {
