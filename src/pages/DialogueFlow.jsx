@@ -277,12 +277,6 @@ const DialogueFlowInner = () => {
       const isTerminal = outgoingEdges.length === 0;
 
       const formName = `form_${screenId.toLowerCase()}`;
-      const currentScreenPayload = n.data.fields?.reduce((acc, field) => {
-        const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-        acc[fieldName] = `\${form.${fieldName}}`;
-        return acc;
-      }, {}) || {};
-
       const children = [
         {
           type: "TextHeading",
@@ -357,13 +351,13 @@ const DialogueFlowInner = () => {
           if (!isTerminal) {
             return {
               name: "data_exchange",
-              payload: currentScreenPayload
+              payload: {}
             };
           }
 
           return {
             name: "complete",
-            payload: currentScreenPayload
+            payload: {}
           };
         })()
       });
