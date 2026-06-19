@@ -208,6 +208,7 @@ const DialogueFlowInner = () => {
       
       const isBranching = outgoingEdges.some(e => e.sourceHandle?.startsWith('choice_'));
       const isActionTarget = targetNode?.type === 'action';
+      const isTerminal = !submitEdge && !isBranching && !isActionTarget;
 
       const currentScreenPayload = n.data.fields?.reduce((acc, field) => {
         const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
@@ -284,20 +285,14 @@ const DialogueFlowInner = () => {
         });
       }
 
-      const screenPayload = n.data.fields?.reduce((acc, field) => {
-        const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-        acc[fieldName] = `\${form.${fieldName}}`;
-        return acc;
-      }, {}) || {};
-
       children.push({
         type: "Footer",
         label: n.data.footerLabel || "Submit",
-        "on-click-action": (() => {
+        on_click_action: (() => {
           if (isBranching || isActionTarget) {
             return {
               name: "data_exchange",
-              payload: screenPayload
+              payload: currentScreenPayload
             };
           }
 
@@ -309,12 +304,12 @@ const DialogueFlowInner = () => {
                 type: "screen",
                 name: targetScreenId
               },
-              payload: screenPayload
+              payload: currentScreenPayload
             };
           }
           return {
             name: "complete",
-            payload: screenPayload
+            payload: currentScreenPayload
           };
         })()
       });
@@ -322,7 +317,7 @@ const DialogueFlowInner = () => {
       return {
         id: screenId,
         title: n.data.label,
-        terminal: !submitEdge && !isBranching && !isActionTarget,
+        terminal: isTerminal,
         layout: {
           type: "SingleColumnLayout",
           children: children
@@ -360,7 +355,7 @@ const DialogueFlowInner = () => {
     });
 
     return JSON.stringify({
-      version: "3.0",
+      version: "7.3",
       data_api_version: "3.0",
       routing_model: routingModel,
       screens: screens,
