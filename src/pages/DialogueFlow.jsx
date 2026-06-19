@@ -215,6 +215,8 @@ const DialogueFlowInner = () => {
         return acc;
       }, {}) || {};
 
+      const formName = `form_${screenId.toLowerCase()}`;
+
       const children = [
         {
           type: "TextHeading",
@@ -229,10 +231,11 @@ const DialogueFlowInner = () => {
       if (n.data.fields && n.data.fields.length > 0) {
         children.push({
           type: "Form",
-          name: "flow_form",
+          name: formName,
           children: n.data.fields.map(f => {
+            const fieldName = f.name || f.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
             const base = {
-              name: f.name || f.label.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+              name: fieldName,
               label: f.label,
               required: f.required !== false
             };
@@ -252,20 +255,13 @@ const DialogueFlowInner = () => {
                 };
               });
 
-              const result = {
+              return {
                 type: typeMap[f.type],
                 name: base.name,
                 label: base.label,
-                required: base.required
+                required: base.required,
+                data_source: options
               };
-
-              if (f.type === 'radio') {
-                result['data-source'] = options;
-              } else {
-                result['options'] = options;
-              }
-
-              return result;
             }
 
             if (f.type === 'optin') {
@@ -288,6 +284,12 @@ const DialogueFlowInner = () => {
         });
       }
 
+      const screenPayload = n.data.fields?.reduce((acc, field) => {
+        const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        acc[fieldName] = `\${form.${fieldName}}`;
+        return acc;
+      }, {}) || {};
+
       children.push({
         type: "Footer",
         label: n.data.footerLabel || "Submit",
@@ -295,7 +297,7 @@ const DialogueFlowInner = () => {
           if (isBranching || isActionTarget) {
             return {
               name: "data_exchange",
-              payload: currentScreenPayload
+              payload: screenPayload
             };
           }
 
@@ -307,12 +309,12 @@ const DialogueFlowInner = () => {
                 type: "screen",
                 name: targetScreenId
               },
-              payload: currentScreenPayload
+              payload: screenPayload
             };
           }
           return {
             name: "complete",
-            payload: currentScreenPayload
+            payload: screenPayload
           };
         })()
       });
