@@ -320,7 +320,7 @@ const DialogueFlowInner = () => {
                 name: base.name,
                 label: base.label,
                 required: base.required,
-                data_source: options
+                "data-source": options
               };
             }
 
@@ -347,7 +347,7 @@ const DialogueFlowInner = () => {
       children.push({
         type: "Footer",
         label: n.data.footerLabel || "Submit",
-        "on_click_action": (() => {
+        "on-click-action": (() => {
           if (!isTerminal) {
             return {
               name: "data_exchange",
