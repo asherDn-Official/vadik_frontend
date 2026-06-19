@@ -15,8 +15,47 @@ import {
   Star
 } from 'lucide-react';
 
-const FlowList = ({ flows, onSelectFlow, onCreateFlow, onDeleteFlow, onPublishFlow, onShowAnalytics, onSetDefault, defaultFlowId, loading }) => {
+const FlowList = ({ flows, onSelectFlow, onCreateFlow, onDeleteFlow, onPublishFlow, onShowAnalytics, onSetDefault, defaultFlowId, loading, onImportTemplate }) => {
   const [searchTerm, setSearchTerm] = React.useState('');
+
+  const templates = [
+    {
+      id: 'template_support',
+      name: 'Customer Support Flow',
+      description: 'Collect user issues and contact details with automated routing.',
+      nodes: [
+        { id: 'n1', type: 'screen', position: { x: 100, y: 100 }, data: { label: 'Start Support', header: 'Support Center', body: 'How can we help you today?', fields: [{ id: 1, type: 'radio', label: 'Issue Type', name: 'issue_type', options: [{ label: 'Billing' }, { label: 'Technical' }, { label: 'Other' }] }] } },
+        { id: 'n2', type: 'screen', position: { x: 500, y: 100 }, data: { label: 'Details', header: 'Issue Details', body: 'Please describe your problem.', fields: [{ id: 2, type: 'textarea', label: 'Description', name: 'description' }, { id: 3, type: 'text', label: 'Email Address', name: 'email' }] } }
+      ],
+      edges: [
+        { id: 'e1-2', source: 'n1', target: 'n2', type: 'labeled', data: { label: 'Next' } }
+      ]
+    },
+    {
+      id: 'template_feedback',
+      name: 'Order Feedback',
+      description: 'Gather ratings and comments about recent purchases.',
+      nodes: [
+        { id: 'n1', type: 'screen', position: { x: 100, y: 100 }, data: { label: 'Rate Order', header: 'Your Feedback', body: 'How was your recent order?', fields: [{ id: 1, type: 'radio', label: 'Rating', name: 'rating', options: [{ label: '5 Stars' }, { label: '4 Stars' }, { label: '3 Stars' }, { label: '2 Stars' }, { label: '1 Star' }] }] } },
+        { id: 'n2', type: 'screen', position: { x: 500, y: 100 }, data: { label: 'Comments', header: 'Comments', body: 'Any specific feedback for us?', fields: [{ id: 2, type: 'textarea', label: 'Your Comments', name: 'comments' }] } }
+      ],
+      edges: [
+        { id: 'e1-2', source: 'n1', target: 'n2', type: 'labeled', data: { label: 'Submit' } }
+      ]
+    },
+    {
+      id: 'template_booking',
+      name: 'Appointment Booking',
+      description: 'Allow customers to book dates and select services.',
+      nodes: [
+        { id: 'n1', type: 'screen', position: { x: 100, y: 100 }, data: { label: 'Select Service', header: 'Booking', body: 'Which service would you like to book?', fields: [{ id: 1, type: 'radio', label: 'Service', name: 'service', options: [{ label: 'Consultation' }, { label: 'Installation' }, { label: 'Repair' }] }] } },
+        { id: 'n2', type: 'screen', position: { x: 500, y: 100 }, data: { label: 'Contact Info', header: 'Contact', body: 'Please provide your details.', fields: [{ id: 2, type: 'text', label: 'Name', name: 'user_name' }, { id: 3, type: 'text', label: 'Phone', name: 'user_phone' }] } }
+      ],
+      edges: [
+        { id: 'e1-2', source: 'n1', target: 'n2', type: 'labeled', data: { label: 'Next' } }
+      ]
+    }
+  ];
 
   const filteredFlows = flows.filter(flow => 
     flow.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -61,6 +100,29 @@ const FlowList = ({ flows, onSelectFlow, onCreateFlow, onDeleteFlow, onPublishFl
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#CB376D]/20 focus:border-[#CB376D] transition-all"
           />
+        </div>
+      </div>
+      
+      {/* Template Library */}
+      <div className="px-8 pt-6 pb-2">
+        <div className="flex items-center gap-2 mb-4">
+          <Globe size={18} className="text-[#CB376D]" />
+          <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Flow Template Library</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {templates.map(template => (
+            <div 
+              key={template.id}
+              className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-[#CB376D] hover:shadow-md transition-all cursor-pointer group"
+              onClick={() => onImportTemplate(template)}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#CB376D]">{template.name}</h3>
+                <Plus size={16} className="text-gray-400 group-hover:text-[#CB376D]" />
+              </div>
+              <p className="text-[10px] text-gray-500 line-clamp-2">{template.description}</p>
+            </div>
+          ))}
         </div>
       </div>
 

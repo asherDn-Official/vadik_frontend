@@ -201,138 +201,166 @@ const DialogueFlowInner = () => {
 
   const generateMetaJSON = () => {
     const screens = nodes.filter(n => n.type === 'screen').map(n => {
-      const screenId = n.data.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || n.id;
+      const screenId = n.data.label?.toUpperCase().replace(/[^A-Z0-9]+/g, '_') || n.id.toUpperCase();
       const outgoingEdges = edges.filter(e => e.source === n.id);
       const submitEdge = outgoingEdges.find(e => e.sourceHandle === 'submit' || !e.sourceHandle);
       const targetNode = submitEdge ? nodes.find(node => node.id === submitEdge.target) : null;
       
-      // If there's branching (multiple choice handles) or target is an action node, use data_exchange
       const isBranching = outgoingEdges.some(e => e.sourceHandle?.startsWith('choice_'));
       const isActionTarget = targetNode?.type === 'action';
 
+      const currentScreenPayload = n.data.fields?.reduce((acc, field) => {
+        const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        acc[fieldName] = `\${form.${fieldName}}`;
+        return acc;
+      }, {}) || {};
+
       const children = [
         {
-          type: "Header",
-          props: { title: n.data.header || n.data.label }
+          type: "TextHeading",
+          text: n.data.header || n.data.label
         },
         {
-          type: "Text",
-          props: { text: n.data.body || "Please fill the details below" }
+          type: "TextBody",
+          text: n.data.body || "Please fill the details below"
         }
       ];
 
       if (n.data.fields && n.data.fields.length > 0) {
         children.push({
           type: "Form",
-          props: {
-            name: "flow_form",
-            children: n.data.fields.map(f => {
-              const base = {
-                name: f.name || f.label.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
-                label: f.label,
-                required: f.required !== false
+          name: "flow_form",
+          children: n.data.fields.map(f => {
+            const base = {
+              name: f.name || f.label.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+              label: f.label,
+              required: f.required !== false
+            };
+
+            if (f.type === 'radio' || f.type === 'select' || f.type === 'checkbox') {
+              const typeMap = {
+                radio: 'RadioButtonsGroup',
+                select: 'Dropdown',
+                checkbox: 'CheckboxGroup'
               };
 
-              if (f.type === 'radio' || f.type === 'select' || f.type === 'checkbox') {
-                const typeMap = {
-                  radio: 'RadioGroup',
-                  select: 'Dropdown',
-                  checkbox: 'CheckboxGroup'
-                };
-
-                const options = (f.options || []).map((o, oIdx) => {
-                  const optionId = o.value || o.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-                  return {
-                    id: optionId,
-                    title: o.label
-                  };
-                });
-
+              const options = (f.options || []).map((o, oIdx) => {
+                const optionId = o.value || o.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
                 return {
-                  type: typeMap[f.type],
-                  props: {
-                    ...base,
-                    options: options
-                  }
+                  id: optionId,
+                  title: o.label
                 };
+              });
+
+              const result = {
+                type: typeMap[f.type],
+                name: base.name,
+                label: base.label,
+                required: base.required
+              };
+
+              if (f.type === 'radio') {
+                result['data-source'] = options;
+              } else {
+                result['options'] = options;
               }
 
-              if (f.type === 'optin') {
-                return {
-                  type: "OptIn",
-                  props: {
-                    ...base,
-                    description: "I agree to receive updates"
-                  }
-                };
-              }
+              return result;
+            }
 
+            if (f.type === 'optin') {
               return {
-                type: f.type === 'textarea' ? 'TextArea' : 'TextInput',
-                props: base
+                type: "OptIn",
+                name: base.name,
+                label: base.label,
+                required: base.required,
+                description: "I agree to receive updates"
               };
-            })
-          }
+            }
+
+            return {
+              type: f.type === 'textarea' ? 'TextArea' : 'TextInput',
+              name: base.name,
+              label: base.label,
+              required: base.required
+            };
+          })
         });
       }
 
       children.push({
         type: "Footer",
-        props: {
-          label: n.data.footerLabel || "Submit",
-          on_click_action: (() => {
-            const currentScreenPayload = n.data.fields?.reduce((acc, field) => {
-              const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-              acc[fieldName] = `\${form.${fieldName}}`;
-              return acc;
-            }, {}) || {};
-
-            if (isBranching || isActionTarget) {
-              return {
-                name: "data_exchange",
-                payload: currentScreenPayload
-              };
-            }
-
-            if (submitEdge) {
-              const targetScreenId = targetNode?.data?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || targetNode?.id;
-              return {
-                name: "navigate",
-                next: {
-                  type: "screen",
-                  name: targetScreenId
-                },
-                payload: currentScreenPayload
-              };
-            }
+        label: n.data.footerLabel || "Submit",
+        "on-click-action": (() => {
+          if (isBranching || isActionTarget) {
             return {
-              name: "complete",
+              name: "data_exchange",
               payload: currentScreenPayload
             };
-          })()
-        }
+          }
+
+          if (submitEdge) {
+            const targetScreenId = targetNode?.data?.label?.toUpperCase().replace(/[^A-Z0-9]+/g, '_') || targetNode?.id.toUpperCase();
+            return {
+              name: "navigate",
+              next: {
+                type: "screen",
+                name: targetScreenId
+              },
+              payload: currentScreenPayload
+            };
+          }
+          return {
+            name: "complete",
+            payload: currentScreenPayload
+          };
+        })()
       });
 
       return {
         id: screenId,
+        title: n.data.label,
+        terminal: !submitEdge && !isBranching && !isActionTarget,
         layout: {
           type: "SingleColumnLayout",
           children: children
-        },
-        routing_config: {
-          [(!isBranching && !isActionTarget && submitEdge) ? "next_screen" : "terminal_state"]: (!isBranching && !isActionTarget && submitEdge) ? {
-            name: targetNode?.data?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || targetNode?.id
-          } : "SUCCESS"
         }
       };
+    });
+
+    const routingModel = {};
+    // Every screen node in the graph needs to be mapped to its reachable screen transitions
+    const getReachableScreens = (sourceNodeId, visited = new Set()) => {
+      if (visited.has(sourceNodeId)) return [];
+      visited.add(sourceNodeId);
+
+      const outgoing = edges.filter(e => e.source === sourceNodeId);
+      let reachable = [];
+
+      outgoing.forEach(edge => {
+        const targetNode = nodes.find(n => n.id === edge.target);
+        if (!targetNode) return;
+
+        if (targetNode.type === 'screen') {
+          reachable.push(targetNode.data.label?.toUpperCase().replace(/[^A-Z0-9]+/g, '_') || targetNode.id.toUpperCase());
+        } else if (targetNode.type === 'action') {
+          // Traverse through action nodes to find screens
+          reachable = [...reachable, ...getReachableScreens(targetNode.id, visited)];
+        }
+      });
+
+      return Array.from(new Set(reachable));
+    };
+
+    nodes.filter(node => node.type === 'screen').forEach(node => {
+      const sanitizedId = node.data.label?.toUpperCase().replace(/[^A-Z0-9]+/g, '_') || node.id.toUpperCase();
+      routingModel[sanitizedId] = getReachableScreens(node.id);
     });
 
     return JSON.stringify({
       version: "3.0",
       data_api_version: "3.0",
-      routing_config: {
-        entry_screen: screens[0]?.id || "welcome_and_consent"
-      },
+      routing_model: routingModel,
       screens: screens,
     }, null, 2);
   };
@@ -630,6 +658,14 @@ const DialogueFlowInner = () => {
     }
   };
 
+  const onImportTemplate = (template) => {
+    setNodes(template.nodes);
+    setEdges(template.edges);
+    setCurrentFlowId(null);
+    setView('builder');
+    showToast(`${template.name} imported!`, 'success');
+  };
+
   if (view === 'list') {
     return (
       <FlowList 
@@ -642,6 +678,7 @@ const DialogueFlowInner = () => {
         onSetDefault={onSetDefault}
         defaultFlowId={defaultFlowId}
         loading={flowsLoading}
+        onImportTemplate={onImportTemplate}
       />
     );
   }
