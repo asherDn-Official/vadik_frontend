@@ -21,21 +21,46 @@ const FlowAnalytics = ({ flow, onBack }) => {
   const [activeTab, setActiveTab] = useState('submissions');
 
   useEffect(() => {
+    let mounted = true;
+    let refreshTimer = null;
+
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
         const response = await api.get(`/api/whatsappFlow/analytics/${flow._id}`);
-        setData(response.data);
+        if (mounted) setData(response.data);
       } catch (error) {
         console.error('Error fetching analytics:', error);
         showToast('Failed to load flow analytics', 'error');
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
-    if (flow?._id) fetchAnalytics();
+    if (flow?._id) {
+      fetchAnalytics();
+      refreshTimer = setInterval(fetchAnalytics, 10000);
+    }
+
+    return () => {
+      mounted = false;
+      if (refreshTimer) clearInterval(refreshTimer);
+    };
   }, [flow]);
+
+  const refreshAnalytics = async () => {
+    if (!flow?._id) return;
+    try {
+      setLoading(true);
+      const response = await api.get(`/api/whatsappFlow/analytics/${flow._id}`);
+      setData(response.data);
+    } catch (error) {
+      console.error('Error refreshing analytics:', error);
+      showToast('Failed to refresh flow analytics', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const exportToCSV = () => {
     if (!data?.submissions?.length) return;
@@ -116,6 +141,12 @@ const FlowAnalytics = ({ flow, onBack }) => {
           >
             <Download size={18} />
             Export CSV
+          </button>
+          <button 
+            onClick={refreshAnalytics}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm"
+          >
+            Refresh
           </button>
         </div>
       </div>
