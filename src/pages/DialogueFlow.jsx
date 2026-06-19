@@ -242,25 +242,9 @@ const DialogueFlowInner = () => {
                       title: o.label
                     };
 
-                    if (optionEdge && f.type === 'radio') {
-                      const optTargetNode = nodes.find(node => node.id === optionEdge.target);
-                      const targetScreenId = optTargetNode?.data?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || optTargetNode?.id;
-                      if (targetScreenId) {
-                        optionObj.on_click_action = {
-                          name: "navigate",
-                          next: {
-                            type: "screen",
-                            name: targetScreenId
-                          },
-                          payload: n.data.fields?.reduce((acc, field) => {
-                            const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-                            acc[fieldName] = `\${form.${fieldName}}`;
-                            return acc;
-                          }, {})
-                        };
-                      }
-                    }
-
+                    // Note: Meta Flows 3.0 does not support on_click_action inside RadioGroup options.
+                    // Branching should be handled via data_exchange on the Footer button.
+                    
                     return optionObj;
                   });
 
@@ -302,6 +286,17 @@ const DialogueFlowInner = () => {
                 return acc;
               }, {}) || {};
 
+              // If there's branching (multiple choice handles) or target is an action node, use data_exchange
+              const isBranching = outgoingEdges.some(e => e.sourceHandle?.startsWith('choice_'));
+              const isActionTarget = targetNode?.type === 'action';
+
+              if (isBranching || isActionTarget) {
+                return {
+                  name: "data_exchange",
+                  payload: currentScreenPayload
+                };
+              }
+
               if (submitEdge) {
                 const targetScreenId = targetNode?.data?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || targetNode?.id;
                 return {
@@ -329,7 +324,7 @@ const DialogueFlowInner = () => {
           children: children
         },
         routing_config: {
-          [submitEdge ? "next_screen" : "terminal_state"]: submitEdge ? {
+          [(!isBranching && !isActionTarget && submitEdge) ? "next_screen" : "terminal_state"]: (!isBranching && !isActionTarget && submitEdge) ? {
             name: targetNode?.data?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || targetNode?.id
           } : {
             name: "SUCCESS"
