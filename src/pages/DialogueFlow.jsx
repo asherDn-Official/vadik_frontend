@@ -223,6 +223,31 @@ const DialogueFlowInner = () => {
     return targetNode;
   };
 
+  const getReachableScreenIds = (sourceNodeId, graphNodes, graphEdges, visited = new Set()) => {
+    if (!sourceNodeId || visited.has(sourceNodeId)) return [];
+    visited.add(sourceNodeId);
+
+    const outgoing = graphEdges.filter((edge) => edge.source === sourceNodeId);
+    const reachable = [];
+
+    outgoing.forEach((edge) => {
+      const targetNode = graphNodes.find((node) => node.id === edge.target);
+      if (!targetNode) return;
+
+      if (targetNode.type === 'screen') {
+        const targetScreenId = getScreenNodeId(targetNode);
+        if (targetScreenId) reachable.push(targetScreenId);
+        return;
+      }
+
+      if (targetNode.type === 'action') {
+        reachable.push(...getReachableScreenIds(targetNode.id, graphNodes, graphEdges, visited));
+      }
+    });
+
+    return [...new Set(reachable)];
+  };
+
   const buildRoutingModel = (graphNodes, graphEdges) => {
     const routingModel = {};
 
@@ -230,14 +255,7 @@ const DialogueFlowInner = () => {
       .filter((node) => node.type === 'screen')
       .forEach((node) => {
         const screenId = getScreenNodeId(node);
-        const outgoing = graphEdges.filter((edge) => edge.source === node.id);
-        const targets = outgoing
-          .map((edge) => resolveNextScreenNode(edge.target, graphNodes, graphEdges))
-          .filter(Boolean)
-          .map((targetNode) => getScreenNodeId(targetNode))
-          .filter(Boolean);
-
-        routingModel[screenId] = [...new Set(targets)];
+        routingModel[screenId] = getReachableScreenIds(node.id, graphNodes, graphEdges);
       });
 
     return routingModel;
@@ -261,7 +279,7 @@ const DialogueFlowInner = () => {
       const formName = `form_${screenId.toLowerCase()}`;
       const currentScreenPayload = n.data.fields?.reduce((acc, field) => {
         const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-        acc[fieldName] = `\${${formName}.${fieldName}}`;
+        acc[fieldName] = `\${form.${fieldName}}`;
         return acc;
       }, {}) || {};
 
