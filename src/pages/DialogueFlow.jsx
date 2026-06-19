@@ -212,110 +212,106 @@ const DialogueFlowInner = () => {
           props: { title: n.data.header || n.data.label }
         },
         {
-          type: "Form",
-          props: {
-            children: [
-              {
-                type: "Text",
-                props: { text: n.data.body || "Please fill the details below" }
-              },
-              ...(n.data.fields || []).map(f => {
-                const base = {
-                  name: f.name || f.label.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
-                  label: f.label,
-                  required: f.required !== false
-                };
-
-                if (f.type === 'radio' || f.type === 'select' || f.type === 'checkbox') {
-                  const typeMap = {
-                    radio: 'RadioGroup',
-                    select: 'Dropdown',
-                    checkbox: 'CheckboxGroup'
-                  };
-
-                  const options = (f.options || []).map((o, oIdx) => {
-                    const optionId = o.value || o.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-                    const optionEdge = outgoingEdges.find(e => e.sourceHandle === `choice_${f.id}_${oIdx}`);
-                    
-                    const optionObj = {
-                      id: optionId,
-                      title: o.label
-                    };
-
-                    // Note: Meta Flows 3.0 does not support on_click_action inside RadioGroup options.
-                    // Branching should be handled via data_exchange on the Footer button.
-                    
-                    return optionObj;
-                  });
-
-                  return {
-                    type: typeMap[f.type],
-                    props: {
-                      ...base,
-                      options: options
-                    }
-                  };
-                }
-
-                if (f.type === 'optin') {
-                  return {
-                    type: "OptIn",
-                    props: {
-                      ...base,
-                      description: "I agree to receive updates"
-                    }
-                  };
-                }
-
-                return {
-                  type: f.type === 'textarea' ? 'TextArea' : 'TextInput',
-                  props: base
-                };
-              })
-            ]
-          }
-        },
-        {
-          type: "Footer",
-          props: {
-            label: n.data.footerLabel || "Submit",
-            on_click_action: (() => {
-              const currentScreenPayload = n.data.fields?.reduce((acc, field) => {
-                const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-                acc[fieldName] = `\${form.${fieldName}}`;
-                return acc;
-              }, {}) || {};
-
-              // If there's branching (multiple choice handles) or target is an action node, use data_exchange
-              const isBranching = outgoingEdges.some(e => e.sourceHandle?.startsWith('choice_'));
-              const isActionTarget = targetNode?.type === 'action';
-
-              if (isBranching || isActionTarget) {
-                return {
-                  name: "data_exchange",
-                  payload: currentScreenPayload
-                };
-              }
-
-              if (submitEdge) {
-                const targetScreenId = targetNode?.data?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || targetNode?.id;
-                return {
-                  name: "navigate",
-                  next: {
-                    type: "screen",
-                    name: targetScreenId
-                  },
-                  payload: currentScreenPayload
-                };
-              }
-              return {
-                name: "complete",
-                payload: currentScreenPayload
-              };
-            })()
-          }
+          type: "Text",
+          props: { text: n.data.body || "Please fill the details below" }
         }
       ];
+
+      if (n.data.fields && n.data.fields.length > 0) {
+        children.push({
+          type: "Form",
+          props: {
+            name: "flow_form",
+            children: n.data.fields.map(f => {
+              const base = {
+                name: f.name || f.label.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+                label: f.label,
+                required: f.required !== false
+              };
+
+              if (f.type === 'radio' || f.type === 'select' || f.type === 'checkbox') {
+                const typeMap = {
+                  radio: 'RadioGroup',
+                  select: 'Dropdown',
+                  checkbox: 'CheckboxGroup'
+                };
+
+                const options = (f.options || []).map((o, oIdx) => {
+                  const optionId = o.value || o.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                  return {
+                    id: optionId,
+                    title: o.label
+                  };
+                });
+
+                return {
+                  type: typeMap[f.type],
+                  props: {
+                    ...base,
+                    options: options
+                  }
+                };
+              }
+
+              if (f.type === 'optin') {
+                return {
+                  type: "OptIn",
+                  props: {
+                    ...base,
+                    description: "I agree to receive updates"
+                  }
+                };
+              }
+
+              return {
+                type: f.type === 'textarea' ? 'TextArea' : 'TextInput',
+                props: base
+              };
+            })
+          }
+        });
+      }
+
+      children.push({
+        type: "Footer",
+        props: {
+          label: n.data.footerLabel || "Submit",
+          on_click_action: (() => {
+            const currentScreenPayload = n.data.fields?.reduce((acc, field) => {
+              const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+              acc[fieldName] = `\${form.${fieldName}}`;
+              return acc;
+            }, {}) || {};
+
+            // If there's branching (multiple choice handles) or target is an action node, use data_exchange
+            const isBranching = outgoingEdges.some(e => e.sourceHandle?.startsWith('choice_'));
+            const isActionTarget = targetNode?.type === 'action';
+
+            if (isBranching || isActionTarget) {
+              return {
+                name: "data_exchange",
+                payload: currentScreenPayload
+              };
+            }
+
+            if (submitEdge) {
+              const targetScreenId = targetNode?.data?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || targetNode?.id;
+              return {
+                name: "navigate",
+                next: {
+                  type: "screen",
+                  name: targetScreenId
+                },
+                payload: currentScreenPayload
+              };
+            }
+            return {
+              name: "complete",
+              payload: currentScreenPayload
+            };
+          })()
+        }
+      });
 
       return {
         id: screenId,
@@ -326,9 +322,7 @@ const DialogueFlowInner = () => {
         routing_config: {
           [(!isBranching && !isActionTarget && submitEdge) ? "next_screen" : "terminal_state"]: (!isBranching && !isActionTarget && submitEdge) ? {
             name: targetNode?.data?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || targetNode?.id
-          } : {
-            name: "SUCCESS"
-          }
+          } : "SUCCESS"
         }
       };
     });
@@ -514,13 +508,11 @@ const DialogueFlowInner = () => {
 
       showToast('Publishing to Meta...', 'info');
       
-      // If we have a flow object from the list, we might need to load its visualGraph to generate JSON
-      // But for simplicity, we'll assume the builder has the latest if no flow passed, 
-      // or we use the metaFlowDefinition if already generated.
-      // However, the current backend expects metaFlowDefinition in the body.
+      // Always generate fresh JSON from the current visual graph to ensure latest fixes
+      const freshMetaJSON = JSON.parse(generateMetaJSON());
       
       const payload = {
-        metaFlowDefinition: flowToPublish.metaFlowDefinition || JSON.parse(generateMetaJSON())
+        metaFlowDefinition: freshMetaJSON
       };
 
       const flowId = flowToPublish._id || flowToPublish.id;
