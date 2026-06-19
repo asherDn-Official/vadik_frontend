@@ -190,6 +190,59 @@ const DialogueFlowInner = () => {
     style: { stroke: '#CB376D', strokeWidth: 2 },
   };
 
+  const normalizeScreenId = (value) =>
+    (value || '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+  const getScreenNodeId = (node) => {
+    if (!node) return null;
+    return normalizeScreenId(node.data?.label) || normalizeScreenId(node.id);
+  };
+
+  const resolveNextScreenNode = (sourceNodeId, graphNodes, graphEdges, contextData = null, visited = new Set()) => {
+    if (!sourceNodeId || visited.has(sourceNodeId)) return null;
+    visited.add(sourceNodeId);
+
+    const outgoing = graphEdges.filter((edge) => edge.source === sourceNodeId);
+    if (outgoing.length === 0) return null;
+
+    const nextEdge =
+      outgoing.find((edge) => contextData && edge.data?.condition && evaluateCondition(edge.data.condition, contextData)) ||
+      outgoing.find((edge) => !edge.data?.condition) ||
+      outgoing[0];
+
+    const targetNode = graphNodes.find((node) => node.id === nextEdge.target);
+    if (!targetNode) return null;
+
+    if (targetNode.type === 'action') {
+      return resolveNextScreenNode(targetNode.id, graphNodes, graphEdges, contextData, visited);
+    }
+
+    return targetNode;
+  };
+
+  const buildRoutingModel = (graphNodes, graphEdges) => {
+    const routingModel = {};
+
+    graphNodes
+      .filter((node) => node.type === 'screen')
+      .forEach((node) => {
+        const screenId = getScreenNodeId(node);
+        const outgoing = graphEdges.filter((edge) => edge.source === node.id);
+        const targets = outgoing
+          .map((edge) => resolveNextScreenNode(edge.target, graphNodes, graphEdges))
+          .filter(Boolean)
+          .map((targetNode) => getScreenNodeId(targetNode))
+          .filter(Boolean);
+
+        routingModel[screenId] = [...new Set(targets)];
+      });
+
+    return routingModel;
+  };
+
   // Sync activePreviewScreen with selectedNode when tab changes to preview
   useEffect(() => {
     if (activeTab === 'preview' && selectedNode?.type === 'screen') {
@@ -201,22 +254,16 @@ const DialogueFlowInner = () => {
 
   const generateMetaJSON = () => {
     const screens = nodes.filter(n => n.type === 'screen').map(n => {
-      const screenId = n.data.label?.toUpperCase().replace(/[^A-Z0-9]+/g, '_') || n.id.toUpperCase();
+      const screenId = getScreenNodeId(n) || n.id.toUpperCase();
       const outgoingEdges = edges.filter(e => e.source === n.id);
-      const submitEdge = outgoingEdges.find(e => e.sourceHandle === 'submit' || !e.sourceHandle);
-      const targetNode = submitEdge ? nodes.find(node => node.id === submitEdge.target) : null;
-      
-      const isBranching = outgoingEdges.some(e => e.sourceHandle?.startsWith('choice_'));
-      const isActionTarget = targetNode?.type === 'action';
-      const isTerminal = !submitEdge && !isBranching && !isActionTarget;
-
-      const currentScreenPayload = n.data.fields?.reduce((acc, field) => {
-        const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-        acc[fieldName] = `\${form.${fieldName}}`;
-        return acc;
-      }, {}) || {};
+      const isTerminal = outgoingEdges.length === 0;
 
       const formName = `form_${screenId.toLowerCase()}`;
+      const currentScreenPayload = n.data.fields?.reduce((acc, field) => {
+        const fieldName = field.name || field.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        acc[fieldName] = `\${${formName}.${fieldName}}`;
+        return acc;
+      }, {}) || {};
 
       const children = [
         {
@@ -288,25 +335,14 @@ const DialogueFlowInner = () => {
       children.push({
         type: "Footer",
         label: n.data.footerLabel || "Submit",
-        on_click_action: (() => {
-          if (isBranching || isActionTarget) {
+        "on_click_action": (() => {
+          if (!isTerminal) {
             return {
               name: "data_exchange",
               payload: currentScreenPayload
             };
           }
 
-          if (submitEdge) {
-            const targetScreenId = targetNode?.data?.label?.toUpperCase().replace(/[^A-Z0-9]+/g, '_') || targetNode?.id.toUpperCase();
-            return {
-              name: "navigate",
-              next: {
-                type: "screen",
-                name: targetScreenId
-              },
-              payload: currentScreenPayload
-            };
-          }
           return {
             name: "complete",
             payload: currentScreenPayload
@@ -325,39 +361,10 @@ const DialogueFlowInner = () => {
       };
     });
 
-    const routingModel = {};
-    // Every screen node in the graph needs to be mapped to its reachable screen transitions
-    const getReachableScreens = (sourceNodeId, visited = new Set()) => {
-      if (visited.has(sourceNodeId)) return [];
-      visited.add(sourceNodeId);
-
-      const outgoing = edges.filter(e => e.source === sourceNodeId);
-      let reachable = [];
-
-      outgoing.forEach(edge => {
-        const targetNode = nodes.find(n => n.id === edge.target);
-        if (!targetNode) return;
-
-        if (targetNode.type === 'screen') {
-          reachable.push(targetNode.data.label?.toUpperCase().replace(/[^A-Z0-9]+/g, '_') || targetNode.id.toUpperCase());
-        } else if (targetNode.type === 'action') {
-          // Traverse through action nodes to find screens
-          reachable = [...reachable, ...getReachableScreens(targetNode.id, visited)];
-        }
-      });
-
-      return Array.from(new Set(reachable));
-    };
-
-    nodes.filter(node => node.type === 'screen').forEach(node => {
-      const sanitizedId = node.data.label?.toUpperCase().replace(/[^A-Z0-9]+/g, '_') || node.id.toUpperCase();
-      routingModel[sanitizedId] = getReachableScreens(node.id);
-    });
-
     return JSON.stringify({
       version: "7.3",
       data_api_version: "3.0",
-      routing_model: routingModel,
+      routing_model: buildRoutingModel(nodes, edges),
       screens: screens,
     }, null, 2);
   };
@@ -619,18 +626,21 @@ const DialogueFlowInner = () => {
     // 1. Check for choice-specific handle first (Direct Branching)
     const directEdge = outgoingEdges.find(e => e.sourceHandle === transitionHandle);
     
-    // 2. If no direct choice edge, check for conditional edges on 'submit'
-    let nextEdge = directEdge;
-    if (!nextEdge && transitionHandle === 'submit') {
-      nextEdge = outgoingEdges.find(e => e.sourceHandle === 'submit' && evaluateCondition(e.data?.condition, previewData));
-    }
-    
-    if (nextEdge) {
-      const nextNode = nodes.find(n => n.id === nextEdge.target);
+    if (directEdge) {
+      const nextNode = nodes.find(n => n.id === directEdge.target);
       executeNode(nextNode);
-    } else {
-      showToast('Flow ended or no matching transition found', 'info');
+      return;
     }
+
+    if (transitionHandle === 'submit') {
+      const nextNode = resolveNextScreenNode(activePreviewScreen.id, nodes, edges, previewData);
+      if (nextNode) {
+        executeNode(nextNode);
+        return;
+      }
+    }
+
+    showToast('Flow ended or no matching transition found', 'info');
   };
 
   const executeNode = async (node) => {
@@ -645,9 +655,8 @@ const DialogueFlowInner = () => {
       await new Promise(resolve => setTimeout(resolve, 800));
       
       // Find next node after action
-      const nextEdge = edges.find(e => e.source === node.id);
-      if (nextEdge) {
-        const nextNode = nodes.find(n => n.id === nextEdge.target);
+      const nextNode = resolveNextScreenNode(node.id, nodes, edges);
+      if (nextNode) {
         executeNode(nextNode);
       } else {
         showToast('Flow completed after action', 'success');
