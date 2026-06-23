@@ -288,79 +288,80 @@ const DialogueFlowInner = () => {
         }
       ];
 
+      const payloadRefs = {};
+      (n.data.fields || []).forEach(f => {
+        const fn = f.name || f.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        payloadRefs[fn] = `\${form.${fn}}`;
+      });
+
+      const footer = {
+        type: "Footer",
+        label: n.data.footerLabel || (isTerminal ? "Submit" : "Next"),
+        "on-click-action": isTerminal
+          ? { name: "complete", payload: payloadRefs }
+          : { name: "data_exchange", payload: payloadRefs }
+      };
+
       if (n.data.fields && n.data.fields.length > 0) {
         children.push({
           type: "Form",
           name: formName,
-          children: n.data.fields.map(f => {
-            const fieldName = f.name || f.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-            const base = {
-              name: fieldName,
-              label: f.label,
-              required: f.required !== false
-            };
-
-            if (f.type === 'radio' || f.type === 'select' || f.type === 'checkbox') {
-              const typeMap = {
-                radio: 'RadioButtonsGroup',
-                select: 'Dropdown',
-                checkbox: 'CheckboxGroup'
+          children: [
+            ...n.data.fields.map(f => {
+              const fieldName = f.name || f.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+              const base = {
+                name: fieldName,
+                label: f.label,
+                required: f.required !== false
               };
 
-              const options = (f.options || []).map((o, oIdx) => {
-                const optionId = o.value || o.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-                return {
-                  id: optionId,
-                  title: o.label
+              if (f.type === 'radio' || f.type === 'select' || f.type === 'checkbox') {
+                const typeMap = {
+                  radio: 'RadioButtonsGroup',
+                  select: 'Dropdown',
+                  checkbox: 'CheckboxGroup'
                 };
-              });
+
+                const options = (f.options || []).map((o) => {
+                  const optionId = o.value || o.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                  return {
+                    id: optionId,
+                    title: o.label
+                  };
+                });
+
+                return {
+                  type: typeMap[f.type],
+                  name: base.name,
+                  label: base.label,
+                  required: base.required,
+                  "data-source": options
+                };
+              }
+
+              if (f.type === 'optin') {
+                return {
+                  type: "OptIn",
+                  name: base.name,
+                  label: base.label,
+                  required: base.required,
+                  description: "I agree to receive updates"
+                };
+              }
 
               return {
-                type: typeMap[f.type],
+                type: f.type === 'textarea' ? 'TextArea' : 'TextInput',
                 name: base.name,
                 label: base.label,
-                required: base.required,
-                "data-source": options
+                required: base.required
               };
-            }
-
-            if (f.type === 'optin') {
-              return {
-                type: "OptIn",
-                name: base.name,
-                label: base.label,
-                required: base.required,
-                description: "I agree to receive updates"
-              };
-            }
-
-            return {
-              type: f.type === 'textarea' ? 'TextArea' : 'TextInput',
-              name: base.name,
-              label: base.label,
-              required: base.required
-            };
-          })
+            }),
+            footer
+          ]
         });
+      } else {
+        children.push(footer);
       }
-
-      children.push({
-        type: "Footer",
-        label: n.data.footerLabel || "Submit",
-        "on-click-action": (() => {
-          if (!isTerminal) {
-            return {
-              name: "data_exchange",
-              payload: {}
-            };
-          }
-
-          return {
-            name: "complete",
-            payload: {}
-          };
-        })()
-      });
 
       return {
         id: screenId,
