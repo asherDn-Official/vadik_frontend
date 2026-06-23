@@ -36,6 +36,9 @@ import FlowAnalytics from '../components/dialogueFlow/FlowAnalytics';
 import api from '../api/apiconfig';
 import showToast from '../utils/ToastNotification';
 import ComingSoon from '../components/common/ComingSoon';
+import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
+import Loader from '../utils/Loader';
 
 const nodeTypes = {
   screen: ScreenNode,
@@ -116,13 +119,31 @@ let id = 10;
 const getId = () => `node_${id++}`;
 
 const DialogueFlowInner = () => {
-  const userEmail = localStorage.getItem("email");
-  const isAuthorized = userEmail === "anbumanickam1972@gmail.com";
+  const { auth, loading: authLoading } = useAuth();
+  
+  // Check if WhatsApp is connected via embedded signup
+  const isWhatsAppConnected = auth?.data?.isUsingOwnWhatsapp;
 
-  if (!isAuthorized) {
+  if (authLoading) {
+    return <Loader fullHeight={true} text="Verifying access..." />;
+  }
+
+  if (!isWhatsAppConnected) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <ComingSoon />
+      <div className="flex flex-col items-center justify-center min-h-[500px] p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 m-6">
+        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6">
+          <MessageSquare className="text-green-500" size={40} />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-3">Connect Your WhatsApp Account</h2>
+        <p className="text-gray-500 max-w-md mb-8">
+          To build and publish interactive WhatsApp Flows, you need to connect your WhatsApp Business account using Meta's Embedded Signup.
+        </p>
+        <Link 
+          to="/integration" 
+          className="px-8 py-3 bg-[#CB376D] text-white font-bold rounded-xl hover:bg-[#b52d5e] transition-all flex items-center gap-2 shadow-lg shadow-[#CB376D]/20"
+        >
+          Go to Integrations <ChevronRight size={18} />
+        </Link>
       </div>
     );
   }
@@ -551,18 +572,29 @@ const DialogueFlowInner = () => {
       
       if (!flowToPublish) {
         // If coming from builder, save first
+        showToast('Saving flow before publishing...', 'info');
         flowToPublish = await saveFlow();
-        if (!flowToPublish?._id) return;
+        if (!flowToPublish?._id) {
+          console.error("❌ [publishFlow] Flow saving failed, cannot publish.");
+          return;
+        }
       }
 
       showToast('Publishing to Meta...', 'info');
       
-      let freshMetaJSON;
+      // Use the nodes and edges from the flow if provided, otherwise use current state
+      let nodesToUse, edgesToUse;
       if (flow && flow.visualGraph?.nodes?.length) {
-        freshMetaJSON = JSON.parse(generateMetaJSON(flow.visualGraph.nodes, flow.visualGraph.edges || []));
+        nodesToUse = flow.visualGraph.nodes;
+        edgesToUse = flow.visualGraph.edges || [];
       } else {
-        freshMetaJSON = JSON.parse(generateMetaJSON());
+        nodesToUse = nodes;
+        edgesToUse = edges;
       }
+
+      const freshMetaJSONStr = generateMetaJSON(nodesToUse, edgesToUse);
+      console.log("📤 [publishFlow] Generated Meta JSON:", freshMetaJSONStr);
+      const freshMetaJSON = JSON.parse(freshMetaJSONStr);
       
       const payload = {
         metaFlowDefinition: freshMetaJSON
@@ -574,12 +606,14 @@ const DialogueFlowInner = () => {
         return;
       }
 
+      console.log(`🚀 [publishFlow] Publishing flow ${flowId} to backend...`);
       const response = await api.post(`/api/whatsappFlow/${flowId}/publish`, payload);
       showToast(response.data?.message || 'Flow published successfully!', 'success');
       fetchFlows();
     } catch (error) {
       console.error('Error publishing flow:', error);
-      showToast(error.response?.data?.error || 'Failed to publish flow', 'error');
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to publish flow';
+      showToast(errorMsg, 'error');
     }
   };
 
@@ -741,11 +775,11 @@ const DialogueFlowInner = () => {
           <button onClick={() => setShowJsonPreview(true)} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
             <Code size={18} /> Preview JSON
           </button>
-          <button onClick={saveFlow} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-            <Save size={18} /> Save Draft
+          <button onClick={saveFlow} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+            <Save size={18} /> Save as Draft
           </button>
-          <button onClick={publishFlow} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#CB376D] rounded-lg hover:bg-[#b52d5e] transition-colors shadow-sm">
-            <Play size={18} /> Publish Flow
+          <button onClick={() => publishFlow()} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#CB376D] rounded-lg hover:bg-[#b52d5e] transition-colors shadow-sm">
+            <Play size={18} /> Publish to Meta
           </button>
         </div>
       </div>
@@ -761,15 +795,17 @@ const DialogueFlowInner = () => {
                 <Layout size={12} /> User Interface
               </div>
               <div 
-                className="group flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:border-[#CB376D] hover:bg-[#CB376D]/5 cursor-grab active:cursor-grabbing transition-all mb-2"
-                onDragStart={(event) => onDragStart(event, 'screen', { label: 'New Screen' })}
+                className="group flex flex-col p-3 border border-gray-100 rounded-xl hover:border-[#CB376D] hover:bg-[#CB376D]/5 cursor-grab active:cursor-grabbing transition-all mb-2"
+                onDragStart={(event) => onDragStart(event, 'screen', { label: 'New Screen', header: 'Welcome', body: 'Hello!' })}
                 draggable
               >
-                <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg group-hover:text-[#CB376D]">
-                  <Layout size={18} />
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg group-hover:text-[#CB376D]">
+                    <Layout size={18} />
+                  </div>
+                  <div className="flex-1 text-xs font-bold text-gray-700">Form Screen</div>
                 </div>
-                <div className="flex-1 text-xs font-bold text-gray-700">Form Screen</div>
-                <ChevronRight size={14} className="text-gray-300 group-hover:text-[#CB376D]" />
+                <p className="text-[9px] text-gray-400">A visual screen with header, body, and input fields for users to interact with.</p>
               </div>
             </div>
             <div>
@@ -777,34 +813,43 @@ const DialogueFlowInner = () => {
                 <Zap size={12} /> Automation Actions
               </div>
               <div 
-                className="group flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 cursor-grab active:cursor-grabbing transition-all mb-2"
+                className="group flex flex-col p-3 border border-gray-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 cursor-grab active:cursor-grabbing transition-all mb-2"
                 onDragStart={(event) => onDragStart(event, 'action', { actionType: 'database', label: 'Update Profile' })}
                 draggable
               >
-                <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-blue-500">
-                  <Database size={18} />
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-blue-500 group-hover:bg-blue-100 transition-colors">
+                    <Database size={18} />
+                  </div>
+                  <div className="flex-1 text-xs font-bold text-gray-700">Update DB</div>
                 </div>
-                <div className="flex-1 text-xs font-bold text-gray-700">Update DB</div>
+                <p className="text-[9px] text-gray-400">Silently save user data or update customer records in your database.</p>
               </div>
               <div 
-                className="group flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:border-amber-500 hover:bg-amber-50 cursor-grab active:cursor-grabbing transition-all mb-2"
+                className="group flex flex-col p-3 border border-gray-100 rounded-xl hover:border-amber-500 hover:bg-amber-50 cursor-grab active:cursor-grabbing transition-all mb-2"
                 onDragStart={(event) => onDragStart(event, 'action', { actionType: 'notification', label: 'Send Alert' })}
                 draggable
               >
-                <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-amber-500">
-                  <Bell size={18} />
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-amber-500 group-hover:bg-amber-100 transition-colors">
+                    <Bell size={18} />
+                  </div>
+                  <div className="flex-1 text-xs font-bold text-gray-700">Notification</div>
                 </div>
-                <div className="flex-1 text-xs font-bold text-gray-700">Notification</div>
+                <p className="text-[9px] text-gray-400">Trigger alerts to staff or customers when this point in the flow is reached.</p>
               </div>
               <div 
-                className="group flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:border-[#CB376D] hover:bg-[#CB376D]/5 cursor-grab active:cursor-grabbing transition-all mb-2"
+                className="group flex flex-col p-3 border border-gray-100 rounded-xl hover:border-[#CB376D] hover:bg-[#CB376D]/5 cursor-grab active:cursor-grabbing transition-all mb-2"
                 onDragStart={(event) => onDragStart(event, 'action', { actionType: 'data_exchange', label: 'Meta Data Exchange' })}
                 draggable
               >
-                <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-[#CB376D]">
-                  <MessageSquare size={18} />
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-[#CB376D] group-hover:bg-[#CB376D]/10 transition-colors">
+                    <MessageSquare size={18} />
+                  </div>
+                  <div className="flex-1 text-xs font-bold text-gray-700">Data Exchange</div>
                 </div>
-                <div className="flex-1 text-xs font-bold text-gray-700">Data Exchange</div>
+                <p className="text-[9px] text-gray-400">Advanced: Exchange data with your server using Meta's Data Exchange API.</p>
               </div>
             </div>
 
@@ -886,77 +931,111 @@ const DialogueFlowInner = () => {
               selectedNode ? (
                 <div className="p-6 space-y-6">
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Node Label</label>
-                    <input type="text" value={selectedNode.data.label || ''} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#CB376D]/20 focus:border-[#CB376D]" />
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase block">Node Label</label>
+                      <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">Internal ID</span>
+                    </div>
+                    <input type="text" placeholder="e.g. Welcome Screen" value={selectedNode.data.label || ''} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#CB376D]/20 focus:border-[#CB376D]" />
+                    <p className="text-[9px] text-gray-400 mt-1">This name is used to identify the screen in the flow builder and routing.</p>
                   </div>
 
                   {selectedNode.type === 'screen' && (
                     <div className="space-y-6">
                       <div className="pt-4 border-t border-gray-100 space-y-4">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase block">Screen Layout</label>
-                        <div>
-                          <label className="text-[11px] text-gray-500 mb-1 block">Header</label>
-                          <input type="text" value={selectedNode.data.header || ''} onChange={(e) => updateNodeData(selectedNode.id, { header: e.target.value })} className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs" />
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[10px] font-bold text-gray-400 uppercase block">Screen Layout</label>
+                          <span className="text-[9px] text-[#CB376D] font-medium">WhatsApp UI</span>
                         </div>
+                        
                         <div>
-                          <label className="text-[11px] text-gray-500 mb-1 block">Body</label>
-                          <textarea value={selectedNode.data.body || ''} onChange={(e) => updateNodeData(selectedNode.id, { body: e.target.value })} className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs h-20" />
+                          <label className="text-[11px] font-semibold text-gray-600 mb-1 block">Header Text</label>
+                          <input type="text" placeholder="e.g. Welcome to Vadik AI" value={selectedNode.data.header || ''} onChange={(e) => updateNodeData(selectedNode.id, { header: e.target.value })} className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-[#CB376D] outline-none" />
+                          <p className="text-[9px] text-gray-400 mt-1">Bold title shown at the top of the WhatsApp screen.</p>
                         </div>
+
                         <div>
-                          <label className="text-[11px] text-gray-500 mb-1 block">Button</label>
-                          <input type="text" value={selectedNode.data.footerLabel || ''} onChange={(e) => updateNodeData(selectedNode.id, { footerLabel: e.target.value })} className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs" />
+                          <label className="text-[11px] font-semibold text-gray-600 mb-1 block">Body Message</label>
+                          <textarea placeholder="e.g. Please let us know how we can help you today..." value={selectedNode.data.body || ''} onChange={(e) => updateNodeData(selectedNode.id, { body: e.target.value })} className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs h-20 focus:ring-1 focus:ring-[#CB376D] outline-none" />
+                          <p className="text-[9px] text-gray-400 mt-1">The main text content users will read on this screen.</p>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-600 mb-1 block">Footer Button Label</label>
+                          <input type="text" placeholder="e.g. Continue" value={selectedNode.data.footerLabel || ''} onChange={(e) => updateNodeData(selectedNode.id, { footerLabel: e.target.value })} className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-[#CB376D] outline-none" />
+                          <p className="text-[9px] text-gray-400 mt-1">Text shown on the primary action button at the bottom.</p>
                         </div>
                       </div>
 
                       <div className="pt-4 border-t border-gray-100">
                         <div className="flex items-center justify-between mb-3">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase">Input Fields</label>
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase block">Input Fields</label>
+                            <p className="text-[9px] text-gray-400">Add forms elements for users to fill.</p>
+                          </div>
                           <button 
                             onClick={() => updateNodeData(selectedNode.id, { fields: [...(selectedNode.data.fields || []), { id: Date.now(), type: 'text', label: 'New Field', name: `field_${Date.now()}`, options: [] }] })}
-                            className="text-[10px] font-bold text-[#CB376D]"
-                          >+ ADD</button>
+                            className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-white bg-[#CB376D] rounded hover:bg-[#b52d5e] transition-colors"
+                          >
+                            <Plus size={10} /> ADD FIELD
+                          </button>
                         </div>
                         <div className="space-y-4">
                           {(selectedNode.data.fields || []).map((field) => (
-                            <div key={field.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100 relative group">
-                              <button onClick={() => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.filter(f => f.id !== field.id) })} className="absolute -top-2 -right-2 p-1 bg-white border border-gray-200 rounded-full text-red-500"><X size={10} /></button>
-                              <div className="flex gap-2 mb-2">
-                                <select 
-                                  value={field.type}
-                                  onChange={(e) => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, type: e.target.value } : f) })}
-                                  className="text-[10px] bg-white border border-gray-200 px-1 py-0.5 rounded font-bold text-[#CB376D]"
-                                >
-                                  <option value="text">Text Input</option>
-                                  <option value="textarea">Multi-line</option>
-                                  <option value="select">Dropdown</option>
-                                  <option value="radio">Radio (Branching)</option>
-                                  <option value="checkbox">Checkbox Group</option>
-                                  <option value="optin">Opt-in Toggle</option>
-                                </select>
-                                <input 
-                                  placeholder="Variable Name"
-                                  type="text" 
-                                  value={field.name || ''} 
-                                  onChange={(e) => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, name: e.target.value } : f) })} 
-                                  className="flex-1 bg-white px-2 py-0.5 border border-gray-200 rounded text-[10px]" 
-                                />
-                              </div>
-                              <input placeholder="Display Label" type="text" value={field.label} onChange={(e) => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, label: e.target.value } : f) })} className="w-full bg-white px-2 py-1 border border-gray-200 rounded text-[11px]" />
+                            <div key={field.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100 relative group hover:border-[#CB376D]/30 transition-colors">
+                              <button onClick={() => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.filter(f => f.id !== field.id) })} className="absolute -top-2 -right-2 p-1 bg-white border border-gray-200 rounded-full text-red-500 shadow-sm hover:bg-red-50"><X size={10} /></button>
                               
-                              {['select', 'radio', 'checkbox'].includes(field.type) && (
-                                <div className="mt-2 space-y-1.5 border-t border-gray-200 pt-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase">Options (Branches)</span>
-                                    <button onClick={() => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: [...(f.options || []), { label: `Option ${(f.options?.length || 0) + 1}`, value: `val_${(f.options?.length || 0) + 1}` }] } : f) })} className="text-[9px] font-bold text-[#CB376D]">+ OPTION</button>
+                              <div className="space-y-3">
+                                <div className="flex gap-2">
+                                  <div className="flex-1">
+                                    <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">Field Type</label>
+                                    <select 
+                                      value={field.type}
+                                      onChange={(e) => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, type: e.target.value } : f) })}
+                                      className="w-full text-[10px] bg-white border border-gray-200 px-1 py-1 rounded font-bold text-[#CB376D] focus:ring-1 focus:ring-[#CB376D] outline-none"
+                                    >
+                                      <option value="text">Text Input (Short)</option>
+                                      <option value="textarea">Multi-line (Long)</option>
+                                      <option value="select">Dropdown List</option>
+                                      <option value="radio">Radio Buttons (Branching)</option>
+                                      <option value="checkbox">Checkbox Group</option>
+                                      <option value="optin">Opt-in Toggle</option>
+                                    </select>
                                   </div>
-                                  {(field.options || []).map((opt, oIdx) => (
-                                    <div key={oIdx} className="flex items-center gap-1">
-                                      <input type="text" value={opt.label} onChange={(e) => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: f.options.map((o, i) => i === oIdx ? { ...o, label: e.target.value, value: e.target.value.toLowerCase().replace(/\s+/g, '_') } : o) } : f) })} className="flex-1 px-2 py-0.5 border border-gray-100 rounded text-[10px]" />
-                                      <button onClick={() => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: f.options.filter((_, i) => i !== oIdx) } : f) })} className="text-red-400"><X size={10} /></button>
-                                    </div>
-                                  ))}
+                                  <div className="flex-1">
+                                    <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">Variable Name</label>
+                                    <input 
+                                      placeholder="e.g. user_name"
+                                      type="text" 
+                                      value={field.name || ''} 
+                                      onChange={(e) => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, name: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') } : f) })} 
+                                      className="w-full bg-white px-2 py-1 border border-gray-200 rounded text-[10px] focus:ring-1 focus:ring-[#CB376D] outline-none" 
+                                    />
+                                  </div>
                                 </div>
-                              )}
+
+                                <div>
+                                  <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">Display Label</label>
+                                  <input placeholder="e.g. What is your name?" type="text" value={field.label} onChange={(e) => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, label: e.target.value } : f) })} className="w-full bg-white px-2 py-1.5 border border-gray-200 rounded text-[11px] focus:ring-1 focus:ring-[#CB376D] outline-none" />
+                                </div>
+                                
+                                {['select', 'radio', 'checkbox'].includes(field.type) && (
+                                  <div className="mt-2 space-y-2 border-t border-gray-200 pt-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[9px] font-bold text-gray-400 uppercase">Options (Branches)</span>
+                                      <button onClick={() => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: [...(f.options || []), { label: `Option ${(f.options?.length || 0) + 1}`, value: `val_${(f.options?.length || 0) + 1}` }] } : f) })} className="text-[9px] font-bold text-[#CB376D] hover:underline">+ OPTION</button>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-1.5">
+                                      {(field.options || []).map((opt, oIdx) => (
+                                        <div key={oIdx} className="flex items-center gap-1 group/opt">
+                                          <input type="text" placeholder="Option Label" value={opt.label} onChange={(e) => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: f.options.map((o, i) => i === oIdx ? { ...o, label: e.target.value, value: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') } : o) } : f) })} className="flex-1 px-2 py-1 border border-gray-100 rounded text-[10px] focus:border-[#CB376D] outline-none" />
+                                          <button onClick={() => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: f.options.filter((_, i) => i !== oIdx) } : f) })} className="text-gray-300 hover:text-red-400 transition-colors"><X size={10} /></button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    {field.type === 'radio' && <p className="text-[8px] text-gray-400 italic">Radio options create branches you can connect to other screens.</p>}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -968,32 +1047,50 @@ const DialogueFlowInner = () => {
                     <div className="pt-4 border-t border-gray-100 space-y-4">
                       <div>
                         <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Action Type</label>
-                        <select value={selectedNode.data.actionType || 'database'} onChange={(e) => updateNodeData(selectedNode.id, { actionType: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
+                        <select value={selectedNode.data.actionType || 'database'} onChange={(e) => updateNodeData(selectedNode.id, { actionType: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 outline-none">
                           <option value="database">Update Database</option>
                           <option value="notification">Send Notification</option>
                           <option value="loyalty">Award Loyalty</option>
                           <option value="data_exchange">Meta Data Exchange</option>
                           <option value="api">External API Call</option>
                         </select>
+                        <p className="text-[9px] text-gray-400 mt-1">Actions are performed automatically when the flow reaches this point.</p>
                       </div>
                       {selectedNode.data.actionType === 'api' && (
-                        <div className="space-y-3">
+                        <div className="space-y-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
                            <div>
-                            <label className="text-[11px] text-gray-500 mb-1 block">URL</label>
-                            <input type="text" placeholder="https://api.example.com/hook" value={selectedNode.data.apiUrl || ''} onChange={(e) => updateNodeData(selectedNode.id, { apiUrl: e.target.value })} className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs" />
+                            <label className="text-[11px] font-semibold text-gray-600 mb-1 block">API Endpoint URL</label>
+                            <input type="text" placeholder="https://api.example.com/hook" value={selectedNode.data.apiUrl || ''} onChange={(e) => updateNodeData(selectedNode.id, { apiUrl: e.target.value })} className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" />
                           </div>
                           <div>
-                            <label className="text-[11px] text-gray-500 mb-1 block">Method</label>
-                            <select value={selectedNode.data.apiMethod || 'POST'} onChange={(e) => updateNodeData(selectedNode.id, { apiMethod: e.target.value })} className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs">
+                            <label className="text-[11px] font-semibold text-gray-600 mb-1 block">HTTP Method</label>
+                            <select value={selectedNode.data.apiMethod || 'POST'} onChange={(e) => updateNodeData(selectedNode.id, { apiMethod: e.target.value })} className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none">
                               <option value="GET">GET</option>
                               <option value="POST">POST</option>
+                              <option value="PUT">PUT</option>
                             </select>
                           </div>
+                          <p className="text-[8px] text-blue-400 italic">Vadik will send current user data as a JSON payload to this endpoint.</p>
                         </div>
                       )}
                     </div>
                   )}
-                  <button onClick={() => { setNodes(nds => nds.filter(n => n.id !== selectedNode.id)); setSelectedNode(null); }} className="w-full py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg mt-6 border border-red-100">Delete Node</button>
+
+                  <div className="pt-6 border-t border-gray-100">
+                    <button 
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to delete this node? All its connections will also be removed.')) {
+                          setNodes((nds) => nds.filter((n) => n.id !== selectedNode.id));
+                          setEdges((eds) => eds.filter((e) => e.source !== selectedNode.id && e.target !== selectedNode.id));
+                          setSelectedNode(null);
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-red-500 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-colors"
+                    >
+                      <X size={14} /> DELETE NODE
+                    </button>
+                    <p className="text-[9px] text-gray-400 mt-2 text-center">Removing this node will also delete its incoming and outgoing connections.</p>
+                  </div>
                 </div>
               ) : selectedEdge ? (
                 <div className="p-6 space-y-6">
