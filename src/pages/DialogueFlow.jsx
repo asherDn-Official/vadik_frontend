@@ -374,12 +374,14 @@ const DialogueFlowInner = () => {
       };
     });
 
-    return JSON.stringify({
+    const finalJson = {
       version: "7.3",
       data_api_version: "3.0",
       routing_model: buildRoutingModel(nodes, edges),
       screens: screens,
-    }, null, 2);
+    };
+    console.log("📋 [generateMetaJSON] Generated flow JSON:", JSON.stringify(finalJson, null, 2));
+    return JSON.stringify(finalJson, null, 2);
   };
 
   const onConnect = useCallback(
