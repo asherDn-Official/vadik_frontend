@@ -15,6 +15,24 @@ import {
 import api from '../../api/apiconfig';
 import showToast from '../../utils/ToastNotification';
 
+const getSubmissionFields = (sub) => {
+  const primaryData = sub?.payloadData && Object.keys(sub.payloadData || {}).length > 0
+    ? sub.payloadData
+    : sub?.responses && Object.keys(sub.responses || {}).length > 0
+      ? sub.responses
+      : sub?.rawPayload?.data && Object.keys(sub.rawPayload.data || {}).length > 0
+        ? sub.rawPayload.data
+        : {};
+
+  const filtered = { ...primaryData };
+  delete filtered.flow_token;
+  delete filtered.status;
+  delete filtered.action;
+  delete filtered.screen;
+
+  return filtered;
+};
+
 const FlowAnalytics = ({ flow, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
@@ -68,18 +86,19 @@ const FlowAnalytics = ({ flow, onBack }) => {
     // Get all unique keys from all submissions to build headers
     const allKeys = new Set();
     data.submissions.forEach(sub => {
-      Object.keys(sub.responses || {}).forEach(key => allKeys.add(key));
+      Object.keys(getSubmissionFields(sub)).forEach(key => allKeys.add(key));
     });
     
     const headers = ['Date', 'Customer', 'Phone', ...Array.from(allKeys)];
     const csvRows = [headers.join(',')];
     
     data.submissions.forEach(sub => {
+      const submissionFields = getSubmissionFields(sub);
       const row = [
         new Date(sub.timestamp).toLocaleString(),
         `"${sub.customerId?.firstname || ''} ${sub.customerId?.lastname || ''}"`,
         sub.customerPhone,
-        ...Array.from(allKeys).map(key => `"${sub.responses?.[key] || ''}"`)
+        ...Array.from(allKeys).map(key => `"${submissionFields?.[key] || ''}"`)
       ];
       csvRows.push(row.join(','));
     });
@@ -239,18 +258,36 @@ const FlowAnalytics = ({ flow, onBack }) => {
                                   <Phone size={10} />
                                   {sub.customerPhone}
                                 </div>
+                                {sub.triggerMessage?.content && (
+                                  <div className="mt-1 text-[10px] text-gray-500">
+                                    Reply: <span className="font-medium text-gray-700">{sub.triggerMessage.content}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="flex flex-wrap gap-2">
-                              {Object.entries(sub.responses || {}).map(([key, val], i) => (
-                                <div key={i} className="px-2 py-1 bg-gray-50 rounded border border-gray-100 text-[10px]">
-                                  <span className="text-gray-400 font-medium mr-1">{key.replace(/_/g, ' ')}:</span>
-                                  <span className="text-gray-700 font-bold">{String(val)}</span>
-                                </div>
-                              ))}
-                            </div>
+                            {Object.keys(getSubmissionFields(sub)).length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {Object.entries(getSubmissionFields(sub)).map(([key, val], i) => (
+                                  <div key={i} className="px-2 py-1 bg-gray-50 rounded border border-gray-100 text-[10px]">
+                                    <span className="text-gray-400 font-medium mr-1">{key.replace(/_/g, ' ')}:</span>
+                                    <span className="text-gray-700 font-bold">{String(val)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="space-y-1 text-[10px] text-gray-500">
+                                <div className="font-semibold text-gray-700">No form fields captured</div>
+                                <div>Flow token only: {sub.flowToken || sub.responses?.flow_token || 'n/a'}</div>
+                                {(sub.screen || sub.rawPayload?.screen) && (
+                                  <div>Screen: {sub.screen || sub.rawPayload?.screen}</div>
+                                )}
+                                {(sub.action || sub.rawPayload?.action) && (
+                                  <div>Action: {sub.action || sub.rawPayload?.action}</div>
+                                )}
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <div className="text-[10px] font-medium text-gray-500 flex items-center gap-1">
