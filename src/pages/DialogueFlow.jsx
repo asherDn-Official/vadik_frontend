@@ -270,10 +270,12 @@ const DialogueFlowInner = () => {
     }
   }, [activeTab, selectedNode, nodes]);
 
-  const generateMetaJSON = () => {
-    const screens = nodes.filter(n => n.type === 'screen').map(n => {
+  const generateMetaJSON = (sourceNodes = null, sourceEdges = null) => {
+    const graphNodes = sourceNodes || nodes;
+    const graphEdges = sourceEdges || edges;
+    const screens = graphNodes.filter(n => n.type === 'screen').map(n => {
       const screenId = getScreenNodeId(n) || n.id.toUpperCase();
-      const outgoingEdges = edges.filter(e => e.source === n.id);
+      const outgoingEdges = graphEdges.filter(e => e.source === n.id);
       const isTerminal = outgoingEdges.length === 0;
 
       const formName = `form_${screenId.toLowerCase()}`;
@@ -377,7 +379,7 @@ const DialogueFlowInner = () => {
     const finalJson = {
       version: "7.3",
       data_api_version: "3.0",
-      routing_model: buildRoutingModel(nodes, edges),
+      routing_model: buildRoutingModel(graphNodes, graphEdges),
       screens: screens,
     };
     console.log("📋 [generateMetaJSON] Generated flow JSON:", JSON.stringify(finalJson, null, 2));
@@ -555,8 +557,12 @@ const DialogueFlowInner = () => {
 
       showToast('Publishing to Meta...', 'info');
       
-      // Always generate fresh JSON from the current visual graph to ensure latest fixes
-      const freshMetaJSON = JSON.parse(generateMetaJSON());
+      let freshMetaJSON;
+      if (flow && flow.visualGraph?.nodes?.length) {
+        freshMetaJSON = JSON.parse(generateMetaJSON(flow.visualGraph.nodes, flow.visualGraph.edges || []));
+      } else {
+        freshMetaJSON = JSON.parse(generateMetaJSON());
+      }
       
       const payload = {
         metaFlowDefinition: freshMetaJSON
@@ -569,7 +575,7 @@ const DialogueFlowInner = () => {
       }
 
       const response = await api.post(`/api/whatsappFlow/${flowId}/publish`, payload);
-      showToast('Flow published successfully!', 'success');
+      showToast(response.data?.message || 'Flow published successfully!', 'success');
       fetchFlows();
     } catch (error) {
       console.error('Error publishing flow:', error);
