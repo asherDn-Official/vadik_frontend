@@ -87,6 +87,7 @@ const SendCampaign = () => {
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [excludePreviousReceivers, setExcludePreviousReceivers] = useState(false);
+  const [excludePreviousDelivered, setExcludePreviousDelivered] = useState(false);
   const [excludePreviousReaders, setExcludePreviousReaders] = useState(false);
   const [selectionProgress, setSelectionProgress] = useState({ current: 0, total: 0, isSelecting: false });
   const [selectAllMatchingMode, setSelectAllMatchingMode] = useState(false);
@@ -123,7 +124,7 @@ const SendCampaign = () => {
     if (view === "wizard" && currentStep === 3) {
       fetchCustomers();
     }
-  }, [currentPage, filters, pageSize, currentStep, view, excludePreviousReceivers, excludePreviousReaders]);
+  }, [currentPage, filters, pageSize, currentStep, view, excludePreviousReceivers, excludePreviousDelivered, excludePreviousReaders]);
 
   useEffect(() => {
     setAppliedFiltersCount(countAppliedFilters(filters));
@@ -226,7 +227,8 @@ const SendCampaign = () => {
             quarter: filters.periodValue,
           }),
         excludeTemplateId: campaignData.template?._id,
-        excludeStatus: excludePreviousReaders ? "read" : excludePreviousReceivers ? "sent" : undefined
+        excludeFlowId: campaignData.flow?._id,
+        excludeStatus: excludePreviousReaders ? "read" : excludePreviousDelivered ? "delivered" : excludePreviousReceivers ? "sent" : undefined
       };
 
       Object.keys(payload).forEach((key) => {
@@ -270,6 +272,7 @@ const SendCampaign = () => {
     });
     setIsScheduling(false);
     setExcludePreviousReceivers(false);
+    setExcludePreviousDelivered(false);
     setExcludePreviousReaders(false);
     setScheduleDate("");
     setScheduleTime("");
@@ -424,7 +427,8 @@ const SendCampaign = () => {
               quarter: filters.periodValue,
             }),
           excludeTemplateId: campaignData.template?._id,
-          excludeStatus: excludePreviousReaders ? "read" : excludePreviousReceivers ? "sent" : undefined
+          excludeFlowId: campaignData.flow?._id,
+          excludeStatus: excludePreviousReaders ? "read" : excludePreviousDelivered ? "delivered" : excludePreviousReceivers ? "sent" : undefined
         };
 
         const response = await api.post("/api/personilizationInsights", payload);
@@ -599,7 +603,8 @@ const SendCampaign = () => {
         payload.search = filters.firstname || filters.mobileNumber;
         payload.dateRangeFieldKey = "firstVisit";
         payload.excludeTemplateId = campaignData.template?._id;
-        payload.excludeStatus = excludePreviousReaders ? "read" : excludePreviousReceivers ? "sent" : undefined;
+        payload.excludeFlowId = campaignData.flow?._id;
+        payload.excludeStatus = excludePreviousReaders ? "read" : excludePreviousDelivered ? "delivered" : excludePreviousReceivers ? "sent" : undefined;
         if (selectedPeriod === "Yearly" && filters.periodValue) payload.year = parseInt(filters.periodValue);
         // Add other period filters as needed
       } else {
@@ -1031,6 +1036,19 @@ const SendCampaign = () => {
                             className="w-4 h-4 rounded border-gray-300 text-[#313166] focus:ring-[#313166]/20"
                           />
                           <span className="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 transition-colors uppercase tracking-wider">Exclude Sent</span>
+                        </label>
+                        <div className="w-px h-4 bg-gray-200"></div>
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input 
+                            type="checkbox" 
+                            checked={excludePreviousDelivered}
+                            onChange={(e) => {
+                              setExcludePreviousDelivered(e.target.checked);
+                              setCurrentPage(1);
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-[#313166] focus:ring-[#313166]/20"
+                          />
+                          <span className="text-[10px] font-bold text-gray-600 group-hover:text-gray-900 transition-colors uppercase tracking-wider">Exclude Delivered</span>
                         </label>
                         <div className="w-px h-4 bg-gray-200"></div>
                         <label className="flex items-center gap-2 cursor-pointer group">
