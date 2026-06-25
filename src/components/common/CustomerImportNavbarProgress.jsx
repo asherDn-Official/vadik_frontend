@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCustomerImport } from '../../context/CustomerImportContext';
-import { FiUploadCloud } from 'react-icons/fi';
+import { FiUploadCloud, FiX } from 'react-icons/fi';
 
 const CustomerImportNavbarProgress = () => {
   const { activeJobs } = useCustomerImport();
+  const [isDismissed, setIsDismissed] = useState(false);
 
-  if (!activeJobs || activeJobs.length === 0) return null;
+  if (!activeJobs || activeJobs.length === 0 || isDismissed) return null;
 
   const job = activeJobs[0]; // Show most recent active job
   let progress = 0;
@@ -38,6 +39,12 @@ const CustomerImportNavbarProgress = () => {
         <span className="text-[10px] font-medium text-gray-500 line-clamp-1 max-w-[80px]">{job.fileName}</span>
         <span className="text-[9px] text-blue-500 font-bold">{job.successCount} created</span>
       </div>
+      <button 
+        onClick={() => setIsDismissed(true)}
+        className="p-1 hover:bg-blue-100 rounded-full text-blue-400 hover:text-blue-600 transition-colors"
+      >
+        <FiX size={14} />
+      </button>
     </div>
   );
 };
