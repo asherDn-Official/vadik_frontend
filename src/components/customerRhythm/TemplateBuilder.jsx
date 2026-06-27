@@ -616,6 +616,17 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
                         <div className="space-y-4">
                           <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Header {comp.format}</label>
                           
+                          <div className="flex gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-blue-900">
+                            <Info size={18} className="mt-0.5 shrink-0 text-blue-600" />
+                            <div className="space-y-1">
+                              <p className="font-semibold">Reusable media guidance</p>
+                              <p className="text-xs leading-5 text-blue-800">
+                                For reusable media verification, use an image or video header. Vadik stores the uploaded file and
+                                uploads it again when you send the campaign later, so the same approved media can be reused.
+                              </p>
+                            </div>
+                          </div>
+                          
                           <div className="flex flex-col gap-3">
                             <div className="flex items-center gap-3">
                               <input
