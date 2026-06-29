@@ -156,8 +156,9 @@ const DialogueFlowInner = () => {
   const [selectedEdge, setSelectedEdge] = useState(null);
   const [showJsonPreview, setShowJsonPreview] = useState(false);
   const [activeTab, setActiveTab] = useState('properties'); // 'properties' or 'preview'
-  const [activePreviewScreen, setActivePreviewScreen] = useState(null);
+  const [activePreviewScreenId, setActivePreviewScreenId] = useState(null);
   const [previewData, setPreviewData] = useState({});
+  const activePreviewScreen = nodes.find(n => n.id === activePreviewScreenId) || null;
   
   const [view, setView] = useState('list'); // 'list', 'builder', or 'analytics'
   const [flows, setFlows] = useState([]);
@@ -165,6 +166,9 @@ const DialogueFlowInner = () => {
   const [flowsLoading, setFlowsLoading] = useState(true);
   const [defaultFlowId, setDefaultFlowId] = useState(null);
   const [selectedFlowForAnalytics, setSelectedFlowForAnalytics] = useState(null);
+  const [validationErrors, setValidationErrors] = useState([]);
+  const [validationWarnings, setValidationWarnings] = useState([]);
+  const [showValidationModal, setShowValidationModal] = useState(false);
 
   const fetchFlows = useCallback(async () => {
     try {
@@ -282,14 +286,15 @@ const DialogueFlowInner = () => {
     return routingModel;
   };
 
-  // Sync activePreviewScreen with selectedNode when tab changes to preview
   useEffect(() => {
-    if (activeTab === 'preview' && selectedNode?.type === 'screen') {
-      setActivePreviewScreen(selectedNode);
-    } else if (activeTab === 'preview' && !activePreviewScreen) {
-       setActivePreviewScreen(nodes.find(n => n.type === 'screen'));
+    if (activeTab !== 'preview') return;
+    if (selectedNode?.type === 'screen') {
+      setActivePreviewScreenId(selectedNode.id);
+    } else if (!activePreviewScreenId) {
+      const firstScreen = nodes.find(n => n.type === 'screen');
+      if (firstScreen) setActivePreviewScreenId(firstScreen.id);
     }
-  }, [activeTab, selectedNode, nodes]);
+  }, [activeTab, selectedNode, activePreviewScreenId, nodes]);
 
   const generateMetaJSON = (sourceNodes = null, sourceEdges = null) => {
     const graphNodes = sourceNodes || nodes;
@@ -566,12 +571,97 @@ const DialogueFlowInner = () => {
     setView('analytics');
   };
 
+  const validateFlowJSON = (sourceNodes = null, sourceEdges = null) => {
+    const graphNodes = sourceNodes || nodes;
+    const graphEdges = sourceEdges || edges;
+    const errors = [];
+    const warnings = [];
+
+    const screenNodes = graphNodes.filter(n => n.type === 'screen');
+
+    if (screenNodes.length === 0) {
+      errors.push('Flow has no screens. Add at least one Screen node.');
+      return { errors, warnings, isValid: false };
+    }
+
+    const idMap = {};
+    screenNodes.forEach(n => {
+      const screenId = getScreenNodeId(n) || '';
+      if (!screenId) {
+        errors.push(`A screen is missing a name. All screens must have a unique, non-empty name.`);
+        return;
+      }
+      if (!idMap[screenId]) idMap[screenId] = [];
+      idMap[screenId].push(n.data.label || n.id);
+    });
+
+    Object.entries(idMap).forEach(([id, labels]) => {
+      if (labels.length > 1) {
+        errors.push(
+          `Duplicate screen name detected: "${labels[0]}" — ${labels.length} screens resolve to the same ID "${id}". Each screen must have a unique name. Same node names are not allowed for multiple screens.`
+        );
+      }
+    });
+
+    screenNodes.forEach(n => {
+      const fieldNames = [];
+      (n.data.fields || []).forEach(f => {
+        const name = (f.name || '').trim() || (f.label || '').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        if (!name) {
+          errors.push(`Screen "${n.data.label}": A field is missing both a variable name and a label.`);
+          return;
+        }
+        if (fieldNames.includes(name)) {
+          errors.push(`Screen "${n.data.label}": Duplicate field variable name "${name}". Each field on a screen must have a unique variable name.`);
+        } else {
+          fieldNames.push(name);
+        }
+      });
+
+      const outgoing = graphEdges.filter(e => e.source === n.id);
+      if (outgoing.length === 0) {
+        warnings.push(`Screen "${n.data.label || n.id}" has no outgoing connections — it will be treated as a terminal (end) screen.`);
+      }
+
+      const radioFields = (n.data.fields || []).filter(f => f.type === 'radio');
+      radioFields.forEach(f => {
+        (f.options || []).forEach((opt, oIdx) => {
+          const handle = `choice_${f.id}_${oIdx}`;
+          const hasEdge = graphEdges.some(e => e.source === n.id && e.sourceHandle === handle);
+          if (!hasEdge) {
+            warnings.push(`Screen "${n.data.label}": Radio option "${opt.label}" (field "${f.label}") has no outgoing branch connection.`);
+          }
+        });
+      });
+    });
+
+    const allEdgeTargets = graphEdges.map(e => e.target);
+    const firstScreen = screenNodes[0];
+    screenNodes.forEach(n => {
+      if (n.id !== firstScreen?.id && !allEdgeTargets.includes(n.id)) {
+        warnings.push(`Screen "${n.data.label || n.id}" is unreachable — no connections lead to it.`);
+      }
+    });
+
+    return { errors, warnings, isValid: errors.length === 0 };
+  };
+
   const publishFlow = async (flow = null) => {
+    const nodesToValidate = flow?.visualGraph?.nodes || nodes;
+    const edgesToValidate = flow?.visualGraph?.edges || edges;
+    const validation = validateFlowJSON(nodesToValidate, edgesToValidate);
+
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      setValidationWarnings(validation.warnings);
+      setShowValidationModal(true);
+      return;
+    }
+
     try {
       let flowToPublish = flow;
       
       if (!flowToPublish) {
-        // If coming from builder, save first
         showToast('Saving flow before publishing...', 'info');
         flowToPublish = await saveFlow();
         if (!flowToPublish?._id) {
@@ -669,40 +759,52 @@ const DialogueFlowInner = () => {
     }
   };
 
-  const handlePreviewSubmit = (choiceId = null) => {
+  const handlePreviewSubmit = () => {
     if (!activePreviewScreen) return;
 
-    // Determine the relevant handle
-    const transitionHandle = choiceId || 'submit';
-    
-    // Find all outgoing edges
     const outgoingEdges = edges.filter(e => e.source === activePreviewScreen.id);
-    
-    // 1. Check for choice-specific handle first (Direct Branching)
-    const directEdge = outgoingEdges.find(e => e.sourceHandle === transitionHandle);
-    
-    if (directEdge) {
-      const nextNode = nodes.find(n => n.id === directEdge.target);
+
+    const radioFields = (activePreviewScreen.data.fields || []).filter(f => f.type === 'radio');
+    for (const f of radioFields) {
+      const selectedValue = previewData[f.name];
+      if (selectedValue !== undefined && selectedValue !== '') {
+        const optIdx = (f.options || []).findIndex(o => o.value === selectedValue);
+        if (optIdx !== -1) {
+          const choiceHandle = `choice_${f.id}_${optIdx}`;
+          const directEdge = outgoingEdges.find(e => e.sourceHandle === choiceHandle);
+          if (directEdge) {
+            const nextNode = nodes.find(n => n.id === directEdge.target);
+            setPreviewData({});
+            executeNode(nextNode);
+            return;
+          }
+        }
+      }
+    }
+
+    const submitEdge = outgoingEdges.find(e => e.sourceHandle === 'submit');
+    if (submitEdge) {
+      const nextNode = nodes.find(n => n.id === submitEdge.target);
+      setPreviewData({});
       executeNode(nextNode);
       return;
     }
 
-    if (transitionHandle === 'submit') {
-      const nextNode = resolveNextScreenNode(activePreviewScreen.id, nodes, edges, previewData);
-      if (nextNode) {
-        executeNode(nextNode);
-        return;
-      }
+    const nextNode = resolveNextScreenNode(activePreviewScreen.id, nodes, edges, previewData);
+    if (nextNode) {
+      setPreviewData({});
+      executeNode(nextNode);
+      return;
     }
 
-    showToast('Flow ended or no matching transition found', 'info');
+    showToast('Flow completed', 'success');
   };
 
   const executeNode = async (node) => {
     if (!node) return;
 
     if (node.type === 'screen') {
-      setActivePreviewScreen(node);
+      setActivePreviewScreenId(node.id);
     } else if (node.type === 'action') {
       showToast(`Executing: ${node.data.label}`, 'info');
       
@@ -772,6 +874,17 @@ const DialogueFlowInner = () => {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              const result = validateFlowJSON();
+              setValidationErrors(result.errors);
+              setValidationWarnings(result.warnings);
+              setShowValidationModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            <Tag size={18} /> Validate Flow
+          </button>
           <button onClick={() => setShowJsonPreview(true)} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
             <Code size={18} /> Preview JSON
           </button>
@@ -1174,7 +1287,7 @@ const DialogueFlowInner = () => {
               <div className="p-6 h-full flex flex-col items-center">
                 <div className="mb-4 flex items-center justify-between w-full">
                   <span className="text-[10px] font-bold text-gray-400 uppercase">Live Simulation</span>
-                  <button onClick={() => setActivePreviewScreen(nodes.find(n => n.type === 'screen'))} className="text-[10px] font-bold text-[#CB376D] hover:underline">Reset Flow</button>
+                  <button onClick={() => { setActivePreviewScreenId(nodes.find(n => n.type === 'screen')?.id || null); setPreviewData({}); }} className="text-[10px] font-bold text-[#CB376D] hover:underline">Reset Flow</button>
                 </div>
                 {activePreviewScreen ? (
                   <div className="w-full max-w-[260px] aspect-[9/18] bg-gray-900 rounded-[3rem] border-[6px] border-gray-800 shadow-2xl relative overflow-hidden flex flex-col">
@@ -1197,7 +1310,6 @@ const DialogueFlowInner = () => {
                                       key={oIdx} 
                                       onClick={() => {
                                         setPreviewData(prev => ({ ...prev, [f.name]: opt.value }));
-                                        handlePreviewSubmit(`choice_${f.id}_${oIdx}`);
                                       }} 
                                       className={`w-full text-left px-3 py-1.5 border rounded text-[10px] transition-colors ${previewData[f.name] === opt.value ? 'bg-[#CB376D] text-white border-[#CB376D]' : 'bg-white text-gray-600 border-gray-200 hover:bg-[#CB376D]/5 hover:border-[#CB376D]'}`}
                                     >
@@ -1246,6 +1358,89 @@ const DialogueFlowInner = () => {
             <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
               <button onClick={() => { navigator.clipboard.writeText(generateMetaJSON()); showToast('JSON copied!', 'success'); }} className="px-6 py-2 text-sm font-bold text-[#CB376D] border border-[#CB376D] rounded-lg">Copy JSON</button>
               <button onClick={() => setShowJsonPreview(false)} className="px-6 py-2 text-sm font-bold text-white bg-[#CB376D] rounded-lg shadow-sm">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showValidationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh]">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                {validationErrors.length > 0 ? (
+                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                    <X size={16} className="text-red-600" />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                    <Bell size={16} className="text-amber-600" />
+                  </div>
+                )}
+                <h3 className="text-lg font-bold text-gray-800">
+                  {validationErrors.length > 0 ? 'Flow Has Errors — Cannot Publish' : 'Flow Warnings'}
+                </h3>
+              </div>
+              <button onClick={() => setShowValidationModal(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto p-6 space-y-4">
+              {validationErrors.length === 0 && validationWarnings.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                    <Play size={24} className="text-green-600" />
+                  </div>
+                  <p className="text-sm font-bold text-green-700">Flow looks good!</p>
+                  <p className="text-xs text-gray-500 mt-1">No errors or warnings detected. You can publish this flow.</p>
+                </div>
+              )}
+
+              {validationErrors.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-red-600 uppercase tracking-widest mb-3">
+                    {validationErrors.length} Error{validationErrors.length !== 1 ? 's' : ''} — Fix these before publishing
+                  </p>
+                  <div className="space-y-2">
+                    {validationErrors.map((err, i) => (
+                      <div key={i} className="flex gap-3 p-3 bg-red-50 border border-red-100 rounded-xl">
+                        <div className="mt-0.5 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                          <X size={10} className="text-white" />
+                        </div>
+                        <p className="text-xs text-red-700 leading-relaxed">{err}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {validationWarnings.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-3">
+                    {validationWarnings.length} Warning{validationWarnings.length !== 1 ? 's' : ''}
+                  </p>
+                  <div className="space-y-2">
+                    {validationWarnings.map((warn, i) => (
+                      <div key={i} className="flex gap-3 p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                        <div className="mt-0.5 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center flex-shrink-0">
+                          <span className="text-white text-[9px] font-bold">!</span>
+                        </div>
+                        <p className="text-xs text-amber-700 leading-relaxed">{warn}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setShowValidationModal(false)}
+                className="px-6 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                {validationErrors.length > 0 ? 'Fix Issues' : 'Close'}
+              </button>
             </div>
           </div>
         </div>
