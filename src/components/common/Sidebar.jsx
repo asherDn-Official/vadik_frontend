@@ -87,7 +87,7 @@ function Sidebar() {
       path: "/integration",
       module: "Integration Management",
       icon: integrationIcon,
-      label: "Integration Management",
+      label: "Integrations",
     },
     // {
     //   path: "/quicksearch",

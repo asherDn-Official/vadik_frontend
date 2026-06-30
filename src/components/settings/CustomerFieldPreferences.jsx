@@ -419,7 +419,7 @@ const CustomerFieldPreferences = () => {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h3 className="text-2xl font-bold tracking-[-0.03em] text-[#1F1C5C]">
-                  {activeTab} Management
+                  {activeTab}
                 </h3>
                 <p className="mt-1 text-sm text-[#8B90B2]">
                   Manage custom fields for {activeTab.toLowerCase()} section

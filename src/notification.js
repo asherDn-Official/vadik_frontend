@@ -121,7 +121,14 @@ console.log(
 
     } catch (error) {
 
-      console.log(error);
+      console.error("FCM Error:", error);
+console.error("Code:", error.code);
+console.error("Message:", error.message);
+console.error("Stack:", error.stack);
+console.log(
+  "VAPID KEY:",
+  import.meta.env.VITE_FIREBASE_VAPID_KEY
+);
 
     }
 
