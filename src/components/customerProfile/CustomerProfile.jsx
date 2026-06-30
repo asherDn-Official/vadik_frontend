@@ -105,6 +105,14 @@ const CustomerProfile = () => {
       showToast("Customer data updated successfully!", "success");
       const updatedCustomer = response.data;
       setSelectedCustomer(updatedCustomer);
+      window.dispatchEvent(
+        new CustomEvent("customer:updated", {
+          detail: {
+            customerId: updatedCustomer?._id,
+            customer: updatedCustomer,
+          },
+        }),
+      );
       setIsEditing(false);
     } catch (error) {
       console.error("Error in handleSave:", error);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
@@ -580,6 +580,21 @@ const EngagementDashboard = () => {
         ]
       : [];
 
+    const replyRows = selectedItem
+      ? (selectedItem.replyMessages?.length
+          ? selectedItem.replyMessages
+          : selectedItemLogs
+              .filter((log) => log.status === "replied")
+              .map((log) => ({
+                customerName: log.firstname || log.lastname ? `${log.firstname || ""} ${log.lastname || ""}`.trim() : "Unknown Customer",
+                mobileNumber: log.mobileNumber || "",
+                replyStatus: log.status,
+                replyMessage: log.replyMessageContent || "",
+                replyDateTime: log.replyTimestamp || log.timestamp,
+                replyMessageType: log.replyMessageType || log.messageType || "",
+              })))
+      : [];
+
     return (
       <div className="space-y-6">
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
@@ -789,6 +804,63 @@ const EngagementDashboard = () => {
                       <div className="text-[10px] text-gray-400 mt-1">(Meta Errors)</div>
                     </button>
                   </div>
+
+                  {replyRows.length > 0 && (
+                    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                      <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between mb-4">
+                        <div>
+                          <h4 className="text-base font-bold text-gray-900">Customer Reply Details</h4>
+                          <p className="text-sm text-gray-500">Actual customer responses tied to this item.</p>
+                        </div>
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                          {replyRows.length} replies
+                        </span>
+                      </div>
+
+                      <div className="overflow-x-auto rounded-2xl border border-gray-100">
+                        <table className="w-full text-left">
+                          <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-500">
+                            <tr>
+                              <th className="px-4 py-3">Customer Name</th>
+                              <th className="px-4 py-3">Mobile Number</th>
+                              <th className="px-4 py-3">Reply Status</th>
+                              <th className="px-4 py-3">Customer Reply Message</th>
+                              <th className="px-4 py-3">Reply Date &amp; Time</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 bg-white">
+                            {replyRows.map((reply, index) => (
+                              <tr key={`${reply.mobileNumber || "reply"}-${index}`} className="hover:bg-gray-50/60">
+                                <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                                  {reply.customerName || "Unknown Customer"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-600">
+                                  {reply.mobileNumber || "-"}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="inline-flex rounded-full bg-purple-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-700 border border-purple-100">
+                                    {reply.replyStatus || "replied"}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-700">
+                                  {reply.replyMessage ? (
+                                    <span className="inline-flex rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-700 border border-gray-100">
+                                      {reply.replyMessage}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400">Reply details unavailable for this record.</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                                  {reply.replyDateTime ? moment(reply.replyDateTime).format("MMM DD, YYYY HH:mm") : "-"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Failure Reasons Breakdown */}
                   {selectedItem.failed > 0 && selectedItem.failureReasons && (
@@ -1027,6 +1099,24 @@ const EngagementDashboard = () => {
                                 <div className="text-sm text-gray-600 max-w-md truncate md:px-4 italic" title={log.messageContent}>
                                   "{log.messageContent}"
                                 </div>
+                                {log.status === "replied" && (
+                                  <div className="md:basis-[320px] md:px-4">
+                                    <div className="rounded-2xl border border-green-100 bg-green-50 p-3">
+                                      <div className="text-[10px] font-bold uppercase tracking-wider text-green-600 mb-1">
+                                        Customer Reply
+                                      </div>
+                                      {log.replyMessageContent ? (
+                                        <div className="text-sm text-green-900" title={log.replyMessageContent}>
+                                          {log.replyMessageContent}
+                                        </div>
+                                      ) : (
+                                        <div className="text-sm text-green-700">
+                                          Reply details unavailable for this record.
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                                 <div className="flex items-center gap-3 shrink-0">
                                   {log.status === "failed" && (
                                     <div className="text-[10px] text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100 font-semibold shadow-sm max-w-[200px] truncate" title={getWhatsappErrorDescription(log.failureCode) || log.failureReason}>

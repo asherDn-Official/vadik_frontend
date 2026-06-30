@@ -7,6 +7,7 @@ import { FiUsers } from "react-icons/fi";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 import BulkImportModal from "../components/customerProfile/BulkImportModal";
 import { formatIndianMobile } from "../components/customerProfile/formatIndianMobile";
+import { getCustomerProfilePictureSrc } from "../utils/customerImageUtils";
 
 import Loader from "../utils/Loader";
 
@@ -75,37 +76,46 @@ const CustomerList = () => {
     fetchCustomers();
   }, [fetchCustomers]);
 
-  useEffect(() => {
-    let isMounted = true;
+ useEffect(() => {
+  let isMounted = true;
 
-    const fetchSources = async () => {
-      try {
-        setSourcesLoading(true);
-        const response = await api.get("/api/retailer/getSource");
-        const fetchedSources = Array.isArray(response.data?.data)
-          ? response.data.data
-          : [];
-        const uniqueSources = [...new Set(fetchedSources.filter(Boolean))];
+  const handleCustomerUpdated = () => {
+    fetchCustomers();
+  };
 
-        if (isMounted) {
-          setSources(uniqueSources);
-        }
-      } catch (error) {
-        console.error("Error fetching sources:", error);
-      } finally {
-        if (isMounted) {
-          setSourcesLoading(false);
-        }
+  const fetchSources = async () => {
+    try {
+      setSourcesLoading(true);
+      const response = await api.get("/api/retailer/getSource");
+      const fetchedSources = Array.isArray(response.data?.data)
+        ? response.data.data
+        : [];
+
+      const uniqueSources = [...new Set(fetchedSources.filter(Boolean))];
+
+      if (isMounted) {
+        setSources(uniqueSources);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching sources:", error);
+    } finally {
+      if (isMounted) {
+        setSourcesLoading(false);
+      }
+    }
+  };
 
-    fetchSources();
+  // Add event listener
+  window.addEventListener("customer:updated", handleCustomerUpdated);
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  // Initial API call
+  fetchSources();
 
+  return () => {
+    isMounted = false;
+    window.removeEventListener("customer:updated", handleCustomerUpdated);
+  };
+}, [fetchCustomers]);
   useEffect(() => {
     fetch("/assets/Comingsoon.json")
       .then((res) => res.json())
@@ -530,7 +540,10 @@ const CustomerList = () => {
                               <div className="flex items-center justify-center gap-3">
                                 {customer.profilePictureUrl && (
                                   <img
-                                    src={customer.profilePictureUrl}
+                                    src={getCustomerProfilePictureSrc(
+                                      customer.profilePictureUrl,
+                                      customer.updatedAt,
+                                    )}
                                     alt=""
                                     className="h-8 w-8 rounded-full object-cover"
                                   />

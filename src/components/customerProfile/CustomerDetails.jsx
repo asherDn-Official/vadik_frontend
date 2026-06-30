@@ -38,6 +38,7 @@ import PhoneInput, {
 import "react-phone-number-input/style.css";
 import api from "../../api/apiconfig";
 import CustomerJourneyPanel from "./CustomerJourneyPanel";
+import { getCustomerProfilePictureSrc } from "../../utils/customerImageUtils";
 
 const MAX_PROFILE_PICTURE_SIZE_BYTES = 2 * 1024 * 1024;
 const PROFILE_PICTURE_SIZE_ERROR =
@@ -934,7 +935,10 @@ const CustomerDetails = ({
                       <img
                         src={
                           profilePreview || 
-                          transformedCustomer?.profilePictureUrl || 
+                          getCustomerProfilePictureSrc(
+                            transformedCustomer?.profilePictureUrl,
+                            transformedCustomer?.updatedAt,
+                          ) || 
                           (transformedCustomer?.gender === "male"
                             ? defaultImage.menDefaultImgUrl
                             : transformedCustomer?.gender === "female"

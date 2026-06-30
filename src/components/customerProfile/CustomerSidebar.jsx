@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/apiconfig";
 import profileIcon from "/assets/user-in-cp.png";
 import { formatIndianMobile } from "./formatIndianMobile";
+import { getCustomerProfilePictureSrc } from "../../utils/customerImageUtils";
 
 const INITIAL_RENDER_COUNT = 10;
 const RENDER_STEP = 8;
@@ -30,58 +31,63 @@ const CustomerSidebar = () => {
   const skeletonItems = Array.from({ length: 6 });
 
   // Fetch customers data
-  const fetchCustomers = async (page = 1, search = "", append = false) => {
-    try {
-      if (append) {
-        setIsLoadingMore(true);
-      } else {
-        setLoading(true);
-      }
-      setError(null);
+  const fetchCustomers = useCallback(
+    async (page = 1, search = "", append = false) => {
+      try {
+        if (append) {
+          setIsLoadingMore(true);
+        } else {
+          setLoading(true);
+        }
+        setError(null);
 
-      const response = await api.get(`/api/customers`, {
-        params: {
-          retailerId,
-          search,
-          page,
-        },
-      });
+        const response = await api.get(`/api/customers`, {
+          params: {
+            retailerId,
+            search,
+            page,
+          },
+        });
 
-      const { data, pagination: paginationData } = response.data;
+        const { data, pagination: paginationData } = response.data;
 
-      setCustomers((prevCustomers) =>
-        append ? [...prevCustomers, ...data] : data,
-      );
-      setRenderedCount((prevCount) =>
-        append
-          ? prevCount
-          : Math.min(data.length, INITIAL_RENDER_COUNT),
-      );
-      setPagination(paginationData);
+        setCustomers((prevCustomers) =>
+          append ? [...prevCustomers, ...data] : data,
+        );
+        setRenderedCount((prevCount) =>
+          append ? prevCount : Math.min(data.length, INITIAL_RENDER_COUNT),
+        );
+        setPagination(paginationData);
 
-      if (!append) {
-        if (customerId && data.length > 0) {
-          const currentCustomer = data.find(
-            (customer) => customer._id === customerId,
-          );
-          if (currentCustomer) {
-            setSelectedCustomer(currentCustomer);
-          }
-        } else if (data.length > 0 && !selectedCustomer && !customerId) {
-          setSelectedCustomer(data[0]);
+        if (!append) {
+          setSelectedCustomer((prevSelectedCustomer) => {
+            if (customerId && data.length > 0) {
+              return (
+                data.find((customer) => customer._id === customerId) ||
+                prevSelectedCustomer
+              );
+            }
+
+            if (data.length > 0 && !customerId && !prevSelectedCustomer) {
+              return data[0];
+            }
+
+            return prevSelectedCustomer;
+          });
+        }
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to fetch customers");
+        console.error("Error fetching customers:", err);
+      } finally {
+        if (append) {
+          setIsLoadingMore(false);
+        } else {
+          setLoading(false);
         }
       }
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch customers");
-      console.error("Error fetching customers:", err);
-    } finally {
-      if (append) {
-        setIsLoadingMore(false);
-      } else {
-        setLoading(false);
-      }
-    }
-  };
+    },
+    [customerId, retailerId],
+  );
 
   // Initial fetch and on search term change
   useEffect(() => {
@@ -90,7 +96,19 @@ const CustomerSidebar = () => {
     }, 500);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchTerm, retailerId]);
+  }, [fetchCustomers, searchTerm, retailerId]);
+
+  useEffect(() => {
+    const handleCustomerUpdated = () => {
+      fetchCustomers(1, searchTerm);
+    };
+
+    window.addEventListener("customer:updated", handleCustomerUpdated);
+
+    return () => {
+      window.removeEventListener("customer:updated", handleCustomerUpdated);
+    };
+  }, [fetchCustomers, searchTerm, retailerId]);
 
   useEffect(() => {
     if (!customerId) return;
@@ -131,6 +149,7 @@ const CustomerSidebar = () => {
     loading,
     isLoadingMore,
     searchTerm,
+    fetchCustomers,
   ]);
 
   useEffect(() => {
@@ -396,7 +415,12 @@ const CustomerSidebar = () => {
                       "
                       >
                         <img
-                          src={customer.profilePictureUrl || profileIcon}
+                          src={
+                            getCustomerProfilePictureSrc(
+                              customer.profilePictureUrl,
+                              customer.updatedAt,
+                            ) || profileIcon
+                          }
                           alt={formatName(customer)}
                           className="
                           h-9 w-9 rounded-lg object-cover

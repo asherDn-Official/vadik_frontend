@@ -1031,13 +1031,6 @@ import {
 import api from "../api/apiconfig";
 import showToast from "../utils/ToastNotification";
 
-const createCanvasGradient = (ctx, width, height, start, end) => {
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, start);
-  gradient.addColorStop(1, end);
-  return gradient;
-};
-
 const loadImage = (src) =>
   new Promise((resolve, reject) => {
     if (!src) {
@@ -1706,10 +1699,10 @@ const QRGenerator = () => {
                 Customize Options
               </h2>
               
-              <div className="space-y-5">
+              <div className="">
                 {qrType === "registration" && (
                   <div className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-xl">
-                    <input
+                    {/* <input
                       type="checkbox"
                       id="includePreferences"
                       checked={includePreferences}
@@ -1723,7 +1716,7 @@ const QRGenerator = () => {
                     />
                     <label htmlFor="includePreferences" className="text-sm font-medium text-gray-700">
                       Include customer preference questions in form
-                    </label>
+                    </label> */}
                   </div>
                 )}
 
@@ -1873,7 +1866,7 @@ const QRGenerator = () => {
               </div>
             </div>
 
-            {/* Card 3: Activity Details (conditional) */}
+            {/* Card 3: Activity Details */}
             {qrType === "activity" && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 transition-all hover:shadow-md">
                 <h2 className="text-lg font-semibold text-gray-800 mb-5 flex items-center gap-2">
