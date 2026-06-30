@@ -18,6 +18,8 @@ const formatSourceLabel = (source = "") =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
+const MANUAL_SOURCE_OPTIONS = [{ value: "qr code", label: "QR Code" }];
+
 const CustomerList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [customers, setCustomers] = useState([]);
@@ -190,13 +192,24 @@ const CustomerList = () => {
   };
 
   const sourceOptions = useMemo(
-    () => [
-      { value: "", label: "All Sources" },
-      ...sources.map((source) => ({
+    () => {
+      const dynamicOptions = sources.map((source) => ({
         value: source,
         label: formatSourceLabel(source),
-      })),
-    ],
+      }));
+      const dynamicValues = new Set(
+        dynamicOptions.map((option) => option.value.toLowerCase()),
+      );
+      const manualOptions = MANUAL_SOURCE_OPTIONS.filter(
+        (option) => !dynamicValues.has(option.value.toLowerCase()),
+      );
+
+      return [
+        { value: "", label: "All Sources" },
+        ...dynamicOptions,
+        ...manualOptions,
+      ];
+    },
     [sources],
   );
 
