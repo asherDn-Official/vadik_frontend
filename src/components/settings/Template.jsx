@@ -13,6 +13,7 @@ import { API_BASE_URL } from "../../api/apiconfig.js";
 import PropTypes from 'prop-types';
 
 import Loader from "../../utils/Loader";
+import { renderWhatsAppFormattedText } from "../../utils/whatsappTextFormatter";
 
 const STANDARD_TEMPLATES = [
   { 
@@ -139,12 +140,16 @@ const STANDARD_TEMPLATES = [
 
 const TemplatePreview = ({ text, vars }) => {
   const previewText = useMemo(() => {
-    let t = text;
-    vars.forEach((v, i) => {
-      const reg = new RegExp(`\\{\\{${i + 1}\\}\\}`, 'g');
-      t = t.replace(reg, `<span class="bg-[#db3b76]/10 text-[#db3b76] px-1 rounded font-bold">[${v}]</span>`);
+    const variableValues = vars.reduce((acc, variable, index) => {
+      acc[`{{${index + 1}}}`] = `[${variable}]`;
+      return acc;
+    }, {});
+
+    return renderWhatsAppFormattedText(text, {
+      variableValues,
+      highlightVariables: true,
+      variableClassName: "bg-[#db3b76]/10 text-[#db3b76] px-1 rounded font-bold",
     });
-    return t;
   }, [text, vars]);
 
   return (

@@ -31,6 +31,7 @@ import CustomerList from "../customerInsigth/CustomerList";
 import * as XLSX from "xlsx";
 
 import Loader from "../../utils/Loader";
+import { renderWhatsAppFormattedText } from "../../utils/whatsappTextFormatter";
 
 const hasMeaningfulFilterValue = (value) => {
   if (value === undefined || value === null || value === "") {
@@ -1348,7 +1349,16 @@ const SendCampaign = () => {
                           {(() => {
                             const header = campaignData.template.components.find(c => c.type === "HEADER");
                             if (!header) return null;
-                            if (header.format === "TEXT") return <div className="mb-1 font-bold text-[10px] text-gray-900">{header.text}</div>;
+                            if (header.format === "TEXT") {
+                              return (
+                                <div
+                                  className="mb-1 font-bold text-[10px] text-gray-900"
+                                  dangerouslySetInnerHTML={{
+                                    __html: renderWhatsAppFormattedText(header.text),
+                                  }}
+                                />
+                              );
+                            }
                             
                             const previewUrl = campaignData.media.url || header.mediaUrl;
                             return (
@@ -1375,8 +1385,10 @@ const SendCampaign = () => {
                           })()}
 
                           {/* Body Preview */}
-                          <div className="text-[10px] text-gray-800 whitespace-pre-wrap leading-relaxed">
-                            {(() => {
+                          <div
+                            className="text-[10px] text-gray-800 whitespace-pre-wrap leading-relaxed"
+                            dangerouslySetInnerHTML={{
+                              __html: (() => {
                               let text = campaignData.template.components.find(c => c.type === "BODY")?.text || "";
                               Object.entries(campaignData.variables).forEach(([key, val]) => {
                                 const placeholder = `{{${key.match(/\d+/)[0]}}}`;
@@ -1384,15 +1396,21 @@ const SendCampaign = () => {
                               });
                               // Also replace {{customer_name}} if it was added as a string
                               text = text.replace(/\{\{customer_name\}\}/g, "John Doe");
-                              return text;
-                            })()}
-                          </div>
+                              return renderWhatsAppFormattedText(text);
+                              })(),
+                            }}
+                          />
                           
                           {/* Footer Preview */}
                           {campaignData.template.components.find(c => c.type === "FOOTER") && (
-                            <div className="mt-1 text-[8px] text-gray-400">
-                              {campaignData.template.components.find(c => c.type === "FOOTER").text}
-                            </div>
+                            <div
+                              className="mt-1 text-[8px] text-gray-400"
+                              dangerouslySetInnerHTML={{
+                                __html: renderWhatsAppFormattedText(
+                                  campaignData.template.components.find(c => c.type === "FOOTER").text,
+                                ),
+                              }}
+                            />
                           )}
 
                           <div className="flex justify-end mt-1">

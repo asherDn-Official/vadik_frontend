@@ -22,6 +22,7 @@ import {
 import api from "../../api/apiconfig";
 import Loader from "../../utils/Loader";
 import { toast } from "react-toastify";
+import { renderWhatsAppFormattedText } from "../../utils/whatsappTextFormatter";
 
 const buildCopyName = (name) => {
   if (!name) return "";
@@ -111,28 +112,12 @@ const EMOJI_GROUPS = {
 
 const QUICK_EMOJIS = ["😀", "😍", "🔥", "🎉", "✅", "📦", "💬", "✨"];
 
-const escapeHtml = (value = "") =>
-  String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-
 const renderMetaFormattedText = (text = "", sampleValues = {}) => {
-  let formatted = escapeHtml(text);
-
-  const vars = text.match(/\{\{(\d+)\}\}/g) || [];
-  vars.forEach((variable) => {
-    const safeVariable = variable.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const replacement = escapeHtml(sampleValues[variable] || variable);
-    formatted = formatted.replace(new RegExp(safeVariable, "g"), `<span class="text-blue-600 font-bold">${replacement}</span>`);
+  return renderWhatsAppFormattedText(text, {
+    variableValues: sampleValues,
+    highlightVariables: true,
+    variableClassName: "text-blue-600 font-bold",
   });
-
-  formatted = formatted.replace(/```([\s\S]+?)```/g, '<code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.95em] text-slate-700">$1</code>');
-  formatted = formatted.replace(/\*([^*\n]+)\*/g, "<strong>$1</strong>");
-  formatted = formatted.replace(/_([^_\n]+)_/g, "<em>$1</em>");
-  formatted = formatted.replace(/~([^~\n]+)~/g, "<span class=\"line-through\">$1</span>");
-
-  return formatted.replace(/\n/g, "<br/>");
 };
 
 const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
@@ -419,9 +404,12 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
             </div>
 
             {footer && (
-              <div className="px-3 pb-2 text-[10px] text-gray-400 uppercase tracking-wide">
-                {footer.text}
-              </div>
+              <div
+                className="px-3 pb-2 text-[10px] text-gray-400 uppercase tracking-wide"
+                dangerouslySetInnerHTML={{
+                  __html: renderMetaFormattedText(footer.text, samples),
+                }}
+              />
             )}
 
             {buttons.length > 0 && (

@@ -8,6 +8,7 @@ import {
   ExternalLink, 
   Phone 
 } from "lucide-react";
+import { renderWhatsAppFormattedText } from "../../utils/whatsappTextFormatter";
 
 const TemplatePreviewModal = ({ template, isOpen, onClose }) => {
   if (!isOpen || !template) return null;
@@ -18,15 +19,16 @@ const TemplatePreviewModal = ({ template, isOpen, onClose }) => {
   const buttons = template.components?.find(c => c.type === "BUTTONS")?.buttons || [];
 
   const formatText = (text) => {
-    if (!text) return "";
-    let formatted = text;
-    // For previewing existing templates, we can just highlight variables or use sample values if available
-    const vars = text.match(/\{\{(\d+)\}\}/g) || [];
-    vars.forEach(v => {
-      // If we had sample values we could use them here, otherwise just highlight
-      formatted = formatted.replace(v, `<span class="text-blue-600 font-bold">${v}</span>`);
+    const variableValues = {};
+    (text?.match(/\{\{(\d+)\}\}/g) || []).forEach((variable) => {
+      variableValues[variable] = variable;
     });
-    return formatted.replace(/\n/g, '<br/>');
+
+    return renderWhatsAppFormattedText(text, {
+      variableValues,
+      highlightVariables: true,
+      variableClassName: "text-blue-600 font-bold",
+    });
   };
 
   return (
@@ -77,7 +79,10 @@ const TemplatePreviewModal = ({ template, isOpen, onClose }) => {
                 <div className="p-4 border border-gray-100 rounded-2xl">
                   <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Header ({header.format})</p>
                   {header.format === "TEXT" ? (
-                    <p className="text-sm text-gray-700">{header.text}</p>
+                    <p
+                      className="text-sm text-gray-700"
+                      dangerouslySetInnerHTML={{ __html: formatText(header.text) }}
+                    />
                   ) : (
                     <p className="text-sm text-blue-600 break-all">{header.mediaUrl || header.example?.header_handle?.[0] || "Media Template"}</p>
                   )}
@@ -87,14 +92,20 @@ const TemplatePreviewModal = ({ template, isOpen, onClose }) => {
               {body && (
                 <div className="p-4 border border-gray-100 rounded-2xl">
                   <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Body</p>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{body.text}</p>
+                  <p
+                    className="text-sm text-gray-700 whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{ __html: formatText(body.text) }}
+                  />
                 </div>
               )}
 
               {footer && (
                 <div className="p-4 border border-gray-100 rounded-2xl">
                   <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Footer</p>
-                  <p className="text-sm text-gray-700">{footer.text}</p>
+                  <p
+                    className="text-sm text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: formatText(footer.text) }}
+                  />
                 </div>
               )}
 
@@ -164,9 +175,10 @@ const TemplatePreviewModal = ({ template, isOpen, onClose }) => {
                 </div>
 
                 {footer && (
-                  <div className="px-3 pb-2 text-[9px] text-gray-400 uppercase tracking-wide">
-                    {footer.text}
-                  </div>
+                  <div
+                    className="px-3 pb-2 text-[9px] text-gray-400 uppercase tracking-wide"
+                    dangerouslySetInnerHTML={{ __html: formatText(footer.text) }}
+                  />
                 )}
 
                 {buttons.length > 0 && (

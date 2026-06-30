@@ -28,6 +28,7 @@ import {
 import api from "../../api/apiconfig";
 import ConfirmationDialog from "../common/ConfirmationDialog";
 import showToast from "../../utils/ToastNotification";
+import { renderWhatsAppFormattedText } from "../../utils/whatsappTextFormatter";
 
 const dashboardStats = [
   { key: "total", filter: "all", label: "Total automations", tone: "text-[#313166]" },
@@ -1514,9 +1515,12 @@ function RetentionBuilderView({
                     <div className="flex justify-end">
                       <div className="max-w-[85%] overflow-hidden rounded-2xl rounded-tr-md bg-[#005c4b]">
                         {templateHeader?.format === "TEXT" && templateHeader?.text ? (
-                          <div className="border-b border-white/10 px-3 pb-2 pt-3 text-sm font-semibold text-white">
-                            {templateHeader.text}
-                          </div>
+                          <div
+                            className="border-b border-white/10 px-3 pb-2 pt-3 text-sm font-semibold text-white"
+                            dangerouslySetInnerHTML={{
+                              __html: renderWhatsAppFormattedText(templateHeader.text),
+                            }}
+                          />
                         ) : null}
 
                         {templateHeaderMediaType ? (
@@ -1559,7 +1563,12 @@ function RetentionBuilderView({
                         ) : null}
 
                         <div className="p-3">
-                          <div className="whitespace-pre-wrap text-sm text-white">{previewText}</div>
+                          <div
+                            className="whitespace-pre-wrap text-sm text-white"
+                            dangerouslySetInnerHTML={{
+                              __html: renderWhatsAppFormattedText(previewText),
+                            }}
+                          />
                           <div className="mt-1 text-right text-xs text-white/60">12:00 PM</div>
                         </div>
                       </div>
