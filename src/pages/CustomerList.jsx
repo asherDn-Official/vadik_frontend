@@ -10,6 +10,13 @@ import { formatIndianMobile } from "../components/customerProfile/formatIndianMo
 
 import Loader from "../utils/Loader";
 
+const formatSourceLabel = (source = "") =>
+  source
+    .split(/[\s-_]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
 const CustomerList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [customers, setCustomers] = useState([]);
@@ -22,8 +29,7 @@ const CustomerList = () => {
     currentPage: 1,
   });
   const [showBulkImport, setShowBulkImport] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [retailerId, setRetailerId] = useState(() => {
+  const [retailerId] = useState(() => {
     return localStorage.getItem("retailerId") || "";
   });
 
@@ -32,6 +38,8 @@ const CustomerList = () => {
   const navigate = useNavigate();
   const searchTerm = searchParams.get("search") || "";
   const [source, setSource] = useState("");
+  const [sources, setSources] = useState([]);
+  const [sourcesLoading, setSourcesLoading] = useState(false);
 
   const fetchCustomers = useCallback(async () => {
     try {
@@ -56,16 +64,47 @@ const CustomerList = () => {
         totalPages: Math.ceil(data.pagination.totalItems / itemsPerPage),
         currentPage: data.pagination.currentPage,
       });
-    } catch (err) {
+    } catch {
       setError("Failed to fetch customers");
     } finally {
       setLoading(false);
     }
-  }, [pagination.currentPage, searchTerm, source]);
+  }, [pagination.currentPage, retailerId, searchTerm, source]);
 
   useEffect(() => {
     fetchCustomers();
   }, [fetchCustomers]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchSources = async () => {
+      try {
+        setSourcesLoading(true);
+        const response = await api.get("/api/retailer/getSource");
+        const fetchedSources = Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
+        const uniqueSources = [...new Set(fetchedSources.filter(Boolean))];
+
+        if (isMounted) {
+          setSources(uniqueSources);
+        }
+      } catch (error) {
+        console.error("Error fetching sources:", error);
+      } finally {
+        if (isMounted) {
+          setSourcesLoading(false);
+        }
+      }
+    };
+
+    fetchSources();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     fetch("/assets/Comingsoon.json")
@@ -94,17 +133,29 @@ const CustomerList = () => {
   }, [startPage, endPage]);
 
   // Debounced search to avoid too many API calls while typing
-  const debouncedSearch = useCallback(
-    debounce((term) => {
-      setSearchParams(term ? { search: term } : {});
-      setPagination((prev) => ({ ...prev, currentPage: 1 }));
-    }, 500),
-    [],
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((term) => {
+        setSearchParams(term ? { search: term } : {});
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
+      }, 500),
+    [setSearchParams],
   );
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   const handleSearchChange = (e) => {
     const term = e.target.value;
     debouncedSearch(term);
+  };
+
+  const handleSourceChange = (selected) => {
+    setSource(selected?.value || "");
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
   };
 
   const handlePageChange = (newPage) => {
@@ -124,6 +175,24 @@ const CustomerList = () => {
     navigate("/customers/add");
   };
 
+  const handleBulkSuccess = () => {
+    fetchCustomers();
+  };
+
+  const sourceOptions = useMemo(
+    () => [
+      { value: "", label: "All Sources" },
+      ...sources.map((source) => ({
+        value: source,
+        label: formatSourceLabel(source),
+      })),
+    ],
+    [sources],
+  );
+
+  const selectedSourceOption =
+    sourceOptions.find((option) => option.value === source) ?? sourceOptions[0];
+
   if (error) {
     return (
       <div className="flex h-screen bg-[#F4F5F9] items-center justify-center">
@@ -131,19 +200,6 @@ const CustomerList = () => {
       </div>
     );
   }
-
-  const handleBulkSuccess = (message) => {
-    setSuccessMessage(message);
-    fetchCustomers();
-  };
-
-  const sourceOptions = [
-    { value: "", label: "All Sources" },
-    { value: "walk-in", label: "Walk In" },
-    { value: "website", label: "Website" },
-    { value: "social-media", label: "Social Media" },
-    { value: "others", label: "Others" },
-  ];
 
   return (
     <div className="app-page">
@@ -277,9 +333,13 @@ const CustomerList = () => {
                 <div className="w-full min-w-0 xl:w-[240px]">
                   <Select
                     options={sourceOptions}
-                    defaultValue={sourceOptions[0]}
-                    onChange={(selected) => setSource(selected?.value || "")}
+                    value={selectedSourceOption}
+                    onChange={handleSourceChange}
                     isSearchable={false}
+                    isDisabled={sourcesLoading && sources.length === 0}
+                    noOptionsMessage={() =>
+                      sourcesLoading ? "Loading sources..." : "No sources found"
+                    }
                     className="text-sm"
                     menuPortalTarget={
                       typeof document !== "undefined" ? document.body : null
