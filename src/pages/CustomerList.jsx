@@ -18,7 +18,7 @@ const formatSourceLabel = (source = "") =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
-const MANUAL_SOURCE_OPTIONS = [{ value: "qr code", label: "QR Code" }];
+const MANUAL_SOURCE_OPTIONS = [{ value: "QR Code", label: "QR Code" }];
 
 const CustomerList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
