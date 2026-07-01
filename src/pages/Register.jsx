@@ -56,10 +56,11 @@ const Register = ({ formData, updateFormData }) => {
         firstName: parsedSavedData.firstName || firstName,
         lastName: parsedSavedData.lastName || lastName,
         email: data.email,
-        countryCode: hasSavedCountry
-          ? sanitizeDigits(parsedSavedData.countryCode || parsedSavedData.phoneCode)
-          : apiCountryCode,
-        mobile: hasSavedMobile ? sanitizeDigits(parsedSavedData.mobile) : apiMobile,
+        countryCode:
+          sanitizeDigits(parsedSavedData.countryCode || parsedSavedData.phoneCode) ||
+          apiCountryCode,
+        mobile:
+          sanitizeDigits(parsedSavedData.mobile) || apiMobile,
         storeName: parsedSavedData.storeName || data.storeName,
       });
       setSetupState((prev) => ({
@@ -248,8 +249,8 @@ const Register = ({ formData, updateFormData }) => {
             only takes a minute to complete and start using the platform:
           </p>
 
-          <ProgressIndicator 
-            currentStep={currentStep} 
+          <ProgressIndicator
+            currentStep={currentStep}
             completedSteps={completedSteps}
             onStepChange={handleStepChange}
             isCurrentStepValid={isStepValid(currentStep)}
