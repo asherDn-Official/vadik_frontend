@@ -22,7 +22,6 @@ import {
   X,
   Zap,
   Clock,
-  ChevronRight,
   History,
 } from "lucide-react";
 import api from "../../api/apiconfig";
@@ -35,12 +34,6 @@ const dashboardStats = [
   { key: "active", filter: "active", label: "Active", tone: "text-emerald-600" },
   { key: "paused", filter: "paused", label: "Paused", tone: "text-amber-600" },
   { key: "draft", filter: "draft", label: "Draft", tone: "text-[#CB376D]" },
-];
-
-const journeyOptions = [
-  { id: "winback", title: "Win Back Customers", note: "Bring dormant customers back with offers and reminders." },
-  { id: "welcome", title: "Welcome Flow", note: "Start automated communication right after customer signup." },
-  { id: "loyalty", title: "Loyalty Nudge", note: "Reward repeat customers based on points, visits, or milestones." },
 ];
 
 const triggerGroups = [
@@ -79,7 +72,7 @@ const triggerIcons = {
   scheduled_recurring: Webhook,
 };
 
-const stepLabels = ["Journey", "Trigger", "Audience", "Conditions", "Action", "Review"];
+const stepLabels = ["Journey", "Trigger", "Audience", "Action", "Review"];
 const previewQuickSegments = [
   {
     key: "all",
@@ -148,7 +141,6 @@ const createEmptyAutomation = () => ({
     timezone: "Asia/Calcutta",
   },
   audienceRules: { logic: "AND", conditions: [] },
-  conditionRules: { logic: "AND", conditions: [] },
   actionConfig: {
     templateId: "",
     templateName: "",
@@ -285,30 +277,30 @@ const formatExecutionSummary = (log) => {
   if (triggerSnapshot.activityType) return `Activity: ${triggerSnapshot.activityType}`;
 
   const audienceSummary = formatRuleGroupSummary(log?.conditionSnapshot?.audienceRules);
-  const conditionSummary = formatRuleGroupSummary(log?.conditionSnapshot?.conditionRules);
-  return `Audience ${audienceSummary} | Conditions ${conditionSummary}`;
+  return `Audience ${audienceSummary}`;
 };
 
 const normalizeAutomationForForm = (automation) => {
   if (!automation) return createEmptyAutomation();
+  const restAutomation = { ...automation };
+  delete restAutomation.conditionRules;
 
   return {
     ...createEmptyAutomation(),
-    ...automation,
+    ...restAutomation,
     actionConfig: {
       ...createEmptyAutomation().actionConfig,
-      ...(automation.actionConfig || {}),
-      templateId: automation.actionConfig?.templateId?._id || automation.actionConfig?.templateId || "",
-      variableMappings: automation.actionConfig?.variableMappings || [],
+      ...(restAutomation.actionConfig || {}),
+      templateId: restAutomation.actionConfig?.templateId?._id || restAutomation.actionConfig?.templateId || "",
+      variableMappings: restAutomation.actionConfig?.variableMappings || [],
     },
     triggerConfig: {
       ...createEmptyAutomation().triggerConfig,
-      ...(automation.triggerConfig || {}),
+      ...(restAutomation.triggerConfig || {}),
     },
-    audienceRules: automation.audienceRules || { logic: "AND", conditions: [] },
-    conditionRules: automation.conditionRules || { logic: "AND", conditions: [] },
-    delay: automation.delay || { mode: "immediate", value: 0, unit: "minutes" },
-    safetyFlags: automation.safetyFlags || { preventDuplicateWindowHours: 24, stopIfOptedOut: true },
+    audienceRules: restAutomation.audienceRules || { logic: "AND", conditions: [] },
+    delay: restAutomation.delay || { mode: "immediate", value: 0, unit: "minutes" },
+    safetyFlags: restAutomation.safetyFlags || { preventDuplicateWindowHours: 24, stopIfOptedOut: true },
   };
 };
 
@@ -717,14 +709,18 @@ function RetentionBuilderView({
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(() => normalizeAutomationForForm(initialAutomation));
   const [audienceDraftRule, setAudienceDraftRule] = useState({ fieldKey: "", operator: "", value: "", valueTo: "" });
-  const [conditionDraftRule, setConditionDraftRule] = useState({ fieldKey: "", operator: "", value: "", valueTo: "" });
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const previewHandlerRef = useRef(onPreview);
+  const formRef = useRef(form);
 
   useEffect(() => {
     setForm(normalizeAutomationForForm(initialAutomation));
   }, [initialAutomation]);
+
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
 
   useEffect(() => {
     previewHandlerRef.current = onPreview;
@@ -733,14 +729,13 @@ function RetentionBuilderView({
   useEffect(() => {
     const timer = window.setTimeout(() => {
       previewHandlerRef.current?.({
-        ...form,
-        audienceRules: form.audienceRules || { logic: "AND", conditions: [] },
-        conditionRules: form.conditionRules || { logic: "AND", conditions: [] },
+        ...formRef.current,
+        audienceRules: formRef.current.audienceRules || { logic: "AND", conditions: [] },
       });
     }, 350);
 
     return () => window.clearTimeout(timer);
-  }, [form.audienceRules, form.conditionRules]);
+  }, [form.audienceRules]);
 
   const selectedTriggerGroup =
     triggerGroups.find((group) => group.items.some((item) => item.id === form.triggerType)) || triggerGroups[0];
@@ -851,10 +846,7 @@ function RetentionBuilderView({
 
     if (ruleType === "audienceRules") {
       setAudienceDraftRule({ fieldKey: "", operator: "", value: "", valueTo: "" });
-      return;
     }
-
-    setConditionDraftRule({ fieldKey: "", operator: "", value: "", valueTo: "" });
   };
 
   const removeRule = (ruleType, index) => {
@@ -950,12 +942,12 @@ function RetentionBuilderView({
         </div>
       </div>
 
-      <div className={`grid gap-6 ${step === 6 ? "xl:grid-cols-[1.25fr_0.95fr]" : "grid-cols-1"}`}>
+      <div className={`grid gap-6 ${step === 5 ? "xl:grid-cols-[1.25fr_0.95fr]" : "grid-cols-1"}`}>
         <div className="space-y-6">
           <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
             <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <div className="text-sm uppercase tracking-[0.22em] text-gray-400">Step {step} of 6</div>
+                <div className="text-sm uppercase tracking-[0.22em] text-gray-400">Step {step} of 5</div>
                 <h3 className="mt-1 text-lg font-semibold text-[#313166]">{stepLabels[step - 1]}</h3>
                 <p className="text-sm text-gray-500">Use dynamic fields, typed operators, and approved templates.</p>
               </div>
@@ -1175,25 +1167,6 @@ function RetentionBuilderView({
             )}
 
             {step === 4 && (
-              <RuleComposer
-                label="Condition rules"
-                fields={fields}
-                rules={form.conditionRules.conditions}
-                draftRule={conditionDraftRule}
-                onDraftChange={setConditionDraftRule}
-                onAddRule={() => addRule("conditionRules", conditionDraftRule)}
-                onRemoveRule={(index) => removeRule("conditionRules", index)}
-                logic={form.conditionRules.logic}
-                onLogicChange={(logic) =>
-                  setForm((previous) => ({
-                    ...previous,
-                    conditionRules: { ...previous.conditionRules, logic },
-                  }))
-                }
-              />
-            )}
-
-            {step === 5 && (
               <div className="space-y-4">
                 <select
                   value={form.actionConfig.templateId}
@@ -1372,7 +1345,7 @@ function RetentionBuilderView({
               </div>
             )}
 
-            {step === 6 && (
+            {step === 5 && (
               <div className="space-y-8 py-4">
                 <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FBFBFE] via-white to-[#F5F6FC] p-4 sm:p-6">
                   <div className="pointer-events-none absolute left-[27px] top-10 bottom-10 w-0.5 border-l-2 border-dashed border-gray-200 lg:hidden" />
@@ -1389,20 +1362,6 @@ function RetentionBuilderView({
                         <div className="text-xs font-semibold uppercase tracking-wider text-emerald-600">Trigger</div>
                         <div className="mt-1 text-sm font-bold text-[#313166]">{form.triggerType.replaceAll("_", " ")}</div>
                         <div className="mt-0.5 text-xs text-gray-500">Starts the journey</div>
-                      </div>
-                    </div>
-
-                    {/* Conditions Node */}
-                    <div className="z-10 flex flex-1 flex-col items-center">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#CB376D10] text-[#CB376D] shadow-sm outline outline-4 outline-white">
-                        <Settings2 size={24} />
-                      </div>
-                      <div className="mt-3 text-center">
-                        <div className="text-xs font-semibold uppercase tracking-wider text-[#CB376D]">Conditions</div>
-                        <div className="mt-1 text-sm font-bold text-[#313166]">
-                          {form.audienceRules.conditions.length + form.conditionRules.conditions.length} Rules
-                        </div>
-                        <div className="mt-0.5 text-xs text-gray-500">{form.audienceRules.logic} matching</div>
                       </div>
                     </div>
 
@@ -1458,27 +1417,6 @@ function RetentionBuilderView({
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-5">
-                    <div className="mb-3 flex items-center justify-between">
-                      <h4 className="text-sm font-bold text-[#313166]">Trigger Conditions</h4>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{form.conditionRules.logic}</span>
-                    </div>
-                    <div className="space-y-2">
-                      {form.conditionRules.conditions.length > 0 ? (
-                        form.conditionRules.conditions.map((rule, idx) => {
-                          const field = fields.find(f => f.fieldKey === rule.fieldKey);
-                          return (
-                            <div key={idx} className="flex items-center gap-2 text-xs text-gray-600">
-                              <CheckCircle2 size={12} className="text-emerald-500" />
-                              <span><b>{field?.label || rule.fieldKey}</b> {operatorLabels[rule.operator] || rule.operator} <b>{rule.value || ""}</b></span>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="text-xs text-gray-500 italic">No additional trigger conditions</div>
-                      )}
-                    </div>
-                  </div>
                 </div>
               </div>
             )}
@@ -1492,12 +1430,12 @@ function RetentionBuilderView({
                 Back to dashboard
               </button>
 
-              <div className="text-sm text-gray-500">Step {step} of 6</div>
+              <div className="text-sm text-gray-500">Step {step} of 5</div>
 
-              {step < 6 ? (
+              {step < 5 ? (
                 <button
                   type="button"
-                  onClick={() => setStep((current) => Math.min(6, current + 1))}
+                  onClick={() => setStep((current) => Math.min(5, current + 1))}
                   className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white"
                 >
                   Next Step
@@ -1516,7 +1454,7 @@ function RetentionBuilderView({
           </div>
         </div>
 
-        {step === 6 && (
+        {step === 5 && (
           <div className="space-y-6">
             <div className="rounded-3xl bg-[#313166] p-5 text-white shadow-lg">
               <div className="flex items-center justify-between">
@@ -1846,7 +1784,6 @@ export default function RetentionRhythmAutomation() {
       setPreviewState((previous) => ({ ...previous, loading: true }));
       const response = await api.post("/api/retention-automations/preview-audience", {
         audienceRules: form.audienceRules,
-        conditionRules: form.conditionRules,
         limit: 5,
       });
 
