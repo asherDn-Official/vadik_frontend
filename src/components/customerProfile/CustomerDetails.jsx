@@ -39,6 +39,11 @@ import "react-phone-number-input/style.css";
 import api from "../../api/apiconfig";
 import CustomerJourneyPanel from "./CustomerJourneyPanel";
 import { getCustomerProfilePictureSrc } from "../../utils/customerImageUtils";
+import LabelPreview from "../common/LabelPreview";
+import {
+  MAX_CUSTOMER_LABELS,
+  normalizeCustomerLabels,
+} from "../../utils/customerLabelUtils";
 
 const MAX_PROFILE_PICTURE_SIZE_BYTES = 2 * 1024 * 1024;
 const PROFILE_PICTURE_SIZE_ERROR =
@@ -369,6 +374,13 @@ const basicSchema = yup.object().shape({
   source: yup.string().optional(),
   customerId: yup.string().optional(),
   firstVisit: yup.string().optional(),
+  labels: yup
+    .string()
+    .test(
+      "labels-limit",
+      `You can add up to ${MAX_CUSTOMER_LABELS} labels only`,
+      (value) => normalizeCustomerLabels(value).length <= MAX_CUSTOMER_LABELS,
+    ),
   mobileNumber: yup
     .string()
     .required("Mobile number is required")
@@ -647,6 +659,32 @@ const CustomerDetails = ({
     [handleInputChange],
   );
 
+  const handleLabelAdd = useCallback(
+    (newLabel) => {
+      const currentLabels = normalizeCustomerLabels(
+        formData?.basic?.labels || "",
+      );
+      const existingKeys = new Set(
+        currentLabels.map((label) => label.toLowerCase()),
+      );
+
+      if (existingKeys.has(newLabel.toLowerCase())) {
+        return;
+      }
+
+      if (currentLabels.length >= MAX_CUSTOMER_LABELS) {
+        showToast(
+          `You can add up to ${MAX_CUSTOMER_LABELS} labels only.`,
+          "error",
+        );
+        return;
+      }
+
+      handleInputChange("basic", "labels", [...currentLabels, newLabel].join(", "));
+    },
+    [formData?.basic?.labels, handleInputChange],
+  );
+
   // Validate form in real-time
   useEffect(() => {
     const validateForm = async () => {
@@ -709,6 +747,27 @@ const CustomerDetails = ({
             basic: {
               ...prev.basic,
               mobileNumber: err.message,
+            },
+          }));
+        }
+      }
+
+      try {
+        await basicSchema.validateAt("labels", formData.basic);
+        setErrors((prev) => ({
+          ...prev,
+          basic: {
+            ...prev.basic,
+            labels: null,
+          },
+        }));
+      } catch (err) {
+        if (touched.basic?.labels) {
+          setErrors((prev) => ({
+            ...prev,
+            basic: {
+              ...prev.basic,
+              labels: err.message,
             },
           }));
         }
@@ -1219,6 +1278,9 @@ const CustomerDetails = ({
                               className="h-11 w-full rounded-xl border bg-white px-4 text-sm font-medium text-[#1F1C5C] outline-none transition-all duration-200 focus:border-[#313166]/30 focus:shadow-[0_0_0_4px_rgba(49,49,102,0.06)]"
                               placeholder="VIP, New, Summer Sale"
                             />
+                            {errors.basic?.labels && (
+                              <p className="text-xs text-red-500">{errors.basic.labels}</p>
+                            )}
                             {sourceOptions && sourceOptions.length > 0 && (
                               <div className="flex flex-wrap gap-2">
                                 {/* Use a separate labels fetch if needed, or if we can get it from preferences */}
@@ -1227,21 +1289,15 @@ const CustomerDetails = ({
                             {/* Adding Label Suggestions here */}
                             <LabelSuggestions 
                               currentLabels={formData?.basic?.labels || ""} 
-                              onLabelAdd={(newLabel) => {
-                                const current = formData?.basic?.labels || "";
-                                const arr = current.split(",").map(l => l.trim()).filter(l => l !== "");
-                                if (!arr.includes(newLabel)) {
-                                  const newVal = arr.length > 0 ? `${current}, ${newLabel}` : newLabel;
-                                  handleInputChange("basic", "labels", newVal);
-                                }
-                              }}
+                              onLabelAdd={handleLabelAdd}
                             />
                             <p className="text-[10px] text-[#8B90B2] mt-1">Comma-separated</p>
                           </div>
                         ) : (
-                          <p className="break-words text-[15px] font-semibold text-[#1F1C5C]">
-                            {formData?.basic?.labels || "No labels"}
-                          </p>
+                          <LabelPreview
+                            labels={formData?.basic?.labels}
+                            className="justify-start"
+                          />
                         )}
                       </div>
                       <FieldItem

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import api from "../../api/apiconfig";
 import Loader from "../../utils/Loader";
+import LabelPreview from "../common/LabelPreview";
 
 import { formatIndianMobile } from "../customerProfile/formatIndianMobile";
 
@@ -140,7 +141,7 @@ const CustomerList = ({
       case "loyaltyPoints":
         return customer.loyaltyPoints ?? 0;
       case "labels":
-        return Array.isArray(customer.labels) ? customer.labels.join(", ") : (customer.labels || "");
+        return <LabelPreview labels={customer.labels} />;
       case "isActive":
         return customer.isActive ? "Active" : "InActive";
       default:
