@@ -24,14 +24,14 @@ const WhatsAppSetup = ({
           </div>
           <h3 className="text-2xl font-bold text-[#313166] mb-3">Use Vadik WhatsApp for now</h3>
           <p className="text-sm text-gray-600 leading-7 mb-5">
-            Your business can start immediately with Vadik&apos;s managed WhatsApp account. You can switch to your own Meta account later from Integration Management.
+            Your business can start immediately with Vadik&apos;s managed WhatsApp account. You can switch to your own Meta account later from Integrations.
           </p>
           <div className="space-y-3 text-sm text-gray-600 mb-6">
             <div className="rounded-2xl bg-[#F8FAFC] border border-gray-200 p-4">
               Messages continue through Vadik&apos;s default account and default templates.
             </div>
             <div className="rounded-2xl bg-[#F8FAFC] border border-gray-200 p-4">
-              You can still connect your own number later from the WhatsApp tab in Integration Management.
+              You can still connect your own number later from the WhatsApp tab in Integrations.
             </div>
           </div>
           <button

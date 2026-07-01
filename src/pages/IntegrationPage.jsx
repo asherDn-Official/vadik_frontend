@@ -336,7 +336,7 @@ const IntegrationDashboard = () => {
       <div className="app-page-shell">
       <div className="mb-8">
         <h1 className="text-[20px] font-[500] mb-2 text-[#313166]">
-          Integration Management
+          Integrations
         </h1>
         <p className="text-[14px] font-[400] text-[#313166]">
           Effortless Integration for Seamless User Engagement and Automated

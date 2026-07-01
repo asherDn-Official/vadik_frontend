@@ -23,7 +23,7 @@ const GoogleReviewSetup = ({
           </div>
           <h3 className="text-2xl font-bold text-[#313166] mb-3">Skip this for now</h3>
           <p className="text-sm text-gray-600 leading-7 mb-5">
-            You can finish onboarding now and connect your Google Place Review integration later from Integration Management.
+            You can finish onboarding now and connect your Google Place Review integration later from Integrations.
           </p>
           <div className="space-y-3 text-sm text-gray-600 mb-6">
             <div className="rounded-2xl bg-[#F8FAFC] border border-gray-200 p-4">

@@ -347,7 +347,7 @@ const TemplateSetup = ({
           </h3>
           <p className="text-sm text-gray-600 leading-7">
             When you continue, your business will use Vadik&apos;s default WhatsApp account and its standard
-            approved templates. You can connect your own account later from Integration Management whenever
+            approved templates. You can connect your own account later from Integrations whenever
             you&apos;re ready.
           </p>
         </div>

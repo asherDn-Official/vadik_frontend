@@ -77,7 +77,7 @@ const UserPermissions = ({ user, onSave, onBack }) => {
     },
     {
       key: "integrationManagement",
-      title: "Integration Management",
+      title: "Integrations",
       description:
         "Connect and manage third-party services, APIs, and system integrations.",
     },
