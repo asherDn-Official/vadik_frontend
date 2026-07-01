@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Activity,
   ArrowRight,
@@ -720,10 +720,27 @@ function RetentionBuilderView({
   const [conditionDraftRule, setConditionDraftRule] = useState({ fieldKey: "", operator: "", value: "", valueTo: "" });
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const previewHandlerRef = useRef(onPreview);
 
   useEffect(() => {
     setForm(normalizeAutomationForForm(initialAutomation));
   }, [initialAutomation]);
+
+  useEffect(() => {
+    previewHandlerRef.current = onPreview;
+  }, [onPreview]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      previewHandlerRef.current?.({
+        ...form,
+        audienceRules: form.audienceRules || { logic: "AND", conditions: [] },
+        conditionRules: form.conditionRules || { logic: "AND", conditions: [] },
+      });
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [form.audienceRules, form.conditionRules]);
 
   const selectedTriggerGroup =
     triggerGroups.find((group) => group.items.some((item) => item.id === form.triggerType)) || triggerGroups[0];
@@ -824,13 +841,13 @@ function RetentionBuilderView({
       return;
     }
 
-    setForm({
-      ...form,
+    setForm((previous) => ({
+      ...previous,
       [ruleType]: {
-        ...form[ruleType],
-        conditions: [...form[ruleType].conditions, draftRule],
+        ...previous[ruleType],
+        conditions: [...previous[ruleType].conditions, draftRule],
       },
-    });
+    }));
 
     if (ruleType === "audienceRules") {
       setAudienceDraftRule({ fieldKey: "", operator: "", value: "", valueTo: "" });
@@ -841,20 +858,20 @@ function RetentionBuilderView({
   };
 
   const removeRule = (ruleType, index) => {
-    setForm({
-      ...form,
+    setForm((previous) => ({
+      ...previous,
       [ruleType]: {
-        ...form[ruleType],
-        conditions: form[ruleType].conditions.filter((_, itemIndex) => itemIndex !== index),
+        ...previous[ruleType],
+        conditions: previous[ruleType].conditions.filter((_, itemIndex) => itemIndex !== index),
       },
-    });
+    }));
   };
 
   const applyQuickSegment = (segment) => {
-    setForm({
-      ...form,
+    setForm((previous) => ({
+      ...previous,
       audienceRules: segment.rules,
-    });
+    }));
   };
 
   const handleSave = () => {
@@ -967,7 +984,7 @@ function RetentionBuilderView({
                   <span className="mb-2 block text-sm font-medium text-[#313166]">Automation name</span>
                   <input
                     value={form.name}
-                    onChange={(event) => setForm({ ...form, name: event.target.value })}
+                    onChange={(event) => setForm((previous) => ({ ...previous, name: event.target.value }))}
                     className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition-all focus:border-[#313166]"
                     placeholder="Enter automation name"
                   />
@@ -1015,7 +1032,7 @@ function RetentionBuilderView({
                           <button
                             key={item.id}
                             type="button"
-                            onClick={() => setForm({ ...form, triggerType: item.id })}
+                            onClick={() => setForm((previous) => ({ ...previous, triggerType: item.id }))}
                             className="rounded-2xl border p-4 text-left transition-all"
                             style={{
                               borderColor: active ? group.color : "#E5E7EB",
@@ -1139,7 +1156,12 @@ function RetentionBuilderView({
                   onAddRule={() => addRule("audienceRules", audienceDraftRule)}
                   onRemoveRule={(index) => removeRule("audienceRules", index)}
                   logic={form.audienceRules.logic}
-                  onLogicChange={(logic) => setForm({ ...form, audienceRules: { ...form.audienceRules, logic } })}
+                  onLogicChange={(logic) =>
+                    setForm((previous) => ({
+                      ...previous,
+                      audienceRules: { ...previous.audienceRules, logic },
+                    }))
+                  }
                 />
 
                 <button
@@ -1162,7 +1184,12 @@ function RetentionBuilderView({
                 onAddRule={() => addRule("conditionRules", conditionDraftRule)}
                 onRemoveRule={(index) => removeRule("conditionRules", index)}
                 logic={form.conditionRules.logic}
-                onLogicChange={(logic) => setForm({ ...form, conditionRules: { ...form.conditionRules, logic } })}
+                onLogicChange={(logic) =>
+                  setForm((previous) => ({
+                    ...previous,
+                    conditionRules: { ...previous.conditionRules, logic },
+                  }))
+                }
               />
             )}
 
@@ -1230,7 +1257,12 @@ function RetentionBuilderView({
                     <button
                       key={item.label}
                       type="button"
-                      onClick={() => setForm({ ...form, delay: { mode: item.mode, value: item.value, unit: item.unit } })}
+                      onClick={() =>
+                        setForm((previous) => ({
+                          ...previous,
+                          delay: { mode: item.mode, value: item.value, unit: item.unit },
+                        }))
+                      }
                       className="rounded-full border px-3 py-1 text-xs font-medium transition-all"
                       style={{
                         backgroundColor:
@@ -1759,6 +1791,7 @@ export default function RetentionRhythmAutomation() {
   const [saving, setSaving] = useState(false);
   const [editingAutomation, setEditingAutomation] = useState(null);
   const [previewState, setPreviewState] = useState({ loading: false, count: 0, customers: [] });
+  const previewRequestRef = useRef(0);
 
   const fetchRetentionData = async () => {
     try {
@@ -1807,6 +1840,8 @@ export default function RetentionRhythmAutomation() {
   };
 
   const handlePreview = async (form) => {
+    const requestId = ++previewRequestRef.current;
+
     try {
       setPreviewState((previous) => ({ ...previous, loading: true }));
       const response = await api.post("/api/retention-automations/preview-audience", {
@@ -1815,12 +1850,16 @@ export default function RetentionRhythmAutomation() {
         limit: 5,
       });
 
+      if (requestId !== previewRequestRef.current) return;
+
       setPreviewState({
         loading: false,
         count: response.data?.data?.count || 0,
         customers: response.data?.data?.customers || [],
       });
     } catch (error) {
+      if (requestId !== previewRequestRef.current) return;
+
       console.error("Error previewing audience:", error);
       setPreviewState({ loading: false, count: 0, customers: [] });
       showToast("Failed to preview audience", "error");
