@@ -127,7 +127,7 @@ const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
           <button
             onClick={syncTemplates}
             disabled={syncing}
-            className="flex items-center gap-2 px-4 py-2 text-[#313166] border border-[#313166] rounded-xl hover:bg-[#313166]/5 transition-all disabled:opacity-50"
+            className="hidden items-center gap-2 px-4 py-2 text-[#313166] border border-[#313166] rounded-xl hover:bg-[#313166]/5 transition-all disabled:opacity-50"
           >
             <RefreshCw size={18} className={syncing ? "animate-spin" : ""} />
             {syncing ? "Syncing..." : "Sync from Meta"}
@@ -219,7 +219,7 @@ const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
                         </button>
                         <button 
                           onClick={() => deleteTemplate(template._id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="hidden p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete Template"
                         >
                           <Trash2 size={16} />
