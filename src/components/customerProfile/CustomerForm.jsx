@@ -13,6 +13,10 @@ import { format, isValid } from "date-fns";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import ManageSourcesPopup from "./components/ManageSourcesPopup.jsx";
+import {
+  MAX_CUSTOMER_LABELS,
+  normalizeCustomerLabels,
+} from "../../utils/customerLabelUtils";
 
 const MAX_PROFILE_PICTURE_SIZE_BYTES = 2 * 1024 * 1024;
 const PROFILE_PICTURE_SIZE_ERROR =
@@ -616,9 +620,20 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
               <input
                 type="text"
                 placeholder="VIP, New, Summer Sale"
-                {...register("labels")}
+                {...register("labels", {
+                  validate: (value) => {
+                    const labels = normalizeCustomerLabels(value);
+                    return (
+                      labels.length <= MAX_CUSTOMER_LABELS ||
+                      `You can add up to ${MAX_CUSTOMER_LABELS} labels only`
+                    );
+                  },
+                })}
                 className={inputStyles}
               />
+              {errors.labels && (
+                <p className="text-red-500 text-xs">{errors.labels.message}</p>
+              )}
               
               {uniqueLabels.length > 0 && (
                 <div className="flex flex-wrap gap-2">
@@ -628,12 +643,26 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                       key={label}
                       type="button"
                       onClick={() => {
-                        const currentLabels = getValues("labels") || "";
-                        const labelsArray = currentLabels.split(",").map(l => l.trim()).filter(l => l !== "");
-                        if (!labelsArray.includes(label)) {
-                          const newValue = labelsArray.length > 0 ? `${currentLabels}, ${label}` : label;
-                          setValue("labels", newValue);
+                        const currentLabels = normalizeCustomerLabels(
+                          getValues("labels") || "",
+                        );
+                        const existingKeys = new Set(
+                          currentLabels.map((item) => item.toLowerCase()),
+                        );
+
+                        if (existingKeys.has(label.toLowerCase())) {
+                          return;
                         }
+
+                        if (currentLabels.length >= MAX_CUSTOMER_LABELS) {
+                          showToast(
+                            `You can add up to ${MAX_CUSTOMER_LABELS} labels only.`,
+                            "error",
+                          );
+                          return;
+                        }
+
+                        setValue("labels", [...currentLabels, label].join(", "));
                       }}
                       className="px-2 py-1 text-[10px] bg-[#F3F5FF] text-[#313166] rounded-full border border-[#E8ECF8] hover:bg-[#E8ECF8] transition-colors"
                     >

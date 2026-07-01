@@ -5,6 +5,7 @@ import Select from "react-select";
 import api from "../api/apiconfig";
 import { FiUsers } from "react-icons/fi";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
+import LabelPreview from "../components/common/LabelPreview";
 import BulkImportModal from "../components/customerProfile/BulkImportModal";
 import { formatIndianMobile } from "../components/customerProfile/formatIndianMobile";
 import { getCustomerProfilePictureSrc } from "../utils/customerImageUtils";
@@ -574,7 +575,7 @@ const CustomerList = () => {
                               {customer.source}
                             </td>
                             <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
-                              {Array.isArray(customer.labels) ? customer.labels.join(", ") : (customer.labels || "-")}
+                              <LabelPreview labels={customer.labels} />
                             </td>
                             <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               <button
