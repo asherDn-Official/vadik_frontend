@@ -1,5 +1,5 @@
 import React from "react";
-import { normalizeCustomerLabels, MAX_CUSTOMER_LABELS } from "../../../../Vadik_AI_Backend-AWS/Utils/customerLabelUtils";
+import { normalizeCustomerLabels, MAX_CUSTOMER_LABELS } from "../../utils/customerLabelUtils.js";
 
 const LabelPreview = ({ labels, className = "" }) => {
   const normalizedLabels = normalizeCustomerLabels(labels);
