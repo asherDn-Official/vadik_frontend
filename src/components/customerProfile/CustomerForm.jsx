@@ -35,9 +35,12 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
       if (!allowedTypes.includes(file.type)) {
-        showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+        showToast(
+          "Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.",
+          "error",
+        );
         setProfileFile(null);
         setProfilePreview(null);
         e.target.value = "";
@@ -96,7 +99,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
     mode: "onChange",
   });
 
-  const [retailerId] = React.useState(() => localStorage.getItem("retailerId") || "");
+  const [retailerId] = React.useState(
+    () => localStorage.getItem("retailerId") || "",
+  );
 
   // Fetch sources on component mount
   React.useEffect(() => {
@@ -367,7 +372,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
             className="hidden"
           />
           <div className="text-center">
-            <p className="text-sm font-medium text-[#313166]">Customer Picture</p>
+            <p className="text-sm font-medium text-[#313166]">
+              Customer Picture
+            </p>
             <p className="text-xs text-[#8B90B2] mt-1">PNG, JPG up to 1MB</p>
           </div>
         </div>
@@ -623,10 +630,22 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                 {...register("labels", {
                   validate: (value) => {
                     const labels = normalizeCustomerLabels(value);
-                    return (
-                      labels.length <= MAX_CUSTOMER_LABELS ||
-                      `You can add up to ${MAX_CUSTOMER_LABELS} labels only`
+
+                    // ✅ Max label count validation
+                    if (labels.length > MAX_CUSTOMER_LABELS) {
+                      return `You can add up to ${MAX_CUSTOMER_LABELS} labels only`;
+                    }
+
+                    // ✅ Each label length validation (max 50 chars)
+                    const invalidLabel = labels.find(
+                      (label) => label.length > 20,
                     );
+
+                    if (invalidLabel) {
+                      return `Each label must not exceed 50 characters (Invalid: "${invalidLabel}")`;
+                    }
+
+                    return true;
                   },
                 })}
                 className={inputStyles}
@@ -634,10 +653,12 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
               {errors.labels && (
                 <p className="text-red-500 text-xs">{errors.labels.message}</p>
               )}
-              
+
               {uniqueLabels.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  <span className="text-xs text-[#8B90B2] w-full mb-1">Quick Add:</span>
+                  <span className="text-xs text-[#8B90B2] w-full mb-1">
+                    Quick Add:
+                  </span>
                   {uniqueLabels.map((label) => (
                     <button
                       key={label}
@@ -662,7 +683,10 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                           return;
                         }
 
-                        setValue("labels", [...currentLabels, label].join(", "));
+                        setValue(
+                          "labels",
+                          [...currentLabels, label].join(", "),
+                        );
                       }}
                       className="px-2 py-1 text-[10px] bg-[#F3F5FF] text-[#313166] rounded-full border border-[#E8ECF8] hover:bg-[#E8ECF8] transition-colors"
                     >
@@ -672,7 +696,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                 </div>
               )}
             </div>
-            <p className="text-xs text-[#8B90B2]">Add tags to group and filter customers</p>
+            <p className="text-xs text-[#8B90B2]">
+              Add tags to group and filter customers
+            </p>
           </div>
         </div>
 
