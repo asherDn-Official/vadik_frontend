@@ -216,7 +216,7 @@ const CustomerAdd = () => {
           >
             ⚠️ You have low WhatsApp credits. Please top up your credits in the
             subscription page to continue using Vadik's default WhatsApp
-            account. Adding a new customer will not send an opt-in message.
+            account. Adding a new customer will not send a start message.
           </div>
         )}
 

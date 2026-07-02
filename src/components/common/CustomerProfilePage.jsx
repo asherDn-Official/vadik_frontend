@@ -230,7 +230,7 @@ function CustomerProfilePage() {
                             value={customerData.source || "Unknown"}
                           />
                           <DetailItem
-                            label="Opt-In"
+                            label="Start"
                             value={customerData.isOptedIn ? "Yes" : "No"}
                           />
                           <DetailItem
