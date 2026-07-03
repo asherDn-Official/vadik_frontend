@@ -96,9 +96,9 @@ drop-shadow-[0_2px_8px_rgba(245,179,1,0.35)] text-[22px] sm:text-[25px]"
             Satisfaction
           </div>
 
-          <div className="mt-2 text-xl font-bold leading-none text-[#1F1C5C] sm:text-[1.45rem] xl:text-[1.65rem]">
-            Excellent
-          </div>
+         <div className="mt-2 text-xl font-bold leading-none text-[#1F1C5C] sm:text-[1.45rem] xl:text-[1.65rem]">
+  {customers > 0 && safeStarCount > 0 ? "Excellent" : "-"}
+</div>
         </div>
 
         {/* Rating */}

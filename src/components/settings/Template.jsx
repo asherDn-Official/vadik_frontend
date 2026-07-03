@@ -33,44 +33,76 @@ const STANDARD_TEMPLATES = [
     description: 'Specifically used for new customer registration via QR code.'
   },
   { 
-    id: 'optin_optout', 
-    label: 'Opt-in/Opt-out Request', 
-    defaultText: 'Hello {{1}}, welcome to {{2}}. Would you like to receive updates from us?',
+    id: 'start_stop_request', 
+    label: 'Start/Stop Request', 
+    defaultText: 'Hello {{1}}, thank you for being part of {{2}}. Would you like to receive updates from us? Reply START to stay connected or STOP if you prefer not to.',
     vars: ['Name', 'Store Name'],
-    category: 'MARKETING',
-    description: 'Initial message to get customer consent for marketing messages.'
+    category: 'UTILITY',
+    description: 'Initial message to get customer consent for future updates.'
   },
   { 
-    id: 'opt_in_success_1', 
-    label: 'Opt-in Success', 
-    defaultText: 'Thank you {{1}} for opting in to updates from {{2}}!',
+    id: 'start_success_1', 
+    label: 'Start Success', 
+    defaultText: 'Thank you {{1}} for choosing START with {{2}}!',
     vars: ['Name', 'Store Name'],
     category: 'MARKETING',
-    description: 'Confirmation message sent after a user successfully opts in.'
+    description: 'Confirmation message sent after a user chooses START.'
   },
   { 
-    id: 'opt_in_confirmation_2', 
-    label: 'Opt-in Confirmation', 
-    defaultText: 'Hi {{1}}, please confirm your subscription to {{2}} by replying YES.',
+    id: 'start_confirmation_2', 
+    label: 'Start Confirmation', 
+    defaultText: 'Hi {{1}}, your START request for {{2}} has been confirmed.',
     vars: ['Name', 'Store Name'],
     category: 'MARKETING',
-    description: 'Secondary confirmation for double opt-in flows.'
+    description: 'Secondary confirmation for start flows.'
   },
   {
-    id: 'opt_out_confirmation',
-    label: 'Opt-out Confirmation Request',
+    id: 'stop_confirmation',
+    label: 'Stop Confirmation Request',
     defaultText: 'Hi {{1}}, are you sure you want to stop receiving updates from {{2}}? To confirm, click STOP below or reply STOP.',
     vars: ['Name', 'Store Name'],
     category: 'UTILITY',
-    description: 'Sent when a customer first requests to opt-out, to confirm their decision.'
+    description: 'Sent when a customer first requests to STOP updates, to confirm their decision.'
   },
   { 
-    id: 'opt_out_acknowledged', 
-    label: 'Opt-out Acknowledged', 
-    defaultText: 'Hi {{1}}, you have been successfully unsubscribed from {{2}} updates.',
+    id: 'stop_acknowledged', 
+    label: 'Stop Acknowledged', 
+    defaultText: 'Hi {{1}}, you have been successfully stopped from receiving {{2}} updates.',
     vars: ['Name', 'Store Name'],
     category: 'UTILITY',
-    description: 'Message confirming the user has been removed from the mailing list.'
+    description: 'Message confirming the user has been removed from optional updates.'
+  },
+  {
+    id: 'start_reminder_1',
+    label: 'Start Reminder 1',
+    defaultText: 'Hi {{1}}, reply START to keep receiving updates from {{2}}.',
+    vars: ['Name', 'Store Name'],
+    category: 'MARKETING',
+    description: 'First reminder for customers to choose START.'
+  },
+  {
+    id: 'start_reminder_2',
+    label: 'Start Reminder 2',
+    defaultText: 'Hi {{1}}, we would love to keep sharing updates from {{2}}. Reply START to continue.',
+    vars: ['Name', 'Store Name'],
+    category: 'MARKETING',
+    description: 'Second reminder for customers to choose START.'
+  },
+  {
+    id: 'start_reminder_3',
+    label: 'Start Reminder 3',
+    defaultText: 'Hi {{1}}, one last reminder from {{2}}. Reply START if you want to stay connected.',
+    vars: ['Name', 'Store Name'],
+    category: 'MARKETING',
+    description: 'Third reminder for customers to choose START.'
+  },
+  {
+    id: 'final_start_attempt',
+    label: 'Final Start Attempt',
+    defaultText: 'Hi {{1}}, this is our final reminder from {{2}}. Reply START to continue receiving updates.',
+    vars: ['Name', 'Store Name'],
+    category: 'MARKETING',
+    description: 'Final reminder in the start consent sequence.'
   },
   { 
     id: 'birthday_greeting', 
@@ -208,6 +240,18 @@ const Template = () => {
     }
   }, [quickCreateData.text, quickCreateData.category, quickCreateData.role]);
 
+  const handleOpenSyncModal = useCallback(() => {
+    const data = STANDARD_TEMPLATES.map(t => ({
+      ...t,
+      selected: !templates.some(existing => existing.name === t.id.toLowerCase()),
+      text: t.defaultText,
+      name: t.id,
+      customName: t.id
+    }));
+    setSyncTemplatesData(data);
+    setShowSyncModal(true);
+  }, [templates]);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('sync') === 'true' && !loading) {
@@ -219,7 +263,7 @@ const Template = () => {
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [location.search, loading, templates.length]);
+  }, [location.search, loading, templates.length, handleOpenSyncModal]);
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -264,8 +308,6 @@ const Template = () => {
 
   const checkCategoryConsistency = (text, category) => {
     const marketingKeywords = ['offer', 'sale', 'discount', 'promo', 'coupon', 'exclusive', 'shop', 'buy', 'win', 'gift'];
-    const utilityKeywords = ['verification', 'code', 'otp', 'update', 'confirmed', 'receipt', 'invoice', 'shipped', 'delivery'];
-    
     const lowerText = text.toLowerCase();
     
     if (category === 'UTILITY') {
@@ -403,7 +445,7 @@ const Template = () => {
           }
         ];
 
-        if (template.id === 'opt_out_confirmation') {
+        if (template.id === 'stop_confirmation') {
           components.push({
             type: 'BUTTONS',
             buttons: [
@@ -539,17 +581,7 @@ const Template = () => {
     }
   };
 
-  const handleOpenSyncModal = () => {
-    const data = STANDARD_TEMPLATES.map(t => ({
-      ...t,
-      selected: !templates.some(existing => existing.name === t.id.toLowerCase()),
-      text: t.defaultText,
-      name: t.id,
-      customName: t.id
-    }));
-    setSyncTemplatesData(data);
-    setShowSyncModal(true);
-  };
+
 
   const updateMapping = async (roleId, templateName, language = "en") => {
     try {

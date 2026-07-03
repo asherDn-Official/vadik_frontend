@@ -251,7 +251,7 @@ export const sampleTours = [
       },
       {
         id: 'dashboard-7',
-        title: 'Opt-In / Opt-Out Tracking',
+        title: 'Start / Stop Tracking',
         description: 'View customer preferences for communication and marketing.',
         imageUrl: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1200',
       },

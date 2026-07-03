@@ -81,7 +81,7 @@ const previewQuickSegments = [
   },
   {
     key: "opted_in",
-    label: "Opted-In",
+    label: "Started",
     rules: { logic: "AND", conditions: [{ fieldKey: "isOptedIn", operator: "is_true" }] },
   },
   {

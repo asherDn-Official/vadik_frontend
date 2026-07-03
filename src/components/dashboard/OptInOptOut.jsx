@@ -2,41 +2,79 @@ import { useEffect, useState } from "react";
 import api from "../../api/apiconfig";
 
 function OptInOptOut() {
-  const [optIn, setOptIn] = useState(60);
-  const [optOut, setOptOut] = useState(40);
+  const [loyaltyScore, setLoyaltyScore] = useState(60);
+  const [riskScore, setRiskScore] = useState(40);
+  const [loyalCustomerPeriodDays, setLoyalCustomerPeriodDays] = useState(120);
+  const [loyalCustomers, setLoyalCustomers] = useState(0);
+  const [nonLoyalCustomers, setNonLoyalCustomers] = useState(0);
+  const [totalCustomers, setTotalCustomers] = useState(0);
 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const fetchOptInOut = async () => {
+      const fetchLoyalty = async () => {
         try {
-          const res = await api.get("api/dashboard/optinOutRate");
-          const optInValue = parseFloat(res.data.optInRate.replace("%", ""));
-          const optOutValue = parseFloat(res.data.optOutRate.replace("%", ""));
-
-          setOptIn(optInValue);
-          setOptOut(optOutValue);
+          const res = await api.get("api/dashboard/customerLoyaltyScore");
+          setLoyalCustomerPeriodDays(
+            Number.isFinite(Number(res.data.loyalCustomerPeriodDays))
+              ? Number(res.data.loyalCustomerPeriodDays)
+              : 120,
+          );
+          setLoyalCustomers(
+            Number.isFinite(Number(res.data.loyalCustomers))
+              ? Number(res.data.loyalCustomers)
+              : 0,
+          );
+          setNonLoyalCustomers(
+            Number.isFinite(Number(res.data.nonLoyalCustomers))
+              ? Number(res.data.nonLoyalCustomers)
+              : 0,
+          );
+          setLoyaltyScore(
+            Number.isFinite(Number(res.data.loyaltyScore))
+              ? Number(res.data.loyaltyScore)
+              : 0,
+          );
+          setRiskScore(
+            Number.isFinite(Number(res.data.riskScore))
+              ? Number(res.data.riskScore)
+              : 0,
+          );
+          setTotalCustomers(
+            Number.isFinite(Number(res.data.totalCustomers))
+              ? Number(res.data.totalCustomers)
+              : 0,
+          );
         } catch (error) {
-          console.error("Error fetching opt-in/out data:", error);
-          setOptIn(0);
-          setOptOut(0);
+          console.error("Error fetching loyalty data:", error);
+          setLoyaltyScore(0);
+          setRiskScore(0);
+          setLoyalCustomers(0);
+          setNonLoyalCustomers(0);
+          setTotalCustomers(0);
         } finally {
           setLoading(false);
         }
       };
 
-      fetchOptInOut();
+      fetchLoyalty();
     }, 1000); // Delay for 1 second
 
     return () => clearTimeout(timer); // Cleanup if component unmounts
   }, []);
 
-  const safeOptIn = Number.isFinite(optIn)
-    ? Math.min(Math.max(optIn, 0), 100)
+  const safeLoyalCustomers = Number.isFinite(loyalCustomers)
+    ? Math.max(loyalCustomers, 0)
     : 0;
-  const safeOptOut = Number.isFinite(optOut)
-    ? Math.min(Math.max(optOut, 0), 100)
+  const safeNonLoyalCustomers = Number.isFinite(nonLoyalCustomers)
+    ? Math.max(nonLoyalCustomers, 0)
+    : 0;
+  const safeLoyaltyScore = Number.isFinite(loyaltyScore)
+    ? Math.min(Math.max(loyaltyScore, 0), 100)
+    : 0;
+  const safeRiskScore = Number.isFinite(riskScore)
+    ? Math.min(Math.max(riskScore, 0), 100)
     : 0;
 
   return (
@@ -46,6 +84,9 @@ function OptInOptOut() {
         <h2 className="dashboard-card-title">
           Customer Loyalty
         </h2>
+        <p className="mt-1 text-xs font-medium text-[#7E85A8]">
+          Customers created within {loyalCustomerPeriodDays} days are counted as loyal
+        </p>
       </div>
 
       {/* Loyal Customers */}
@@ -60,7 +101,7 @@ function OptInOptOut() {
           </div>
 
           <span className="ml-3 text-2xl font-bold leading-none text-[#1F1C5C] sm:text-[28px]">
-            {loading ? "--" : `${safeOptIn.toFixed(0)}%`}
+            {loading ? "--" : `${safeLoyaltyScore.toFixed(0)}%`}
           </span>
         </div>
 
@@ -75,7 +116,7 @@ function OptInOptOut() {
             shadow-[0_0_20px_rgba(28,30,139,0.35)]
             transition-all duration-700 ease-out
           "
-            style={{ width: `${safeOptIn}%` }}
+            style={{ width: `${safeLoyaltyScore}%` }}
           />
 
           {/* Shine */}
@@ -95,7 +136,7 @@ function OptInOptOut() {
           </div>
 
           <span className="ml-3 text-2xl font-bold leading-none text-[#E43274] sm:text-[28px]">
-            {loading ? "--" : `${safeOptOut.toFixed(0)}%`}
+            {loading ? "--" : `${safeRiskScore.toFixed(0)}%`}
           </span>
         </div>
 
@@ -110,7 +151,7 @@ function OptInOptOut() {
             shadow-[0_0_20px_rgba(228,50,116,0.35)]
             transition-all duration-700 ease-out
           "
-            style={{ width: `${safeOptOut}%` }}
+            style={{ width: `${safeRiskScore}%` }}
           />
 
           {/* Shine */}
@@ -127,7 +168,10 @@ function OptInOptOut() {
           </div>
 
           <div className="dashboard-stat-value">
-            {loading ? "--" : safeOptIn.toFixed(0)}
+            {loading ? "--" : safeLoyaltyScore.toFixed(0)}
+          </div>
+          <div className="text-[11px] text-[#8B90B2]">
+            {loading ? "--" : `${safeLoyalCustomers} of ${totalCustomers} customers`}
           </div>
         </div>
 
@@ -138,7 +182,10 @@ function OptInOptOut() {
           </div>
 
           <div className="mt-2 text-2xl font-bold leading-none text-[#E43274] sm:text-[28px]">
-            {loading ? "--" : safeOptOut.toFixed(0)}
+            {loading ? "--" : safeRiskScore.toFixed(0)}
+          </div>
+          <div className="text-[11px] text-[#D85B8B]">
+            {loading ? "--" : `${safeNonLoyalCustomers} of ${totalCustomers} customers`}
           </div>
         </div>
       </div>

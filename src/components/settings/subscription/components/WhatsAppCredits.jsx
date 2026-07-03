@@ -1,27 +1,31 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Info, History, CreditCard, ArrowUpCircle, RefreshCw, Calendar, ArrowLeft, ArrowRight } from "lucide-react";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import api from "../../../../api/apiconfig";
 import showToast from "../../../../utils/ToastNotification";
 import { useAuth } from "../../../../context/AuthContext";
-import { calculateTotalWithGST } from "../../../../utils/billingUtils";
 import TopupConfirmationModal from "./TopupConfirmationModal";
 
 const TEMPLATE_PRICING = {
   quiz_link_message: 0.78,
   scratch_card_offer: 0.79,
   spinwheel_offer: 0.79,
-  optin_optout: 0.12,
+  start_stop_request: 0.12,
   custom_event_greeting: 0.78,
   customer_appreciation: 0.78,
   birthday_greeting: 0.82,
   customer_otp: 0.15,
   sale_reminder: 0.78,
-  opt_in_success_1: 0.78,
-  opt_in_confirmation_2: 0.79,
+  start_success_1: 0.78,
+  start_confirmation_2: 0.79,
   anniversary_greeting: 0.79,
-  opt_out_acknowledged: 0
+  stop_acknowledged: 0,
+  stop_confirmation: 0.12,
+  start_reminder_1: 0.78,
+  start_reminder_2: 0.78,
+  start_reminder_3: 0.78,
+  final_start_attempt: 0.78
 };
 
 export default function WhatsAppCredits() {
@@ -30,7 +34,6 @@ export default function WhatsAppCredits() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [topupAmount, setTopupAmount] = useState(100);
   const [isTopupLoading, setIsTopupLoading] = useState(false);
@@ -39,7 +42,6 @@ export default function WhatsAppCredits() {
   const { auth } = useAuth();
 
   const fetchBalance = async () => {
-    setLoading(true);
     try {
       const response = await api.get("/api/whatsapp-credits/balance");
       if (response.data.status) {
@@ -47,8 +49,6 @@ export default function WhatsAppCredits() {
       }
     } catch (error) {
       console.error("Error fetching balance:", error);
-    } finally {
-      setLoading(false);
     }
   };
 

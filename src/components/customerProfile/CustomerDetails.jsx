@@ -1538,8 +1538,8 @@ const CustomerDetails = ({
                       name="isOptedIn"
                       defaultValue={
                         transformedCustomer?.isOptedIn === true
-                          ? "Opt-In"
-                          : "Opt-Out"
+                          ? "Start"
+                          : "Stop"
                       }
                       section="basic"
                       isEditable={false}
@@ -1553,8 +1553,8 @@ const CustomerDetails = ({
                             iconUrl: allowNotificationIconUrl,
                             value:
                               formData?.basic?.isOptedIn === true
-                                ? "Opt-In"
-                                : "Opt-Out",
+                                ? "Start"
+                                : "Stop",
                           },
                         },
                       }}
