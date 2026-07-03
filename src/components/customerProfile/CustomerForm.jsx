@@ -642,7 +642,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
                     );
 
                     if (invalidLabel) {
-                      return `Each label must not exceed 50 characters (Invalid: "${invalidLabel}")`;
+                      return `Each label must not exceed 20 characters (Invalid: "${invalidLabel}")`;
                     }
 
                     return true;
