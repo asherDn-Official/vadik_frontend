@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Copy,
   Eye,
+  ExternalLink,
   FileText,
   Image as ImageIcon,
   LayoutGrid,
@@ -14,6 +15,7 @@ import {
   Pause,
   Play,
   Plus,
+  Phone,
   Settings2,
   Tag,
   Trash2,
@@ -23,6 +25,7 @@ import {
   Zap,
   Clock,
   History,
+  Smartphone,
 } from "lucide-react";
 import api from "../../api/apiconfig";
 import ConfirmationDialog from "../common/ConfirmationDialog";
@@ -30,8 +33,18 @@ import showToast from "../../utils/ToastNotification";
 import { renderWhatsAppFormattedText } from "../../utils/whatsappTextFormatter";
 
 const dashboardStats = [
-  { key: "total", filter: "all", label: "Total automations", tone: "text-[#313166]" },
-  { key: "active", filter: "active", label: "Active", tone: "text-emerald-600" },
+  {
+    key: "total",
+    filter: "all",
+    label: "Total automations",
+    tone: "text-[#313166]",
+  },
+  {
+    key: "active",
+    filter: "active",
+    label: "Active",
+    tone: "text-emerald-600",
+  },
   { key: "paused", filter: "paused", label: "Paused", tone: "text-amber-600" },
   { key: "draft", filter: "draft", label: "Draft", tone: "text-[#CB376D]" },
 ];
@@ -42,7 +55,11 @@ const triggerGroups = [
     color: "#CB376D",
     items: [
       { id: "new_customer", name: "New Customer", icon: UserPlus },
-      { id: "customer_field_date", name: "Customer Date Field", icon: Calendar },
+      {
+        id: "customer_field_date",
+        name: "Customer Date Field",
+        icon: Calendar,
+      },
       { id: "inactive_for_days", name: "Inactive for Days", icon: Activity },
     ],
   },
@@ -54,12 +71,20 @@ const triggerGroups = [
   {
     name: "Activity",
     color: "#D97706",
-    items: [{ id: "customer_activity_completed", name: "Activity Completed", icon: CheckCircle2 }],
+    items: [
+      {
+        id: "customer_activity_completed",
+        name: "Activity Completed",
+        icon: CheckCircle2,
+      },
+    ],
   },
   {
     name: "Recurring",
     color: "#7C3AED",
-    items: [{ id: "scheduled_recurring", name: "Scheduled Recurring", icon: Webhook }],
+    items: [
+      { id: "scheduled_recurring", name: "Scheduled Recurring", icon: Webhook },
+    ],
   },
 ];
 
@@ -72,7 +97,13 @@ const triggerIcons = {
   scheduled_recurring: Webhook,
 };
 
-const stepLabels = ["Journey", "Trigger", "Audience", "Action", "Review"];
+// const stepLabels = ["Journey", "Trigger", "Audience", "Action", "Review"];
+const getStepLabels = (triggerType) => {
+  if (triggerType === "new_customer") {
+    return ["Journey", "Trigger", "Action", "Review"]; // skip Audience
+  }
+  return ["Journey", "Trigger", "Audience", "Action", "Review"];
+};
 const previewQuickSegments = [
   {
     key: "all",
@@ -82,17 +113,30 @@ const previewQuickSegments = [
   {
     key: "opted_in",
     label: "Started",
-    rules: { logic: "AND", conditions: [{ fieldKey: "isOptedIn", operator: "is_true" }] },
+    rules: {
+      logic: "AND",
+      conditions: [{ fieldKey: "isOptedIn", operator: "is_true" }],
+    },
   },
   {
     key: "new_7d",
     label: "New 7d",
-    rules: { logic: "AND", conditions: [{ fieldKey: "createdAt", operator: "in_last_days", value: 7 }] },
+    rules: {
+      logic: "AND",
+      conditions: [
+        { fieldKey: "createdAt", operator: "in_last_days", value: 7 },
+      ],
+    },
   },
   {
     key: "active_30d",
     label: "Active 30d",
-    rules: { logic: "AND", conditions: [{ fieldKey: "firstVisit", operator: "in_last_days", value: 30 }] },
+    rules: {
+      logic: "AND",
+      conditions: [
+        { fieldKey: "firstVisit", operator: "in_last_days", value: 30 },
+      ],
+    },
   },
 ];
 
@@ -166,12 +210,17 @@ const normalizeTemplateVariableToken = (value = "") => {
 };
 
 const getTemplateHeaderMediaType = (template) => {
-  const header = template?.components?.find((component) => component.type === "HEADER");
-  return header && ["IMAGE", "VIDEO", "DOCUMENT"].includes(header.format) ? header.format : "";
+  const header = template?.components?.find(
+    (component) => component.type === "HEADER",
+  );
+  return header && ["IMAGE", "VIDEO", "DOCUMENT"].includes(header.format)
+    ? header.format
+    : "";
 };
 
 const getTemplateHeaderComponent = (template) =>
-  template?.components?.find((component) => component.type === "HEADER") || null;
+  template?.components?.find((component) => component.type === "HEADER") ||
+  null;
 
 const extractTemplateVariables = (template) => {
   const values = [];
@@ -180,12 +229,17 @@ const extractTemplateVariables = (template) => {
 
     const textSources = [
       component?.text || "",
-      ...(Array.isArray(component?.example?.body_text) ? component.example.body_text.flat() : []),
+      ...(Array.isArray(component?.example?.body_text)
+        ? component.example.body_text.flat()
+        : []),
     ].filter(Boolean);
 
     const matches = textSources.join(" ").match(/\{\{\s*\d+\s*\}\}/g) || [];
-    const uniqueMatches = [...new Set(matches.map(normalizeTemplateVariableToken))].sort(
-      (left, right) => Number(left.replace(/\D/g, "")) - Number(right.replace(/\D/g, ""))
+    const uniqueMatches = [
+      ...new Set(matches.map(normalizeTemplateVariableToken)),
+    ].sort(
+      (left, right) =>
+        Number(left.replace(/\D/g, "")) - Number(right.replace(/\D/g, "")),
     );
 
     uniqueMatches.forEach((variable) => {
@@ -202,19 +256,29 @@ const extractTemplateVariables = (template) => {
 const findVariableMapping = (mappings = [], descriptor = {}) =>
   mappings.find(
     (mapping) =>
-      (mapping.componentType || "BODY") === descriptor.componentType && mapping.variable === descriptor.variable
+      (mapping.componentType || "BODY") === descriptor.componentType &&
+      mapping.variable === descriptor.variable,
   ) ||
   mappings.find(
     (mapping) =>
-      !mapping.componentType && descriptor.componentType === "BODY" && mapping.variable === descriptor.variable
+      !mapping.componentType &&
+      descriptor.componentType === "BODY" &&
+      mapping.variable === descriptor.variable,
   );
 
-const upsertVariableMapping = (mappings = [], descriptor = {}, updates = {}) => {
+const upsertVariableMapping = (
+  mappings = [],
+  descriptor = {},
+  updates = {},
+) => {
   const nextMappings = [...mappings];
   const index = nextMappings.findIndex(
     (mapping) =>
-      ((mapping.componentType || "BODY") === descriptor.componentType && mapping.variable === descriptor.variable) ||
-      (!mapping.componentType && descriptor.componentType === "BODY" && mapping.variable === descriptor.variable)
+      ((mapping.componentType || "BODY") === descriptor.componentType &&
+        mapping.variable === descriptor.variable) ||
+      (!mapping.componentType &&
+        descriptor.componentType === "BODY" &&
+        mapping.variable === descriptor.variable),
   );
   const nextMapping = {
     componentType: descriptor.componentType,
@@ -234,30 +298,202 @@ const upsertVariableMapping = (mappings = [], descriptor = {}, updates = {}) => 
   return nextMappings;
 };
 
-const getTemplatePreviewText = (template, mappings, fields) => {
-  const bodyText =
-    template?.components?.find((component) => component.type === "BODY")?.text ||
-    "Choose a template to preview the WhatsApp message.";
+const getTemplatePreviewText = (
+  text = "",
+  componentType = "BODY",
+  mappings = [],
+  fields = [],
+) => {
+  const fallbackText =
+    componentType === "BODY"
+      ? "Choose a template to preview the WhatsApp message."
+      : "";
+  const sourceText = text || fallbackText;
 
-  if (!template) return bodyText;
+  if (!sourceText) return "";
 
-  let previewText = bodyText;
+  let previewText = sourceText;
   mappings
-    .filter((mapping) => (mapping.componentType || "BODY") === "BODY")
+    .filter(
+      (mapping) => (mapping.componentType || "BODY") === componentType,
+    )
     .forEach((mapping) => {
-    const field = fields.find((item) => item.fieldKey === mapping.value);
-    const replacement =
-      mapping.sourceType === "static"
-        ? mapping.value || "value"
-        : mapping.sourceType === "derived"
-          ? mapping.value || "derived"
-          : field?.label || "customer field";
+      const field = fields.find((item) => item.fieldKey === mapping.value);
+      const replacement =
+        mapping.sourceType === "static"
+          ? mapping.value || "value"
+          : mapping.sourceType === "derived"
+            ? mapping.value || "derived"
+            : field?.label || "customer field";
 
-    previewText = previewText.replaceAll(mapping.variable, `{{${replacement}}}`);
+      previewText = previewText.replaceAll(
+        mapping.variable,
+        `{{${replacement}}}`,
+      );
     });
 
   return previewText;
 };
+
+function WhatsAppTemplatePreviewCard({
+  template,
+  headerComponent,
+  headerText = "",
+  bodyText,
+  footerText = "",
+  buttons = [],
+  mediaType = "",
+  mediaUrl = "",
+}) {
+  const headerFormat = headerComponent?.format || mediaType || "";
+  const resolvedMediaUrl =
+    mediaUrl?.trim() ||
+    headerComponent?.mediaUrl ||
+    headerComponent?.example?.header_handle?.[0] ||
+    "";
+
+  return (
+    <div className="rounded-3xl bg-[#313166] p-5 text-white shadow-lg">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-xs uppercase tracking-[0.25em] text-white/60">
+            Live Preview
+          </div>
+          <h3 className="mt-2 text-lg font-semibold">
+            {template?.name || "WhatsApp Template"}
+          </h3>
+        </div>
+        <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
+          Template
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-[28px] bg-[#171717] p-3 shadow-2xl">
+        <div className="overflow-hidden rounded-[22px] bg-[#0a0a0a]">
+          <div className="flex items-center gap-3 bg-[#075e54] px-4 py-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+              <Smartphone className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="font-semibold">Vadik Business</div>
+              <div className="text-xs text-white/75">template preview</div>
+            </div>
+          </div>
+
+          <div
+            className="min-h-[320px] space-y-3 px-4 py-4"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, #0d1418 0px, #0d1418 10px, #0e1519 10px, #0e1519 20px)",
+            }}
+          >
+            <div className="flex justify-end">
+              <div className="max-w-[85%] overflow-hidden rounded-2xl rounded-tr-md bg-white shadow-sm">
+                {headerComponent ? (
+                  headerFormat === "TEXT" ? (
+                    <div
+                      className="border-b border-gray-100 px-3 pb-2 pt-3 text-sm font-semibold text-gray-800"
+                      dangerouslySetInnerHTML={{
+                        __html: renderWhatsAppFormattedText(headerText || ""),
+                      }}
+                    />
+                  ) : (
+                    <div className="border-b border-gray-100 bg-[#111827]">
+                      {resolvedMediaUrl ? (
+                        headerFormat === "IMAGE" ? (
+                          <img
+                            src={resolvedMediaUrl}
+                            alt="Template header preview"
+                            className="max-h-64 w-full object-cover"
+                          />
+                        ) : headerFormat === "VIDEO" ? (
+                          <video
+                            src={resolvedMediaUrl}
+                            controls
+                            className="max-h-64 w-full bg-black object-contain"
+                          />
+                        ) : (
+                          <div className="flex items-center gap-3 px-3 py-4 text-white">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium">
+                                Document attachment
+                              </div>
+                              <div className="truncate text-xs text-white/70">
+                                {resolvedMediaUrl}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        <div className="flex min-h-[148px] flex-col items-center justify-center gap-2 px-4 py-6 text-center text-white/70">
+                          {headerFormat === "IMAGE" && (
+                            <ImageIcon className="h-7 w-7" />
+                          )}
+                          {headerFormat === "VIDEO" && (
+                            <Play className="h-7 w-7" />
+                          )}
+                          {headerFormat === "DOCUMENT" && (
+                            <FileText className="h-7 w-7" />
+                          )}
+                          <div className="text-xs font-medium">
+                            {headerFormat
+                              ? `${headerFormat.toLowerCase()} header will appear here`
+                              : "Template header will appear here"}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                ) : null}
+
+                <div className="p-3">
+                  <div
+                    className="whitespace-pre-wrap text-sm text-gray-800"
+                    dangerouslySetInnerHTML={{
+                      __html: renderWhatsAppFormattedText(bodyText || ""),
+                    }}
+                  />
+                  {footerText ? (
+                    <div
+                      className="mt-2 text-[11px] text-gray-500"
+                      dangerouslySetInnerHTML={{
+                        __html: renderWhatsAppFormattedText(footerText),
+                      }}
+                    />
+                  ) : null}
+                  {buttons.length > 0 ? (
+                    <div className="mt-3 border-t border-gray-100">
+                      {buttons.map((button, index) => (
+                        <div
+                          key={`${button.text || "button"}-${index}`}
+                          className="flex items-center justify-center gap-2 border-b border-gray-50 py-2.5 text-center text-sm font-medium text-[#00a884] last:border-b-0"
+                        >
+                          {button.type === "URL" ? (
+                            <ExternalLink className="h-4 w-4" />
+                          ) : null}
+                          {button.type === "PHONE_NUMBER" ? (
+                            <Phone className="h-4 w-4" />
+                          ) : null}
+                          <span>{button.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  <div className="mt-1 text-right text-xs text-gray-400">
+                    12:00 PM
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const formatPhone = (countryCode = "", mobileNumber = "") => {
   const phone = `${countryCode || ""}${mobileNumber || ""}`.trim();
@@ -265,7 +501,9 @@ const formatPhone = (countryCode = "", mobileNumber = "") => {
 };
 
 const formatRuleGroupSummary = (ruleGroup = {}) => {
-  const rules = Array.isArray(ruleGroup?.conditions) ? ruleGroup.conditions : [];
+  const rules = Array.isArray(ruleGroup?.conditions)
+    ? ruleGroup.conditions
+    : [];
   if (!rules.length) return "All";
   return `${ruleGroup.logic || "AND"} • ${rules.length} rule${rules.length === 1 ? "" : "s"}`;
 };
@@ -274,9 +512,12 @@ const formatExecutionSummary = (log) => {
   const triggerSnapshot = log?.triggerSnapshot || {};
   if (triggerSnapshot.customerCreatedAt) return "New customer";
   if (triggerSnapshot.keyword) return `Keyword: ${triggerSnapshot.keyword}`;
-  if (triggerSnapshot.activityType) return `Activity: ${triggerSnapshot.activityType}`;
+  if (triggerSnapshot.activityType)
+    return `Activity: ${triggerSnapshot.activityType}`;
 
-  const audienceSummary = formatRuleGroupSummary(log?.conditionSnapshot?.audienceRules);
+  const audienceSummary = formatRuleGroupSummary(
+    log?.conditionSnapshot?.audienceRules,
+  );
   return `Audience ${audienceSummary}`;
 };
 
@@ -291,16 +532,29 @@ const normalizeAutomationForForm = (automation) => {
     actionConfig: {
       ...createEmptyAutomation().actionConfig,
       ...(restAutomation.actionConfig || {}),
-      templateId: restAutomation.actionConfig?.templateId?._id || restAutomation.actionConfig?.templateId || "",
+      templateId:
+        restAutomation.actionConfig?.templateId?._id ||
+        restAutomation.actionConfig?.templateId ||
+        "",
       variableMappings: restAutomation.actionConfig?.variableMappings || [],
     },
     triggerConfig: {
       ...createEmptyAutomation().triggerConfig,
       ...(restAutomation.triggerConfig || {}),
     },
-    audienceRules: restAutomation.audienceRules || { logic: "AND", conditions: [] },
-    delay: restAutomation.delay || { mode: "immediate", value: 0, unit: "minutes" },
-    safetyFlags: restAutomation.safetyFlags || { preventDuplicateWindowHours: 24, stopIfOptedOut: true },
+    audienceRules: restAutomation.audienceRules || {
+      logic: "AND",
+      conditions: [],
+    },
+    delay: restAutomation.delay || {
+      mode: "immediate",
+      value: 0,
+      unit: "minutes",
+    },
+    safetyFlags: restAutomation.safetyFlags || {
+      preventDuplicateWindowHours: 24,
+      stopIfOptedOut: true,
+    },
   };
 };
 
@@ -317,13 +571,18 @@ function AutomationDashboardView({
   onViewLogs,
 }) {
   const filteredAutomations =
-    selectedView === "all" ? automations : automations.filter((automation) => automation.status === selectedView);
+    selectedView === "all"
+      ? automations
+      : automations.filter((automation) => automation.status === selectedView);
 
   const summary = {
     total: automations.length,
-    active: automations.filter((automation) => automation.status === "active").length,
-    paused: automations.filter((automation) => automation.status === "paused").length,
-    draft: automations.filter((automation) => automation.status === "draft").length,
+    active: automations.filter((automation) => automation.status === "active")
+      .length,
+    paused: automations.filter((automation) => automation.status === "paused")
+      .length,
+    draft: automations.filter((automation) => automation.status === "draft")
+      .length,
   };
 
   return (
@@ -335,20 +594,30 @@ function AutomationDashboardView({
               <Zap className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-white/60">Retention Rhythm</p>
-              <h2 className="mt-1 text-2xl font-semibold">Automation dashboard</h2>
+              <p className="text-xs uppercase tracking-[0.24em] text-white/60">
+                Retention Rhythm
+              </p>
+              <h2 className="mt-1 text-2xl font-semibold">
+                Automation dashboard
+              </h2>
               <p className="mt-2 max-w-3xl text-sm text-white/75">
-                Build reusable WhatsApp retention journeys using dynamic customer fields, typed conditions, and approved templates.
+                Build reusable WhatsApp retention journeys using dynamic
+                customer fields, typed conditions, and approved templates.
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {["WhatsApp-first", "Dynamic fields", "Retention automation"].map((badge) => (
-              <span key={badge} className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-white/80">
-                {badge}
-              </span>
-            ))}
+            {["WhatsApp-first", "Dynamic fields", "Retention automation"].map(
+              (badge) => (
+                <span
+                  key={badge}
+                  className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-white/80"
+                >
+                  {badge}
+                </span>
+              ),
+            )}
           </div>
         </div>
 
@@ -363,12 +632,18 @@ function AutomationDashboardView({
                   onClick={() => onSelectView(stat.filter)}
                   className="rounded-2xl border p-4 text-left transition-all"
                   style={{
-                    backgroundColor: isSelected ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.08)",
-                    borderColor: isSelected ? "rgba(255,255,255,0.22)" : "transparent",
+                    backgroundColor: isSelected
+                      ? "rgba(255,255,255,0.16)"
+                      : "rgba(255,255,255,0.08)",
+                    borderColor: isSelected
+                      ? "rgba(255,255,255,0.22)"
+                      : "transparent",
                   }}
                 >
                   <div className="text-white/70 text-sm">{stat.label}</div>
-                  <div className={`mt-2 text-3xl font-semibold ${stat.tone}`}>{summary[stat.key]}</div>
+                  <div className={`mt-2 text-3xl font-semibold ${stat.tone}`}>
+                    {summary[stat.key]}
+                  </div>
                 </button>
               );
             })}
@@ -388,8 +663,12 @@ function AutomationDashboardView({
       <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-[#313166]">Automations</h3>
-            <p className="text-sm text-gray-500">These flows are now backed by the retention automation APIs.</p>
+            <h3 className="text-lg font-semibold text-[#313166]">
+              Automations
+            </h3>
+            <p className="text-sm text-gray-500">
+              These flows are now backed by the retention automation APIs.
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {["all", "active", "paused", "draft"].map((view) => (
@@ -399,11 +678,14 @@ function AutomationDashboardView({
                 onClick={() => onSelectView(view)}
                 className="rounded-full px-3 py-1.5 text-xs font-medium transition-all"
                 style={{
-                  backgroundColor: selectedView === view ? "#313166" : "#F4F5F9",
+                  backgroundColor:
+                    selectedView === view ? "#313166" : "#F4F5F9",
                   color: selectedView === view ? "white" : "#313166",
                 }}
               >
-                {view === "all" ? "All" : view.charAt(0).toUpperCase() + view.slice(1)}
+                {view === "all"
+                  ? "All"
+                  : view.charAt(0).toUpperCase() + view.slice(1)}
               </button>
             ))}
           </div>
@@ -419,8 +701,13 @@ function AutomationDashboardView({
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#313166]">
                 <LayoutGrid className="h-6 w-6" />
               </div>
-              <h4 className="mt-4 text-lg font-semibold text-[#313166]">No automations found</h4>
-              <p className="mt-2 text-sm text-gray-500">Create your first retention flow to start automating customer follow-ups.</p>
+              <h4 className="mt-4 text-lg font-semibold text-[#313166]">
+                No automations found
+              </h4>
+              <p className="mt-2 text-sm text-gray-500">
+                Create your first retention flow to start automating customer
+                follow-ups.
+              </p>
               <button
                 type="button"
                 onClick={onCreateNew}
@@ -432,7 +719,8 @@ function AutomationDashboardView({
             </div>
           ) : (
             filteredAutomations.map((automation) => {
-              const TriggerIcon = triggerIcons[automation.triggerType] || Activity;
+              const TriggerIcon =
+                triggerIcons[automation.triggerType] || Activity;
               const statusTone =
                 automation.status === "active"
                   ? { background: "#16A34A15", color: "#16A34A" }
@@ -446,35 +734,59 @@ function AutomationDashboardView({
                   className="rounded-2xl border border-gray-100 bg-[#FCFCFF] p-5 shadow-[0_10px_30px_rgba(49,49,102,0.06)] transition-all hover:-translate-y-0.5 hover:shadow-lg"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <button type="button" onClick={() => onEdit(automation)} className="flex-1 text-left">
+                    <button
+                      type="button"
+                      onClick={() => onEdit(automation)}
+                      className="flex-1 text-left"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#31316610] text-[#313166]">
                           <TriggerIcon className="h-5 w-5" />
                         </div>
                         <div>
-                          <h4 className="text-base font-semibold text-[#313166]">{automation.name}</h4>
-                          <p className="mt-0.5 text-sm text-gray-500">{automation.triggerType.replaceAll("_", " ")}</p>
+                          <h4 className="text-base font-semibold text-[#313166]">
+                            {automation.name}
+                          </h4>
+                          <p className="mt-0.5 text-sm text-gray-500">
+                            {automation.triggerType.replaceAll("_", " ")}
+                          </p>
                         </div>
                       </div>
                     </button>
 
-                    <span className="rounded-full px-3 py-1 text-xs font-medium" style={statusTone}>
-                      {automation.status.charAt(0).toUpperCase() + automation.status.slice(1)}
+                    <span
+                      className="rounded-full px-3 py-1 text-xs font-medium"
+                      style={statusTone}
+                    >
+                      {automation.status.charAt(0).toUpperCase() +
+                        automation.status.slice(1)}
                     </span>
                   </div>
 
                   <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
                     <div className="rounded-xl bg-[#F4F5F9] p-3">
-                      <div className="text-xs uppercase text-gray-400">Audience</div>
-                      <div className="mt-1 font-semibold text-[#313166]">{automation.audienceSize || 0}</div>
+                      <div className="text-xs uppercase text-gray-400">
+                        Audience
+                      </div>
+                      <div className="mt-1 font-semibold text-[#313166]">
+                        {automation.audienceSize || 0}
+                      </div>
                     </div>
                     <div className="rounded-xl bg-[#F4F5F9] p-3">
-                      <div className="text-xs uppercase text-gray-400">Delivered</div>
-                      <div className="mt-1 font-semibold text-[#313166]">{automation.delivered || 0}</div>
+                      <div className="text-xs uppercase text-gray-400">
+                        Delivered
+                      </div>
+                      <div className="mt-1 font-semibold text-[#313166]">
+                        {automation.delivered || 0}
+                      </div>
                     </div>
                     <div className="rounded-xl bg-[#F4F5F9] p-3">
-                      <div className="text-xs uppercase text-gray-400">Replied</div>
-                      <div className="mt-1 font-semibold text-[#313166]">{automation.replied || 0}</div>
+                      <div className="text-xs uppercase text-gray-400">
+                        Replied
+                      </div>
+                      <div className="mt-1 font-semibold text-[#313166]">
+                        {automation.replied || 0}
+                      </div>
                     </div>
                   </div>
 
@@ -505,7 +817,11 @@ function AutomationDashboardView({
                       onClick={() => onToggleStatus(automation)}
                       className="inline-flex items-center rounded-xl border border-gray-200 px-3 py-2 text-xs font-medium text-[#313166]"
                     >
-                      {automation.status === "active" ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+                      {automation.status === "active" ? (
+                        <Pause className="mr-2 h-4 w-4" />
+                      ) : (
+                        <Play className="mr-2 h-4 w-4" />
+                      )}
                       {automation.status === "active" ? "Pause" : "Activate"}
                     </button>
                     <button
@@ -535,13 +851,30 @@ function AutomationDashboardView({
   );
 }
 
-function RuleComposer({ label, fields, rules, draftRule, onDraftChange, onAddRule, onRemoveRule, logic, onLogicChange }) {
-  const selectedField = fields.find((field) => field.fieldKey === draftRule.fieldKey);
+function RuleComposer({
+  label,
+  fields,
+  rules,
+  draftRule,
+  onDraftChange,
+  onAddRule,
+  onRemoveRule,
+  logic,
+  onLogicChange,
+}) {
+  const selectedField = fields.find(
+    (field) => field.fieldKey === draftRule.fieldKey,
+  );
   const operators = selectedField?.operators || [];
 
   const renderValueInput = () => {
     if (!selectedField) return null;
-    if (["is_true", "is_false", "today", "is_empty", "is_not_empty"].includes(draftRule.operator)) return null;
+    if (
+      ["is_true", "is_false", "today", "is_empty", "is_not_empty"].includes(
+        draftRule.operator,
+      )
+    )
+      return null;
 
     if (draftRule.operator === "between") {
       const inputType = selectedField.type === "number" ? "number" : "date";
@@ -550,14 +883,18 @@ function RuleComposer({ label, fields, rules, draftRule, onDraftChange, onAddRul
           <input
             type={inputType}
             value={draftRule.value || ""}
-            onChange={(event) => onDraftChange({ ...draftRule, value: event.target.value })}
+            onChange={(event) =>
+              onDraftChange({ ...draftRule, value: event.target.value })
+            }
             className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
             placeholder="From"
           />
           <input
             type={inputType}
             value={draftRule.valueTo || ""}
-            onChange={(event) => onDraftChange({ ...draftRule, valueTo: event.target.value })}
+            onChange={(event) =>
+              onDraftChange({ ...draftRule, valueTo: event.target.value })
+            }
             className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
             placeholder="To"
           />
@@ -573,7 +910,9 @@ function RuleComposer({ label, fields, rules, draftRule, onDraftChange, onAddRul
           <input
             type="number"
             value={draftRule.value || ""}
-            onChange={(event) => onDraftChange({ ...draftRule, value: event.target.value })}
+            onChange={(event) =>
+              onDraftChange({ ...draftRule, value: event.target.value })
+            }
             className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
             placeholder="Number of days"
           />
@@ -584,7 +923,9 @@ function RuleComposer({ label, fields, rules, draftRule, onDraftChange, onAddRul
         <input
           type="date"
           value={draftRule.value || ""}
-          onChange={(event) => onDraftChange({ ...draftRule, value: event.target.value })}
+          onChange={(event) =>
+            onDraftChange({ ...draftRule, value: event.target.value })
+          }
           className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
         />
       );
@@ -594,7 +935,9 @@ function RuleComposer({ label, fields, rules, draftRule, onDraftChange, onAddRul
       return (
         <select
           value={draftRule.value || ""}
-          onChange={(event) => onDraftChange({ ...draftRule, value: event.target.value })}
+          onChange={(event) =>
+            onDraftChange({ ...draftRule, value: event.target.value })
+          }
           className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
         >
           <option value="">Select value</option>
@@ -611,9 +954,13 @@ function RuleComposer({ label, fields, rules, draftRule, onDraftChange, onAddRul
       <input
         type={selectedField.type === "number" ? "number" : "text"}
         value={draftRule.value || ""}
-        onChange={(event) => onDraftChange({ ...draftRule, value: event.target.value })}
+        onChange={(event) =>
+          onDraftChange({ ...draftRule, value: event.target.value })
+        }
         className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
-        placeholder={selectedField.type === "options" ? "Comma separated values" : "Value"}
+        placeholder={
+          selectedField.type === "options" ? "Comma separated values" : "Value"
+        }
       />
     );
   };
@@ -623,7 +970,9 @@ function RuleComposer({ label, fields, rules, draftRule, onDraftChange, onAddRul
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-sm font-semibold text-[#313166]">{label}</div>
-          <div className="text-xs text-gray-500">Choose dynamic customer fields and typed operators.</div>
+          <div className="text-xs text-gray-500">
+            Choose dynamic customer fields and typed operators.
+          </div>
         </div>
         <select
           value={logic}
@@ -638,7 +987,14 @@ function RuleComposer({ label, fields, rules, draftRule, onDraftChange, onAddRul
       <div className="grid gap-3 md:grid-cols-3">
         <select
           value={draftRule.fieldKey}
-          onChange={(event) => onDraftChange({ fieldKey: event.target.value, operator: "", value: "", valueTo: "" })}
+          onChange={(event) =>
+            onDraftChange({
+              fieldKey: event.target.value,
+              operator: "",
+              value: "",
+              valueTo: "",
+            })
+          }
           className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
         >
           <option value="">Select field</option>
@@ -651,7 +1007,14 @@ function RuleComposer({ label, fields, rules, draftRule, onDraftChange, onAddRul
 
         <select
           value={draftRule.operator}
-          onChange={(event) => onDraftChange({ ...draftRule, operator: event.target.value, value: "", valueTo: "" })}
+          onChange={(event) =>
+            onDraftChange({
+              ...draftRule,
+              operator: event.target.value,
+              value: "",
+              valueTo: "",
+            })
+          }
           className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
           disabled={!selectedField}
         >
@@ -663,7 +1026,11 @@ function RuleComposer({ label, fields, rules, draftRule, onDraftChange, onAddRul
           ))}
         </select>
 
-        {renderValueInput() || <div className="rounded-xl border border-dashed border-gray-200 px-3 py-2 text-sm text-gray-400">No extra value needed</div>}
+        {renderValueInput() || (
+          <div className="rounded-xl border border-dashed border-gray-200 px-3 py-2 text-sm text-gray-400">
+            No extra value needed
+          </div>
+        )}
       </div>
 
       <button
@@ -677,12 +1044,22 @@ function RuleComposer({ label, fields, rules, draftRule, onDraftChange, onAddRul
       {rules.length > 0 && (
         <div className="space-y-2">
           {rules.map((rule, index) => {
-            const field = fields.find((item) => item.fieldKey === rule.fieldKey);
+            const field = fields.find(
+              (item) => item.fieldKey === rule.fieldKey,
+            );
             return (
-              <div key={`${rule.fieldKey}-${index}`} className="flex items-center justify-between rounded-xl bg-[#F4F5F9] px-4 py-3 text-sm text-[#313166]">
+              <div
+                key={`${rule.fieldKey}-${index}`}
+                className="flex items-center justify-between rounded-xl bg-[#F4F5F9] px-4 py-3 text-sm text-[#313166]"
+              >
                 <span>
-                  <b>{field?.label || rule.fieldKey}</b> {operatorLabels[rule.operator] || rule.operator}{" "}
-                  <b>{rule.valueTo ? `${rule.value} to ${rule.valueTo}` : rule.value || ""}</b>
+                  <b>{field?.label || rule.fieldKey}</b>{" "}
+                  {operatorLabels[rule.operator] || rule.operator}{" "}
+                  <b>
+                    {rule.valueTo
+                      ? `${rule.value} to ${rule.valueTo}`
+                      : rule.value || ""}
+                  </b>
                 </span>
                 <button type="button" onClick={() => onRemoveRule(index)}>
                   <X className="h-4 w-4 text-gray-400" />
@@ -707,8 +1084,16 @@ function RetentionBuilderView({
   saving,
 }) {
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState(() => normalizeAutomationForForm(initialAutomation));
-  const [audienceDraftRule, setAudienceDraftRule] = useState({ fieldKey: "", operator: "", value: "", valueTo: "" });
+  const [form, setForm] = useState(() =>
+    normalizeAutomationForForm(initialAutomation),
+  );
+  const steps = getStepLabels(form.triggerType);
+  const [audienceDraftRule, setAudienceDraftRule] = useState({
+    fieldKey: "",
+    operator: "",
+    value: "",
+    valueTo: "",
+  });
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const previewHandlerRef = useRef(onPreview);
@@ -730,7 +1115,10 @@ function RetentionBuilderView({
     const timer = window.setTimeout(() => {
       previewHandlerRef.current?.({
         ...formRef.current,
-        audienceRules: formRef.current.audienceRules || { logic: "AND", conditions: [] },
+        audienceRules: formRef.current.audienceRules || {
+          logic: "AND",
+          conditions: [],
+        },
       });
     }, 350);
 
@@ -738,13 +1126,43 @@ function RetentionBuilderView({
   }, [form.audienceRules]);
 
   const selectedTriggerGroup =
-    triggerGroups.find((group) => group.items.some((item) => item.id === form.triggerType)) || triggerGroups[0];
-  const selectedTemplate = templates.find((template) => template._id === form.actionConfig.templateId);
+    triggerGroups.find((group) =>
+      group.items.some((item) => item.id === form.triggerType),
+    ) || triggerGroups[0];
+  const selectedTemplate = templates.find(
+    (template) => template._id === form.actionConfig.templateId,
+  );
   const dateFields = fields.filter((field) => field.type === "date");
   const templateVariables = extractTemplateVariables(selectedTemplate);
   const templateHeaderMediaType = getTemplateHeaderMediaType(selectedTemplate);
   const templateHeader = getTemplateHeaderComponent(selectedTemplate);
-  const previewText = getTemplatePreviewText(selectedTemplate, form.actionConfig.variableMappings || [], fields);
+  const templateBody = selectedTemplate?.components?.find(
+    (component) => component.type === "BODY",
+  );
+  const templateFooter = selectedTemplate?.components?.find(
+    (component) => component.type === "FOOTER",
+  );
+  const templateButtons =
+    selectedTemplate?.components?.find((component) => component.type === "BUTTONS")
+      ?.buttons || [];
+  const previewHeaderText = getTemplatePreviewText(
+    templateHeader?.text || "",
+    "HEADER",
+    form.actionConfig.variableMappings || [],
+    fields,
+  );
+  const previewBodyText = getTemplatePreviewText(
+    templateBody?.text || "",
+    "BODY",
+    form.actionConfig.variableMappings || [],
+    fields,
+  );
+  const previewFooterText = getTemplatePreviewText(
+    templateFooter?.text || "",
+    "FOOTER",
+    form.actionConfig.variableMappings || [],
+    fields,
+  );
   const isEditingAutomation = Boolean(initialAutomation?._id);
 
   const updateTemplate = (templateId) => {
@@ -757,7 +1175,7 @@ function RetentionBuilderView({
           variable: descriptor.variable,
           sourceType: "customer_field",
           value: "firstname",
-        }
+        },
     );
     const mediaType = getTemplateHeaderMediaType(template);
 
@@ -770,7 +1188,10 @@ function RetentionBuilderView({
         languageCode: template?.language || "en_US",
         variableMappings: nextMappings,
         mediaType,
-        mediaUrl: mediaType === form.actionConfig.mediaType ? form.actionConfig.mediaUrl : "",
+        mediaUrl:
+          mediaType === form.actionConfig.mediaType
+            ? form.actionConfig.mediaUrl
+            : "",
       },
     });
   };
@@ -783,21 +1204,33 @@ function RetentionBuilderView({
     if (templateHeaderMediaType === "IMAGE") {
       const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
       if (!allowedTypes.includes(file.type)) {
-        showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+        showToast(
+          "Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.",
+          "error",
+        );
         event.target.value = "";
         return;
       }
       const maxImgSize = 1 * 1024 * 1024; // 1MB for consistency with other modules
       if (file.size > maxImgSize) {
-        showToast("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.", "error");
+        showToast(
+          "Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.",
+          "error",
+        );
         event.target.value = "";
         return;
       }
     } else {
       // Validation for other media (VIDEO, DOCUMENT)
-      const maxSize = templateHeaderMediaType === "VIDEO" ? 64 * 1024 * 1024 : 5 * 1024 * 1024;
+      const maxSize =
+        templateHeaderMediaType === "VIDEO"
+          ? 64 * 1024 * 1024
+          : 5 * 1024 * 1024;
       if (file.size > maxSize) {
-        showToast(`File too large. Max ${maxSize / (1024 * 1024)}MB.`, "warning");
+        showToast(
+          `File too large. Max ${maxSize / (1024 * 1024)}MB.`,
+          "warning",
+        );
         event.target.value = "";
         return;
       }
@@ -808,7 +1241,10 @@ function RetentionBuilderView({
 
     try {
       setUploadingMedia(true);
-      const response = await api.post("/api/integrationManagement/whatsapp/media/upload", formData);
+      const response = await api.post(
+        "/api/integrationManagement/whatsapp/media/upload",
+        formData,
+      );
       if (response.data?.status) {
         setForm((previous) => ({
           ...previous,
@@ -822,7 +1258,9 @@ function RetentionBuilderView({
       }
     } catch (error) {
       console.error("Error uploading template media:", error);
-      const errorMsg = error.response?.data?.message || "Image upload failed. Please verify the file and try again.";
+      const errorMsg =
+        error.response?.data?.message ||
+        "Image upload failed. Please verify the file and try again.";
       showToast(errorMsg, "error");
     } finally {
       setUploadingMedia(false);
@@ -845,7 +1283,12 @@ function RetentionBuilderView({
     }));
 
     if (ruleType === "audienceRules") {
-      setAudienceDraftRule({ fieldKey: "", operator: "", value: "", valueTo: "" });
+      setAudienceDraftRule({
+        fieldKey: "",
+        operator: "",
+        value: "",
+        valueTo: "",
+      });
     }
   };
 
@@ -854,7 +1297,9 @@ function RetentionBuilderView({
       ...previous,
       [ruleType]: {
         ...previous[ruleType],
-        conditions: previous[ruleType].conditions.filter((_, itemIndex) => itemIndex !== index),
+        conditions: previous[ruleType].conditions.filter(
+          (_, itemIndex) => itemIndex !== index,
+        ),
       },
     }));
   };
@@ -873,7 +1318,10 @@ function RetentionBuilderView({
     }
 
     const missingMappings = templateVariables.filter((descriptor) => {
-      const mapping = findVariableMapping(form.actionConfig.variableMappings, descriptor);
+      const mapping = findVariableMapping(
+        form.actionConfig.variableMappings,
+        descriptor,
+      );
       return !mapping?.value?.trim();
     });
 
@@ -883,7 +1331,10 @@ function RetentionBuilderView({
     }
 
     if (templateHeaderMediaType && !form.actionConfig.mediaUrl?.trim()) {
-      showToast(`Add a ${templateHeaderMediaType.toLowerCase()} header URL or upload media before saving`, "warning");
+      showToast(
+        `Add a ${templateHeaderMediaType.toLowerCase()} header URL or upload media before saving`,
+        "warning",
+      );
       return;
     }
 
@@ -892,97 +1343,134 @@ function RetentionBuilderView({
 
   return (
     <>
-    <div className="space-y-6">
-      <div className="rounded-[28px] bg-gradient-to-r from-[#313166] to-[#3d3b83] px-6 py-6 text-white shadow-lg">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-              <Zap className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-white/60">
-                {isEditingAutomation ? "Edit automation" : "Create automation"}
-              </p>
-              <h2 className="mt-1 text-2xl font-semibold">{form.name}</h2>
-              <p className="mt-2 max-w-3xl text-sm text-white/75">
-                This builder now uses the real retention APIs, dynamic field registry, and template catalog.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {stepLabels.map((label, index) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => setStep(index + 1)}
-                className="rounded-full px-3 py-1 text-xs font-medium transition-all"
-                style={{
-                  backgroundColor: step === index + 1 ? "white" : "rgba(255,255,255,0.1)",
-                  color: step === index + 1 ? "#313166" : "rgba(255,255,255,0.8)",
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
-          <button
-            type="button"
-            onClick={onBack}
-            className="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-white/15"
-          >
-            <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
-            Back to dashboard
-          </button>
-
-          <div className="text-xs uppercase tracking-[0.22em] text-white/55">Retention rhythm automation builder</div>
-        </div>
-      </div>
-
-      <div className={`grid gap-6 ${step === 5 ? "xl:grid-cols-[1.25fr_0.95fr]" : "grid-cols-1"}`}>
-        <div className="space-y-6">
-          <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="space-y-6">
+        <div className="rounded-[28px] bg-gradient-to-r from-[#313166] to-[#3d3b83] px-6 py-6 text-white shadow-lg">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+                <Zap className="h-6 w-6" />
+              </div>
               <div>
-                <div className="text-sm uppercase tracking-[0.22em] text-gray-400">Step {step} of 5</div>
-                <h3 className="mt-1 text-lg font-semibold text-[#313166]">{stepLabels[step - 1]}</h3>
-                <p className="text-sm text-gray-500">Use dynamic fields, typed operators, and approved templates.</p>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {stepLabels.map((label, index) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => setStep(index + 1)}
-                    className="rounded-full px-3 py-1 text-xs font-medium transition-all"
-                    style={{
-                      backgroundColor: step === index + 1 ? "#313166" : "#F4F5F9",
-                      color: step === index + 1 ? "white" : "#313166",
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
+                <p className="text-xs uppercase tracking-[0.24em] text-white/60">
+                  {isEditingAutomation
+                    ? "Edit automation"
+                    : "Create automation"}
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold">{form.name}</h2>
+                <p className="mt-2 max-w-3xl text-sm text-white/75">
+                  This builder now uses the real retention APIs, dynamic field
+                  registry, and template catalog.
+                </p>
               </div>
             </div>
 
-            {step === 1 && (
-              <div className="space-y-4">
-                <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-[#313166]">Automation name</span>
-                  <input
-                    value={form.name}
-                    onChange={(event) => setForm((previous) => ({ ...previous, name: event.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition-all focus:border-[#313166]"
-                    placeholder="Enter automation name"
-                  />
-                </label>
+            <div className="flex flex-wrap gap-2">
+              {steps.map((label, index) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+  // 🚀 skip Audience if new_customer
+  if (form.triggerType === "new_customer" && step === 1) {
+    setStep(2); // jump directly to Action
+  } else {
+    setStep(step + 1);
+  }
+}}
+                  className="rounded-full px-3 py-1 text-xs font-medium transition-all"
+                  style={{
+                    backgroundColor:
+                      step === index + 1 ? "white" : "rgba(255,255,255,0.1)",
+                    color:
+                      step === index + 1 ? "#313166" : "rgba(255,255,255,0.8)",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-                {/* <div className="grid gap-3 md:grid-cols-3">
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-white/15"
+            >
+              <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
+              Back to dashboard
+            </button>
+
+            <div className="text-xs uppercase tracking-[0.22em] text-white/55">
+              Retention rhythm automation builder
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`grid gap-6 ${step === 4 || step === 5 ? "xl:grid-cols-[1.05fr_0.95fr]" : "grid-cols-1"}`}
+        >
+          <div className="space-y-6">
+            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+              <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="text-sm uppercase tracking-[0.22em] text-gray-400">
+                    Step {step} of 5
+                  </div>
+                  <h3 className="mt-1 text-lg font-semibold text-[#313166]">
+                    {steps[step - 1]}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Use dynamic fields, typed operators, and approved templates.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {steps.map((label, index) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => {
+  // 🚀 skip Audience if new_customer
+  if (form.triggerType === "new_customer" && step === 1) {
+    setStep(2); // jump directly to Action
+  } else {
+    setStep(step + 1);
+  }
+}}
+                      className="rounded-full px-3 py-1 text-xs font-medium transition-all"
+                      style={{
+                        backgroundColor:
+                          step === index + 1 ? "#313166" : "#F4F5F9",
+                        color: step === index + 1 ? "white" : "#313166",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {step === 1 && (
+                <div className="space-y-4">
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-[#313166]">
+                      Automation name
+                    </span>
+                    <input
+                      value={form.name}
+                      onChange={(event) =>
+                        setForm((previous) => ({
+                          ...previous,
+                          name: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition-all focus:border-[#313166]"
+                      placeholder="Enter automation name"
+                    />
+                  </label>
+
+                  {/* <div className="grid gap-3 md:grid-cols-3">
                   {journeyOptions.map((option) => (
                     <button
                       key={option.id}
@@ -1004,607 +1492,929 @@ function RetentionBuilderView({
                     </button>
                   ))}
                 </div> */}
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="space-y-4">
-                {triggerGroups.map((group) => (
-                  <div key={group.name}>
-                    <div className="mb-3 flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: group.color }} />
-                      <h4 className="text-sm font-semibold uppercase tracking-wide text-gray-500">{group.name}</h4>
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {group.items.map((item) => {
-                        const Icon = item.icon;
-                        const active = form.triggerType === item.id;
-
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => setForm((previous) => ({ ...previous, triggerType: item.id }))}
-                            className="rounded-2xl border p-4 text-left transition-all"
-                            style={{
-                              borderColor: active ? group.color : "#E5E7EB",
-                              backgroundColor: active ? `${group.color}08` : "white",
-                            }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${group.color}15` }}>
-                                <Icon className="h-5 w-5" style={{ color: group.color }} />
-                              </div>
-                              <div>
-                                <div className="font-semibold text-[#313166]">{item.name}</div>
-                                <div className="text-sm text-gray-500">Trigger this flow</div>
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-
-                {form.triggerType === "customer_field_date" && (
-                  <select
-                    value={form.triggerConfig.fieldKey}
-                    onChange={(event) => setForm({ ...form, triggerConfig: { ...form.triggerConfig, fieldKey: event.target.value } })}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                  >
-                    <option value="">Choose a date field</option>
-                    {dateFields.map((field) => (
-                      <option key={field.fieldKey} value={field.fieldKey}>
-                        {field.label} ({field.sourceSection})
-                      </option>
-                    ))}
-                  </select>
-                )}
-
-                {form.triggerType === "inactive_for_days" && (
-                  <input
-                    type="number"
-                    value={form.triggerConfig.days || ""}
-                    onChange={(event) => setForm({ ...form, triggerConfig: { ...form.triggerConfig, days: Number(event.target.value) } })}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                    placeholder="Inactive for how many days?"
-                  />
-                )}
-
-                {form.triggerType === "whatsapp_keyword" && (
-                  <input
-                    value={form.triggerConfig.keyword || ""}
-                    onChange={(event) => setForm({ ...form, triggerConfig: { ...form.triggerConfig, keyword: event.target.value } })}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                    placeholder="Enter keyword"
-                  />
-                )}
-
-                {form.triggerType === "customer_activity_completed" && (
-                  <select
-                    value={form.triggerConfig.activityType || ""}
-                    onChange={(event) => setForm({ ...form, triggerConfig: { ...form.triggerConfig, activityType: event.target.value } })}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                  >
-                    <option value="">Choose activity</option>
-                    <option value="spinwheel">Spin Wheel</option>
-                    <option value="scratchcard">Scratch Card</option>
-                    <option value="quiz">Quiz</option>
-                  </select>
-                )}
-
-                {form.triggerType === "scheduled_recurring" && (
-                  <select
-                    value={form.triggerConfig.scheduleType || "daily"}
-                    onChange={(event) => setForm({ ...form, triggerConfig: { ...form.triggerConfig, scheduleType: event.target.value } })}
-                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                )}
-              </div>
-            )}
-
-            {step === 3 && (
-              <div className="space-y-4">
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  {previewQuickSegments.map((segment) => (
-                    <button
-                      key={segment.key}
-                      type="button"
-                      onClick={() => applyQuickSegment(segment)}
-                      className="rounded-2xl border px-4 py-3 text-left transition-all"
-                      style={{
-                        borderColor: form.audienceRules.conditions.length === segment.rules.conditions.length ? "#313166" : "#E5E7EB",
-                        backgroundColor: "#fff",
-                      }}
-                    >
-                      <div className="font-semibold text-[#313166]">{segment.label}</div>
-                      <div className="text-xs text-gray-500">Audience preset</div>
-                    </button>
-                  ))}
                 </div>
+              )}
 
-                <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
-                  <div className="mb-2 text-sm font-semibold text-[#313166]">Dynamic customer fields</div>
-                  <div className="flex flex-wrap gap-2">
-                    {fields.map((field) => (
-                      <span key={field.fieldKey} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#313166]">
-                        {field.label}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              {step === 2 && (
+                <div className="space-y-4">
+                  {triggerGroups.map((group) => (
+                    <div key={group.name}>
+                      <div className="mb-3 flex items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: group.color }}
+                        />
+                        <h4 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                          {group.name}
+                        </h4>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {group.items.map((item) => {
+                          const Icon = item.icon;
+                          const active = form.triggerType === item.id;
 
-                <RuleComposer
-                  label="Audience rules"
-                  fields={fields}
-                  rules={form.audienceRules.conditions}
-                  draftRule={audienceDraftRule}
-                  onDraftChange={setAudienceDraftRule}
-                  onAddRule={() => addRule("audienceRules", audienceDraftRule)}
-                  onRemoveRule={(index) => removeRule("audienceRules", index)}
-                  logic={form.audienceRules.logic}
-                  onLogicChange={(logic) =>
-                    setForm((previous) => ({
-                      ...previous,
-                      audienceRules: { ...previous.audienceRules, logic },
-                    }))
-                  }
-                />
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => {
+                                setForm((prev) => ({
+                                  ...prev,
+                                  triggerType: item.id,
+                                }));
 
-                <button
-                  type="button"
-                  onClick={() => onPreview(form)}
-                  className="rounded-xl border border-[#313166] px-4 py-2 text-sm font-medium text-[#313166]"
-                >
-                  Preview Audience
-                </button>
-              </div>
-            )}
-
-            {step === 4 && (
-              <div className="space-y-4">
-                <select
-                  value={form.actionConfig.templateId}
-                  onChange={(event) => updateTemplate(event.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                >
-                  <option value="">Choose WhatsApp template</option>
-                  {templates.map((template) => (
-                    <option key={template._id} value={template._id}>
-                      {template.name} ({template.status})
-                    </option>
+                                // 🚀 ADD THIS
+                                if (item.id === "new_customer") {
+                                  setStep(2); // skip Audience
+                                }
+                              }}
+                              className="rounded-2xl border p-4 text-left transition-all"
+                              style={{
+                                borderColor: active ? group.color : "#E5E7EB",
+                                backgroundColor: active
+                                  ? `${group.color}08`
+                                  : "white",
+                              }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="flex h-10 w-10 items-center justify-center rounded-xl"
+                                  style={{
+                                    backgroundColor: `${group.color}15`,
+                                  }}
+                                >
+                                  <Icon
+                                    className="h-5 w-5"
+                                    style={{ color: group.color }}
+                                  />
+                                </div>
+                                <div>
+                                  <div className="font-semibold text-[#313166]">
+                                    {item.name}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    Trigger this flow
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   ))}
-                </select>
 
-                {templateHeaderMediaType && (
-                  <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
-                    <div className="text-sm font-semibold text-[#313166]">{templateHeaderMediaType} header media</div>
-                    <p className="text-sm text-gray-500">
-                      This template uses a media header. Add the file URL or upload the media that should be sent with the automation.
-                    </p>
-                    <input
-                      value={form.actionConfig.mediaUrl || ""}
+                  {form.triggerType === "customer_field_date" && (
+                    <select
+                      value={form.triggerConfig.fieldKey}
                       onChange={(event) =>
                         setForm({
                           ...form,
-                          actionConfig: {
-                            ...form.actionConfig,
-                            mediaUrl: event.target.value,
-                            mediaType: templateHeaderMediaType,
+                          triggerConfig: {
+                            ...form.triggerConfig,
+                            fieldKey: event.target.value,
                           },
                         })
                       }
                       className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                      placeholder={`Paste ${templateHeaderMediaType.toLowerCase()} URL here...`}
-                    />
-                    <div className="flex flex-wrap items-center gap-3">
-                      <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#313166] px-4 py-2 text-sm font-medium text-[#313166]">
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept={
-                            templateHeaderMediaType === "IMAGE"
-                              ? "image/*"
-                              : templateHeaderMediaType === "VIDEO"
-                                ? "video/*"
-                                : ".pdf,.doc,.docx"
-                          }
-                          onChange={handleMediaUpload}
-                        />
-                        {uploadingMedia ? "Uploading..." : form.actionConfig.mediaUrl ? "Replace File" : "Upload File"}
-                      </label>
-                      {form.actionConfig.mediaUrl ? (
-                        <span className="truncate text-xs text-gray-500">{form.actionConfig.mediaUrl}</span>
-                      ) : null}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-2">
-                  {delayOptions.map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() =>
-                        setForm((previous) => ({
-                          ...previous,
-                          delay: { mode: item.mode, value: item.value, unit: item.unit },
-                        }))
-                      }
-                      className="rounded-full border px-3 py-1 text-xs font-medium transition-all"
-                      style={{
-                        backgroundColor:
-                          form.delay.mode === item.mode && form.delay.value === item.value && form.delay.unit === item.unit ? "#313166" : "white",
-                        color:
-                          form.delay.mode === item.mode && form.delay.value === item.value && form.delay.unit === item.unit ? "white" : "#313166",
-                        borderColor:
-                          form.delay.mode === item.mode && form.delay.value === item.value && form.delay.unit === item.unit ? "#313166" : "#E5E7EB",
-                      }}
                     >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
+                      <option value="">Choose a date field</option>
+                      {dateFields.map((field) => (
+                        <option key={field.fieldKey} value={field.fieldKey}>
+                          {field.label} ({field.sourceSection})
+                        </option>
+                      ))}
+                    </select>
+                  )}
 
-                {templateVariables.length > 0 && (
-                  <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
-                    <div className="text-sm font-semibold text-[#313166]">Template variable mapping</div>
-                    {templateVariables.map((descriptor) => {
-                      const mapping = findVariableMapping(form.actionConfig.variableMappings, descriptor) || {
-                        componentType: descriptor.componentType,
-                        variable: descriptor.variable,
-                        sourceType: "customer_field",
-                        value: "firstname",
-                      };
-                      return (
-                        <div key={descriptor.key} className="grid gap-3 md:grid-cols-3">
-                          <div className="space-y-1">
-                            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">{descriptor.componentType}</div>
-                            <input value={descriptor.variable} readOnly className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm" />
-                          </div>
-                          <select
-                            value={mapping.sourceType}
-                            onChange={(event) => {
-                              const nextMappings = upsertVariableMapping(form.actionConfig.variableMappings, descriptor, {
-                                ...mapping,
-                                sourceType: event.target.value,
-                                value: "",
-                              });
-                              setForm({ ...form, actionConfig: { ...form.actionConfig, variableMappings: nextMappings } });
-                            }}
-                            className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                          >
-                            <option value="customer_field">Customer field</option>
-                            <option value="static">Static value</option>
-                            <option value="derived">Derived value</option>
-                          </select>
-                          {mapping.sourceType === "customer_field" ? (
-                            <select
-                              value={mapping.value}
-                              onChange={(event) => {
-                                const nextMappings = upsertVariableMapping(form.actionConfig.variableMappings, descriptor, {
-                                  ...mapping,
-                                  value: event.target.value,
-                                });
-                                setForm({ ...form, actionConfig: { ...form.actionConfig, variableMappings: nextMappings } });
-                              }}
-                              className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                            >
-                              <option value="">Choose field</option>
-                              {fields.map((field) => (
-                                <option key={field.fieldKey} value={field.fieldKey}>
-                                  {field.label}
-                                </option>
-                              ))}
-                            </select>
-                          ) : mapping.sourceType === "derived" ? (
-                            <select
-                              value={mapping.value}
-                              onChange={(event) => {
-                                const nextMappings = upsertVariableMapping(form.actionConfig.variableMappings, descriptor, {
-                                  ...mapping,
-                                  value: event.target.value,
-                                });
-                                setForm({ ...form, actionConfig: { ...form.actionConfig, variableMappings: nextMappings } });
-                              }}
-                              className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                            >
-                              <option value="">Choose derived value</option>
-                              <option value="full_name">Full name</option>
-                              <option value="first_name">First name</option>
-                              <option value="last_name">Last name</option>
-                              <option value="mobile_number">Mobile number</option>
-                              <option value="loyalty_points">Loyalty points</option>
-                              <option value="store_name">Store name</option>
-                              <option value="current_date">Current date</option>
-                            </select>
-                          ) : (
-                            <input
-                              value={mapping.value}
-                              onChange={(event) => {
-                                const nextMappings = upsertVariableMapping(form.actionConfig.variableMappings, descriptor, {
-                                  ...mapping,
-                                  value: event.target.value,
-                                });
-                                setForm({ ...form, actionConfig: { ...form.actionConfig, variableMappings: nextMappings } });
-                              }}
-                              className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                              placeholder="Static value"
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {step === 5 && (
-              <div className="space-y-8 py-4">
-                <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FBFBFE] via-white to-[#F5F6FC] p-4 sm:p-6">
-                  <div className="pointer-events-none absolute left-[27px] top-10 bottom-10 w-0.5 border-l-2 border-dashed border-gray-200 lg:hidden" />
-
-                  <div className="relative flex flex-col gap-10 lg:flex-row lg:justify-between lg:gap-4">
-                    <div className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-7 hidden border-t-2 border-dashed border-[#D8DBEC] lg:block" />
-
-                    {/* Trigger Node */}
-                    <div className="z-10 flex flex-1 flex-col items-center">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm outline outline-4 outline-white">
-                        <Zap size={24} />
-                      </div>
-                      <div className="mt-3 text-center">
-                        <div className="text-xs font-semibold uppercase tracking-wider text-emerald-600">Trigger</div>
-                        <div className="mt-1 text-sm font-bold text-[#313166]">{form.triggerType.replaceAll("_", " ")}</div>
-                        <div className="mt-0.5 text-xs text-gray-500">Starts the journey</div>
-                      </div>
-                    </div>
-
-                    {/* Delay Node */}
-                    <div className="z-10 flex flex-1 flex-col items-center">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 shadow-sm outline outline-4 outline-white">
-                        <Clock size={24} />
-                      </div>
-                      <div className="mt-3 text-center">
-                        <div className="text-xs font-semibold uppercase tracking-wider text-amber-600">Delay</div>
-                        <div className="mt-1 text-sm font-bold text-[#313166]">
-                          {form.delay.mode === "immediate" ? "Immediate" : `${form.delay.value} ${form.delay.unit}`}
-                        </div>
-                        <div className="mt-0.5 text-xs text-gray-500">Wait before action</div>
-                      </div>
-                    </div>
-
-                    {/* Action Node */}
-                    <div className="z-10 flex flex-1 flex-col items-center">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#31316610] text-[#313166] shadow-sm outline outline-4 outline-white">
-                        <MessageCircle size={24} />
-                      </div>
-                      <div className="mt-3 text-center">
-                        <div className="text-xs font-semibold uppercase tracking-wider text-[#313166]">Action</div>
-                        <div className="mt-1 text-sm font-bold text-[#313166]">{selectedTemplate?.name || "WhatsApp Message"}</div>
-                        <div className="mt-0.5 text-xs text-gray-500">Send template</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Configuration Summary Cards */}
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-5">
-                    <div className="mb-3 flex items-center justify-between">
-                      <h4 className="text-sm font-bold text-[#313166]">Audience Filtering</h4>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{form.audienceRules.logic}</span>
-                    </div>
-                    <div className="space-y-2">
-                      {form.audienceRules.conditions.length > 0 ? (
-                        form.audienceRules.conditions.map((rule, idx) => {
-                          const field = fields.find(f => f.fieldKey === rule.fieldKey);
-                          return (
-                            <div key={idx} className="flex items-center gap-2 text-xs text-gray-600">
-                              <CheckCircle2 size={12} className="text-emerald-500" />
-                              <span><b>{field?.label || rule.fieldKey}</b> {operatorLabels[rule.operator] || rule.operator} <b>{rule.value || ""}</b></span>
-                            </div>
-                          );
+                  {form.triggerType === "inactive_for_days" && (
+                    <input
+                      type="number"
+                      value={form.triggerConfig.days || ""}
+                      onChange={(event) =>
+                        setForm({
+                          ...form,
+                          triggerConfig: {
+                            ...form.triggerConfig,
+                            days: Number(event.target.value),
+                          },
                         })
-                      ) : (
-                        <div className="text-xs text-gray-500 italic">No audience rules (targeting all)</div>
-                      )}
-                    </div>
-                  </div>
+                      }
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                      placeholder="Inactive for how many days?"
+                    />
+                  )}
 
+                  {form.triggerType === "whatsapp_keyword" && (
+                    <input
+                      value={form.triggerConfig.keyword || ""}
+                      onChange={(event) =>
+                        setForm({
+                          ...form,
+                          triggerConfig: {
+                            ...form.triggerConfig,
+                            keyword: event.target.value,
+                          },
+                        })
+                      }
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                      placeholder="Enter keyword"
+                    />
+                  )}
+
+                  {form.triggerType === "customer_activity_completed" && (
+                    <select
+                      value={form.triggerConfig.activityType || ""}
+                      onChange={(event) =>
+                        setForm({
+                          ...form,
+                          triggerConfig: {
+                            ...form.triggerConfig,
+                            activityType: event.target.value,
+                          },
+                        })
+                      }
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                    >
+                      <option value="">Choose activity</option>
+                      <option value="spinwheel">Spin Wheel</option>
+                      <option value="scratchcard">Scratch Card</option>
+                      <option value="quiz">Quiz</option>
+                    </select>
+                  )}
+
+                  {form.triggerType === "scheduled_recurring" && (
+                    <select
+                      value={form.triggerConfig.scheduleType || "daily"}
+                      onChange={(event) =>
+                        setForm({
+                          ...form,
+                          triggerConfig: {
+                            ...form.triggerConfig,
+                            scheduleType: event.target.value,
+                          },
+                        })
+                      }
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                  )}
                 </div>
-              </div>
-            )}
-
-            <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-6">
-              <button
-                type="button"
-                onClick={onBack}
-                className="rounded-xl border border-[#313166] px-5 py-2.5 text-sm font-medium text-[#313166]"
-              >
-                Back to dashboard
-              </button>
-
-              <div className="text-sm text-gray-500">Step {step} of 5</div>
-
-              {step < 5 ? (
-                <button
-                  type="button"
-                  onClick={() => setStep((current) => Math.min(5, current + 1))}
-                  className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white"
-                >
-                  Next Step
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
-                >
-                  {saving ? "Saving..." : isEditingAutomation ? "Update Automation" : "Save Automation"}
-                </button>
               )}
-            </div>
-          </div>
-        </div>
 
-        {step === 5 && (
-          <div className="space-y-6">
-            <div className="rounded-3xl bg-[#313166] p-5 text-white shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs uppercase tracking-[0.25em] text-white/60">Live Preview</div>
-                  <h3 className="mt-2 text-lg font-semibold">WhatsApp Retention Flow</h3>
-                </div>
-                <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium">{selectedTriggerGroup.name}</div>
-              </div>
+              {step === 3 && (
+                <div className="space-y-4">
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    {previewQuickSegments.map((segment) => (
+                      <button
+                        key={segment.key}
+                        type="button"
+                        onClick={() => applyQuickSegment(segment)}
+                        className="rounded-2xl border px-4 py-3 text-left transition-all"
+                        style={{
+                          borderColor:
+                            form.audienceRules.conditions.length ===
+                            segment.rules.conditions.length
+                              ? "#313166"
+                              : "#E5E7EB",
+                          backgroundColor: "#fff",
+                        }}
+                      >
+                        <div className="font-semibold text-[#313166]">
+                          {segment.label}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Audience preset
+                        </div>
+                      </button>
+                    ))}
+                  </div>
 
-              <div className="mt-5 rounded-[28px] bg-[#171717] p-3 shadow-2xl">
-                <div className="overflow-hidden rounded-[22px] bg-[#0a0a0a]">
-                  <div className="flex items-center gap-3 bg-[#075e54] px-4 py-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 font-semibold">V</div>
-                    <div className="flex-1">
-                      <div className="font-semibold">Vadik Business</div>
-                      <div className="text-xs text-white/75">retention automation preview</div>
+                  <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
+                    <div className="mb-2 text-sm font-semibold text-[#313166]">
+                      Dynamic customer fields
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {fields.map((field) => (
+                        <span
+                          key={field.fieldKey}
+                          className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#313166]"
+                        >
+                          {field.label}
+                        </span>
+                      ))}
                     </div>
                   </div>
 
-                  <div
-                    className="min-h-[300px] space-y-3 px-4 py-4"
-                    style={{
-                      backgroundImage:
-                        "repeating-linear-gradient(45deg, #0d1418 0px, #0d1418 10px, #0e1519 10px, #0e1519 20px)",
-                    }}
-                  >
-                    <div className="flex justify-end">
-                      <div className="max-w-[85%] overflow-hidden rounded-2xl rounded-tr-md bg-[#005c4b]">
-                        {templateHeader?.format === "TEXT" && templateHeader?.text ? (
-                          <div
-                            className="border-b border-white/10 px-3 pb-2 pt-3 text-sm font-semibold text-white"
-                            dangerouslySetInnerHTML={{
-                              __html: renderWhatsAppFormattedText(templateHeader.text),
-                            }}
-                          />
-                        ) : null}
+                  <RuleComposer
+                    label="Audience rules"
+                    fields={fields}
+                    rules={form.audienceRules.conditions}
+                    draftRule={audienceDraftRule}
+                    onDraftChange={setAudienceDraftRule}
+                    onAddRule={() =>
+                      addRule("audienceRules", audienceDraftRule)
+                    }
+                    onRemoveRule={(index) => removeRule("audienceRules", index)}
+                    logic={form.audienceRules.logic}
+                    onLogicChange={(logic) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        audienceRules: { ...previous.audienceRules, logic },
+                      }))
+                    }
+                  />
 
-                        {templateHeaderMediaType ? (
-                          <div className="border-b border-white/10 bg-black/10">
-                            {form.actionConfig.mediaUrl ? (
-                              templateHeaderMediaType === "IMAGE" ? (
-                                <img
-                                  src={form.actionConfig.mediaUrl}
-                                  alt="Template header preview"
-                                  className="max-h-64 w-full object-cover"
-                                />
-                              ) : templateHeaderMediaType === "VIDEO" ? (
-                                <video
-                                  src={form.actionConfig.mediaUrl}
-                                  controls
-                                  className="max-h-64 w-full bg-black object-contain"
-                                />
-                              ) : (
-                                <div className="flex items-center gap-3 px-3 py-4 text-white">
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-                                    <FileText className="h-5 w-5" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div className="text-sm font-medium">Document attachment</div>
-                                    <div className="truncate text-xs text-white/70">{form.actionConfig.mediaUrl}</div>
-                                  </div>
-                                </div>
-                              )
-                            ) : (
-                              <div className="flex min-h-[148px] flex-col items-center justify-center gap-2 px-4 py-6 text-center text-white/70">
-                                {templateHeaderMediaType === "IMAGE" && <ImageIcon className="h-7 w-7" />}
-                                {templateHeaderMediaType === "VIDEO" && <Play className="h-7 w-7" />}
-                                {templateHeaderMediaType === "DOCUMENT" && <FileText className="h-7 w-7" />}
-                                <div className="text-xs font-medium">
-                                  {templateHeaderMediaType.toLowerCase()} header will appear here
-                                </div>
+                  <button
+                    type="button"
+                    onClick={() => onPreview(form)}
+                    className="rounded-xl border border-[#313166] px-4 py-2 text-sm font-medium text-[#313166]"
+                  >
+                    Preview Audience
+                  </button>
+                </div>
+              )}
+
+              {step === 4 && (
+                <div className="space-y-4">
+                  <select
+                    value={form.actionConfig.templateId}
+                    onChange={(event) => updateTemplate(event.target.value)}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                  >
+                    <option value="">Choose WhatsApp template</option>
+                    {templates.map((template) => (
+                      <option key={template._id} value={template._id}>
+                        {template.name} ({template.status})
+                      </option>
+                    ))}
+                  </select>
+
+                  {templateHeaderMediaType && (
+                    <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
+                      <div className="text-sm font-semibold text-[#313166]">
+                        {templateHeaderMediaType} header media
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        This template uses a media header. Add the file URL or
+                        upload the media that should be sent with the
+                        automation.
+                      </p>
+                      <input
+                        value={form.actionConfig.mediaUrl || ""}
+                        onChange={(event) =>
+                          setForm({
+                            ...form,
+                            actionConfig: {
+                              ...form.actionConfig,
+                              mediaUrl: event.target.value,
+                              mediaType: templateHeaderMediaType,
+                            },
+                          })
+                        }
+                        className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                        placeholder={`Paste ${templateHeaderMediaType.toLowerCase()} URL here...`}
+                      />
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#313166] px-4 py-2 text-sm font-medium text-[#313166]">
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept={
+                              templateHeaderMediaType === "IMAGE"
+                                ? "image/*"
+                                : templateHeaderMediaType === "VIDEO"
+                                  ? "video/*"
+                                  : ".pdf,.doc,.docx"
+                            }
+                            onChange={handleMediaUpload}
+                          />
+                          {uploadingMedia
+                            ? "Uploading..."
+                            : form.actionConfig.mediaUrl
+                              ? "Replace File"
+                              : "Upload File"}
+                        </label>
+                        {form.actionConfig.mediaUrl ? (
+                          <span className="truncate text-xs text-gray-500">
+                            {form.actionConfig.mediaUrl}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    {delayOptions.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() =>
+                          setForm((previous) => ({
+                            ...previous,
+                            delay: {
+                              mode: item.mode,
+                              value: item.value,
+                              unit: item.unit,
+                            },
+                          }))
+                        }
+                        className="rounded-full border px-3 py-1 text-xs font-medium transition-all"
+                        style={{
+                          backgroundColor:
+                            form.delay.mode === item.mode &&
+                            form.delay.value === item.value &&
+                            form.delay.unit === item.unit
+                              ? "#313166"
+                              : "white",
+                          color:
+                            form.delay.mode === item.mode &&
+                            form.delay.value === item.value &&
+                            form.delay.unit === item.unit
+                              ? "white"
+                              : "#313166",
+                          borderColor:
+                            form.delay.mode === item.mode &&
+                            form.delay.value === item.value &&
+                            form.delay.unit === item.unit
+                              ? "#313166"
+                              : "#E5E7EB",
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {templateVariables.length > 0 && (
+                    <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
+                      <div className="text-sm font-semibold text-[#313166]">
+                        Template variable mapping
+                      </div>
+                      {templateVariables.map((descriptor) => {
+                        const mapping = findVariableMapping(
+                          form.actionConfig.variableMappings,
+                          descriptor,
+                        ) || {
+                          componentType: descriptor.componentType,
+                          variable: descriptor.variable,
+                          sourceType: "customer_field",
+                          value: "firstname",
+                        };
+                        return (
+                          <div
+                            key={descriptor.key}
+                            className="grid gap-3 md:grid-cols-3"
+                          >
+                            <div className="space-y-1">
+                              <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                {descriptor.componentType}
                               </div>
+                              <input
+                                value={descriptor.variable}
+                                readOnly
+                                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm"
+                              />
+                            </div>
+                            <select
+                              value={mapping.sourceType}
+                              onChange={(event) => {
+                                const nextMappings = upsertVariableMapping(
+                                  form.actionConfig.variableMappings,
+                                  descriptor,
+                                  {
+                                    ...mapping,
+                                    sourceType: event.target.value,
+                                    value: "",
+                                  },
+                                );
+                                setForm({
+                                  ...form,
+                                  actionConfig: {
+                                    ...form.actionConfig,
+                                    variableMappings: nextMappings,
+                                  },
+                                });
+                              }}
+                              className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                            >
+                              <option value="customer_field">
+                                Customer field
+                              </option>
+                              <option value="static">Static value</option>
+                              <option value="derived">Derived value</option>
+                            </select>
+                            {mapping.sourceType === "customer_field" ? (
+                              <select
+                                value={mapping.value}
+                                onChange={(event) => {
+                                  const nextMappings = upsertVariableMapping(
+                                    form.actionConfig.variableMappings,
+                                    descriptor,
+                                    {
+                                      ...mapping,
+                                      value: event.target.value,
+                                    },
+                                  );
+                                  setForm({
+                                    ...form,
+                                    actionConfig: {
+                                      ...form.actionConfig,
+                                      variableMappings: nextMappings,
+                                    },
+                                  });
+                                }}
+                                className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                              >
+                                <option value="">Choose field</option>
+                                {fields.map((field) => (
+                                  <option
+                                    key={field.fieldKey}
+                                    value={field.fieldKey}
+                                  >
+                                    {field.label}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : mapping.sourceType === "derived" ? (
+                              <select
+                                value={mapping.value}
+                                onChange={(event) => {
+                                  const nextMappings = upsertVariableMapping(
+                                    form.actionConfig.variableMappings,
+                                    descriptor,
+                                    {
+                                      ...mapping,
+                                      value: event.target.value,
+                                    },
+                                  );
+                                  setForm({
+                                    ...form,
+                                    actionConfig: {
+                                      ...form.actionConfig,
+                                      variableMappings: nextMappings,
+                                    },
+                                  });
+                                }}
+                                className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                              >
+                                <option value="">Choose derived value</option>
+                                <option value="full_name">Full name</option>
+                                <option value="first_name">First name</option>
+                                <option value="last_name">Last name</option>
+                                <option value="mobile_number">
+                                  Mobile number
+                                </option>
+                                <option value="loyalty_points">
+                                  Loyalty points
+                                </option>
+                                <option value="store_name">Store name</option>
+                                <option value="current_date">
+                                  Current date
+                                </option>
+                              </select>
+                            ) : (
+                              <input
+                                value={mapping.value}
+                                onChange={(event) => {
+                                  const nextMappings = upsertVariableMapping(
+                                    form.actionConfig.variableMappings,
+                                    descriptor,
+                                    {
+                                      ...mapping,
+                                      value: event.target.value,
+                                    },
+                                  );
+                                  setForm({
+                                    ...form,
+                                    actionConfig: {
+                                      ...form.actionConfig,
+                                      variableMappings: nextMappings,
+                                    },
+                                  });
+                                }}
+                                className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                                placeholder="Static value"
+                              />
                             )}
                           </div>
-                        ) : null}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
 
-                        <div className="p-3">
-                          <div
-                            className="whitespace-pre-wrap text-sm text-white"
-                            dangerouslySetInnerHTML={{
-                              __html: renderWhatsAppFormattedText(previewText),
-                            }}
-                          />
-                          <div className="mt-1 text-right text-xs text-white/60">12:00 PM</div>
+              {step === 5 && (
+                <div className="space-y-8 py-4">
+                  <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FBFBFE] via-white to-[#F5F6FC] p-4 sm:p-6">
+                    <div className="pointer-events-none absolute left-[27px] top-10 bottom-10 w-0.5 border-l-2 border-dashed border-gray-200 lg:hidden" />
+
+                    <div className="relative flex flex-col gap-10 lg:flex-row lg:justify-between lg:gap-4">
+                      <div className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-7 hidden border-t-2 border-dashed border-[#D8DBEC] lg:block" />
+
+                      {/* Trigger Node */}
+                      <div className="z-10 flex flex-1 flex-col items-center">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm outline outline-4 outline-white">
+                          <Zap size={24} />
+                        </div>
+                        <div className="mt-3 text-center">
+                          <div className="text-xs font-semibold uppercase tracking-wider text-emerald-600">
+                            Trigger
+                          </div>
+                          <div className="mt-1 text-sm font-bold text-[#313166]">
+                            {form.triggerType.replaceAll("_", " ")}
+                          </div>
+                          <div className="mt-0.5 text-xs text-gray-500">
+                            Starts the journey
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Delay Node */}
+                      <div className="z-10 flex flex-1 flex-col items-center">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 shadow-sm outline outline-4 outline-white">
+                          <Clock size={24} />
+                        </div>
+                        <div className="mt-3 text-center">
+                          <div className="text-xs font-semibold uppercase tracking-wider text-amber-600">
+                            Delay
+                          </div>
+                          <div className="mt-1 text-sm font-bold text-[#313166]">
+                            {form.delay.mode === "immediate"
+                              ? "Immediate"
+                              : `${form.delay.value} ${form.delay.unit}`}
+                          </div>
+                          <div className="mt-0.5 text-xs text-gray-500">
+                            Wait before action
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Node */}
+                      <div className="z-10 flex flex-1 flex-col items-center">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#31316610] text-[#313166] shadow-sm outline outline-4 outline-white">
+                          <MessageCircle size={24} />
+                        </div>
+                        <div className="mt-3 text-center">
+                          <div className="text-xs font-semibold uppercase tracking-wider text-[#313166]">
+                            Action
+                          </div>
+                          <div className="mt-1 text-sm font-bold text-[#313166]">
+                            {selectedTemplate?.name || "WhatsApp Message"}
+                          </div>
+                          <div className="mt-0.5 text-xs text-gray-500">
+                            Send template
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-[#1f2c33] px-3 py-2">
-                    <div className="flex-1 rounded-full bg-[#2a3942] px-4 py-2 text-sm text-[#8696a0]">Type a message</div>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00a884]">
-                      <ArrowRight className="h-5 w-5 text-white" />
+                  {/* Configuration Summary Cards */}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-5">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-[#313166]">
+                          Audience Filtering
+                        </h4>
+                        <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                          {form.audienceRules.logic}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {form.audienceRules.conditions.length > 0 ? (
+                          form.audienceRules.conditions.map((rule, idx) => {
+                            const field = fields.find(
+                              (f) => f.fieldKey === rule.fieldKey,
+                            );
+                            return (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-2 text-xs text-gray-600"
+                              >
+                                <CheckCircle2
+                                  size={12}
+                                  className="text-emerald-500"
+                                />
+                                <span>
+                                  <b>{field?.label || rule.fieldKey}</b>{" "}
+                                  {operatorLabels[rule.operator] ||
+                                    rule.operator}{" "}
+                                  <b>{rule.value || ""}</b>
+                                </span>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="text-xs text-gray-500 italic">
+                            No audience rules (targeting all)
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              )}
 
-            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-[#313166]">Audience preview</h3>
-                <Eye className="h-4 w-4 text-gray-400" />
-              </div>
+              <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-6">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="rounded-xl border border-[#313166] px-5 py-2.5 text-sm font-medium text-[#313166]"
+                >
+                  Back to dashboard
+                </button>
 
-              <div className="rounded-2xl bg-[#F4F5F9] p-4">
-                <div className="text-3xl font-semibold text-[#313166]">{previewState.loading ? "..." : previewState.count}</div>
-                <div className="text-sm text-gray-500">Customers currently matching this automation</div>
-              </div>
+                <div className="text-sm text-gray-500">Step {step} of 5</div>
 
-              <div className="mt-4 space-y-2">
-                {(previewState.customers || []).map((customer) => (
-                  <div key={`${customer._id}`} className="rounded-xl border border-gray-100 px-4 py-3 text-sm">
-                    <div className="font-medium text-[#313166]">{customer.firstname || "Customer"}</div>
-                    <div className="text-gray-500">
-                      {customer.countryCode ? `+${customer.countryCode}` : ""} {customer.mobileNumber}
-                    </div>
-                  </div>
-                ))}
-
-                {!previewState.loading && previewState.customers.length === 0 && (
-                  <div className="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500">
-                    Run audience preview after adding rules to see sample customers here.
-                  </div>
+                {step < 5 ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setStep((current) => Math.min(5, current + 1))
+                    }
+                    className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white"
+                  >
+                    Next Step
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+                  >
+                    {saving
+                      ? "Saving..."
+                      : isEditingAutomation
+                        ? "Update Automation"
+                        : "Save Automation"}
+                  </button>
                 )}
               </div>
             </div>
           </div>
-        )}
-      </div>
-    </div>
 
-    <ConfirmationDialog
-      isOpen={showSaveConfirm}
-      title={isEditingAutomation ? "Update Automation?" : "Save Automation?"}
-      message={
-        isEditingAutomation
-          ? "Do you want to save these changes to this automation?"
-          : "Do you want to save this automation now?"
-      }
-      confirmLabel={isEditingAutomation ? "Yes, Update" : "Yes, Save"}
-      cancelLabel="No"
-      loading={saving}
-      onCancel={() => setShowSaveConfirm(false)}
-      onConfirm={() => {
-        setShowSaveConfirm(false);
-        onSave(form);
-      }}
-    />
+          {step === 4 && (
+            <div className="space-y-6">
+              <WhatsAppTemplatePreviewCard
+                template={selectedTemplate}
+                headerComponent={templateHeader}
+                headerText={previewHeaderText}
+                bodyText={previewBodyText}
+                footerText={previewFooterText}
+                buttons={templateButtons}
+                mediaType={templateHeaderMediaType}
+                mediaUrl={form.actionConfig.mediaUrl}
+              />
+
+              <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.22em] text-gray-400">
+                      Template Summary
+                    </div>
+                    <h4 className="mt-1 text-lg font-semibold text-[#313166]">
+                      {selectedTemplate?.name || "No template selected"}
+                    </h4>
+                  </div>
+                  <div className="rounded-full bg-[#F4F5F9] px-3 py-1 text-xs font-medium text-[#313166]">
+                    Action step
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3 text-sm text-gray-600">
+                  <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#F4F5F9] px-4 py-3">
+                    <span>Body variables</span>
+                    <span className="font-semibold text-[#313166]">
+                      {templateVariables.filter((item) => item.componentType === "BODY").length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#F4F5F9] px-4 py-3">
+                    <span>Header type</span>
+                    <span className="font-semibold text-[#313166]">
+                      {templateHeader?.format || "TEXT"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#F4F5F9] px-4 py-3">
+                    <span>Buttons</span>
+                    <span className="font-semibold text-[#313166]">
+                      {templateButtons.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#F4F5F9] px-4 py-3">
+                    <span>Media status</span>
+                    <span className="font-semibold text-[#313166]">
+                      {templateHeaderMediaType
+                        ? form.actionConfig.mediaUrl?.trim()
+                          ? "Ready"
+                          : "Missing media"
+                        : "Not required"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="space-y-6">
+              <div className="rounded-3xl bg-[#313166] p-5 text-white shadow-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.25em] text-white/60">
+                      Live Preview
+                    </div>
+                    <h3 className="mt-2 text-lg font-semibold">
+                      WhatsApp Retention Flow
+                    </h3>
+                  </div>
+                  <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
+                    {selectedTriggerGroup.name}
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-[28px] bg-[#171717] p-3 shadow-2xl">
+                  <div className="overflow-hidden rounded-[22px] bg-[#0a0a0a]">
+                    <div className="flex items-center gap-3 bg-[#075e54] px-4 py-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 font-semibold">
+                        V
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold">Vadik Business</div>
+                        <div className="text-xs text-white/75">
+                          retention automation preview
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      className="min-h-[300px] space-y-3 px-4 py-4"
+                      style={{
+                        backgroundImage:
+                          "repeating-linear-gradient(45deg, #0d1418 0px, #0d1418 10px, #0e1519 10px, #0e1519 20px)",
+                      }}
+                    >
+                      <div className="flex justify-end">
+                        <div className="max-w-[85%] overflow-hidden rounded-2xl rounded-tr-md bg-[#005c4b]">
+                          {templateHeader?.format === "TEXT" &&
+                          templateHeader?.text ? (
+                            <div
+                              className="border-b border-white/10 px-3 pb-2 pt-3 text-sm font-semibold text-white"
+                              dangerouslySetInnerHTML={{
+                                __html: renderWhatsAppFormattedText(
+                                  templateHeader.text,
+                                ),
+                              }}
+                            />
+                          ) : null}
+
+                          {templateHeaderMediaType ? (
+                            <div className="border-b border-white/10 bg-black/10">
+                              {form.actionConfig.mediaUrl ? (
+                                templateHeaderMediaType === "IMAGE" ? (
+                                  <img
+                                    src={form.actionConfig.mediaUrl}
+                                    alt="Template header preview"
+                                    className="max-h-64 w-full object-cover"
+                                  />
+                                ) : templateHeaderMediaType === "VIDEO" ? (
+                                  <video
+                                    src={form.actionConfig.mediaUrl}
+                                    controls
+                                    className="max-h-64 w-full bg-black object-contain"
+                                  />
+                                ) : (
+                                  <div className="flex items-center gap-3 px-3 py-4 text-white">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
+                                      <FileText className="h-5 w-5" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="text-sm font-medium">
+                                        Document attachment
+                                      </div>
+                                      <div className="truncate text-xs text-white/70">
+                                        {form.actionConfig.mediaUrl}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              ) : (
+                                <div className="flex min-h-[148px] flex-col items-center justify-center gap-2 px-4 py-6 text-center text-white/70">
+                                  {templateHeaderMediaType === "IMAGE" && (
+                                    <ImageIcon className="h-7 w-7" />
+                                  )}
+                                  {templateHeaderMediaType === "VIDEO" && (
+                                    <Play className="h-7 w-7" />
+                                  )}
+                                  {templateHeaderMediaType === "DOCUMENT" && (
+                                    <FileText className="h-7 w-7" />
+                                  )}
+                                  <div className="text-xs font-medium">
+                                    {templateHeaderMediaType.toLowerCase()}{" "}
+                                    header will appear here
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+
+                          <div className="p-3">
+                            <div
+                              className="whitespace-pre-wrap text-sm text-white"
+                              dangerouslySetInnerHTML={{
+                                __html:
+                                  renderWhatsAppFormattedText(previewBodyText),
+                              }}
+                            />
+                            <div className="mt-1 text-right text-xs text-white/60">
+                              12:00 PM
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-[#1f2c33] px-3 py-2">
+                      <div className="flex-1 rounded-full bg-[#2a3942] px-4 py-2 text-sm text-[#8696a0]">
+                        Type a message
+                      </div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00a884]">
+                        <ArrowRight className="h-5 w-5 text-white" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-[#313166]">
+                    Audience preview
+                  </h3>
+                  <Eye className="h-4 w-4 text-gray-400" />
+                </div>
+
+                <div className="rounded-2xl bg-[#F4F5F9] p-4">
+                  <div className="text-3xl font-semibold text-[#313166]">
+                    {previewState.loading ? "..." : previewState.count}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    Customers currently matching this automation
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  {(previewState.customers || []).map((customer) => (
+                    <div
+                      key={`${customer._id}`}
+                      className="rounded-xl border border-gray-100 px-4 py-3 text-sm"
+                    >
+                      <div className="font-medium text-[#313166]">
+                        {customer.firstname || "Customer"}
+                      </div>
+                      <div className="text-gray-500">
+                        {customer.countryCode ? `+${customer.countryCode}` : ""}{" "}
+                        {customer.mobileNumber}
+                      </div>
+                    </div>
+                  ))}
+
+                  {!previewState.loading &&
+                    previewState.customers.length === 0 && (
+                      <div className="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500">
+                        Run audience preview after adding rules to see sample
+                        customers here.
+                      </div>
+                    )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <ConfirmationDialog
+        isOpen={showSaveConfirm}
+        title={isEditingAutomation ? "Update Automation?" : "Save Automation?"}
+        message={
+          isEditingAutomation
+            ? "Do you want to save these changes to this automation?"
+            : "Do you want to save this automation now?"
+        }
+        confirmLabel={isEditingAutomation ? "Yes, Update" : "Yes, Save"}
+        cancelLabel="No"
+        loading={saving}
+        onCancel={() => setShowSaveConfirm(false)}
+        onConfirm={() => {
+          setShowSaveConfirm(false);
+          onSave(form);
+        }}
+      />
     </>
   );
 }
@@ -1617,7 +2427,9 @@ function AutomationLogsView({ automation, onBack }) {
     const fetchLogs = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/api/retention-automations/${automation._id}/executions`);
+        const response = await api.get(
+          `/api/retention-automations/${automation._id}/executions`,
+        );
         setLogs(response.data?.data || []);
       } catch (error) {
         console.error("Error fetching logs:", error);
@@ -1638,7 +2450,9 @@ function AutomationLogsView({ automation, onBack }) {
               <History className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-white/60">Execution History</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-white/60">
+                Execution History
+              </p>
               <h2 className="mt-1 text-2xl font-semibold">{automation.name}</h2>
             </div>
           </div>
@@ -1657,50 +2471,87 @@ function AutomationLogsView({ automation, onBack }) {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-gray-100 pb-4">
-                <th className="pb-4 text-xs font-bold uppercase tracking-wider text-gray-400">Customer</th>
-                <th className="pb-4 text-xs font-bold uppercase tracking-wider text-gray-400">Triggered Condition</th>
-                <th className="pb-4 text-xs font-bold uppercase tracking-wider text-gray-400">Status</th>
-                <th className="pb-4 text-xs font-bold uppercase tracking-wider text-gray-400">Triggered At</th>
+                <th className="pb-4 text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Customer
+                </th>
+                <th className="pb-4 text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Triggered Condition
+                </th>
+                <th className="pb-4 text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Status
+                </th>
+                <th className="pb-4 text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Triggered At
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
                 <tr>
-                  <td colSpan="4" className="py-8 text-center text-sm text-gray-500">Loading history...</td>
+                  <td
+                    colSpan="4"
+                    className="py-8 text-center text-sm text-gray-500"
+                  >
+                    Loading history...
+                  </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="py-8 text-center text-sm text-gray-500">No executions found for this automation.</td>
+                  <td
+                    colSpan="4"
+                    className="py-8 text-center text-sm text-gray-500"
+                  >
+                    No executions found for this automation.
+                  </td>
                 </tr>
               ) : (
                 logs.map((log) => {
                   const customer = log.customerId || {};
                   const messageLog = log.messageLogId || {};
-                  const fullName = [customer.firstname, customer.lastname].filter(Boolean).join(" ") ||
-                    [messageLog.firstname, messageLog.lastname].filter(Boolean).join(" ") ||
+                  const fullName =
+                    [customer.firstname, customer.lastname]
+                      .filter(Boolean)
+                      .join(" ") ||
+                    [messageLog.firstname, messageLog.lastname]
+                      .filter(Boolean)
+                      .join(" ") ||
                     customer.firstname ||
                     messageLog.firstname ||
                     "Unknown Customer";
-                  const mobileNumber = customer.mobileNumber || messageLog.mobileNumber || "";
+                  const mobileNumber =
+                    customer.mobileNumber || messageLog.mobileNumber || "";
 
                   return (
                     <tr key={log._id} className="hover:bg-gray-50/50">
                       <td className="py-4">
-                        <div className="font-medium text-[#313166]">{fullName}</div>
-                        <div className="text-xs text-gray-500">{formatPhone(customer.countryCode, mobileNumber)}</div>
+                        <div className="font-medium text-[#313166]">
+                          {fullName}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {formatPhone(customer.countryCode, mobileNumber)}
+                        </div>
                       </td>
                       <td className="py-4">
-                        <div className="max-w-xs text-sm text-gray-600">{formatExecutionSummary(log)}</div>
-                        {log.failureReason ? <div className="mt-1 text-xs text-red-500">{log.failureReason}</div> : null}
+                        <div className="max-w-xs text-sm text-gray-600">
+                          {formatExecutionSummary(log)}
+                        </div>
+                        {log.failureReason ? (
+                          <div className="mt-1 text-xs text-red-500">
+                            {log.failureReason}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="py-4">
-                        <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
-                          log.sendResult === "delivered" || log.sendResult === "read"
-                            ? "bg-emerald-100 text-emerald-600"
-                            : log.sendResult === "failed"
-                              ? "bg-red-100 text-red-600"
-                              : "bg-gray-100 text-gray-500"
-                        }`}>
+                        <span
+                          className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
+                            log.sendResult === "delivered" ||
+                            log.sendResult === "read"
+                              ? "bg-emerald-100 text-emerald-600"
+                              : log.sendResult === "failed"
+                                ? "bg-red-100 text-red-600"
+                                : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
                           {log.sendResult}
                         </span>
                       </td>
@@ -1728,7 +2579,11 @@ export default function RetentionRhythmAutomation() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingAutomation, setEditingAutomation] = useState(null);
-  const [previewState, setPreviewState] = useState({ loading: false, count: 0, customers: [] });
+  const [previewState, setPreviewState] = useState({
+    loading: false,
+    count: 0,
+    customers: [],
+  });
   const previewRequestRef = useRef(0);
 
   const fetchRetentionData = async () => {
@@ -1763,7 +2618,11 @@ export default function RetentionRhythmAutomation() {
 
   const handleEdit = (automation) => {
     setEditingAutomation(automation);
-    setPreviewState({ loading: false, count: automation.audienceSize || 0, customers: [] });
+    setPreviewState({
+      loading: false,
+      count: automation.audienceSize || 0,
+      customers: [],
+    });
     setView("builder");
   };
 
@@ -1782,10 +2641,13 @@ export default function RetentionRhythmAutomation() {
 
     try {
       setPreviewState((previous) => ({ ...previous, loading: true }));
-      const response = await api.post("/api/retention-automations/preview-audience", {
-        audienceRules: form.audienceRules,
-        limit: 5,
-      });
+      const response = await api.post(
+        "/api/retention-automations/preview-audience",
+        {
+          audienceRules: form.audienceRules,
+          limit: 5,
+        },
+      );
 
       if (requestId !== previewRequestRef.current) return;
 
@@ -1809,7 +2671,8 @@ export default function RetentionRhythmAutomation() {
       const payload = {
         ...form,
         analyticsSummary: {
-          audienceSize: previewState.count || editingAutomation?.audienceSize || 0,
+          audienceSize:
+            previewState.count || editingAutomation?.audienceSize || 0,
           sent: editingAutomation?.sent || 0,
           delivered: editingAutomation?.delivered || 0,
           read: editingAutomation?.read || 0,
@@ -1819,7 +2682,10 @@ export default function RetentionRhythmAutomation() {
       };
 
       if (editingAutomation?._id) {
-        await api.put(`/api/retention-automations/${editingAutomation._id}`, payload);
+        await api.put(
+          `/api/retention-automations/${editingAutomation._id}`,
+          payload,
+        );
         showToast("Automation updated successfully", "success");
       } else {
         await api.post("/api/retention-automations", payload);
@@ -1831,7 +2697,10 @@ export default function RetentionRhythmAutomation() {
       setEditingAutomation(null);
     } catch (error) {
       console.error("Error saving automation:", error);
-      showToast(error.response?.data?.message || "Failed to save automation", "error");
+      showToast(
+        error.response?.data?.message || "Failed to save automation",
+        "error",
+      );
     } finally {
       setSaving(false);
     }
@@ -1840,11 +2709,18 @@ export default function RetentionRhythmAutomation() {
   const handleToggleStatus = async (automation) => {
     try {
       const nextStatus = automation.status === "active" ? "paused" : "active";
-      await api.patch(`/api/retention-automations/${automation._id}/status`, { status: nextStatus });
+      await api.patch(`/api/retention-automations/${automation._id}/status`, {
+        status: nextStatus,
+      });
       setAutomations((previous) =>
-        previous.map((item) => (item._id === automation._id ? { ...item, status: nextStatus } : item))
+        previous.map((item) =>
+          item._id === automation._id ? { ...item, status: nextStatus } : item,
+        ),
       );
-      showToast(`Automation ${nextStatus === "active" ? "activated" : "paused"}`, "success");
+      showToast(
+        `Automation ${nextStatus === "active" ? "activated" : "paused"}`,
+        "success",
+      );
     } catch (error) {
       console.error("Error updating automation status:", error);
       showToast("Failed to update automation status", "error");
@@ -1859,7 +2735,14 @@ export default function RetentionRhythmAutomation() {
       delete copyPayload.updatedAt;
       copyPayload.name = `${automation.name} (Copy)`;
       copyPayload.status = "draft";
-      copyPayload.analyticsSummary = { audienceSize: 0, sent: 0, delivered: 0, read: 0, replied: 0, failed: 0 };
+      copyPayload.analyticsSummary = {
+        audienceSize: 0,
+        sent: 0,
+        delivered: 0,
+        read: 0,
+        replied: 0,
+        failed: 0,
+      };
 
       await api.post("/api/retention-automations", copyPayload);
       await fetchRetentionData();
@@ -1875,7 +2758,9 @@ export default function RetentionRhythmAutomation() {
 
     try {
       await api.delete(`/api/retention-automations/${automation._id}`);
-      setAutomations((previous) => previous.filter((item) => item._id !== automation._id));
+      setAutomations((previous) =>
+        previous.filter((item) => item._id !== automation._id),
+      );
       showToast("Automation deleted successfully", "success");
     } catch (error) {
       console.error("Error deleting automation:", error);
@@ -1909,9 +2794,6 @@ export default function RetentionRhythmAutomation() {
       saving={saving}
     />
   ) : (
-    <AutomationLogsView 
-      automation={editingAutomation}
-      onBack={handleBack}
-    />
+    <AutomationLogsView automation={editingAutomation} onBack={handleBack} />
   );
 }
