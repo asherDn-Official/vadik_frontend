@@ -433,6 +433,7 @@ const CustomerDetails = ({
 }) => {
   const [profilePreview, setProfilePreview] = useState(null);
   const [profileFile, setProfileFile] = useState(null);
+  const [removeProfilePicture, setRemoveProfilePicture] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFileChange = (e) => {
@@ -446,6 +447,7 @@ const CustomerDetails = ({
         );
         setProfileFile(null);
         setProfilePreview(null);
+        setRemoveProfilePicture(false);
         e.target.value = "";
         return;
       }
@@ -454,11 +456,13 @@ const CustomerDetails = ({
         showToast(PROFILE_PICTURE_SIZE_ERROR, "error");
         setProfileFile(null);
         setProfilePreview(null);
+        setRemoveProfilePicture(false);
         e.target.value = "";
         return;
       }
 
       setProfileFile(file);
+      setRemoveProfilePicture(false);
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePreview(reader.result);
@@ -467,11 +471,22 @@ const CustomerDetails = ({
     }
   };
 
+  const handleRemoveProfilePicture = () => {
+    setProfileFile(null);
+    setProfilePreview(null);
+    setRemoveProfilePicture(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    showToast("Profile picture will be removed when you save changes.", "success");
+  };
+
   // Reset profile state when editing is cancelled or saved
   useEffect(() => {
     if (!isEditing) {
       setProfilePreview(null);
       setProfileFile(null);
+      setRemoveProfilePicture(false);
     }
   }, [isEditing]);
 
@@ -916,7 +931,11 @@ const CustomerDetails = ({
       console.log("Formatted data for API:", formattedData);
 
       // Call the parent save handler with formatted data
-      onSave({ ...formattedData, profilePicture: profileFile });
+      onSave({
+        ...formattedData,
+        profilePicture: profileFile,
+        removeProfilePicture,
+      });
     } catch (err) {
       console.error("Validation error in onSubmit:", err);
       if (err instanceof yup.ValidationError) {
@@ -994,10 +1013,12 @@ const CustomerDetails = ({
                       <img
                         src={
                           profilePreview || 
-                          getCustomerProfilePictureSrc(
-                            transformedCustomer?.profilePictureUrl,
-                            transformedCustomer?.updatedAt,
-                          ) || 
+                          (removeProfilePicture
+                            ? ""
+                            : getCustomerProfilePictureSrc(
+                                transformedCustomer?.profilePictureUrl,
+                                transformedCustomer?.updatedAt,
+                              )) || 
                           (transformedCustomer?.gender === "male"
                             ? defaultImage.menDefaultImgUrl
                             : transformedCustomer?.gender === "female"
@@ -1017,20 +1038,42 @@ const CustomerDetails = ({
 "
                       />
                       {isEditing && (
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="
-                            absolute bottom-4 right-4
-                            p-2 rounded-xl bg-white/90
-                            border border-[#EEF1FF]
-                            text-[#313166] shadow-sm
-                            hover:bg-white transition-all
-                            backdrop-blur-sm
-                          "
-                        >
-                          <Camera size={18} />
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="
+                              absolute bottom-4 right-4
+                              p-2 rounded-xl bg-white/90
+                              border border-[#EEF1FF]
+                              text-[#313166] shadow-sm
+                              hover:bg-white transition-all
+                              backdrop-blur-sm
+                            "
+                          >
+                            <Camera size={18} />
+                          </button>
+                          {(profilePreview ||
+                            transformedCustomer?.profilePictureUrl) && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveProfilePicture}
+                              className="
+                                absolute bottom-4 left-4
+                                inline-flex items-center gap-1.5
+                                rounded-xl border border-red-100
+                                bg-white/90 px-3 py-2
+                                text-xs font-semibold text-red-600
+                                shadow-sm transition-all
+                                hover:bg-red-50
+                                backdrop-blur-sm
+                              "
+                            >
+                              <X size={14} />
+                              Remove
+                            </button>
+                          )}
+                        </>
                       )}
                       <input
                         type="file"

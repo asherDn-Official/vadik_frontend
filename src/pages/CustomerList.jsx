@@ -21,6 +21,17 @@ const formatSourceLabel = (source = "") =>
 
 const MANUAL_SOURCE_OPTIONS = [{ value: "QR Code", label: "QR Code" }];
 
+const getCustomerName = (customer = {}) => {
+  const firstName = customer.firstname ?? customer.firstName ?? "";
+  const lastName = customer.lastname ?? customer.lastName ?? "";
+  const fullName = customer.name ?? `${firstName} ${lastName}`.trim();
+  return fullName || "-";
+};
+
+const getCustomerLastName = (customer = {}) => {
+  return customer.lastname ?? customer.lastName ?? "-";
+};
+
 const CustomerList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [customers, setCustomers] = useState([]);
@@ -562,11 +573,11 @@ const CustomerList = () => {
                                     className="h-8 w-8 rounded-full object-cover"
                                   />
                                 )}
-                                <span>{customer.firstname}</span>
+                                <span>{getCustomerName(customer)}</span>
                               </div>
                             </td>
                             <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
-                              {customer.lastname || "-"}
+                              {getCustomerLastName(customer)}
                             </td>
                             <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               {`${formatIndianMobile(customer.countryCode + " " + customer.mobileNumber)}`}

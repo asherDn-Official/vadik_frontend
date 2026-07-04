@@ -69,8 +69,9 @@ const CustomerProfile = () => {
       const formData = new FormData();
       
       // Separate profilePicture from the rest of apiData
-      const { profilePicture, ...otherData } = apiData;
+      const { profilePicture, removeProfilePicture, ...otherData } = apiData;
       console.log("profilePicture:", profilePicture);
+      console.log("removeProfilePicture:", removeProfilePicture);
       console.log("otherData:", otherData);
 
       // Convert date strings in the payload
@@ -91,6 +92,10 @@ const CustomerProfile = () => {
 
       if (profilePicture) {
         formData.append('profilePicture', profilePicture);
+      }
+
+      if (removeProfilePicture) {
+        formData.append('removeProfilePicture', 'true');
       }
 
       const response = await api.patch(

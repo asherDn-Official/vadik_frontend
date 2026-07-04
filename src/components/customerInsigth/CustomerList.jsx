@@ -30,6 +30,13 @@ const CustomerList = ({
     return localStorage.getItem("retailerId") || "";
   });
 
+  const getCustomerName = (customer = {}) => {
+    const firstName = customer.firstname ?? customer.firstName ?? "";
+    const lastName = customer.lastname ?? customer.lastName ?? "";
+    const fullName = customer.name ?? `${firstName} ${lastName}`.trim();
+    return fullName || "-";
+  };
+
   // Function to safely get nested values from customer object
   const getNestedValue = (obj, path) => {
     return path.split(".").reduce((o, p) => (o || {})[p], obj);
@@ -127,7 +134,7 @@ const CustomerList = ({
   const renderCellContent = (customer, header) => {
     switch (header) {
       case "name":
-        return `${customer.firstname || ""} ${customer.lastname || ""}`.trim();
+        return getCustomerName(customer);
       case "mobileNumber":
         return  `${formatIndianMobile(customer.countryCode + " " + customer.mobileNumber)}`
       case "gender":
@@ -156,13 +163,30 @@ const CustomerList = ({
           ? rawNestedValue.join(", ")
           : rawNestedValue;
 
+        const topLevelValue =
+          customer?.[header] ??
+          customer?.[header?.toLowerCase?.()] ??
+          customer?.[header === "firstname" ? "firstName" : header === "firstName" ? "firstname" : header === "lastname" ? "lastName" : header === "lastName" ? "lastname" : header];
+
         // Handle null/undefined values
         if (
           nestedValue === null ||
           nestedValue === undefined ||
           nestedValue === ""
         ) {
-          return "-";
+          if (
+            topLevelValue === null ||
+            topLevelValue === undefined ||
+            topLevelValue === ""
+          ) {
+            return "-";
+          }
+
+          if (Array.isArray(topLevelValue)) {
+            return topLevelValue.join(", ");
+          }
+
+          return topLevelValue;
         }
 
         // Check if the value is a date string in ISO format
