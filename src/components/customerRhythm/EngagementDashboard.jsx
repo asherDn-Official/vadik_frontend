@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
 } from 'recharts';
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { 
   Search, Filter, Calendar, RefreshCw, CheckCircle2, 
   Clock, AlertCircle, Eye, Mail, MessageSquare, TrendingUp,
@@ -17,6 +17,7 @@ import { getWhatsappErrorDescription } from "../../utils/whatsappErrorCodes";
 import RetryAutomationSettings from "./RetryAutomationSettings";
 
 const EngagementDashboard = () => {
+  const location = useLocation();
   const [logs, setLogs] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [retryStats, setRetryStats] = useState(null);
@@ -42,6 +43,10 @@ const EngagementDashboard = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [showRetrySettings, setShowRetrySettings] = useState(false);
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const selectedSourceType = searchParams.get("sourceType") || "";
+  const selectedSourceId = searchParams.get("sourceId") || "";
+  const selectedTabParam = searchParams.get("tab") || "";
 
   const fetchLogs = async () => {
     try {
@@ -88,6 +93,8 @@ const EngagementDashboard = () => {
       const params = [];
       if (startDate) params.push(`startDate=${startDate}`);
       if (endDate) params.push(`endDate=${endDate}`);
+      if (selectedSourceType) params.push(`sourceType=${selectedSourceType}`);
+      if (selectedSourceId) params.push(`sourceId=${selectedSourceId}`);
       if (params.length > 0) url += `?${params.join("&")}`;
 
       const res = await api.get(url);
@@ -96,6 +103,16 @@ const EngagementDashboard = () => {
         setIndividualAnalytics(items);
         setSelectedItem((previous) => {
           if (!items.length) return null;
+
+          if (selectedSourceType && selectedSourceId) {
+            const matched = items.find(
+              (item) =>
+                item.sourceType === selectedSourceType &&
+                String(item.sourceId) === String(selectedSourceId)
+            );
+            return matched || items[0];
+          }
+
           if (previous) {
             const matched = items.find((item) => item.key === previous.key);
             if (matched) return matched;
@@ -168,7 +185,18 @@ const EngagementDashboard = () => {
   useEffect(() => {
     fetchAnalytics();
     fetchIndividualAnalytics();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, location.search]);
+
+  useEffect(() => {
+    if (["overview", "logs", "individual", "retry"].includes(selectedTabParam)) {
+      setActiveTab(selectedTabParam);
+      return;
+    }
+
+    if (selectedSourceType && selectedSourceId) {
+      setActiveTab("individual");
+    }
+  }, [selectedSourceId, selectedSourceType, selectedTabParam]);
 
   useEffect(() => {
     fetchSelectedItemLogs(selectedItem);
@@ -180,6 +208,10 @@ const EngagementDashboard = () => {
       setIndividualLogPage(1);
     }
   }, [selectedItem]);
+
+  useEffect(() => {
+    setIndividualFilter(selectedSourceType || "all");
+  }, [selectedSourceType]);
 
   useEffect(() => {
     if (activeTab === "retry") {
@@ -739,20 +771,7 @@ const EngagementDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <button
-                      onClick={() => {
-                        setIndividualLogFilter({ status: "", reason: "" });
-                        setIndividualLogPage(1);
-                      }}
-                      className={`rounded-2xl p-4 border transition-all text-left ${
-                        !individualLogFilter.status ? "bg-white border-gray-100 shadow-sm" : "bg-gray-50 border-transparent opacity-60 grayscale"
-                      }`}
-                    >
-                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Attempts</div>
-                      <div className="mt-2 text-2xl font-bold text-gray-900">{selectedItem.sent}</div>
-                      <div className="text-[10px] text-gray-400 mt-1">(Our side)</div>
-                    </button>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <button
                       onClick={() => {
                         setIndividualLogFilter({ status: "delivered", reason: "" });
@@ -1036,7 +1055,7 @@ const EngagementDashboard = () => {
                             <YAxis />
                             <Tooltip labelFormatter={(val) => moment(val).format("MMM DD, YYYY")} />
                             <Legend />
-                            <Area type="monotone" dataKey="sent" name="Attempts" stroke="#313166" fill="#313166" fillOpacity={0.1} />
+                            <Area type="monotone" dataKey="sent" name="Sent" stroke="#313166" fill="#313166" fillOpacity={0.1} />
                             <Area type="monotone" dataKey="delivered" name="Delivered" stroke="#4CAF50" fill="#4CAF50" fillOpacity={0.1} />
                             <Area type="monotone" dataKey="failed" name="Failed" stroke="#F44336" fill="#F44336" fillOpacity={0.1} />
                           </AreaChart>

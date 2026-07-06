@@ -23,6 +23,7 @@ import SettingsPage from "./pages/SettingsPage";
 import PerformanceTracking from "./pages/PerformanceTracking";
 import CustomerPersonalisation from "./pages/CustomerPersonalisation";
 import CustomerRhythm from "./pages/CustomerRhythm";
+import CampaignAnalytics from "./pages/CampaignAnalytics";
 import CustomerOpportunities from "./pages/CustomerOpportunities";
 import { useAuth } from "./context/AuthContext";
 import { CustomerImportProvider } from "./context/CustomerImportContext";
@@ -173,6 +174,16 @@ function App() {
                 element={
                   onboardingDone && auth?.data?.isUsingOwnWhatsapp ? (
                     <CustomerRhythm />
+                  ) : (
+                    <Navigate to="/dashboard" replace />
+                  )
+                }
+              />
+              <Route
+                path="customerrhythm/campaign/:campaignId"
+                element={
+                  onboardingDone && auth?.data?.isUsingOwnWhatsapp ? (
+                    <CampaignAnalytics />
                   ) : (
                     <Navigate to="/dashboard" replace />
                   )

@@ -97,6 +97,22 @@ const triggerIcons = {
   scheduled_recurring: Webhook,
 };
 
+const activityOptions = [
+  { value: "spinWheel", label: "Spin Wheel" },
+  { value: "scratchCard", label: "Scratch Card" },
+  { value: "quiz", label: "Quiz" },
+];
+
+const weekdayOptions = [
+  { value: 0, label: "Sunday" },
+  { value: 1, label: "Monday" },
+  { value: 2, label: "Tuesday" },
+  { value: 3, label: "Wednesday" },
+  { value: 4, label: "Thursday" },
+  { value: 5, label: "Friday" },
+  { value: 6, label: "Saturday" },
+];
+
 // const stepLabels = ["Journey", "Trigger", "Audience", "Action", "Review"];
 const getStepLabels = (triggerType) => {
   if (triggerType === "new_customer") {
@@ -180,7 +196,12 @@ const createEmptyAutomation = () => ({
     fieldKey: "",
     keyword: "",
     activityType: "",
+    activityTypes: ["spinWheel", "scratchCard", "quiz"],
     scheduleType: "daily",
+    scheduleTime: "09:00",
+    scheduleDayOfWeek: new Date().getDay(),
+    scheduleDayOfMonth: new Date().getDate(),
+    scheduleTimezone: "Asia/Calcutta",
     days: 30,
     timezone: "Asia/Calcutta",
   },
@@ -202,6 +223,37 @@ const formatDate = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Not yet";
   return date.toLocaleDateString();
+};
+
+const formatScheduleTime = (value = "09:00") => {
+  const match = String(value || "").match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return "09:00";
+  const hour = Number(match[1]);
+  const minute = match[2];
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const normalizedHour = ((hour + 11) % 12) + 1;
+  return `${normalizedHour}:${minute} ${suffix}`;
+};
+
+const normalizeActivitySelection = (value) => {
+  const values = Array.isArray(value) ? value : value ? [value] : [];
+  const normalized = values
+    .map((item) => {
+      const lower = String(item || "").toLowerCase();
+      if (lower === "spinwheel") return "spinWheel";
+      if (lower === "scratchcard") return "scratchCard";
+      if (lower === "quiz") return "quiz";
+      if (item === "spinWheel" || item === "scratchCard") return item;
+      return null;
+    })
+    .filter(Boolean);
+
+  return normalized.length ? [...new Set(normalized)] : ["spinWheel", "scratchCard", "quiz"];
+};
+
+const isAllActivitiesSelected = (value) => {
+  const selected = normalizeActivitySelection(value);
+  return activityOptions.every((option) => selected.includes(option.value));
 };
 
 const normalizeTemplateVariableToken = (value = "") => {
@@ -512,13 +564,57 @@ const formatExecutionSummary = (log) => {
   const triggerSnapshot = log?.triggerSnapshot || {};
   if (triggerSnapshot.customerCreatedAt) return "New customer";
   if (triggerSnapshot.keyword) return `Keyword: ${triggerSnapshot.keyword}`;
-  if (triggerSnapshot.activityType)
-    return `Activity: ${triggerSnapshot.activityType}`;
+  if (triggerSnapshot.activityTypes?.length) {
+    return `Activities: ${triggerSnapshot.activityTypes.join(", ")}`;
+  }
+  if (triggerSnapshot.activityType) return `Activity: ${triggerSnapshot.activityType}`;
 
   const audienceSummary = formatRuleGroupSummary(
     log?.conditionSnapshot?.audienceRules,
   );
   return `Audience ${audienceSummary}`;
+};
+
+const describeTriggerConfig = (automation = {}) => {
+  const triggerConfig = automation.triggerConfig || {};
+
+  if (automation.triggerType === "scheduled_recurring") {
+    const label = triggerConfig.scheduleType || "daily";
+    const time = formatScheduleTime(triggerConfig.scheduleTime || "09:00");
+    if (label === "weekly") {
+      return `Weekly at ${time}`;
+    }
+    if (label === "monthly") {
+      return `Monthly at ${time}`;
+    }
+    return `Daily at ${time}`;
+  }
+
+  if (automation.triggerType === "customer_activity_completed") {
+    const selected = normalizeActivitySelection(
+      triggerConfig.activityTypes || triggerConfig.activityType,
+    );
+    if (selected.length === activityOptions.length) {
+      return "All completed activities";
+    }
+    return selected
+      .map((value) => activityOptions.find((option) => option.value === value)?.label || value)
+      .join(", ");
+  }
+
+  if (automation.triggerType === "whatsapp_keyword") {
+    return triggerConfig.keyword ? `Keyword: ${triggerConfig.keyword}` : "Keyword trigger";
+  }
+
+  if (automation.triggerType === "customer_field_date") {
+    return triggerConfig.fieldKey ? `Date field: ${triggerConfig.fieldKey}` : "Date field trigger";
+  }
+
+  if (automation.triggerType === "inactive_for_days") {
+    return `Inactive for ${triggerConfig.days || 30} days`;
+  }
+
+  return "Trigger configured";
 };
 
 const normalizeAutomationForForm = (automation) => {
@@ -541,6 +637,23 @@ const normalizeAutomationForForm = (automation) => {
     triggerConfig: {
       ...createEmptyAutomation().triggerConfig,
       ...(restAutomation.triggerConfig || {}),
+      activityTypes: normalizeActivitySelection(
+        restAutomation.triggerConfig?.activityTypes ||
+          restAutomation.triggerConfig?.activityType,
+      ),
+      scheduleTime:
+        restAutomation.triggerConfig?.scheduleTime ||
+        createEmptyAutomation().triggerConfig.scheduleTime,
+      scheduleDayOfWeek:
+        restAutomation.triggerConfig?.scheduleDayOfWeek ??
+        createEmptyAutomation().triggerConfig.scheduleDayOfWeek,
+      scheduleDayOfMonth:
+        restAutomation.triggerConfig?.scheduleDayOfMonth ??
+        createEmptyAutomation().triggerConfig.scheduleDayOfMonth,
+      scheduleTimezone:
+        restAutomation.triggerConfig?.scheduleTimezone ||
+        restAutomation.triggerConfig?.timezone ||
+        createEmptyAutomation().triggerConfig.scheduleTimezone,
     },
     audienceRules: restAutomation.audienceRules || {
       logic: "AND",
@@ -749,6 +862,9 @@ function AutomationDashboardView({
                           </h4>
                           <p className="mt-0.5 text-sm text-gray-500">
                             {automation.triggerType.replaceAll("_", " ")}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-400">
+                            {describeTriggerConfig(automation)}
                           </p>
                         </div>
                       </div>
@@ -1317,6 +1433,21 @@ function RetentionBuilderView({
       return;
     }
 
+    if (form.triggerType === "customer_activity_completed") {
+      const selectedActivities = normalizeActivitySelection(
+        form.triggerConfig.activityTypes || form.triggerConfig.activityType,
+      );
+      if (!selectedActivities.length) {
+        showToast("Choose at least one activity type", "warning");
+        return;
+      }
+    }
+
+    if (form.triggerType === "scheduled_recurring" && !form.triggerConfig.scheduleTime) {
+      showToast("Choose an exact time for the recurring trigger", "warning");
+      return;
+    }
+
     const missingMappings = templateVariables.filter((descriptor) => {
       const mapping = findVariableMapping(
         form.actionConfig.variableMappings,
@@ -1623,44 +1754,218 @@ function RetentionBuilderView({
                   )}
 
                   {form.triggerType === "customer_activity_completed" && (
-                    <select
-                      value={form.triggerConfig.activityType || ""}
-                      onChange={(event) =>
-                        setForm({
-                          ...form,
-                          triggerConfig: {
-                            ...form.triggerConfig,
-                            activityType: event.target.value,
-                          },
-                        })
-                      }
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                    >
-                      <option value="">Choose activity</option>
-                      <option value="spinwheel">Spin Wheel</option>
-                      <option value="scratchcard">Scratch Card</option>
-                      <option value="quiz">Quiz</option>
-                    </select>
+                    <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold text-[#313166]">
+                            Activity type
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Default is all activities. Pick one or more to narrow the trigger.
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setForm((previous) => ({
+                              ...previous,
+                              triggerConfig: {
+                                ...previous.triggerConfig,
+                                activityTypes: activityOptions.map((option) => option.value),
+                                activityType: "all",
+                              },
+                            }))
+                          }
+                          className="rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-[#313166]"
+                        >
+                          Select all
+                        </button>
+                      </div>
+
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        {activityOptions.map((option) => {
+                          const selected = normalizeActivitySelection(
+                            form.triggerConfig.activityTypes ||
+                              form.triggerConfig.activityType,
+                          ).includes(option.value);
+
+                          return (
+                            <label
+                              key={option.value}
+                              className="flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-sm transition-all"
+                              style={{
+                                borderColor: selected ? "#313166" : "#E5E7EB",
+                                backgroundColor: selected ? "#31316608" : "white",
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={(event) => {
+                                  setForm((previous) => {
+                                    const current = normalizeActivitySelection(
+                                      previous.triggerConfig.activityTypes ||
+                                        previous.triggerConfig.activityType,
+                                    );
+                                    const nextSelected = event.target.checked
+                                      ? [...new Set([...current, option.value])]
+                                      : current.filter((value) => value !== option.value);
+
+                                    return {
+                                      ...previous,
+                                      triggerConfig: {
+                                        ...previous.triggerConfig,
+                                        activityTypes: nextSelected.length
+                                          ? nextSelected
+                                          : [...activityOptions.map((item) => item.value)],
+                                        activityType:
+                                          nextSelected.length === activityOptions.length
+                                            ? "all"
+                                            : nextSelected.length === 1
+                                              ? nextSelected[0]
+                                              : nextSelected.length
+                                                ? "custom"
+                                                : "all",
+                                      },
+                                    };
+                                  });
+                                }}
+                                className="h-4 w-4 accent-[#313166]"
+                              />
+                              <span className="font-medium text-[#313166]">
+                                {option.label}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+
+                      <div className="text-xs text-gray-500">
+                        {isAllActivitiesSelected(
+                          form.triggerConfig.activityTypes ||
+                            form.triggerConfig.activityType,
+                        )
+                          ? "Watching all completed activities."
+                          : `Watching ${normalizeActivitySelection(
+                              form.triggerConfig.activityTypes ||
+                                form.triggerConfig.activityType,
+                            ).map((value) =>
+                              activityOptions.find((item) => item.value === value)?.label || value,
+                            ).join(", ")}.`}
+                      </div>
+                    </div>
                   )}
 
                   {form.triggerType === "scheduled_recurring" && (
-                    <select
-                      value={form.triggerConfig.scheduleType || "daily"}
-                      onChange={(event) =>
-                        setForm({
-                          ...form,
-                          triggerConfig: {
-                            ...form.triggerConfig,
-                            scheduleType: event.target.value,
-                          },
-                        })
-                      }
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                    >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                    </select>
+                    <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Repeat
+                          </label>
+                          <select
+                            value={form.triggerConfig.scheduleType || "daily"}
+                            onChange={(event) =>
+                              setForm((previous) => ({
+                                ...previous,
+                                triggerConfig: {
+                                  ...previous.triggerConfig,
+                                  scheduleType: event.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                          >
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Exact time
+                          </label>
+                          <input
+                            type="time"
+                            value={form.triggerConfig.scheduleTime || "09:00"}
+                            onChange={(event) =>
+                              setForm((previous) => ({
+                                ...previous,
+                                triggerConfig: {
+                                  ...previous.triggerConfig,
+                                  scheduleTime: event.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Weekday
+                          </label>
+                          <select
+                            value={form.triggerConfig.scheduleDayOfWeek ?? 1}
+                            onChange={(event) =>
+                              setForm((previous) => ({
+                                ...previous,
+                                triggerConfig: {
+                                  ...previous.triggerConfig,
+                                  scheduleDayOfWeek: Number(event.target.value),
+                                },
+                              }))
+                            }
+                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                            disabled={form.triggerConfig.scheduleType !== "weekly"}
+                          >
+                            {weekdayOptions.map((day) => (
+                              <option key={day.value} value={day.value}>
+                                {day.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Day of month
+                          </label>
+                          <select
+                            value={form.triggerConfig.scheduleDayOfMonth ?? 1}
+                            onChange={(event) =>
+                              setForm((previous) => ({
+                                ...previous,
+                                triggerConfig: {
+                                  ...previous.triggerConfig,
+                                  scheduleDayOfMonth: Number(event.target.value),
+                                },
+                              }))
+                            }
+                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                            disabled={form.triggerConfig.scheduleType !== "monthly"}
+                          >
+                            {Array.from({ length: 31 }, (_, index) => index + 1).map(
+                              (day) => (
+                                <option key={day} value={day}>
+                                  {day}
+                                </option>
+                              ),
+                            )}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
+                        {form.triggerConfig.scheduleType === "daily" &&
+                          `Runs every day at ${formatScheduleTime(form.triggerConfig.scheduleTime)}`}
+                        {form.triggerConfig.scheduleType === "weekly" &&
+                          `Runs every ${weekdayOptions.find((day) => day.value === Number(form.triggerConfig.scheduleDayOfWeek))?.label || "week day"} at ${formatScheduleTime(form.triggerConfig.scheduleTime)}`}
+                        {form.triggerConfig.scheduleType === "monthly" &&
+                          `Runs on day ${form.triggerConfig.scheduleDayOfMonth || 1} at ${formatScheduleTime(form.triggerConfig.scheduleTime)}`}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -2332,7 +2637,9 @@ function RetentionBuilderView({
                               }}
                             />
                             <div className="mt-1 text-right text-xs text-white/60">
-                              12:00 PM
+                              {formatScheduleTime(
+                                form.triggerConfig.scheduleTime || "09:00",
+                              )}
                             </div>
                           </div>
                         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Send, 
   Filter,
@@ -20,7 +21,6 @@ import {
   Plus,
   ArrowRight,
   Clock,
-  Trash2,
   Calendar,
   Layers
 } from "lucide-react";
@@ -57,6 +57,7 @@ const countAppliedFilters = (activeFilters) =>
   ).length;
 
 const SendCampaign = () => {
+  const navigate = useNavigate();
   // Main View State
   const [view, setView] = useState("dashboard"); // "dashboard" or "wizard"
   
@@ -112,6 +113,12 @@ const SendCampaign = () => {
     total: 0,
     totalPages: 1,
   });
+
+  const openCampaignAnalytics = (campaign) => {
+    if (!campaign?._id) return;
+
+    navigate(`/customerrhythm/campaign/${campaign._id}`);
+  };
   
   // Backwards compatibility for wizard steps
   const customerSearch = filters.mobileNumber || filters.firstname || ""; 
@@ -711,7 +718,11 @@ const SendCampaign = () => {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {campaigns.length > 0 ? campaigns.map((camp) => (
-                <tr key={camp._id} className="hover:bg-gray-50/50 transition-colors">
+                <tr
+                  key={camp._id}
+                  className="cursor-pointer hover:bg-gray-50/50 transition-colors"
+                  onClick={() => openCampaignAnalytics(camp)}
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-[#313166]/5 flex items-center justify-center text-[#313166]">
@@ -749,8 +760,15 @@ const SendCampaign = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-all">
-                      <Trash2 size={16} />
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openCampaignAnalytics(camp);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#313166]/10 bg-[#313166]/5 px-3 py-2 text-xs font-semibold text-[#313166] transition-all hover:bg-[#313166]/10"
+                    >
+                      View analytics
                     </button>
                   </td>
                 </tr>
