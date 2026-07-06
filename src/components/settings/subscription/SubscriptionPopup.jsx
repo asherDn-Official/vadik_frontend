@@ -72,6 +72,12 @@ const SubscriptionPopup = ({
     }
   }, [showAutopay]);
 
+  useEffect(() => {
+    if (selectedPlan && !canUseAutoPayForSelectedPlan) {
+      setAutoplay(false);
+    }
+  }, [selectedPlan, canUseAutoPayForSelectedPlan]);
+
   const getCurrentPlanDetails = async () => {
     try {
       const response = await api.get("/api/subscriptions/credit/usage");
@@ -170,6 +176,8 @@ const SubscriptionPopup = ({
     });
     return total;
   };
+
+  const canUseAutoPayForSelectedPlan = !!selectedPlan && !selectedPlan.isFreeTrial && !selectedPlan.isEnterprise && selectedPlan.name?.toLowerCase() !== "enterprise";
 
   const verifyRazorpayPayment = async (response, subscriptionId) => {
     try {
@@ -356,6 +364,12 @@ const SubscriptionPopup = ({
     try {
       if (isAutoPayEnabled && selectedAddons.length > 0) {
         alert("AutoPay currently supports plan-only subscriptions. Remove add-ons or disable AutoPay.");
+        setLoading(false);
+        return;
+      }
+
+      if (isAutoPayEnabled && !canUseAutoPayForSelectedPlan) {
+        alert("AutoPay is available only for eligible non-enterprise paid plans.");
         setLoading(false);
         return;
       }
@@ -654,7 +668,7 @@ const SubscriptionPopup = ({
                   )}
                 </button>
               </div>
-              {showAutopay && (
+              {showAutopay && (!selectedPlan || canUseAutoPayForSelectedPlan) && (
                 <div className="flex items-center gap-2 pb-3">
                   <label htmlFor="autoplay" className="text-gray-700 font-medium">
                     Autopay
@@ -670,7 +684,7 @@ const SubscriptionPopup = ({
               )}
             </div>
           </div>
-        ) : showAutopay ? (
+        ) : showAutopay && (!selectedPlan || canUseAutoPayForSelectedPlan) ? (
           // Show Autopay standalone when tabs are hidden but autopay is enabled
           <div className="px-6 pt-6">
             <div className="flex justify-end border-b border-gray-200 pb-3">
@@ -914,7 +928,7 @@ const SubscriptionPopup = ({
         loading={loading}
         autoPayEnabled={autoplay}
         onAutoPayChange={setAutoplay}
-        showAutoPayToggle={showAutopay && !!selectedPlan && !selectedPlan.isFreeTrial && !currentPlans}
+        showAutoPayToggle={showAutopay && canUseAutoPayForSelectedPlan && !currentPlans}
         showPriceBreakdown={true}
       />
 

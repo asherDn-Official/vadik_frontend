@@ -161,6 +161,14 @@ export default function SubscriptionPage() {
     return total;
   };
 
+  const canUseAutoPayForSelectedPlan = !!selectedPlan && !selectedPlan.isFreeTrial && !selectedPlan.isEnterprise && selectedPlan.name?.toLowerCase() !== "enterprise";
+
+  useEffect(() => {
+    if (selectedPlan && !canUseAutoPayForSelectedPlan) {
+      setAutoPayEnabled(false);
+    }
+  }, [selectedPlan, canUseAutoPayForSelectedPlan]);
+
   const verifyRazorpayPayment = async (response, subscriptionId) => {
     try {
       const verificationPayload = {
@@ -298,6 +306,15 @@ export default function SubscriptionPage() {
       if (autoPayEnabled && selectedAddons.length > 0) {
         showToast(
           "AutoPay currently supports plan-only subscriptions. Remove add-ons or disable AutoPay.",
+          "error",
+        );
+        setLoading(false);
+        return;
+      }
+
+      if (autoPayEnabled && !canUseAutoPayForSelectedPlan) {
+        showToast(
+          "AutoPay is available only for eligible non-enterprise paid plans.",
           "error",
         );
         setLoading(false);
@@ -946,9 +963,7 @@ export default function SubscriptionPage() {
           loading={loading}
           autoPayEnabled={autoPayEnabled}
           onAutoPayChange={setAutoPayEnabled}
-          showAutoPayToggle={
-            !!selectedPlan && !selectedPlan.isFreeTrial && !subscriptionDetails
-          }
+          showAutoPayToggle={canUseAutoPayForSelectedPlan && !subscriptionDetails}
           showPriceBreakdown={true}
         />
 
