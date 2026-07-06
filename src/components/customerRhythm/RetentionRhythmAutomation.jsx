@@ -103,6 +103,12 @@ const activityOptions = [
   { value: "quiz", label: "Quiz" },
 ];
 
+const campaignLabelKeys = {
+  spinWheel: "name",
+  scratchCard: "name",
+  quiz: "campaignName",
+};
+
 const weekdayOptions = [
   { value: 0, label: "Sunday" },
   { value: 1, label: "Monday" },
@@ -195,7 +201,10 @@ const createEmptyAutomation = () => ({
   triggerConfig: {
     fieldKey: "",
     keyword: "",
+    activityScope: "all",
     activityType: "",
+    activityCampaignScope: "all",
+    activityCampaignId: "",
     activityTypes: ["spinWheel", "scratchCard", "quiz"],
     scheduleType: "daily",
     scheduleTime: "09:00",
@@ -235,26 +244,16 @@ const formatScheduleTime = (value = "09:00") => {
   return `${normalizedHour}:${minute} ${suffix}`;
 };
 
-const normalizeActivitySelection = (value) => {
-  const values = Array.isArray(value) ? value : value ? [value] : [];
-  const normalized = values
-    .map((item) => {
-      const lower = String(item || "").toLowerCase();
-      if (lower === "spinwheel") return "spinWheel";
-      if (lower === "scratchcard") return "scratchCard";
-      if (lower === "quiz") return "quiz";
-      if (item === "spinWheel" || item === "scratchCard") return item;
-      return null;
-    })
-    .filter(Boolean);
+const getCampaignLabel = (campaign = {}, type = "") =>
+  campaign?.[campaignLabelKeys[type] || "name"] || campaign?.name || campaign?.campaignName || "Untitled";
 
-  return normalized.length ? [...new Set(normalized)] : ["spinWheel", "scratchCard", "quiz"];
-};
+const getCampaignList = (campaigns = {}, type = "") =>
+  Array.isArray(campaigns?.[type]) ? campaigns[type] : [];
 
-const isAllActivitiesSelected = (value) => {
-  const selected = normalizeActivitySelection(value);
-  return activityOptions.every((option) => selected.includes(option.value));
-};
+const getCampaignSelectValue = (campaigns = {}, type = "", campaignId = "") =>
+  getCampaignList(campaigns, type).some((campaign) => String(campaign?._id) === String(campaignId))
+    ? String(campaignId)
+    : "";
 
 const normalizeTemplateVariableToken = (value = "") => {
   const match = String(value).match(/\d+/);
@@ -564,9 +563,7 @@ const formatExecutionSummary = (log) => {
   const triggerSnapshot = log?.triggerSnapshot || {};
   if (triggerSnapshot.customerCreatedAt) return "New customer";
   if (triggerSnapshot.keyword) return `Keyword: ${triggerSnapshot.keyword}`;
-  if (triggerSnapshot.activityTypes?.length) {
-    return `Activities: ${triggerSnapshot.activityTypes.join(", ")}`;
-  }
+  if (triggerSnapshot.activityScope === "all") return "All activities";
   if (triggerSnapshot.activityType) return `Activity: ${triggerSnapshot.activityType}`;
 
   const audienceSummary = formatRuleGroupSummary(
@@ -575,7 +572,7 @@ const formatExecutionSummary = (log) => {
   return `Audience ${audienceSummary}`;
 };
 
-const describeTriggerConfig = (automation = {}) => {
+const describeTriggerConfig = (automation = {}, campaigns = {}) => {
   const triggerConfig = automation.triggerConfig || {};
 
   if (automation.triggerType === "scheduled_recurring") {
@@ -591,15 +588,21 @@ const describeTriggerConfig = (automation = {}) => {
   }
 
   if (automation.triggerType === "customer_activity_completed") {
-    const selected = normalizeActivitySelection(
-      triggerConfig.activityTypes || triggerConfig.activityType,
-    );
-    if (selected.length === activityOptions.length) {
+    if ((triggerConfig.activityScope || "all") === "all") {
       return "All completed activities";
     }
-    return selected
-      .map((value) => activityOptions.find((option) => option.value === value)?.label || value)
-      .join(", ");
+    const activityLabel =
+      activityOptions.find((option) => option.value === triggerConfig.activityType)?.label ||
+      "Specific activity";
+    if ((triggerConfig.activityCampaignScope || "all") === "specific") {
+      const campaign = getCampaignList(campaigns, triggerConfig.activityType).find(
+        (item) => String(item?._id) === String(triggerConfig.activityCampaignId),
+      );
+      return campaign
+        ? `${activityLabel}: ${getCampaignLabel(campaign, triggerConfig.activityType)}`
+        : `${activityLabel}: specific campaign`;
+    }
+    return activityLabel;
   }
 
   if (automation.triggerType === "whatsapp_keyword") {
@@ -621,6 +624,19 @@ const normalizeAutomationForForm = (automation) => {
   if (!automation) return createEmptyAutomation();
   const restAutomation = { ...automation };
   delete restAutomation.conditionRules;
+  const existingTriggerConfig = restAutomation.triggerConfig || {};
+  const inferredActivityScope =
+    (existingTriggerConfig.activityCampaignScope === "specific" ||
+    existingTriggerConfig.activityCampaignId
+      ? "specific"
+      : undefined) ||
+    existingTriggerConfig.activityScope ||
+    (Array.isArray(existingTriggerConfig.activityTypes) &&
+    existingTriggerConfig.activityTypes.length > 1
+      ? "all"
+      : existingTriggerConfig.activityType
+        ? "specific"
+        : "all");
 
   return {
     ...createEmptyAutomation(),
@@ -637,10 +653,18 @@ const normalizeAutomationForForm = (automation) => {
     triggerConfig: {
       ...createEmptyAutomation().triggerConfig,
       ...(restAutomation.triggerConfig || {}),
-      activityTypes: normalizeActivitySelection(
-        restAutomation.triggerConfig?.activityTypes ||
-          restAutomation.triggerConfig?.activityType,
-      ),
+      activityScope: inferredActivityScope,
+      activityType:
+        inferredActivityScope === "specific"
+          ? restAutomation.triggerConfig?.activityType || ""
+          : Array.isArray(restAutomation.triggerConfig?.activityTypes) &&
+              restAutomation.triggerConfig.activityTypes.length === 1
+            ? restAutomation.triggerConfig.activityTypes[0]
+            : restAutomation.triggerConfig?.activityType || "",
+      activityCampaignScope:
+        restAutomation.triggerConfig?.activityCampaignScope ||
+        (restAutomation.triggerConfig?.activityCampaignId ? "specific" : "all"),
+      activityCampaignId: restAutomation.triggerConfig?.activityCampaignId || "",
       scheduleTime:
         restAutomation.triggerConfig?.scheduleTime ||
         createEmptyAutomation().triggerConfig.scheduleTime,
@@ -673,6 +697,7 @@ const normalizeAutomationForForm = (automation) => {
 
 function AutomationDashboardView({
   automations,
+  activityCampaigns,
   selectedView,
   onSelectView,
   onCreateNew,
@@ -864,7 +889,7 @@ function AutomationDashboardView({
                             {automation.triggerType.replaceAll("_", " ")}
                           </p>
                           <p className="mt-1 text-xs text-gray-400">
-                            {describeTriggerConfig(automation)}
+                            {describeTriggerConfig(automation, activityCampaigns)}
                           </p>
                         </div>
                       </div>
@@ -1193,6 +1218,7 @@ function RetentionBuilderView({
   initialAutomation,
   fields,
   templates,
+  activityCampaigns,
   onBack,
   onSave,
   previewState,
@@ -1247,6 +1273,14 @@ function RetentionBuilderView({
     ) || triggerGroups[0];
   const selectedTemplate = templates.find(
     (template) => template._id === form.actionConfig.templateId,
+  );
+  const selectedActivityCampaigns = getCampaignList(
+    activityCampaigns,
+    form.triggerConfig.activityType,
+  );
+  const selectedActivityCampaign = selectedActivityCampaigns.find(
+    (campaign) =>
+      String(campaign?._id) === String(form.triggerConfig.activityCampaignId),
   );
   const dateFields = fields.filter((field) => field.type === "date");
   const templateVariables = extractTemplateVariables(selectedTemplate);
@@ -1434,11 +1468,18 @@ function RetentionBuilderView({
     }
 
     if (form.triggerType === "customer_activity_completed") {
-      const selectedActivities = normalizeActivitySelection(
-        form.triggerConfig.activityTypes || form.triggerConfig.activityType,
-      );
-      if (!selectedActivities.length) {
-        showToast("Choose at least one activity type", "warning");
+      if (
+        (form.triggerConfig.activityScope || "all") === "specific" &&
+        !form.triggerConfig.activityType
+      ) {
+        showToast("Choose a specific activity type", "warning");
+        return;
+      }
+      if (
+        (form.triggerConfig.activityCampaignScope || "all") === "specific" &&
+        !form.triggerConfig.activityCampaignId
+      ) {
+        showToast("Choose a specific campaign for the selected activity", "warning");
         return;
       }
     }
@@ -1755,103 +1796,140 @@ function RetentionBuilderView({
 
                   {form.triggerType === "customer_activity_completed" && (
                     <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="grid gap-3 md:grid-cols-2">
                         <div>
-                          <div className="text-sm font-semibold text-[#313166]">
-                            Activity type
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            Default is all activities. Pick one or more to narrow the trigger.
-                          </div>
+                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Activity selection
+                          </label>
+                          <select
+                            value={form.triggerConfig.activityScope || "all"}
+                            onChange={(event) =>
+                              setForm((previous) => ({
+                                ...previous,
+                                triggerConfig: {
+                                  ...previous.triggerConfig,
+                                  activityScope: event.target.value,
+                                  activityType:
+                                    event.target.value === "all"
+                                      ? ""
+                                      : previous.triggerConfig.activityType || "spinWheel",
+                                  activityCampaignScope:
+                                    event.target.value === "all"
+                                      ? "all"
+                                      : previous.triggerConfig.activityCampaignScope || "all",
+                                  activityCampaignId:
+                                    event.target.value === "all"
+                                      ? ""
+                                      : previous.triggerConfig.activityCampaignId || "",
+                                },
+                              }))
+                            }
+                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                          >
+                            <option value="all">All activities</option>
+                            <option value="specific">Specific activity</option>
+                          </select>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setForm((previous) => ({
-                              ...previous,
-                              triggerConfig: {
-                                ...previous.triggerConfig,
-                                activityTypes: activityOptions.map((option) => option.value),
-                                activityType: "all",
-                              },
-                            }))
-                          }
-                          className="rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-[#313166]"
-                        >
-                          Select all
-                        </button>
-                      </div>
 
-                      <div className="grid gap-2 sm:grid-cols-3">
-                        {activityOptions.map((option) => {
-                          const selected = normalizeActivitySelection(
-                            form.triggerConfig.activityTypes ||
-                              form.triggerConfig.activityType,
-                          ).includes(option.value);
-
-                          return (
-                            <label
-                              key={option.value}
-                              className="flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-sm transition-all"
-                              style={{
-                                borderColor: selected ? "#313166" : "#E5E7EB",
-                                backgroundColor: selected ? "#31316608" : "white",
-                              }}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selected}
-                                onChange={(event) => {
-                                  setForm((previous) => {
-                                    const current = normalizeActivitySelection(
-                                      previous.triggerConfig.activityTypes ||
-                                        previous.triggerConfig.activityType,
-                                    );
-                                    const nextSelected = event.target.checked
-                                      ? [...new Set([...current, option.value])]
-                                      : current.filter((value) => value !== option.value);
-
-                                    return {
-                                      ...previous,
-                                      triggerConfig: {
-                                        ...previous.triggerConfig,
-                                        activityTypes: nextSelected.length
-                                          ? nextSelected
-                                          : [...activityOptions.map((item) => item.value)],
-                                        activityType:
-                                          nextSelected.length === activityOptions.length
-                                            ? "all"
-                                            : nextSelected.length === 1
-                                              ? nextSelected[0]
-                                              : nextSelected.length
-                                                ? "custom"
-                                                : "all",
-                                      },
-                                    };
-                                  });
-                                }}
-                                className="h-4 w-4 accent-[#313166]"
-                              />
-                              <span className="font-medium text-[#313166]">
-                                {option.label}
-                              </span>
+                        {form.triggerConfig.activityScope === "specific" && (
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Activity type
                             </label>
-                          );
-                        })}
+                            <select
+                              value={form.triggerConfig.activityType || "spinWheel"}
+                              onChange={(event) =>
+                                setForm((previous) => ({
+                                  ...previous,
+                                  triggerConfig: {
+                                    ...previous.triggerConfig,
+                                    activityType: event.target.value,
+                                    activityCampaignId: "",
+                                    activityCampaignScope:
+                                      previous.triggerConfig.activityCampaignScope || "all",
+                                  },
+                                }))
+                              }
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                            >
+                              <option value="spinWheel">Spin Wheel</option>
+                              <option value="scratchCard">Scratch Card</option>
+                              <option value="quiz">Quiz</option>
+                            </select>
+                          </div>
+                        )}
                       </div>
+
+                      {(form.triggerConfig.activityScope || "all") === "specific" && (
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Campaign scope
+                            </label>
+                            <select
+                              value={form.triggerConfig.activityCampaignScope || "all"}
+                              onChange={(event) =>
+                                setForm((previous) => ({
+                                  ...previous,
+                                  triggerConfig: {
+                                    ...previous.triggerConfig,
+                                    activityCampaignScope: event.target.value,
+                                    activityCampaignId:
+                                      event.target.value === "all" ? "" : previous.triggerConfig.activityCampaignId || "",
+                                  },
+                                }))
+                              }
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                            >
+                              <option value="all">All campaigns</option>
+                              <option value="specific">Specific campaign</option>
+                            </select>
+                          </div>
+
+                          {(form.triggerConfig.activityCampaignScope || "all") === "specific" && (
+                            <div>
+                              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Select {activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label || "activity"} campaign
+                              </label>
+                              <select
+                                value={
+                                  getCampaignSelectValue(
+                                    activityCampaigns,
+                                    form.triggerConfig.activityType,
+                                    form.triggerConfig.activityCampaignId,
+                                  )
+                                }
+                                onChange={(event) =>
+                                  setForm((previous) => ({
+                                    ...previous,
+                                    triggerConfig: {
+                                      ...previous.triggerConfig,
+                                      activityCampaignId: event.target.value,
+                                    },
+                                  }))
+                                }
+                                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                              >
+                                <option value="">
+                                  Select a {activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label?.toLowerCase() || "campaign"}
+                                </option>
+                                {selectedActivityCampaigns.map((campaign) => (
+                                  <option key={campaign._id} value={campaign._id}>
+                                    {getCampaignLabel(campaign, form.triggerConfig.activityType)}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       <div className="text-xs text-gray-500">
-                        {isAllActivitiesSelected(
-                          form.triggerConfig.activityTypes ||
-                            form.triggerConfig.activityType,
-                        )
+                        {(form.triggerConfig.activityScope || "all") === "all"
                           ? "Watching all completed activities."
-                          : `Watching ${normalizeActivitySelection(
-                              form.triggerConfig.activityTypes ||
-                                form.triggerConfig.activityType,
-                            ).map((value) =>
-                              activityOptions.find((item) => item.value === value)?.label || value,
-                            ).join(", ")}.`}
+                          : (form.triggerConfig.activityCampaignScope || "all") === "specific"
+                            ? `Watching ${activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label || "a specific activity"}: ${selectedActivityCampaign ? getCampaignLabel(selectedActivityCampaign, form.triggerConfig.activityType) : "specific campaign"}.`
+                            : `Watching ${activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label || "a specific activity"}.`}
                       </div>
                     </div>
                   )}
@@ -1903,58 +1981,61 @@ function RetentionBuilderView({
                       </div>
 
                       <div className="grid gap-3 md:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            Weekday
-                          </label>
-                          <select
-                            value={form.triggerConfig.scheduleDayOfWeek ?? 1}
-                            onChange={(event) =>
-                              setForm((previous) => ({
-                                ...previous,
-                                triggerConfig: {
-                                  ...previous.triggerConfig,
-                                  scheduleDayOfWeek: Number(event.target.value),
-                                },
-                              }))
-                            }
-                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                            disabled={form.triggerConfig.scheduleType !== "weekly"}
-                          >
-                            {weekdayOptions.map((day) => (
-                              <option key={day.value} value={day.value}>
-                                {day.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            Day of month
-                          </label>
-                          <select
-                            value={form.triggerConfig.scheduleDayOfMonth ?? 1}
-                            onChange={(event) =>
-                              setForm((previous) => ({
-                                ...previous,
-                                triggerConfig: {
-                                  ...previous.triggerConfig,
-                                  scheduleDayOfMonth: Number(event.target.value),
-                                },
-                              }))
-                            }
-                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                            disabled={form.triggerConfig.scheduleType !== "monthly"}
-                          >
-                            {Array.from({ length: 31 }, (_, index) => index + 1).map(
-                              (day) => (
-                                <option key={day} value={day}>
-                                  {day}
+                        {form.triggerConfig.scheduleType === "weekly" && (
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Weekday
+                            </label>
+                            <select
+                              value={form.triggerConfig.scheduleDayOfWeek ?? 1}
+                              onChange={(event) =>
+                                setForm((previous) => ({
+                                  ...previous,
+                                  triggerConfig: {
+                                    ...previous.triggerConfig,
+                                    scheduleDayOfWeek: Number(event.target.value),
+                                  },
+                                }))
+                              }
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                            >
+                              {weekdayOptions.map((day) => (
+                                <option key={day.value} value={day.value}>
+                                  {day.label}
                                 </option>
-                              ),
-                            )}
-                          </select>
-                        </div>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {form.triggerConfig.scheduleType === "monthly" && (
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Date
+                            </label>
+                            <select
+                              value={form.triggerConfig.scheduleDayOfMonth ?? 1}
+                              onChange={(event) =>
+                                setForm((previous) => ({
+                                  ...previous,
+                                  triggerConfig: {
+                                    ...previous.triggerConfig,
+                                    scheduleDayOfMonth: Number(event.target.value),
+                                  },
+                                }))
+                              }
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                            >
+                              {Array.from({ length: 31 }, (_, index) => index + 1).map(
+                                (day) => (
+                                  <option key={day} value={day}>
+                                    {day}
+                                  </option>
+                                ),
+                              )}
+                            </select>
+                          </div>
+                        )}
                       </div>
 
                       <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
@@ -2883,6 +2964,11 @@ export default function RetentionRhythmAutomation() {
   const [automations, setAutomations] = useState([]);
   const [fields, setFields] = useState([]);
   const [templates, setTemplates] = useState([]);
+  const [activityCampaigns, setActivityCampaigns] = useState({
+    spinWheel: [],
+    scratchCard: [],
+    quiz: [],
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingAutomation, setEditingAutomation] = useState(null);
@@ -2913,8 +2999,28 @@ export default function RetentionRhythmAutomation() {
     }
   };
 
+  const fetchActivityCampaigns = async () => {
+    try {
+      const [quizRes, spinRes, scratchRes] = await Promise.allSettled([
+        api.get("/api/quiz?fully=true"),
+        api.get("/api/spinWheels/spinWheel/all?fully=true"),
+        api.get("/api/scratchCards/scratchCard/all?fully=true"),
+      ]);
+
+      setActivityCampaigns({
+        quiz: quizRes.status === "fulfilled" ? quizRes.value.data?.docs || [] : [],
+        spinWheel: spinRes.status === "fulfilled" ? spinRes.value.data?.data || [] : [],
+        scratchCard:
+          scratchRes.status === "fulfilled" ? scratchRes.value.data?.data || [] : [],
+      });
+    } catch (error) {
+      console.error("Error loading activity campaigns:", error);
+    }
+  };
+
   useEffect(() => {
     fetchRetentionData();
+    fetchActivityCampaigns();
   }, []);
 
   const handleCreateNew = () => {
@@ -3078,6 +3184,7 @@ export default function RetentionRhythmAutomation() {
   return view === "dashboard" ? (
     <AutomationDashboardView
       automations={automations}
+      activityCampaigns={activityCampaigns}
       selectedView={selectedView}
       onSelectView={setSelectedView}
       onCreateNew={handleCreateNew}
@@ -3094,6 +3201,7 @@ export default function RetentionRhythmAutomation() {
       initialAutomation={editingAutomation}
       fields={fields}
       templates={templates}
+      activityCampaigns={activityCampaigns}
       onBack={handleBack}
       onSave={handleSave}
       previewState={previewState}
