@@ -212,6 +212,8 @@ const createEmptyAutomation = () => ({
     scheduleDayOfMonth: new Date().getDate(),
     scheduleTimezone: "Asia/Calcutta",
     days: 30,
+    daysBefore: 0,
+    triggerTime: "09:00",
     timezone: "Asia/Calcutta",
   },
   audienceRules: { logic: "AND", conditions: [] },
@@ -610,7 +612,12 @@ const describeTriggerConfig = (automation = {}, campaigns = {}) => {
   }
 
   if (automation.triggerType === "customer_field_date") {
-    return triggerConfig.fieldKey ? `Date field: ${triggerConfig.fieldKey}` : "Date field trigger";
+    const fieldLabel = triggerConfig.fieldKey || "Date field";
+    const offset = Number(triggerConfig.daysBefore) || 0;
+    const timeLabel = formatScheduleTime(triggerConfig.triggerTime || "09:00");
+    if (!triggerConfig.fieldKey) return "Date field trigger";
+    const dateText = offset > 0 ? `${offset} days before` : "same day";
+    return `${fieldLabel}, ${dateText} at ${timeLabel}`;
   }
 
   if (automation.triggerType === "inactive_for_days") {
@@ -678,6 +685,12 @@ const normalizeAutomationForForm = (automation) => {
         restAutomation.triggerConfig?.scheduleTimezone ||
         restAutomation.triggerConfig?.timezone ||
         createEmptyAutomation().triggerConfig.scheduleTimezone,
+      daysBefore:
+        restAutomation.triggerConfig?.daysBefore ??
+        createEmptyAutomation().triggerConfig.daysBefore,
+      triggerTime:
+        restAutomation.triggerConfig?.triggerTime ||
+        createEmptyAutomation().triggerConfig.triggerTime,
     },
     audienceRules: restAutomation.audienceRules || {
       logic: "AND",
@@ -1283,6 +1296,9 @@ function RetentionBuilderView({
       String(campaign?._id) === String(form.triggerConfig.activityCampaignId),
   );
   const dateFields = fields.filter((field) => field.type === "date");
+  const selectedDateField = dateFields.find(
+    (field) => field.fieldKey === form.triggerConfig.fieldKey,
+  );
   const templateVariables = extractTemplateVariables(selectedTemplate);
   const templateHeaderMediaType = getTemplateHeaderMediaType(selectedTemplate);
   const templateHeader = getTemplateHeaderComponent(selectedTemplate);
@@ -1486,6 +1502,11 @@ function RetentionBuilderView({
 
     if (form.triggerType === "scheduled_recurring" && !form.triggerConfig.scheduleTime) {
       showToast("Choose an exact time for the recurring trigger", "warning");
+      return;
+    }
+
+    if (form.triggerType === "customer_field_date" && !form.triggerConfig.fieldKey) {
+      showToast("Choose a date field for the trigger", "warning");
       return;
     }
 
@@ -1737,26 +1758,93 @@ function RetentionBuilderView({
                   ))}
 
                   {form.triggerType === "customer_field_date" && (
-                    <select
-                      value={form.triggerConfig.fieldKey}
-                      onChange={(event) =>
-                        setForm({
-                          ...form,
-                          triggerConfig: {
-                            ...form.triggerConfig,
-                            fieldKey: event.target.value,
-                          },
-                        })
-                      }
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                    >
-                      <option value="">Choose a date field</option>
-                      {dateFields.map((field) => (
-                        <option key={field.fieldKey} value={field.fieldKey}>
-                          {field.label} ({field.sourceSection})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          Date field
+                        </label>
+                        <select
+                          value={form.triggerConfig.fieldKey}
+                          onChange={(event) =>
+                            setForm((previous) => ({
+                              ...previous,
+                              triggerConfig: {
+                                ...previous.triggerConfig,
+                                fieldKey: event.target.value,
+                              },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                        >
+                          <option value="">Choose a date field</option>
+                          {dateFields.map((field) => (
+                            <option key={field.fieldKey} value={field.fieldKey}>
+                              {field.label} ({field.sourceSection})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          Days before
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={form.triggerConfig.daysBefore ?? 0}
+                          onChange={(event) =>
+                            setForm((previous) => ({
+                              ...previous,
+                              triggerConfig: {
+                                ...previous.triggerConfig,
+                                daysBefore: Math.max(
+                                  0,
+                                  Number(event.target.value) || 0,
+                                ),
+                              },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          Trigger time
+                        </label>
+                        <input
+                          type="time"
+                          value={form.triggerConfig.triggerTime || "09:00"}
+                          onChange={(event) =>
+                            setForm((previous) => ({
+                              ...previous,
+                              triggerConfig: {
+                                ...previous.triggerConfig,
+                                triggerTime: event.target.value,
+                              },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                        />
+                      </div>
+
+                      <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
+                        <div>
+                          {selectedDateField
+                            ? `${selectedDateField.label} will trigger ${Number(form.triggerConfig.daysBefore) || 0} day${Number(form.triggerConfig.daysBefore) === 1 ? "" : "s"} before the date at ${formatScheduleTime(form.triggerConfig.triggerTime || "09:00")}.`
+                            : "Pick a date field and set how many days before it should trigger."}
+                        </div>
+                        {selectedDateField &&
+                          (String(selectedDateField.fieldKey).toLowerCase().includes("birthday") ||
+                            String(selectedDateField.fieldKey).toLowerCase().includes("anniversary")) && (
+                            <div className="mt-1">
+                              Birthday and anniversary fields repeat every year.
+                            </div>
+                          )}
+                      </div>
+                    </div>
                   )}
 
                   {form.triggerType === "inactive_for_days" && (
