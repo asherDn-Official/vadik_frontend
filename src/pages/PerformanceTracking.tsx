@@ -134,19 +134,19 @@ useEffect(() => {
         </div>
 
         {/* Second Row - Activities Table & Conversion Chart */}
-        <div className="grid grid-cols-1 gap-4 text-[#313166] xl:grid-cols-10 xl:gap-6">
+        {/* <div className="grid grid-cols-1 gap-4 text-[#313166] xl:grid-cols-10 xl:gap-6"> */}
           {/* <div className="lg:col-span-7"> */}
-          <CampaignTable />
+          {/* <CampaignTable /> */}
           {/* </div> */}
           {/* <div className="lg:col-span-3"> */}
-          <ConversionChart />
+          {/* <ConversionChart /> */}
           {/* </div> */}
-        </div>
+        {/* </div> */}
 
         {/* Third Row - Revenue Growth & Cart Value | CLV Section */}
-        <div className="hidden grid-cols-1 gap-4 xl:grid xl:grid-cols-2 xl:gap-6">
+        {/* <div className="hidden grid-cols-1 gap-4 xl:grid xl:grid-cols-2 xl:gap-6"> */}
           {/* Left Column */}
-          <div className="space-y-6">
+          {/* <div className="space-y-6">
              <div className="bg-white p-6 rounded-[10px]">
               <h3 className="text-lg font-semibold text-[#313166] mb-4">
                 Customer Lifetime Value (CLV)
@@ -165,13 +165,13 @@ useEffect(() => {
                   bgColor="#48C471" // Green
                 />
               </div>
-            </div>
+            </div> */}
             {/* <RevenueChart /> */}
-            <CartValueCards />
-          </div>
+            {/* <CartValueCards /> */}
+          {/* </div> */}
 
           {/* Right Column */}
-          <div className="space-y-6">
+          {/* <div className="space-y-6"> */}
             {/* CLV Cards */}
             {/* <div className="bg-white p-6 rounded-[10px]">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -194,9 +194,9 @@ useEffect(() => {
             </div> */}
 
             {/* Customer Table */}
-            <CustomerTable value={clvList}/>
-          </div>
-        </div>
+            {/* <CustomerTable value={clvList}/> */}
+          {/* </div> */}
+        {/* </div> */}
       </div>
     </div>
   );

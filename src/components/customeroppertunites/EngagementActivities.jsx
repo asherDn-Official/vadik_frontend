@@ -23,7 +23,7 @@ const EngagementActivities = () => {
             onChange={(e) => setSelectedCampaign(e.target.value)}
             className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
           >
-            <option value="quiz">Quiz</option>
+            <option value="quiz">Direct Quiz</option>
             <option value="spinwheel">Spin Wheel</option>
             <option value="scratchcard">Scratch Card</option>
           </select>

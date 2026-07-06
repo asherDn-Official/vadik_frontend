@@ -232,7 +232,7 @@
 //   const handlePreferenceKeyChange = (index, key, section) => {
 //     const sectionFields = categorizedPreferences[section];
 //     const selectedPref = sectionFields.find(p => p.key === key);
-    
+
 //     if (selectedPref) {
 //       const updated = [...selectedPreferences];
 //       updated[index] = {
@@ -287,10 +287,10 @@
 //       const padding = 40;
 //       const statementHeight = qrStatement ? 60 : 0;
 //       const brandingHeight = (brandingName || (logo && logoPlacement === "top")) ? 80 : 0;
-      
+
 //       canvas.width = img.width + (padding * 2);
 //       canvas.height = img.height + (padding * 2) + statementHeight + brandingHeight;
-      
+
 //       ctx.fillStyle = bgColor;
 //       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -298,7 +298,7 @@
 //         ctx.fillStyle = fgColor === "#ffffff" ? "#000000" : fgColor;
 //         ctx.font = "bold 28px Inter, system-ui, sans-serif";
 //         ctx.textAlign = "center";
-        
+
 //         if (logo && logoPlacement === "top") {
 //           const logoImg = new Image();
 //           logoImg.crossOrigin = "anonymous";
@@ -308,16 +308,16 @@
 //             const textWidth = ctx.measureText(brandingName).width;
 //             const totalWidth = brandingName ? (logoDispSize + gap + textWidth) : logoDispSize;
 //             const startX = (canvas.width - totalWidth) / 2;
-            
+
 //             ctx.globalAlpha = logoOpacity;
 //             ctx.drawImage(logoImg, startX, padding + 10, logoDispSize, logoDispSize);
 //             ctx.globalAlpha = 1;
-            
+
 //             if (brandingName) {
 //               ctx.textAlign = "left";
 //               ctx.fillText(brandingName, startX + logoDispSize + gap, padding + 40);
 //             }
-            
+
 //             // Continue drawing rest after logo loads
 //             drawRest();
 //           };
@@ -334,14 +334,14 @@
 
 //       function drawRest() {
 //         ctx.drawImage(img, padding, padding + brandingHeight);
-        
+
 //         if (qrStatement) {
 //           ctx.fillStyle = fgColor === "#ffffff" ? "#000000" : fgColor;
 //           ctx.font = "bold 24px Inter, system-ui, sans-serif";
 //           ctx.textAlign = "center";
 //           ctx.fillText(qrStatement, canvas.width / 2, img.height + padding + brandingHeight + 40);
 //         }
-        
+
 //         const pngFile = canvas.toDataURL("image/png");
 //         const downloadLink = document.createElement("a");
 //         downloadLink.download = `QR_${qrType}_${new Date().getTime()}.png`;
@@ -383,7 +383,7 @@
 //               <h2 className="text-xl font-bold text-[#313166] mb-6 flex items-center gap-2">
 //                 1. Select QR Type
 //               </h2>
-              
+
 //               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 //                 <button
 //                   onClick={() => handleQrTypeChange("registration")}
@@ -416,7 +416,7 @@
 //                 <h2 className="text-xl font-bold text-[#313166] mb-6 flex items-center gap-2">
 //                   2. Customize QR Options
 //                 </h2>
-                
+
 //                 <div className="space-y-6">
 //                   {qrType === "registration" && (
 //                     <div className="flex items-center gap-3">
@@ -446,7 +446,7 @@
 //                             <h3 className="text-lg font-semibold text-slate-800">
 //                               Question {index + 1}
 //                             </h3>
-                            
+
 //                             <div className="flex items-center gap-3">
 //                               <div className="relative">
 //                                 <button
@@ -533,7 +533,7 @@
 //                                   </div>
 //                                 )}
 //                               </div>
-                              
+
 //                               <button
 //                                 onClick={() => removePreferenceQuestion(index)}
 //                                 className="text-red-500 hover:text-red-700 transition-colors"
@@ -554,7 +554,7 @@
 //                           </div>
 //                         </div>
 //                       ))}
-                      
+
 //                       <button
 //                         type="button"
 //                         onClick={addPreferenceQuestion}
@@ -586,7 +586,7 @@
 //                   <h2 className="text-xl font-bold text-[#313166] mb-6 flex items-center gap-2">
 //                     3. Select Activity Details
 //                   </h2>
-                  
+
 //                   <div className="space-y-6">
 //                     <div>
 //                       <label className="block text-sm font-semibold text-gray-700 mb-3">Activity Category</label>
@@ -776,7 +776,7 @@
 //                 <h2 className="text-xl font-bold text-[#313166] mb-6 flex items-center gap-2">
 //                   5. Save & Manage Dynamic QR
 //                 </h2>
-                
+
 //                 <div className="space-y-4">
 //                   {savedQRs.length > 0 && (
 //                     <div className="space-y-4">
@@ -898,7 +898,7 @@
 //            <div className="lg:col-span-1">
 //             <div className="sticky top-8 bg-white rounded-[32px] border border-gray-100 shadow-lg p-6 md:p-8 flex flex-col items-center">
 //               <h2 className="text-xl font-bold text-[#313166] mb-8 w-full">QR Preview</h2>
-              
+
 //               <div className="bg-[#F8F9FF] p-8 rounded-[32px] mb-8 border border-[#EEF1FF] flex flex-col items-center justify-center">
 //                 {generatedUrl ? (
 //                   <>
@@ -1009,14 +1009,15 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { QRCodeSVG } from "qrcode.react";
+// import { QRCodeSVG } from "qrcode.react";
+import StyledQRCode from "../components/StyledQRCode";
 import { jsPDF } from "jspdf";
-import { 
-  QrCode, 
-  UserPlus, 
-  Gamepad2, 
-  Download, 
-  Copy, 
+import {
+  QrCode,
+  UserPlus,
+  Gamepad2,
+  Download,
+  Copy,
   ExternalLink,
   Info,
   Plus,
@@ -1030,6 +1031,11 @@ import {
 } from "lucide-react";
 import api from "../api/apiconfig";
 import showToast from "../utils/ToastNotification";
+import { useRef } from "react";
+import { toPng } from "html-to-image";
+import QRStyleOption from "../components/QRStyleOption";
+
+
 
 const loadImage = (src) =>
   new Promise((resolve, reject) => {
@@ -1111,6 +1117,110 @@ const canUseLogoInCanvas = (src) => {
   return src.startsWith("data:") || src.startsWith("blob:");
 };
 
+const bodyStyles = [
+  {
+    id: "square",
+    options: {
+      dotsOptions: {
+        type: "square",
+      },
+    },
+  },
+  {
+    id: "dots",
+    options: {
+      dotsOptions: {
+        type: "dots",
+      },
+    },
+  },
+  {
+    id: "rounded",
+    options: {
+      dotsOptions: {
+        type: "rounded",
+      },
+    },
+  },
+  {
+    id: "classy",
+    options: {
+      dotsOptions: {
+        type: "classy",
+      },
+    },
+  },
+  {
+    id: "classy-rounded",
+    options: {
+      dotsOptions: {
+        type: "classy-rounded",
+      },
+    },
+  },
+  {
+    id: "extra-rounded",
+    options: {
+      dotsOptions: {
+        type: "extra-rounded",
+      },
+    },
+  },
+];
+
+const eyeFrameStyles = [
+  {
+    id: "square",
+    options: {
+      cornersSquareOptions: {
+        type: "square",
+      },
+    },
+  },
+  {
+    id: "dot",
+    options: {
+      cornersSquareOptions: {
+        type: "dot",
+      },
+    },
+  },
+  {
+    id: "extra-rounded",
+    options: {
+      cornersSquareOptions: {
+        type: "extra-rounded",
+      },
+    },
+  },
+];
+
+const eyeBallStyles = [
+  {
+    id: "square",
+    options: {
+      cornersDotOptions: {
+        type: "square",
+      },
+    },
+  },
+  {
+    id: "dot",
+    options: {
+      cornersDotOptions: {
+        type: "dot",
+      },
+    },
+  },
+  {
+    id: "extra-rounded",
+    options: {
+      cornersDotOptions: {
+        type: "extra-rounded",
+      },
+    },
+  },
+];
 const QRGenerator = () => {
   const { auth } = useAuth();
   const [qrType, setQrType] = useState("registration"); // registration | activity
@@ -1139,6 +1249,10 @@ const QRGenerator = () => {
   const [fgColor, setFgColor] = useState("#000000");
   const [bgColor, setBgColor] = useState("#ffffff");
   const [cardBgColor, setCardBgColor] = useState("#ffffff");
+
+  const [tempFgColor, setTempFgColor] = useState(fgColor);
+  const [tempBgColor, setTempBgColor] = useState(bgColor);
+  const [tempCardBgColor, setTempCardBgColor] = useState(cardBgColor);
   const [brandingName, setBrandingName] = useState("");
   const [logo, setLogo] = useState(null);
   const [logoOpacity, setLogoOpacity] = useState(1);
@@ -1146,6 +1260,53 @@ const QRGenerator = () => {
   const [logoPlacement, setLogoPlacement] = useState("top"); // top | inside
   const [qrSubtitle, setQrSubtitle] = useState("");
   const [resolvedLogo, setResolvedLogo] = useState(null);
+  const previewRef = useRef(null);
+  // QR body style
+  const [qrStyle, setQrStyle] = useState("squares");
+  // const [qrStyle, setQrStyle] = useState("square");
+
+  const [eyeFrame, setEyeFrame] = useState("square");
+
+  const [eyeBall, setEyeBall] = useState("square");
+
+
+  // Eye frame
+  const [eyeRadius, setEyeRadius] = useState([
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ]);
+
+  // Eye ball
+  const [eyeInnerRadius, setEyeInnerRadius] = useState([
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFgColor(tempFgColor);
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [tempFgColor]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setBgColor(tempBgColor);
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [tempBgColor]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCardBgColor(tempCardBgColor);
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [tempCardBgColor]);
 
   // Set default branding and logo from retailer info
   useEffect(() => {
@@ -1214,6 +1375,7 @@ const QRGenerator = () => {
       console.error("Error fetching available preferences:", error);
     }
   };
+
 
   const fetchSavedQRs = async () => {
     try {
@@ -1415,14 +1577,14 @@ const QRGenerator = () => {
   const handlePreferenceKeyChange = (index, key, section) => {
     const sectionFields = categorizedPreferences[section];
     const selectedPref = sectionFields.find(p => p.key === key);
-    
+
     if (selectedPref) {
       const updated = [...selectedPreferences];
       updated[index] = {
         key: selectedPref.key,
         section: section,
-        question: selectedPref.type === "date" 
-          ? `When is your ${selectedPref.key}?` 
+        question: selectedPref.type === "date"
+          ? `When is your ${selectedPref.key}?`
           : `What is your ${selectedPref.key}?`
       };
       setSelectedPreferences(updated);
@@ -1479,42 +1641,42 @@ const QRGenerator = () => {
         effectiveLogo && logoPlacement === "top" && canRenderLogoInCanvas
           ? await loadImage(effectiveLogo)
           : null;
-      
+
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
-      
+
       const cardWidth = 720;
       const contentPaddingX = 60;
       const contentWidth = cardWidth - contentPaddingX * 2;
       const qrSize = 400;
       const borderRadius = 24;
-      
+
       const brandFontSize = 36;
       const subtitleFontSize = 20;
       const statementFontSize = 24;
-      
+
       const titleLineHeight = Math.round(brandFontSize * 1.2);
       const subtitleLineHeight = Math.round(subtitleFontSize * 1.3);
       const statementLineHeight = Math.round(statementFontSize * 1.4);
 
       ctx.font = `700 ${brandFontSize}px Inter, system-ui, sans-serif`;
       const brandMeasure = measureWrappedText(ctx, brandingName, contentWidth, titleLineHeight);
-      
+
       ctx.font = `500 ${subtitleFontSize}px Inter, system-ui, sans-serif`;
       const subtitleMeasure = measureWrappedText(ctx, qrSubtitle, contentWidth, subtitleLineHeight);
-      
+
       ctx.font = `600 ${statementFontSize}px Inter, system-ui, sans-serif`;
       const statementMeasure = measureWrappedText(ctx, qrStatement, contentWidth, statementLineHeight);
 
       const hasHeader = Boolean(brandingName || topLogoImage || qrSubtitle);
-      const headerHeight = hasHeader ? 
-        (topLogoImage ? logoSize * 2 : 0) + 
-        (brandingName ? brandMeasure.height + 10 : 0) + 
+      const headerHeight = hasHeader ?
+        (topLogoImage ? logoSize * 2 : 0) +
+        (brandingName ? brandMeasure.height + 10 : 0) +
         (qrSubtitle ? subtitleMeasure.height + 10 : 0) + 20
         : 0;
-      
+
       const footerHeight = qrStatement ? statementMeasure.height + 40 : 0;
-      
+
       canvas.width = cardWidth;
       canvas.height = 80 + headerHeight + qrSize + 40 + footerHeight + 60;
       const cardHeight = canvas.height;
@@ -1524,7 +1686,7 @@ const QRGenerator = () => {
       ctx.beginPath();
       ctx.roundRect(0, 0, cardWidth, cardHeight, borderRadius);
       ctx.fill();
-      
+
       // Border
       ctx.strokeStyle = "#f1f5f9";
       ctx.lineWidth = 2;
@@ -1557,7 +1719,7 @@ const QRGenerator = () => {
           drawWrappedText(ctx, subtitleMeasure.lines, cardWidth / 2, currentY + subtitleFontSize, subtitleLineHeight);
           currentY += subtitleMeasure.height + 15;
         }
-        
+
         currentY += 10;
       }
 
@@ -1581,35 +1743,59 @@ const QRGenerator = () => {
   };
 
   const downloadQR = async () => {
-    try {
-      const canvas = await generateQRCanvas();
-      if (!canvas) return;
+    if (!previewRef.current) return;
 
-      const pngFile = canvas.toDataURL("image/png");
-      const downloadLink = document.createElement("a");
-      downloadLink.download = `QR_${new Date().getTime()}.png`;
-      downloadLink.href = pngFile;
-      downloadLink.click();
-    } catch (error) {
-      console.error("Error downloading QR:", error);
-      showToast("Could not prepare QR download", "error");
+    try {
+      const dataUrl = await toPng(previewRef.current, {
+        cacheBust: true,
+        pixelRatio: 4,
+        backgroundColor: cardBgColor,
+      });
+
+      const link = document.createElement("a");
+      link.download = `QR_${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error(err);
+      showToast("Unable to download QR", "error");
     }
   };
 
   const downloadPDF = async () => {
-    try {
-      const canvas = await generateQRCanvas();
-      if (!canvas) return;
+    if (!previewRef.current) return;
 
-      const imgData = canvas.toDataURL("image/png", 1.0);
-      const pdf = new jsPDF({
-        orientation: canvas.width > canvas.height ? "landscape" : "portrait",
-        unit: "px",
-        format: [canvas.width, canvas.height],
+    try {
+      const dataUrl = await toPng(previewRef.current, {
+        pixelRatio: 4,
+        cacheBust: true,
+        backgroundColor: cardBgColor,
       });
 
-      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
-      pdf.save(`QR_${new Date().getTime()}.pdf`);
+      // Create an image to determine dimensions
+      const img = new Image();
+      img.src = dataUrl;
+
+      img.onload = () => {
+        const pdf = new jsPDF({
+          orientation: img.width > img.height ? "landscape" : "portrait",
+          unit: "px",
+          format: [img.width, img.height],
+        });
+
+        pdf.addImage(
+          dataUrl,
+          "PNG",
+          0,
+          0,
+          img.width,
+          img.height,
+          undefined,
+          "FAST"
+        );
+
+        pdf.save(`QR_${Date.now()}.pdf`);
+      };
     } catch (error) {
       console.error("Error downloading PDF:", error);
       showToast("Could not prepare PDF download", "error");
@@ -1627,6 +1813,7 @@ const QRGenerator = () => {
       setIncludePreferences(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-4 md:p-8">
@@ -1654,19 +1841,17 @@ const QRGenerator = () => {
                 <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">1</span>
                 Select QR Type
               </h2>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
                   onClick={() => handleQrTypeChange("registration")}
-                  className={`group flex flex-col items-start p-4 rounded-xl border transition-all ${
-                    qrType === "registration" 
-                    ? "border-indigo-300 bg-indigo-50/30 shadow-sm" 
-                    : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50"
-                  }`}
+                  className={`group flex flex-col items-start p-4 rounded-xl border transition-all ${qrType === "registration"
+                      ? "border-indigo-300 bg-indigo-50/30 shadow-sm"
+                      : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50"
+                    }`}
                 >
-                  <div className={`p-2 rounded-xl mb-3 ${
-                    qrType === "registration" ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-400 group-hover:text-gray-500"
-                  }`}>
+                  <div className={`p-2 rounded-xl mb-3 ${qrType === "registration" ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-400 group-hover:text-gray-500"
+                    }`}>
                     <UserPlus className="w-5 h-5" />
                   </div>
                   <span className={`font-semibold ${qrType === "registration" ? "text-indigo-700" : "text-gray-700"}`}>Customer Registration</span>
@@ -1675,15 +1860,13 @@ const QRGenerator = () => {
 
                 <button
                   onClick={() => handleQrTypeChange("activity")}
-                  className={`group flex flex-col items-start p-4 rounded-xl border transition-all ${
-                    qrType === "activity" 
-                    ? "border-rose-300 bg-rose-50/30 shadow-sm" 
-                    : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50"
-                  }`}
+                  className={`group flex flex-col items-start p-4 rounded-xl border transition-all ${qrType === "activity"
+                      ? "border-rose-300 bg-rose-50/30 shadow-sm"
+                      : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50"
+                    }`}
                 >
-                  <div className={`p-2 rounded-xl mb-3 ${
-                    qrType === "activity" ? "bg-rose-100 text-rose-500" : "bg-gray-100 text-gray-400 group-hover:text-gray-500"
-                  }`}>
+                  <div className={`p-2 rounded-xl mb-3 ${qrType === "activity" ? "bg-rose-100 text-rose-500" : "bg-gray-100 text-gray-400 group-hover:text-gray-500"
+                    }`}>
                     <Gamepad2 className="w-5 h-5" />
                   </div>
                   <span className={`font-semibold ${qrType === "activity" ? "text-rose-600" : "text-gray-700"}`}>Customer Activity</span>
@@ -1698,7 +1881,60 @@ const QRGenerator = () => {
                 <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">2</span>
                 Customize Options
               </h2>
-              
+              <div className="mt-6">
+
+                <h4 className="font-semibold mb-3">
+                  Body Shape
+                </h4>
+
+                <div className="flex gap-4 flex-wrap">
+                  {bodyStyles.map((item) => (
+                    <QRStyleOption
+                      key={item.id}
+                      options={item.options}
+                      selected={qrStyle === item.id}
+                      onClick={() => setQrStyle(item.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="mt-6">
+
+                <h4 className="font-semibold mb-3">
+                  Eye Frame
+                </h4>
+
+                <div className="flex gap-4 flex-wrap">
+                  {eyeFrameStyles.map((item) => (
+                    <QRStyleOption
+                      key={item.id}
+                      options={item.options}
+                      selected={eyeFrame === item.id}
+                      onClick={() => setEyeFrame(item.id)}
+                    />
+                  ))}
+                </div>
+
+              </div>
+              <div className="mt-6">
+
+                <h4 className="font-semibold mb-3">
+                  Eye Ball
+                </h4>
+
+                <div className="flex gap-4 flex-wrap">
+                  {eyeBallStyles.map((item) => (
+                    <QRStyleOption
+                      key={item.id}
+                      options={item.options}
+                      selected={eyeBall === item.id}
+                      onClick={() => setEyeBall(item.id)}
+                    />
+                  ))}
+                </div>
+
+              </div>
+
               <div className="">
                 {qrType === "registration" && (
                   <div className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-xl">
@@ -1728,7 +1964,7 @@ const QRGenerator = () => {
                           <h3 className="text-md font-semibold text-gray-700">
                             Question {index + 1}
                           </h3>
-                          
+
                           <div className="flex items-center gap-3">
                             <div className="relative w-64">
                               <button
@@ -1816,7 +2052,7 @@ const QRGenerator = () => {
                                 </div>
                               )}
                             </div>
-                            
+
                             <button
                               onClick={() => removePreferenceQuestion(index)}
                               className="text-gray-400 hover:text-red-500 transition-colors"
@@ -1837,7 +2073,7 @@ const QRGenerator = () => {
                         </div>
                       </div>
                     ))}
-                    
+
                     <button
                       type="button"
                       onClick={addPreferenceQuestion}
@@ -1873,7 +2109,7 @@ const QRGenerator = () => {
                   <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">3</span>
                   Activity Details
                 </h2>
-                
+
                 <div className="space-y-5">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">Activity Category</label>
@@ -1885,11 +2121,10 @@ const QRGenerator = () => {
                             setActivityType(type);
                             setSelectedActivityId("");
                           }}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            activityType === type 
-                            ? "bg-indigo-600 text-white shadow-sm" 
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                          }`}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activityType === type
+                              ? "bg-indigo-600 text-white shadow-sm"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}
                         >
                           {type.charAt(0).toUpperCase() + type.slice(1)}
                         </button>
@@ -1952,7 +2187,7 @@ const QRGenerator = () => {
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition-all"
                     />
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1961,11 +2196,11 @@ const QRGenerator = () => {
                       <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
                         <input
                           type="color"
-                          value={fgColor}
-                          onChange={(e) => setFgColor(e.target.value)}
+                          value={tempFgColor}
+                          onChange={(e) => setTempFgColor(e.target.value)}
                           className="w-8 h-8 rounded cursor-pointer border-0"
                         />
-                        <span className="text-xs font-mono text-gray-600">{fgColor}</span>
+                        <span className="text-xs font-mono text-gray-600">{tempFgColor}</span>
                       </div>
                     </div>
                     <div>
@@ -1975,11 +2210,11 @@ const QRGenerator = () => {
                       <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
                         <input
                           type="color"
-                          value={bgColor}
-                          onChange={(e) => setBgColor(e.target.value)}
+                          value={tempBgColor}
+                          onChange={(e) => setTempBgColor(e.target.value)}
                           className="w-8 h-8 rounded cursor-pointer border-0"
                         />
-                        <span className="text-xs font-mono text-gray-600">{bgColor}</span>
+                        <span className="text-xs font-mono text-gray-600">{tempBgColor}</span>
                       </div>
                     </div>
                     <div>
@@ -1989,11 +2224,11 @@ const QRGenerator = () => {
                       <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
                         <input
                           type="color"
-                          value={cardBgColor}
-                          onChange={(e) => setCardBgColor(e.target.value)}
+                          value={tempCardBgColor}
+                          onChange={(e) => setTempCardBgColor(e.target.value)}
                           className="w-8 h-8 rounded cursor-pointer border-0"
                         />
-                        <span className="text-xs font-mono text-gray-600">{cardBgColor}</span>
+                        <span className="text-xs font-mono text-gray-600">{tempCardBgColor}</span>
                       </div>
                     </div>
                   </div>
@@ -2035,7 +2270,7 @@ const QRGenerator = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   {logo && (
                     <div className="space-y-4 border-t border-gray-50 pt-4">
                       <div className="grid grid-cols-2 gap-4">
@@ -2052,8 +2287,9 @@ const QRGenerator = () => {
                             className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                           />
                         </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1">
+                        {logoPlacement === "top" && (
+  <div>
+   <label className="block text-xs font-medium text-gray-500 mb-1">
                             Opacity ({logoOpacity})
                           </label>
                           <input
@@ -2065,9 +2301,10 @@ const QRGenerator = () => {
                             onChange={(e) => setLogoOpacity(parseFloat(e.target.value))}
                             className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                           />
-                        </div>
+  </div>
+)}
                       </div>
-                      
+
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-2">
                           Logo Placement
@@ -2075,21 +2312,19 @@ const QRGenerator = () => {
                         <div className="flex gap-2 p-1 bg-gray-100/50 rounded-lg">
                           <button
                             onClick={() => setLogoPlacement("top")}
-                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
-                              logoPlacement === "top"
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${logoPlacement === "top"
                                 ? "bg-white text-indigo-600 shadow-sm"
                                 : "text-gray-500 hover:text-gray-700"
-                            }`}
+                              }`}
                           >
                             Top of Card
                           </button>
                           <button
                             onClick={() => setLogoPlacement("inside")}
-                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
-                              logoPlacement === "inside"
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${logoPlacement === "inside"
                                 ? "bg-white text-indigo-600 shadow-sm"
                                 : "text-gray-500 hover:text-gray-700"
-                            }`}
+                              }`}
                           >
                             Inside QR
                           </button>
@@ -2107,7 +2342,7 @@ const QRGenerator = () => {
                 <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">5</span>
                 Save & Manage
               </h2>
-              
+
               <div className="space-y-5">
                 {savedQRs.length > 0 && (
                   <div>
@@ -2116,7 +2351,7 @@ const QRGenerator = () => {
                       <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{savedQRs.length}</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar">
-                      <div 
+                      <div
                         onClick={() => {
                           setSelectedDynamicQR(null);
                           setIsDynamic(false);
@@ -2132,39 +2367,41 @@ const QRGenerator = () => {
                           setBgColor("#ffffff");
                           setCardBgColor("#ffffff");
                         }}
-                        className={`group p-3 rounded-xl border-2 border-dashed transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                          !selectedDynamicQR 
-                          ? "border-indigo-300 bg-indigo-50/30" 
-                          : "border-gray-200 hover:border-indigo-200 hover:bg-gray-50"
-                        }`}
+                        className={`group p-3 rounded-xl border-2 border-dashed transition-all cursor-pointer flex items-center justify-center gap-2 ${!selectedDynamicQR
+                            ? "border-indigo-300 bg-indigo-50/30"
+                            : "border-gray-200 hover:border-indigo-200 hover:bg-gray-50"
+                          }`}
                       >
-                        <div className={`p-1.5 rounded-lg ${
-                          !selectedDynamicQR ? "bg-indigo-500 text-white" : "bg-gray-100 text-gray-400 group-hover:bg-indigo-100 group-hover:text-indigo-500"
-                        }`}>
+                        <div className={`p-1.5 rounded-lg ${!selectedDynamicQR ? "bg-indigo-500 text-white" : "bg-gray-100 text-gray-400 group-hover:bg-indigo-100 group-hover:text-indigo-500"
+                          }`}>
                           <Plus className="w-4 h-4" />
                         </div>
                         <span className={`text-sm font-medium ${!selectedDynamicQR ? "text-indigo-700" : "text-gray-500"}`}>Create New</span>
                       </div>
 
                       {savedQRs.map((qr) => (
-                        <div 
+                        <div
                           key={qr._id}
                           onClick={() => handleSelectDynamicQR(qr)}
-                          className={`group relative p-3 rounded-xl border-2 transition-all cursor-pointer hover:shadow-sm ${
-                            selectedDynamicQR?._id === qr._id 
-                            ? "border-indigo-300 bg-indigo-50/30" 
-                            : "border-gray-100 bg-white hover:border-indigo-200"
-                          }`}
+                          className={`group relative p-3 rounded-xl border-2 transition-all cursor-pointer hover:shadow-sm ${selectedDynamicQR?._id === qr._id
+                              ? "border-indigo-300 bg-indigo-50/30"
+                              : "border-gray-100 bg-white hover:border-indigo-200"
+                            }`}
                         >
                           <div className="flex items-start gap-3">
                             <div className="p-1 rounded-lg bg-white border border-gray-100 shadow-sm">
-                              <QRCodeSVG 
-                                value={`${landingPageBaseUrl}/q/${qr.qrId}`}
-                                size={48}
-                                level="L"
-                                includeMargin={false}
-                                fgColor={qr.fgColor || "#000000"}
-                                bgColor={qr.bgColor || "#ffffff"}
+                              <StyledQRCode
+                                value={generatedUrl}
+                                size={180}
+                                fgColor={fgColor}
+                                bgColor={bgColor}
+                                logo={effectiveLogo}
+                                logoSize={logoSize}
+                                logoOpacity={logoOpacity}
+                                logoPlacement={logoPlacement}
+                                qrStyle={qrStyle}
+                                eyeFrame={eyeFrame}
+                                eyeBall={eyeBall}
                               />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -2172,9 +2409,8 @@ const QRGenerator = () => {
                                 {qr.name}
                               </h4>
                               <div className="flex flex-wrap gap-1 mt-1">
-                                <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${
-                                  qr.type === "registration" ? "bg-blue-100 text-blue-700" : "bg-rose-100 text-rose-600"
-                                }`}>
+                                <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${qr.type === "registration" ? "bg-blue-100 text-blue-700" : "bg-rose-100 text-rose-600"
+                                  }`}>
                                   {qr.type}
                                 </span>
                                 {qr.activityType !== "none" && (
@@ -2230,10 +2466,11 @@ const QRGenerator = () => {
           <div className="lg:col-span-1 h-full">
             <div className="lg:sticky lg:top-8 bg-white rounded-[2rem] border border-gray-200 shadow-xl p-6 md:p-8 flex flex-col items-center transition-all hover:shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto custom-scrollbar">
               <h2 className="text-xl font-bold text-gray-800 mb-6 w-full text-center">QR Preview</h2>
-              
+
               <div className="bg-gray-50/80 p-6 rounded-[2.5rem] mb-8 w-full flex flex-col items-center justify-center border border-gray-100 shadow-inner">
                 {generatedUrl || qrType === "activity" ? (
                   <div
+                    ref={previewRef}
                     className="w-full max-w-[280px] sm:max-w-[320px] border border-gray-100 rounded-[2rem] shadow-lg p-6 flex flex-col items-center"
                     style={{
                       boxShadow: "0 20px 50px rgba(0, 0, 0, 0.1)",
@@ -2245,7 +2482,7 @@ const QRGenerator = () => {
                         src={effectiveLogo}
                         alt="Brand Logo"
                         className="object-contain rounded-xl mb-4"
-                        style={{ 
+                        style={{
                           opacity: logoOpacity,
                           height: `${logoSize}px`,
                           width: `${logoSize}px`
@@ -2256,7 +2493,7 @@ const QRGenerator = () => {
                     {(brandingName || qrSubtitle) && (
                       <div className="text-center mb-1 w-full px-2">
                         {brandingName && (
-                          <p className="font-extrabold text-gray-800 text-xl leading-tight break-words">
+                          <p className="font-extrabold text-gray-800 text-md lg:text-[12px] xl:text-[16px] leading-tight break-words">
                             {brandingName}
                           </p>
                         )}
@@ -2270,39 +2507,32 @@ const QRGenerator = () => {
 
                     <div className="my-6 p-4 bg-white rounded-2xl border border-gray-50 shadow-md flex items-center justify-center min-w-[212px] min-h-[212px]">
                       {generatedUrl ? (
-                        <QRCodeSVG
-                          id="qr-code-svg"
+                        <StyledQRCode
                           value={generatedUrl}
                           size={180}
-                          level="H"
-                          includeMargin={false}
                           fgColor={fgColor}
                           bgColor={bgColor}
-                          imageSettings={
-                            effectiveLogo && logoPlacement === "inside"
-                              ? {
-                                  src: effectiveLogo,
-                                  height: logoSize,
-                                  width: logoSize,
-                                  excavate: true,
-                                  opacity: logoOpacity,
-                                }
-                              : undefined
-                          }
+                          logo={effectiveLogo}
+                          logoSize={logoSize}
+                          logoOpacity={logoOpacity}
+                          logoPlacement={logoPlacement}
+                          qrStyle={qrStyle}
+                          eyeFrame={eyeFrame}
+                          eyeBall={eyeBall}
                         />
                       ) : (
                         <div className="flex flex-col items-center justify-center text-gray-400 text-center p-4 gap-3">
-                           <QrCode className="w-12 h-12 opacity-20" />
-                           <div className="space-y-1">
-                             <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                                {qrType === "activity" ? "Activity Selection Required" : "Setup Incomplete"}
-                             </p>
-                             <p className="text-[9px] text-gray-400 font-medium whitespace-pre-line">
-                                {qrType === "activity" 
-                                  ? "Please select an activity to\nview the complete preview" 
-                                  : "Complete all fields to\ngenerate your QR code"}
-                             </p>
-                           </div>
+                          <QrCode className="w-12 h-12 opacity-20" />
+                          <div className="space-y-1">
+                            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                              {qrType === "activity" ? "Activity Selection Required" : "Setup Incomplete"}
+                            </p>
+                            <p className="text-[9px] text-gray-400 font-medium whitespace-pre-line">
+                              {qrType === "activity"
+                                ? "Please select an activity to\nview the complete preview"
+                                : "Complete all fields to\ngenerate your QR code"}
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2326,7 +2556,7 @@ const QRGenerator = () => {
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Target URL</p>
                     {generatedUrl && (
-                       <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-600 rounded font-bold uppercase">Ready</span>
+                      <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-600 rounded font-bold uppercase">Ready</span>
                     )}
                   </div>
                   <p className="text-[11px] font-semibold text-gray-500 break-all line-clamp-3 leading-relaxed">
@@ -2359,7 +2589,7 @@ const QRGenerator = () => {
                   <button
                     disabled={!generatedUrl}
                     onClick={downloadQR}
-                    className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-4 rounded-2xl text-sm lg:text-[8px] xl:text-[12px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Download className="w-5 h-5" />
                     Download PNG
