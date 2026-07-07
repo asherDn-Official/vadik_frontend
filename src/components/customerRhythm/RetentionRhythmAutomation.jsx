@@ -1,12 +1,11 @@
 /* eslint-disable react/prop-types */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity,
   ArrowRight,
   Calendar,
   CheckCircle2,
   Copy,
-  Eye,
   ExternalLink,
   FileText,
   Image as ImageIcon,
@@ -1289,8 +1288,6 @@ function RetentionBuilderView({
   activityCampaigns,
   onBack,
   onSave,
-  previewState,
-  onPreview,
   saving,
 }) {
   const [step, setStep] = useState(1);
@@ -1310,38 +1307,14 @@ function RetentionBuilderView({
   });
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
-  const previewHandlerRef = useRef(onPreview);
-  const formRef = useRef(form);
 
   useEffect(() => {
     setForm(normalizeAutomationForForm(initialAutomation));
   }, [initialAutomation]);
 
   useEffect(() => {
-    formRef.current = form;
-  }, [form]);
-
-  useEffect(() => {
-    previewHandlerRef.current = onPreview;
-  }, [onPreview]);
-
-  useEffect(() => {
     setStep((current) => Math.min(current, totalSteps));
   }, [totalSteps]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      previewHandlerRef.current?.({
-        ...formRef.current,
-        audienceRules: formRef.current.audienceRules || {
-          logic: "AND",
-          conditions: [],
-        },
-      });
-    }, 350);
-
-    return () => window.clearTimeout(timer);
-  }, [form.audienceRules]);
 
   const selectedTriggerGroup =
     triggerGroups.find((group) =>
@@ -2315,14 +2288,6 @@ function RetentionBuilderView({
                       }))
                     }
                   />
-
-                  <button
-                    type="button"
-                    onClick={() => onPreview(form)}
-                    className="rounded-xl border border-[#313166] px-4 py-2 text-sm font-medium text-[#313166]"
-                  >
-                    Preview Audience
-                  </button>
                 </div>
               )}
 
@@ -2999,48 +2964,6 @@ function RetentionBuilderView({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-[#313166]">
-                    Audience preview
-                  </h3>
-                  <Eye className="h-4 w-4 text-gray-400" />
-                </div>
-
-                <div className="rounded-2xl bg-[#F4F5F9] p-4">
-                  <div className="text-3xl font-semibold text-[#313166]">
-                    {previewState.loading ? "..." : previewState.count}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    Customers currently matching this automation
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  {(previewState.customers || []).map((customer) => (
-                    <div
-                      key={`${customer._id}`}
-                      className="rounded-xl border border-gray-100 px-4 py-3 text-sm"
-                    >
-                      <div className="font-medium text-[#313166]">
-                        {customer.firstname || "Customer"}
-                      </div>
-                      <div className="text-gray-500">
-                        {customer.countryCode ? `+${customer.countryCode}` : ""}{" "}
-                        {customer.mobileNumber}
-                      </div>
-                    </div>
-                  ))}
-
-                  {!previewState.loading &&
-                    previewState.customers.length === 0 && (
-                      <div className="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500">
-                        Run audience preview after adding rules to see sample
-                        customers here.
-                      </div>
-                    )}
-                </div>
-              </div>
             </div>
           )}
         </div>
@@ -3232,12 +3155,6 @@ export default function RetentionRhythmAutomation() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingAutomation, setEditingAutomation] = useState(null);
-  const [previewState, setPreviewState] = useState({
-    loading: false,
-    count: 0,
-    customers: [],
-  });
-  const previewRequestRef = useRef(0);
 
   const fetchRetentionData = async () => {
     try {
@@ -3285,17 +3202,11 @@ export default function RetentionRhythmAutomation() {
 
   const handleCreateNew = () => {
     setEditingAutomation(null);
-    setPreviewState({ loading: false, count: 0, customers: [] });
     setView("builder");
   };
 
   const handleEdit = (automation) => {
     setEditingAutomation(automation);
-    setPreviewState({
-      loading: false,
-      count: automation.audienceSize || 0,
-      customers: [],
-    });
     setView("builder");
   };
 
@@ -3309,43 +3220,13 @@ export default function RetentionRhythmAutomation() {
     setEditingAutomation(null);
   };
 
-  const handlePreview = async (form) => {
-    const requestId = ++previewRequestRef.current;
-
-    try {
-      setPreviewState((previous) => ({ ...previous, loading: true }));
-      const response = await api.post(
-        "/api/retention-automations/preview-audience",
-        {
-          audienceRules: form.audienceRules,
-          limit: 5,
-        },
-      );
-
-      if (requestId !== previewRequestRef.current) return;
-
-      setPreviewState({
-        loading: false,
-        count: response.data?.data?.count || 0,
-        customers: response.data?.data?.customers || [],
-      });
-    } catch (error) {
-      if (requestId !== previewRequestRef.current) return;
-
-      console.error("Error previewing audience:", error);
-      setPreviewState({ loading: false, count: 0, customers: [] });
-      showToast("Failed to preview audience", "error");
-    }
-  };
-
   const handleSave = async (form) => {
     try {
       setSaving(true);
       const payload = {
         ...form,
         analyticsSummary: {
-          audienceSize:
-            previewState.count || editingAutomation?.audienceSize || 0,
+          audienceSize: editingAutomation?.audienceSize || 0,
           sent: editingAutomation?.sent || 0,
           delivered: editingAutomation?.delivered || 0,
           read: editingAutomation?.read || 0,
@@ -3456,18 +3337,16 @@ export default function RetentionRhythmAutomation() {
       onViewLogs={handleViewLogs}
     />
   ) : view === "builder" ? (
-    <RetentionBuilderView
-      key={editingAutomation?._id || "new"}
-      initialAutomation={editingAutomation}
-      fields={fields}
-      templates={templates}
-      activityCampaigns={activityCampaigns}
-      onBack={handleBack}
-      onSave={handleSave}
-      previewState={previewState}
-      onPreview={handlePreview}
-      saving={saving}
-    />
+      <RetentionBuilderView
+        key={editingAutomation?._id || "new"}
+        initialAutomation={editingAutomation}
+        fields={fields}
+        templates={templates}
+        activityCampaigns={activityCampaigns}
+        onBack={handleBack}
+        onSave={handleSave}
+        saving={saving}
+      />
   ) : (
     <AutomationLogsView automation={editingAutomation} onBack={handleBack} />
   );
