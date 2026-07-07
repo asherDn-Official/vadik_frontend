@@ -39,11 +39,48 @@ import MyProfile from "./components/settings/MyProfile";
 import SearchPage from "./components/common/SearchPage";
 import CustomerProfilePage from "./components/common/CustomerProfilePage";
 import Loader from "./utils/Loader";
+import GlobalChatNotification from "./components/GlobalChatNotification";
+// import api from "./api/apiconfig";
+// import { useChatNotification } from "./context/ChatNotificationContext";
+
 
 function App() {
   // console.log("APP COMPONENT RUNNING");
   
   const { auth, loading } = useAuth();
+  // const { totalUnread } = useChatNotification();
+
+  // const [totalUnread, setTotalUnread] = useState(0);
+  
+//   const fetchUnreadCount = async () => {
+//   try {
+//     const retailerId = localStorage.getItem("retailerId");
+
+//     if (!retailerId) return;
+
+//     const res = await api.get(
+//       `/api/customers/all?retailerId=${retailerId}&limit=200&fields=chat&chatOnly=true&skipCount=true`
+//     );
+
+//     if (res.data?.status === "success") {
+//       setTotalUnread(res.data.totalUnread || 0);
+//     }
+//   } catch (err) {
+//     console.error(err);
+//      setTotalUnread(0);
+//   }
+// };
+
+// useEffect(() => {
+//   if (!auth) return;
+
+//   fetchUnreadCount();
+
+//   const interval = setInterval(fetchUnreadCount, 5000);
+
+//   return () => clearInterval(interval);
+// }, [auth]);
+  
 // console.log("AUTH:", auth);
  useEffect(() => {
 
@@ -170,15 +207,15 @@ function App() {
                 }
               />
               <Route
-                path="customerrhythm"
-                element={
-                  onboardingDone && auth?.data?.isUsingOwnWhatsapp ? (
-                    <CustomerRhythm />
-                  ) : (
-                    <Navigate to="/dashboard" replace />
-                  )
-                }
-              />
+  path="customerrhythm"
+  element={
+    onboardingDone && auth?.data?.isUsingOwnWhatsapp ? (
+      <CustomerRhythm />
+    ) : (
+      <Navigate to="/dashboard" replace />
+    )
+  }
+/>
               <Route
                 path="customerrhythm/campaign/:campaignId"
                 element={
@@ -350,6 +387,8 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           )}
         </Routes>
+       {/* <GlobalChatNotification unreadCount={totalUnread} /> */}
+       {/* <GlobalChatNotification /> */}
       </CustomerImportProvider>
     </Router>
   );

@@ -13,6 +13,8 @@ import CustomerImportNavbarProgress from "./CustomerImportNavbarProgress.jsx";
 import { FiUser, FiUsers } from "react-icons/fi";
 import { FiSearch } from "react-icons/fi";
 import { useLocation } from "react-router-dom";
+import { ChatNotificationProvider } from "../../context/ChatNotificationContext";
+import GlobalChatNotification from "../GlobalChatNotification.jsx";
 
 function Layout() {
   const [activeTour, setActiveTour] = useState(null);
@@ -208,6 +210,7 @@ function Layout() {
 
   return (
     <SecurityPopupProvider>
+          <ChatNotificationProvider>
       <div className="flex min-h-screen overflow-x-clip bg-[#F4F5F9]">
         <WhatsAppAlertPopup />
         {currentTour && isDemo && !isTourComplete && (
@@ -449,6 +452,8 @@ function Layout() {
           </div>
         </main>
       </div>
+      <GlobalChatNotification />
+      </ChatNotificationProvider>
     </SecurityPopupProvider>
   );
 }

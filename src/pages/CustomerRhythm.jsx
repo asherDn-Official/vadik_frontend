@@ -9,6 +9,7 @@ import RetentionRhythmAutomation from "../components/customerRhythm/RetentionRhy
 import { useAuth } from "../context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
+import Template from "../components/settings/Template";
 
   const CustomerRhythm = () => {
   const { auth } = useAuth();
@@ -17,6 +18,7 @@ import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
   const [activeSection, setActiveSection] = useState("live_chat");
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [templateToCopy, setTemplateToCopy] = useState(null);
+  const { fetchUnreadCount } = useChatNotification();
 
   useEffect(() => {
     fetch("/assets/comingSoon.json")
@@ -118,9 +120,9 @@ import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
 
       {/* Main Content Area */}
       <div className={`min-h-0 flex-1 overflow-auto ${isCreatingTemplate ? '' : 'rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm sm:p-5 lg:p-6'}`}>
-        {activeSection === "live_chat" && (
-          <LiveChat />
-        )}
+       {activeSection === "live_chat" && (
+  <LiveChat />
+)}
         {activeSection === "templates" && (
           isCreatingTemplate ? (
             <TemplateBuilder 

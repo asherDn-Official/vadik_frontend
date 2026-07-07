@@ -25,7 +25,7 @@ import Loader from "../../utils/Loader";
 import { toast } from "react-toastify";
 import { format, isToday } from "date-fns";
 
-const LiveChat = () => {
+const LiveChat = ({ onUnreadCountChange }) => {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -66,16 +66,19 @@ const LiveChat = () => {
 
   useEffect(() => {
     fetchCustomers();
-    fetchTemplates();
-    fetchMediaUsage();
+fetchTemplates();
+fetchMediaUsage();
+
+    
     
     // Set up polling for new messages
-    const interval = setInterval(() => {
-      if (selectedCustomer) {
-        syncMessages(selectedCustomer.mobileNumber, false);
-      }
-      fetchCustomers(false); // Update customer list for new message indicators
-    }, 5000);
+   const interval = setInterval(async () => {
+  if (selectedCustomer) {
+    await syncMessages(selectedCustomer.mobileNumber, false);
+  }
+
+  await fetchCustomers(false);
+}, 5000);
 
     return () => clearInterval(interval);
   }, [selectedCustomer]);
@@ -160,9 +163,10 @@ const LiveChat = () => {
         `/api/customers/all?retailerId=${retailerId}&limit=200&fields=chat&chatOnly=true&skipCount=true`,
         { signal: controller.signal }
       );
-
       if (res.data) {
         const allCustomers = res.data.customers || [];
+         console.log("Full API Response:", res.data);
+  
 
         // Sort by last activity
         const sortedCustomers = allCustomers
@@ -179,7 +183,11 @@ const LiveChat = () => {
             return timeB - timeA;
           });
 
-        if (isMountedRef.current) setCustomers(sortedCustomers);
+       if (isMountedRef.current) {
+  setCustomers(sortedCustomers);
+
+  onUnreadCountChange?.(res.data.totalUnread);
+}
       }
     } catch (error) {
       if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") {
@@ -191,6 +199,32 @@ const LiveChat = () => {
       customersFetchInFlightRef.current = false;
     }
   };
+
+
+  const fetchUnreadCount = async () => {
+  try {
+    const res = await api.get("/api/whatsappMessage/unread-count");
+
+    if (res.data.status) {
+      onUnreadCountChange?.(res.data.totalUnread);
+
+      const unreadMap = {};
+
+      res.data.customerUnread.forEach(item => {
+        unreadMap[item._id] = item.unreadCount;
+      });
+
+      setCustomers(prev =>
+        prev.map(customer => ({
+          ...customer,
+          unreadCount: unreadMap[customer._id] || 0
+        }))
+      );
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const fetchTemplates = async () => {
     try {
@@ -258,10 +292,24 @@ const LiveChat = () => {
     }
   };
 
-  const handleSelectCustomer = (customer) => {
+ const handleSelectCustomer = async (customer) => {
+  try {
+    // Mark all unread messages as opened
+    const res = await api.post("/api/whatsappMessage/mark-opened", {
+      customerId: customer._id,
+    });
+
+    // console.log("Mark Opened:", res.data);
+
     setSelectedCustomer(customer);
-    syncMessages(customer.mobileNumber);
-  };
+
+    await syncMessages(customer.mobileNumber);
+   await fetchCustomers(false);
+
+  } catch (error) {
+    console.error("Error marking messages as opened:", error);
+  }
+};
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedCustomer || isUploading) return;
@@ -275,7 +323,8 @@ const LiveChat = () => {
       const res = await api.post("/api/whatsappMessage/text", payload);
       if (res.data) {
         setNewMessage("");
-        syncMessages(selectedCustomer.mobileNumber, false);
+       await syncMessages(selectedCustomer.mobileNumber, false);
+await fetchCustomers(false);
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -527,25 +576,63 @@ const LiveChat = () => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start mb-0.5">
-                    <h4 className="font-bold text-gray-900 truncate text-sm">
-                      {customer.firstname} {customer.lastname}
-                    </h4>
-                    <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                      {(() => {
-                        const lastTime = customer.lastInboundMessageAt || customer.lastOutboundMessageAt;
-                        if (!lastTime) return "";
-                        const lastDate = new Date(lastTime);
-                        return isToday(lastDate)
-                          ? format(lastDate, "HH:mm")
-                          : format(lastDate, "dd MMM, HH:mm");
-                      })()}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 truncate flex items-center gap-1">
-                    {customer.lastMessageContent || "No messages yet"}
-                  </p>
-                </div>
+  <div className="flex justify-between items-start mb-0.5">
+    <h4
+      className={`font-bold truncate text-sm ${
+        customer.unreadCount > 0 ? "text-gray-900" : "text-gray-900"
+      }`}
+    >
+      {customer.firstname} {customer.lastname}
+    </h4>
+
+    <div className="flex flex-col items-end">
+      <span
+        className={`text-[10px] whitespace-nowrap ${
+          customer.unreadCount > 0
+            ? "text-[#25D366] font-semibold"
+            : "text-gray-400"
+        }`}
+      >
+        {(() => {
+          const lastTime =
+            customer.lastInboundMessageAt || customer.lastOutboundMessageAt;
+          if (!lastTime) return "";
+          const lastDate = new Date(lastTime);
+          return isToday(lastDate)
+            ? format(lastDate, "HH:mm")
+            : format(lastDate, "dd MMM, HH:mm");
+        })()}
+      </span>
+
+      {customer.unreadCount > 0 && (
+        <span
+          className="
+            mt-1
+            min-w-[18px]
+            h-[18px]
+            rounded-full
+            bg-[#25D366]
+            text-white
+            text-[10px]
+            font-semibold
+            flex
+            items-center
+            justify-center
+            px-1
+          "
+        >
+          {customer.unreadCount}
+        </span>
+      )}
+    </div>
+  </div>
+
+  <p
+    className="text-[10px] text-gray-400 whitespace-nowrap"
+  >
+    {customer.lastMessageContent || "No messages yet"}
+  </p>
+</div>
               </div>
             ))
           )}
