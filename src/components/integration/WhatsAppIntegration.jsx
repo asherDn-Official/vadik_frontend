@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
+import Template from "../settings/Template";
 
 const WhatsAppIntegration = ({ onConfigChange = null }) => {
   const { checkAuth } = useAuth();
@@ -44,6 +45,7 @@ const WhatsAppIntegration = ({ onConfigChange = null }) => {
   const [refreshingStatus, setRefreshingStatus] = useState(false);
   const [showPaymentInstructions, setShowPaymentInstructions] = useState(false);
   const [pendingPhoneId, setPendingPhoneId] = useState('');
+  const [activeSection, setActiveSection] = useState('account');
   const [manualConfig, setManualConfig] = useState({
     accessToken: '',
     wabaId: '',
@@ -383,6 +385,12 @@ const WhatsAppIntegration = ({ onConfigChange = null }) => {
   const isBusinessVerified = metaStatus?.businessVerification?.status === 'verified';
   const isAccountApproved = metaStatus?.wabaReviewStatus === 'APPROVED' || ['verified', 'approved'].includes(config?.whatsappBusinessVerificationStatus?.toLowerCase());
   const isPaymentDone = metaStatus?.isBillingConfigured ?? config?.whatsappPaymentMethodAttached;
+  const canManageWhatsAppTemplates =
+    config?.isUsingOwnWhatsapp &&
+    config?.whatsappStatus === 'connected' &&
+    config?.whatsappOnboardingStatus === 'connected' &&
+    Boolean(config?.whatsappWabaId) &&
+    Boolean(config?.whatsappPhoneNumberId);
 
   const getMessagingLimitLabel = (tier) => {
     const tiers = {
@@ -467,33 +475,68 @@ const WhatsAppIntegration = ({ onConfigChange = null }) => {
   if (loading) return <Loader text="Loading WhatsApp config..." fullHeight={false} />;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Premium Onboarding Card */}
-      <div className="bg-white rounded-[24px] shadow-xl shadow-gray-100 border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="p-6 border-b border-gray-50 bg-[#F9FAFB]/50 flex justify-between items-center">
+    <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mb-6 rounded-[24px] border border-gray-100 bg-white px-4 py-4 shadow-sm sm:px-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h3 className="text-[20px] font-[700] text-[#111827] tracking-tight">WhatsApp Business Integration</h3>
-            <p className="text-[14px] text-[#6B7280]">Establish your professional messaging channel via Meta API</p>
+            <p className="text-[11px] font-[700] uppercase tracking-[0.2em] text-[#9CA3AF]">WhatsApp Integration</p>
+            <h3 className="mt-1 text-[22px] font-[800] text-[#111827]">Choose a section</h3>
+            <p className="mt-1 text-sm text-[#6B7280]">Switch between account setup and automation without leaving the page.</p>
           </div>
-          <div className="flex items-center gap-3">
-             {config?.whatsappOnboardingStatus === 'provisioning' && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-[12px] font-[600] border border-blue-100 italic">
-                  <Loader size="sm" />
-                  Provisioning
-                </div>
-             )}
-             <div className={`
-               px-4 py-1.5 rounded-full text-[12px] font-[700] border uppercase tracking-wider
-               ${config?.whatsappStatus === 'connected' ? 'bg-green-50 text-green-700 border-green-100' : 
-                 config?.whatsappStatus === 'authorised' ? 'bg-blue-50 text-blue-700 border-blue-100' : 
-                 'bg-gray-50 text-gray-500 border-gray-100'}
-             `}>
-               {config?.whatsappStatus || 'Disconnected'}
-             </div>
+          <div className="inline-flex w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 p-1 lg:w-auto">
+            <button
+              type="button"
+              onClick={() => setActiveSection('account')}
+              className={`flex-1 rounded-xl px-4 py-3 text-sm font-bold transition-all lg:flex-initial ${
+                activeSection === 'account'
+                  ? 'bg-white text-[#313166] shadow-md'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Account Details
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSection('automation')}
+              className={`flex-1 rounded-xl px-4 py-3 text-sm font-bold transition-all lg:flex-initial ${
+                activeSection === 'automation'
+                  ? 'bg-white text-[#313166] shadow-md'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Automation
+            </button>
           </div>
         </div>
+      </div>
 
-        <div className="p-8">
+      {activeSection === 'account' && (
+        <div className="bg-white rounded-[24px] shadow-xl shadow-gray-100 border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="p-6 border-b border-gray-50 bg-[#F9FAFB]/50 flex justify-between items-center">
+            <div>
+              <p className="text-[11px] font-[700] uppercase tracking-[0.2em] text-[#9CA3AF]">Account Details</p>
+              <h3 className="mt-1 text-[20px] font-[700] text-[#111827] tracking-tight">WhatsApp Business Integration</h3>
+              <p className="text-[14px] text-[#6B7280]">Establish your professional messaging channel via Meta API</p>
+            </div>
+            <div className="flex items-center gap-3">
+               {config?.whatsappOnboardingStatus === 'provisioning' && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-[12px] font-[600] border border-blue-100 italic">
+                    <Loader size="sm" />
+                    Provisioning
+                  </div>
+               )}
+               <div className={`
+                 px-4 py-1.5 rounded-full text-[12px] font-[700] border uppercase tracking-wider
+                 ${config?.whatsappStatus === 'connected' ? 'bg-green-50 text-green-700 border-green-100' : 
+                   config?.whatsappStatus === 'authorised' ? 'bg-blue-50 text-blue-700 border-blue-100' : 
+                   'bg-gray-50 text-gray-500 border-gray-100'}
+               `}>
+                 {config?.whatsappStatus || 'Disconnected'}
+               </div>
+            </div>
+          </div>
+
+          <div className="p-6 sm:p-8">
            {/* Steps Section */}
            <div className="relative mb-12">
              <div className="absolute left-[23px] top-4 bottom-4 w-[2px] bg-gray-100" />
@@ -871,8 +914,46 @@ const WhatsAppIntegration = ({ onConfigChange = null }) => {
                 )}
               </div>
            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {activeSection === 'automation' && (
+        <div className="bg-white rounded-[24px] shadow-xl shadow-gray-100 border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="p-6 border-b border-gray-50 bg-[#FCFCFF] flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-[700] uppercase tracking-[0.2em] text-[#9CA3AF]">Automation</p>
+              <h3 className="mt-1 text-[20px] font-[800] text-[#313166]">Template automation</h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+                Manage the WhatsApp template workflows that were previously shown inside Customer Rhythm.
+              </p>
+            </div>
+            {canManageWhatsAppTemplates && (
+              <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-[700] uppercase tracking-[0.18em] text-emerald-700 whitespace-nowrap">
+                Connected
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 sm:p-6">
+            {canManageWhatsAppTemplates ? (
+              <Template embedded />
+            ) : (
+              <div className="flex min-h-[540px] items-center justify-center rounded-[20px] border border-dashed border-gray-200 bg-[#FCFCFF] p-8">
+                <div className="max-w-lg text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#313166] text-white shadow-lg shadow-[#313166]/15">
+                    <Globe size={28} />
+                  </div>
+                  <h4 className="text-xl font-bold text-[#313166]">Connect your own WhatsApp account</h4>
+                  <p className="mt-2 text-sm leading-6 text-gray-600">
+                    Automation appears here after embedded signup is complete and the account is connected. Once your own WhatsApp number is active, this panel will show the template workflows in a full-width workspace.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* PIN Verification Modal */}
       {showPinModal && (

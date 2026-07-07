@@ -9,7 +9,6 @@ import RetentionRhythmAutomation from "../components/customerRhythm/RetentionRhy
 import { useAuth } from "../context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
-import Template from "../components/settings/Template";
 
   const CustomerRhythm = () => {
   const { auth } = useAuth();
@@ -29,7 +28,7 @@ import Template from "../components/settings/Template";
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
-    if (section && ["templates", "send_campaign", "automation", "retention", "engagement", "live_chat"].includes(section)) {
+    if (section && ["templates", "send_campaign", "retention", "engagement", "live_chat"].includes(section)) {
       setActiveSection(section);
     }
   }, [location.search]);
@@ -84,17 +83,6 @@ import Template from "../components/settings/Template";
               >
                 <Megaphone size={18} />
                 Send Campaign
-              </button>
-              <button
-                onClick={() => setActiveSection("automation")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                  activeSection === "automation"
-                    ? "bg-white text-[#313166] shadow-md"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                <Zap size={18} />
-                Automation
               </button>
               <button
                 onClick={() => setActiveSection("retention")}
@@ -162,10 +150,6 @@ import Template from "../components/settings/Template";
 
         {activeSection === "send_campaign" && (
           <SendCampaign />
-        )}
-
-        {activeSection === "automation" && (
-          <Template />
         )}
 
         {activeSection === "retention" && (

@@ -213,7 +213,7 @@ TemplatePreview.propTypes = {
   vars: PropTypes.arrayOf(PropTypes.string).isRequired
 };
 
-const Template = () => {
+const Template = ({ embedded = false }) => {
   const location = useLocation();
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -613,8 +613,12 @@ const Template = () => {
   const isUsingOwn = config?.isUsingOwnWhatsapp;
   const role = selectedRole ? STANDARD_TEMPLATES.find(r => r.id === selectedRole) : null;
 
+  const containerClassName = embedded
+    ? "h-full min-h-0 w-full"
+    : "p-6 max-w-7xl mx-auto";
+
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className={containerClassName}>
       {selectedRole ? (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
           <button 
@@ -648,7 +652,7 @@ const Template = () => {
               </div>
             </div>
 
-            <div className="p-8">
+          <div className="p-8">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
                 <h3 className="text-xl font-bold text-[#313166]">Eligible Templates</h3>
                 <div className="flex items-center gap-3">
@@ -1356,3 +1360,7 @@ const Template = () => {
 };
 
 export default Template;
+
+Template.propTypes = {
+  embedded: PropTypes.bool,
+};

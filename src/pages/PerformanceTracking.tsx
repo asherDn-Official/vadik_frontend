@@ -133,15 +133,14 @@ useEffect(() => {
           />
         </div>
 
-        {/* Second Row - Activities Table & Conversion Chart */}
-        {/* <div className="grid grid-cols-1 gap-4 text-[#313166] xl:grid-cols-10 xl:gap-6"> */}
-          {/* <div className="lg:col-span-7"> */}
-          {/* <CampaignTable /> */}
-          {/* </div> */}
-          {/* <div className="lg:col-span-3"> */}
+        <div className="grid grid-cols-1 gap-4 text-[#313166] xl:grid-cols-10 xl:gap-6">
+       <div className="lg:col-span-7">
+          <CampaignTable />
+          </div>
+          <div className="lg:col-span-3">
           {/* <ConversionChart /> */}
-          {/* </div> */}
-        {/* </div> */}
+          </div>
+        </div>
 
         {/* Third Row - Revenue Growth & Cart Value | CLV Section */}
         {/* <div className="hidden grid-cols-1 gap-4 xl:grid xl:grid-cols-2 xl:gap-6"> */}

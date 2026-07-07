@@ -20,6 +20,7 @@ import {
   Tag,
   Trash2,
   UserPlus,
+  Users,
   Webhook,
   X,
   Zap,
@@ -54,13 +55,13 @@ const triggerGroups = [
     name: "Customer",
     color: "#CB376D",
     items: [
+      { id: "all_customers", name: "All Customers", icon: Users },
       { id: "new_customer", name: "New Customer", icon: UserPlus },
       {
         id: "customer_field_date",
         name: "Customer Date Field",
         icon: Calendar,
       },
-      { id: "inactive_for_days", name: "Inactive for Days", icon: Activity },
     ],
   },
   {
@@ -89,9 +90,10 @@ const triggerGroups = [
 ];
 
 const triggerIcons = {
+  all_customers: Users,
   new_customer: UserPlus,
   customer_field_date: Calendar,
-  inactive_for_days: Activity,
+  inactive_for_days: Calendar,
   whatsapp_keyword: MessageCircle,
   customer_activity_completed: CheckCircle2,
   scheduled_recurring: Webhook,
@@ -126,6 +128,14 @@ const getStepLabels = (triggerType) => {
   }
   return ["Journey", "Trigger", "Audience", "Action", "Review"];
 };
+const getTotalSteps = (triggerType) =>
+  triggerType === "new_customer" ? 4 : 5;
+const getAudienceStep = (triggerType) =>
+  triggerType === "new_customer" ? null : 3;
+const getActionStep = (triggerType) =>
+  triggerType === "new_customer" ? 3 : 4;
+const getReviewStep = (triggerType) =>
+  triggerType === "new_customer" ? 4 : 5;
 const previewQuickSegments = [
   {
     key: "all",
@@ -164,11 +174,33 @@ const previewQuickSegments = [
 
 const delayOptions = [
   { label: "Immediate", mode: "immediate", value: 0, unit: "minutes" },
-  { label: "5m", mode: "delay", value: 5, unit: "minutes" },
-  { label: "1h", mode: "delay", value: 1, unit: "hours" },
-  { label: "1d", mode: "delay", value: 1, unit: "days" },
-  { label: "3d", mode: "delay", value: 3, unit: "days" },
+  { label: "After 5 minutes", mode: "delay", value: 5, unit: "minutes" },
+  { label: "After 1 hour", mode: "delay", value: 1, unit: "hours" },
+  { label: "After 2 hours", mode: "delay", value: 2, unit: "hours" },
+  { label: "After 1 day", mode: "delay", value: 1, unit: "days" },
+  { label: "After 3 days", mode: "delay", value: 3, unit: "days" },
 ];
+
+const delayUnitOptions = [
+  { label: "Minutes", value: "minutes" },
+  { label: "Hours", value: "hours" },
+  { label: "Days", value: "days" },
+];
+
+const formatDelayLabel = (delay = {}) => {
+  if (delay?.mode === "immediate" || Number(delay?.value) <= 0) {
+    return "Immediate";
+  }
+
+  const value = Number(delay.value) || 0;
+  const unit = String(delay.unit || "minutes");
+  const unitLabel =
+    value === 1
+      ? unit.replace(/s$/, "")
+      : unit;
+
+  return `After ${value} ${unitLabel}`;
+};
 
 const operatorLabels = {
   equals: "Equals",
@@ -201,6 +233,7 @@ const createEmptyAutomation = () => ({
   triggerConfig: {
     fieldKey: "",
     keyword: "",
+    dateTriggerMode: "field",
     activityScope: "all",
     activityType: "",
     activityCampaignScope: "all",
@@ -256,6 +289,11 @@ const getCampaignSelectValue = (campaigns = {}, type = "", campaignId = "") =>
   getCampaignList(campaigns, type).some((campaign) => String(campaign?._id) === String(campaignId))
     ? String(campaignId)
     : "";
+
+const getDateTriggerMode = (automation = {}) =>
+  automation.triggerType === "inactive_for_days"
+    ? "inactive"
+    : automation.triggerConfig?.dateTriggerMode || "field";
 
 const normalizeTemplateVariableToken = (value = "") => {
   const match = String(value).match(/\d+/);
@@ -563,6 +601,7 @@ const formatRuleGroupSummary = (ruleGroup = {}) => {
 
 const formatExecutionSummary = (log) => {
   const triggerSnapshot = log?.triggerSnapshot || {};
+  if (triggerSnapshot.triggerType === "all_customers") return "All customers";
   if (triggerSnapshot.customerCreatedAt) return "New customer";
   if (triggerSnapshot.keyword) return `Keyword: ${triggerSnapshot.keyword}`;
   if (triggerSnapshot.activityScope === "all") return "All activities";
@@ -589,6 +628,11 @@ const describeTriggerConfig = (automation = {}, campaigns = {}) => {
     return `Daily at ${time}`;
   }
 
+  if (automation.triggerType === "all_customers") {
+    const time = formatScheduleTime(triggerConfig.scheduleTime || "09:00");
+    return `All customers daily at ${time}`;
+  }
+
   if (automation.triggerType === "customer_activity_completed") {
     if ((triggerConfig.activityScope || "all") === "all") {
       return "All completed activities";
@@ -611,17 +655,16 @@ const describeTriggerConfig = (automation = {}, campaigns = {}) => {
     return triggerConfig.keyword ? `Keyword: ${triggerConfig.keyword}` : "Keyword trigger";
   }
 
-  if (automation.triggerType === "customer_field_date") {
+  if (automation.triggerType === "customer_field_date" || automation.triggerType === "inactive_for_days") {
+    if (getDateTriggerMode(automation) === "inactive") {
+      return `Inactive for ${triggerConfig.days || 30} days`;
+    }
     const fieldLabel = triggerConfig.fieldKey || "Date field";
     const offset = Number(triggerConfig.daysBefore) || 0;
     const timeLabel = formatScheduleTime(triggerConfig.triggerTime || "09:00");
     if (!triggerConfig.fieldKey) return "Date field trigger";
     const dateText = offset > 0 ? `${offset} days before` : "same day";
     return `${fieldLabel}, ${dateText} at ${timeLabel}`;
-  }
-
-  if (automation.triggerType === "inactive_for_days") {
-    return `Inactive for ${triggerConfig.days || 30} days`;
   }
 
   return "Trigger configured";
@@ -632,6 +675,10 @@ const normalizeAutomationForForm = (automation) => {
   const restAutomation = { ...automation };
   delete restAutomation.conditionRules;
   const existingTriggerConfig = restAutomation.triggerConfig || {};
+  const inferredDateTriggerMode =
+    restAutomation.triggerType === "inactive_for_days"
+      ? "inactive"
+      : existingTriggerConfig.dateTriggerMode || "field";
   const inferredActivityScope =
     (existingTriggerConfig.activityCampaignScope === "specific" ||
     existingTriggerConfig.activityCampaignId
@@ -648,6 +695,10 @@ const normalizeAutomationForForm = (automation) => {
   return {
     ...createEmptyAutomation(),
     ...restAutomation,
+    triggerType:
+      restAutomation.triggerType === "inactive_for_days"
+        ? "customer_field_date"
+        : restAutomation.triggerType || createEmptyAutomation().triggerType,
     actionConfig: {
       ...createEmptyAutomation().actionConfig,
       ...(restAutomation.actionConfig || {}),
@@ -660,6 +711,7 @@ const normalizeAutomationForForm = (automation) => {
     triggerConfig: {
       ...createEmptyAutomation().triggerConfig,
       ...(restAutomation.triggerConfig || {}),
+      dateTriggerMode: inferredDateTriggerMode,
       activityScope: inferredActivityScope,
       activityType:
         inferredActivityScope === "specific"
@@ -688,6 +740,9 @@ const normalizeAutomationForForm = (automation) => {
       daysBefore:
         restAutomation.triggerConfig?.daysBefore ??
         createEmptyAutomation().triggerConfig.daysBefore,
+      days:
+        restAutomation.triggerConfig?.days ??
+        createEmptyAutomation().triggerConfig.days,
       triggerTime:
         restAutomation.triggerConfig?.triggerTime ||
         createEmptyAutomation().triggerConfig.triggerTime,
@@ -1243,6 +1298,10 @@ function RetentionBuilderView({
     normalizeAutomationForForm(initialAutomation),
   );
   const steps = getStepLabels(form.triggerType);
+  const totalSteps = getTotalSteps(form.triggerType);
+  const audienceStep = getAudienceStep(form.triggerType);
+  const actionStep = getActionStep(form.triggerType);
+  const reviewStep = getReviewStep(form.triggerType);
   const [audienceDraftRule, setAudienceDraftRule] = useState({
     fieldKey: "",
     operator: "",
@@ -1265,6 +1324,10 @@ function RetentionBuilderView({
   useEffect(() => {
     previewHandlerRef.current = onPreview;
   }, [onPreview]);
+
+  useEffect(() => {
+    setStep((current) => Math.min(current, totalSteps));
+  }, [totalSteps]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -1505,9 +1568,16 @@ function RetentionBuilderView({
       return;
     }
 
-    if (form.triggerType === "customer_field_date" && !form.triggerConfig.fieldKey) {
-      showToast("Choose a date field for the trigger", "warning");
-      return;
+    if (form.triggerType === "customer_field_date") {
+      if ((form.triggerConfig.dateTriggerMode || "field") === "inactive") {
+        if (Number(form.triggerConfig.days) < 1) {
+          showToast("Enter how many inactive days should trigger this automation", "warning");
+          return;
+        }
+      } else if (!form.triggerConfig.fieldKey) {
+        showToast("Choose a date field for the trigger", "warning");
+        return;
+      }
     }
 
     const missingMappings = templateVariables.filter((descriptor) => {
@@ -1565,9 +1635,9 @@ function RetentionBuilderView({
                   onClick={() => {
   // 🚀 skip Audience if new_customer
   if (form.triggerType === "new_customer" && step === 1) {
-    setStep(2); // jump directly to Action
+    setStep(3); // jump directly to Action or Audience
   } else {
-    setStep(step + 1);
+    setStep(Math.min(totalSteps, index + 1));
   }
 }}
                   className="rounded-full px-3 py-1 text-xs font-medium transition-all"
@@ -1601,14 +1671,14 @@ function RetentionBuilderView({
         </div>
 
         <div
-          className={`grid gap-6 ${step === 4 || step === 5 ? "xl:grid-cols-[1.05fr_0.95fr]" : "grid-cols-1"}`}
+          className={`grid gap-6 ${step === actionStep || step === reviewStep ? "xl:grid-cols-[1.05fr_0.95fr]" : "grid-cols-1"}`}
         >
           <div className="space-y-6">
             <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
               <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <div className="text-sm uppercase tracking-[0.22em] text-gray-400">
-                    Step {step} of 5
+                    Step {step} of {totalSteps}
                   </div>
                   <h3 className="mt-1 text-lg font-semibold text-[#313166]">
                     {steps[step - 1]}
@@ -1626,9 +1696,9 @@ function RetentionBuilderView({
                       onClick={() => {
   // 🚀 skip Audience if new_customer
   if (form.triggerType === "new_customer" && step === 1) {
-    setStep(2); // jump directly to Action
+    setStep(3); // jump directly to Action or Audience
   } else {
-    setStep(step + 1);
+    setStep(Math.min(totalSteps, index + 1));
   }
 }}
                       className="rounded-full px-3 py-1 text-xs font-medium transition-all"
@@ -1718,7 +1788,7 @@ function RetentionBuilderView({
 
                                 // 🚀 ADD THIS
                                 if (item.id === "new_customer") {
-                                  setStep(2); // skip Audience
+                                  setStep(3); // skip Audience for new customer
                                 }
                               }}
                               className="rounded-2xl border p-4 text-left transition-all"
@@ -1761,108 +1831,152 @@ function RetentionBuilderView({
                     <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
                       <div>
                         <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Date field
+                          Trigger on
                         </label>
                         <select
-                          value={form.triggerConfig.fieldKey}
+                          value={form.triggerConfig.dateTriggerMode || "field"}
                           onChange={(event) =>
                             setForm((previous) => ({
                               ...previous,
                               triggerConfig: {
                                 ...previous.triggerConfig,
-                                fieldKey: event.target.value,
+                                dateTriggerMode: event.target.value,
+                                fieldKey:
+                                  event.target.value === "inactive"
+                                    ? ""
+                                    : previous.triggerConfig.fieldKey || "",
+                                days:
+                                  event.target.value === "inactive"
+                                    ? Number(previous.triggerConfig.days) || 30
+                                    : previous.triggerConfig.days ?? 30,
                               },
                             }))
                           }
                           className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
                         >
-                          <option value="">Choose a date field</option>
-                          {dateFields.map((field) => (
-                            <option key={field.fieldKey} value={field.fieldKey}>
-                              {field.label} ({field.sourceSection})
-                            </option>
-                          ))}
+                          <option value="field">Customer date field</option>
+                          <option value="inactive">Inactive days</option>
                         </select>
                       </div>
 
-                      <div>
-                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Days before
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={form.triggerConfig.daysBefore ?? 0}
-                          onChange={(event) =>
-                            setForm((previous) => ({
-                              ...previous,
-                              triggerConfig: {
-                                ...previous.triggerConfig,
-                                daysBefore: Math.max(
-                                  0,
-                                  Number(event.target.value) || 0,
-                                ),
-                              },
-                            }))
-                          }
-                          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                          placeholder="0"
-                        />
-                      </div>
+                      {(form.triggerConfig.dateTriggerMode || "field") === "field" ? (
+                        <>
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Date field
+                            </label>
+                            <select
+                              value={form.triggerConfig.fieldKey}
+                              onChange={(event) =>
+                                setForm((previous) => ({
+                                  ...previous,
+                                  triggerConfig: {
+                                    ...previous.triggerConfig,
+                                    fieldKey: event.target.value,
+                                  },
+                                }))
+                              }
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                            >
+                              <option value="">Choose a date field</option>
+                              {dateFields.map((field) => (
+                                <option key={field.fieldKey} value={field.fieldKey}>
+                                  {field.label} ({field.sourceSection})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
 
-                      <div>
-                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Trigger time
-                        </label>
-                        <input
-                          type="time"
-                          value={form.triggerConfig.triggerTime || "09:00"}
-                          onChange={(event) =>
-                            setForm((previous) => ({
-                              ...previous,
-                              triggerConfig: {
-                                ...previous.triggerConfig,
-                                triggerTime: event.target.value,
-                              },
-                            }))
-                          }
-                          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                        />
-                      </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Days before
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={form.triggerConfig.daysBefore ?? 0}
+                              onChange={(event) =>
+                                setForm((previous) => ({
+                                  ...previous,
+                                  triggerConfig: {
+                                    ...previous.triggerConfig,
+                                    daysBefore: Math.max(
+                                      0,
+                                      Number(event.target.value) || 0,
+                                    ),
+                                  },
+                                }))
+                              }
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                              placeholder="0"
+                            />
+                          </div>
 
-                      <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
-                        <div>
-                          {selectedDateField
-                            ? `${selectedDateField.label} will trigger ${Number(form.triggerConfig.daysBefore) || 0} day${Number(form.triggerConfig.daysBefore) === 1 ? "" : "s"} before the date at ${formatScheduleTime(form.triggerConfig.triggerTime || "09:00")}.`
-                            : "Pick a date field and set how many days before it should trigger."}
-                        </div>
-                        {selectedDateField &&
-                          (String(selectedDateField.fieldKey).toLowerCase().includes("birthday") ||
-                            String(selectedDateField.fieldKey).toLowerCase().includes("anniversary")) && (
-                            <div className="mt-1">
-                              Birthday and anniversary fields repeat every year.
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Trigger time
+                            </label>
+                            <input
+                              type="time"
+                              value={form.triggerConfig.triggerTime || "09:00"}
+                              onChange={(event) =>
+                                setForm((previous) => ({
+                                  ...previous,
+                                  triggerConfig: {
+                                    ...previous.triggerConfig,
+                                    triggerTime: event.target.value,
+                                  },
+                                }))
+                              }
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                            />
+                          </div>
+
+                          <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
+                            <div>
+                              {selectedDateField
+                                ? `${selectedDateField.label} will trigger ${Number(form.triggerConfig.daysBefore) || 0} day${Number(form.triggerConfig.daysBefore) === 1 ? "" : "s"} before the date at ${formatScheduleTime(form.triggerConfig.triggerTime || "09:00")}.`
+                                : "Pick a date field and set how many days before it should trigger."}
                             </div>
-                          )}
-                      </div>
-                    </div>
-                  )}
+                            {selectedDateField &&
+                              (String(selectedDateField.fieldKey).toLowerCase().includes("birthday") ||
+                                String(selectedDateField.fieldKey).toLowerCase().includes("anniversary")) && (
+                                <div className="mt-1">
+                                  Birthday and anniversary fields repeat every year.
+                                </div>
+                              )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              Inactive for how many days?
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={form.triggerConfig.days || ""}
+                              onChange={(event) =>
+                                setForm((previous) => ({
+                                  ...previous,
+                                  triggerConfig: {
+                                    ...previous.triggerConfig,
+                                    days: Math.max(1, Number(event.target.value) || 0),
+                                  },
+                                }))
+                              }
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                              placeholder="30"
+                            />
+                          </div>
 
-                  {form.triggerType === "inactive_for_days" && (
-                    <input
-                      type="number"
-                      value={form.triggerConfig.days || ""}
-                      onChange={(event) =>
-                        setForm({
-                          ...form,
-                          triggerConfig: {
-                            ...form.triggerConfig,
-                            days: Number(event.target.value),
-                          },
-                        })
-                      }
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                      placeholder="Inactive for how many days?"
-                    />
+                          <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
+                            Customers who have been inactive for this many days will enter the flow.
+                          </div>
+                        </>
+                      )}
+                    </div>
                   )}
 
                   {form.triggerType === "whatsapp_keyword" && (
@@ -2139,7 +2253,7 @@ function RetentionBuilderView({
                 </div>
               )}
 
-              {step === 3 && (
+              {audienceStep && step === audienceStep && (
                 <div className="space-y-4">
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                     {previewQuickSegments.map((segment) => (
@@ -2212,7 +2326,7 @@ function RetentionBuilderView({
                 </div>
               )}
 
-              {step === 4 && (
+              {step === actionStep && (
                 <div className="space-y-4">
                   <select
                     value={form.actionConfig.templateId}
@@ -2281,46 +2395,94 @@ function RetentionBuilderView({
                     </div>
                   )}
 
-                  <div className="flex flex-wrap gap-2">
-                    {delayOptions.map((item) => (
-                      <button
-                        key={item.label}
-                        type="button"
-                        onClick={() =>
-                          setForm((previous) => ({
-                            ...previous,
-                            delay: {
-                              mode: item.mode,
-                              value: item.value,
-                              unit: item.unit,
-                            },
-                          }))
-                        }
-                        className="rounded-full border px-3 py-1 text-xs font-medium transition-all"
-                        style={{
-                          backgroundColor:
-                            form.delay.mode === item.mode &&
-                            form.delay.value === item.value &&
-                            form.delay.unit === item.unit
-                              ? "#313166"
-                              : "white",
-                          color:
-                            form.delay.mode === item.mode &&
-                            form.delay.value === item.value &&
-                            form.delay.unit === item.unit
-                              ? "white"
-                              : "#313166",
-                          borderColor:
-                            form.delay.mode === item.mode &&
-                            form.delay.value === item.value &&
-                            form.delay.unit === item.unit
-                              ? "#313166"
-                              : "#E5E7EB",
-                        }}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
+                  <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
+                    <div className="flex flex-wrap gap-2">
+                      {delayOptions.map((item) => {
+                        const isSelected =
+                          form.delay.mode === item.mode &&
+                          form.delay.value === item.value &&
+                          form.delay.unit === item.unit;
+
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() =>
+                              setForm((previous) => ({
+                                ...previous,
+                                delay: {
+                                  mode: item.mode,
+                                  value: item.value,
+                                  unit: item.unit,
+                                },
+                              }))
+                            }
+                            className="rounded-full border px-3 py-1 text-xs font-medium transition-all"
+                            style={{
+                              backgroundColor: isSelected ? "#313166" : "white",
+                              color: isSelected ? "white" : "#313166",
+                              borderColor: isSelected ? "#313166" : "#E5E7EB",
+                            }}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-[1fr_160px]">
+                      <div className="space-y-1">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                          Custom delay
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={form.delay.value}
+                          onChange={(event) =>
+                            setForm((previous) => ({
+                              ...previous,
+                              delay: {
+                                ...previous.delay,
+                                mode: Number(event.target.value) > 0 ? "delay" : "immediate",
+                                value: Number(event.target.value) || 0,
+                              },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                          placeholder="Enter a value"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                          Unit
+                        </div>
+                        <select
+                          value={form.delay.unit}
+                          onChange={(event) =>
+                            setForm((previous) => ({
+                              ...previous,
+                              delay: {
+                                ...previous.delay,
+                                mode: Number(previous.delay.value) > 0 ? "delay" : "immediate",
+                                unit: event.target.value,
+                              },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                        >
+                          {delayUnitOptions.map((unit) => (
+                            <option key={unit.value} value={unit.value}>
+                              {unit.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Use the quick options above, or set a custom after delay in minutes, hours, or days.
+                    </div>
                   </div>
 
                   {templateVariables.length > 0 && (
@@ -2482,7 +2644,7 @@ function RetentionBuilderView({
                 </div>
               )}
 
-              {step === 5 && (
+              {step === reviewStep && (
                 <div className="space-y-8 py-4">
                   <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FBFBFE] via-white to-[#F5F6FC] p-4 sm:p-6">
                     <div className="pointer-events-none absolute left-[27px] top-10 bottom-10 w-0.5 border-l-2 border-dashed border-gray-200 lg:hidden" />
@@ -2518,9 +2680,7 @@ function RetentionBuilderView({
                             Delay
                           </div>
                           <div className="mt-1 text-sm font-bold text-[#313166]">
-                            {form.delay.mode === "immediate"
-                              ? "Immediate"
-                              : `${form.delay.value} ${form.delay.unit}`}
+                            {formatDelayLabel(form.delay)}
                           </div>
                           <div className="mt-0.5 text-xs text-gray-500">
                             Wait before action
@@ -2550,46 +2710,58 @@ function RetentionBuilderView({
 
                   {/* Configuration Summary Cards */}
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-5">
-                      <div className="mb-3 flex items-center justify-between">
-                        <h4 className="text-sm font-bold text-[#313166]">
-                          Audience Filtering
-                        </h4>
-                        <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                          {form.audienceRules.logic}
-                        </span>
+                    {audienceStep ? (
+                      <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-5">
+                        <div className="mb-3 flex items-center justify-between">
+                          <h4 className="text-sm font-bold text-[#313166]">
+                            Audience Filtering
+                          </h4>
+                          <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                            {form.audienceRules.logic}
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {form.audienceRules.conditions.length > 0 ? (
+                            form.audienceRules.conditions.map((rule, idx) => {
+                              const field = fields.find(
+                                (f) => f.fieldKey === rule.fieldKey,
+                              );
+                              return (
+                                <div
+                                  key={idx}
+                                  className="flex items-center gap-2 text-xs text-gray-600"
+                                >
+                                  <CheckCircle2
+                                    size={12}
+                                    className="text-emerald-500"
+                                  />
+                                  <span>
+                                    <b>{field?.label || rule.fieldKey}</b>{" "}
+                                    {operatorLabels[rule.operator] ||
+                                      rule.operator}{" "}
+                                    <b>{rule.value || ""}</b>
+                                  </span>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="text-xs text-gray-500 italic">
+                              No audience rules (targeting all)
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        {form.audienceRules.conditions.length > 0 ? (
-                          form.audienceRules.conditions.map((rule, idx) => {
-                            const field = fields.find(
-                              (f) => f.fieldKey === rule.fieldKey,
-                            );
-                            return (
-                              <div
-                                key={idx}
-                                className="flex items-center gap-2 text-xs text-gray-600"
-                              >
-                                <CheckCircle2
-                                  size={12}
-                                  className="text-emerald-500"
-                                />
-                                <span>
-                                  <b>{field?.label || rule.fieldKey}</b>{" "}
-                                  {operatorLabels[rule.operator] ||
-                                    rule.operator}{" "}
-                                  <b>{rule.value || ""}</b>
-                                </span>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <div className="text-xs text-gray-500 italic">
-                            No audience rules (targeting all)
-                          </div>
-                        )}
+                    ) : (
+                      <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-5">
+                        <div className="text-sm font-bold text-[#313166]">
+                          Audience step skipped
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500">
+                          New customer journeys go straight from the trigger to
+                          the action step.
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -2603,13 +2775,13 @@ function RetentionBuilderView({
                   Back to dashboard
                 </button>
 
-                <div className="text-sm text-gray-500">Step {step} of 5</div>
+                <div className="text-sm text-gray-500">Step {step} of {totalSteps}</div>
 
-                {step < 5 ? (
+                {step < totalSteps ? (
                   <button
                     type="button"
                     onClick={() =>
-                      setStep((current) => Math.min(5, current + 1))
+                      setStep((current) => Math.min(totalSteps, current + 1))
                     }
                     className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white"
                   >
@@ -2633,7 +2805,7 @@ function RetentionBuilderView({
             </div>
           </div>
 
-          {step === 4 && (
+          {step === actionStep && (
             <div className="space-y-6">
               <WhatsAppTemplatePreviewCard
                 template={selectedTemplate}
@@ -2695,7 +2867,7 @@ function RetentionBuilderView({
             </div>
           )}
 
-          {step === 5 && (
+          {step === reviewStep && (
             <div className="space-y-6">
               <div className="rounded-3xl bg-[#313166] p-5 text-white shadow-lg">
                 <div className="flex items-center justify-between">
