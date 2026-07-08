@@ -224,6 +224,77 @@ const operatorLabels = {
   not_in_list: "Not in list",
 };
 
+const ruleNeedsValue = (operator = "") =>
+  ![
+    "is_true",
+    "is_false",
+    "today",
+    "is_empty",
+    "is_not_empty",
+  ].includes(operator);
+
+const validateRuleDraft = (draftRule = {}, fields = []) => {
+  const selectedField = fields.find(
+    (field) => field.fieldKey === draftRule.fieldKey,
+  );
+
+  if (!draftRule.fieldKey) {
+    return { valid: false, message: "Select a field before adding a rule" };
+  }
+
+  if (!selectedField) {
+    return { valid: false, message: "Select a valid field before adding a rule" };
+  }
+
+  if (!draftRule.operator) {
+    return { valid: false, message: "Select an operator before adding a rule" };
+  }
+
+  if (!ruleNeedsValue(draftRule.operator)) {
+    return { valid: true, message: "" };
+  }
+
+  const value = String(draftRule.value ?? "").trim();
+  const valueTo = String(draftRule.valueTo ?? "").trim();
+
+  if (draftRule.operator === "between") {
+    if (!value || !valueTo) {
+      return { valid: false, message: "Provide both values for a between rule" };
+    }
+
+    if (
+      selectedField.type === "number" &&
+      Number.isFinite(Number(value)) &&
+      Number.isFinite(Number(valueTo)) &&
+      Number(value) > Number(valueTo)
+    ) {
+      return { valid: false, message: "The first value must be smaller than the second value" };
+    }
+
+    return { valid: true, message: "" };
+  }
+
+  if (
+    selectedField.type === "date" &&
+    ["in_next_days", "in_last_days"].includes(draftRule.operator)
+  ) {
+    if (!value || Number(value) <= 0) {
+      return { valid: false, message: "Enter a positive number of days" };
+    }
+    return { valid: true, message: "" };
+  }
+
+  if (selectedField.type === "options" && draftRule.operator === "equals" && !value) {
+    return { valid: false, message: "Select a value for this option field" };
+  }
+
+  if (!value) {
+    return { valid: false, message: "Enter a value for this rule" };
+  }
+
+  return { valid: true, message: "" };
+};
+
 const createEmptyAutomation = () => ({
   name: "Untitled Automation",
   status: "draft",
@@ -1069,6 +1140,8 @@ function RuleComposer({
   onRemoveRule,
   logic,
   onLogicChange,
+  canAddRule = true,
+  addRuleHint = "",
 }) {
   const selectedField = fields.find(
     (field) => field.fieldKey === draftRule.fieldKey,
@@ -1244,10 +1317,14 @@ function RuleComposer({
       <button
         type="button"
         onClick={onAddRule}
-        className="rounded-xl bg-[#CB376D] px-4 py-2 text-sm font-medium text-white"
+        disabled={!canAddRule}
+        className="rounded-xl bg-[#CB376D] px-4 py-2 text-sm font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
       >
         Add Rule
       </button>
+      {addRuleHint ? (
+        <div className="text-xs text-amber-600">{addRuleHint}</div>
+      ) : null}
 
       {rules.length > 0 && (
         <div className="space-y-2">
@@ -1471,8 +1548,9 @@ function RetentionBuilderView({
   };
 
   const addRule = (ruleType, draftRule) => {
-    if (!draftRule.fieldKey || !draftRule.operator) {
-      showToast("Choose a field and operator before adding a rule", "warning");
+    const validation = validateRuleDraft(draftRule, fields);
+    if (!validation.valid) {
+      showToast(validation.message, "warning");
       return;
     }
 
@@ -1541,6 +1619,14 @@ function RetentionBuilderView({
       return;
     }
 
+    if (
+      form.triggerType === "whatsapp_keyword" &&
+      !String(form.triggerConfig.keyword || "").trim()
+    ) {
+      showToast("Enter a keyword before saving this automation", "warning");
+      return;
+    }
+
     if (form.triggerType === "customer_field_date") {
       if ((form.triggerConfig.dateTriggerMode || "field") === "inactive") {
         if (Number(form.triggerConfig.days) < 1) {
@@ -1576,6 +1662,8 @@ function RetentionBuilderView({
 
     setShowSaveConfirm(true);
   };
+
+  const audienceRuleValidation = validateRuleDraft(audienceDraftRule, fields);
 
   return (
     <>
@@ -2228,6 +2316,26 @@ function RetentionBuilderView({
 
               {audienceStep && step === audienceStep && (
                 <div className="space-y-4">
+                  <RuleComposer
+                    label="Audience rules"
+                    fields={fields}
+                    rules={form.audienceRules.conditions}
+                    draftRule={audienceDraftRule}
+                    onDraftChange={setAudienceDraftRule}
+                    onAddRule={() =>
+                      addRule("audienceRules", audienceDraftRule)
+                    }
+                    onRemoveRule={(index) => removeRule("audienceRules", index)}
+                    logic={form.audienceRules.logic}
+                    onLogicChange={(logic) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        audienceRules: { ...previous.audienceRules, logic },
+                      }))
+                    }
+                    canAddRule={audienceRuleValidation.valid}
+                    addRuleHint={audienceRuleValidation.message}
+                  />
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                     {previewQuickSegments.map((segment) => (
                       <button
@@ -2270,24 +2378,6 @@ function RetentionBuilderView({
                     </div>
                   </div>
 
-                  <RuleComposer
-                    label="Audience rules"
-                    fields={fields}
-                    rules={form.audienceRules.conditions}
-                    draftRule={audienceDraftRule}
-                    onDraftChange={setAudienceDraftRule}
-                    onAddRule={() =>
-                      addRule("audienceRules", audienceDraftRule)
-                    }
-                    onRemoveRule={(index) => removeRule("audienceRules", index)}
-                    logic={form.audienceRules.logic}
-                    onLogicChange={(logic) =>
-                      setForm((previous) => ({
-                        ...previous,
-                        audienceRules: { ...previous.audienceRules, logic },
-                      }))
-                    }
-                  />
                 </div>
               )}
 
