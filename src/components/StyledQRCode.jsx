@@ -1,3 +1,133 @@
+// import { useEffect, useRef, memo } from "react";
+// import QRCodeStyling from "qr-code-styling";
+
+// const StyledQRCode = memo(function StyledQRCode({
+//   value,
+//   size = 180,
+//   fgColor = "#000000",
+//   bgColor = "#ffffff",
+//   logo,
+//   logoSize = 40,
+//   logoOpacity = 1,
+//   logoPlacement = "inside",
+//   qrStyle = "square",
+//   eyeFrame = "square",
+//   eyeBall = "square",
+// }) {
+//   const ref = useRef(null);
+//   const qr = useRef(null);
+//   const frame = useRef(null);
+
+//   // Create QR only once
+//   useEffect(() => {
+//     qr.current = new QRCodeStyling({
+//       width: size,
+//       height: size,
+//       type: "svg",
+//       data: value || "",
+
+//       image: logoPlacement === "inside" ? logo : undefined,
+
+//       dotsOptions: {
+//         color: fgColor,
+//         type: qrStyle,
+//       },
+
+//       backgroundOptions: {
+//         color: bgColor,
+//       },
+
+//       imageOptions: {
+//         crossOrigin: "anonymous",
+//         margin: 2,
+//         imageSize: logoSize / 100,
+//         opacity: logoOpacity,
+//         hideBackgroundDots: true,
+//       },
+
+//       cornersSquareOptions: {
+//         color: fgColor,
+//         type: eyeFrame,
+//       },
+
+//       cornersDotOptions: {
+//         color: fgColor,
+//         type: eyeBall,
+//       },
+//     });
+
+//     qr.current.append(ref.current);
+
+//     return () => {
+//       cancelAnimationFrame(frame.current);
+
+//       if (ref.current) {
+//         ref.current.innerHTML = "";
+//       }
+//     };
+//   }, []);
+
+//   // Update only when values change
+//   useEffect(() => {
+//     if (!qr.current) return;
+
+//     cancelAnimationFrame(frame.current);
+
+//     frame.current = requestAnimationFrame(() => {
+//       qr.current.update({
+//         width: size,
+//         height: size,
+
+//         data: value || "",
+
+//         image: logoPlacement === "inside" ? logo : undefined,
+
+//         dotsOptions: {
+//           color: fgColor,
+//           type: qrStyle,
+//         },
+
+//         backgroundOptions: {
+//           color: bgColor,
+//         },
+
+//         imageOptions: {
+//           crossOrigin: "anonymous",
+//           margin: 2,
+//           imageSize: logoSize / 100,
+//           opacity: logoOpacity,
+//           hideBackgroundDots: true,
+//         },
+
+//         cornersSquareOptions: {
+//           color: fgColor,
+//           type: eyeFrame,
+//         },
+
+//         cornersDotOptions: {
+//           color: fgColor,
+//           type: eyeBall,
+//         },
+//       });
+//     });
+//   }, [
+//     value,
+//     size,
+//     fgColor,
+//     bgColor,
+//     logo,
+//     logoOpacity,
+//     logoSize,
+//     logoPlacement,
+//     qrStyle,
+//     eyeFrame,
+//     eyeBall,
+//   ]);
+
+//   return <div ref={ref} />;
+// });
+
+// export default StyledQRCode;
 import { useEffect, useRef, memo } from "react";
 import QRCodeStyling from "qr-code-styling";
 
@@ -10,7 +140,11 @@ const StyledQRCode = memo(function StyledQRCode({
   logoSize = 40,
   logoOpacity = 1,
   logoPlacement = "inside",
-  qrStyle = "square",
+
+  // ✅ NOW EXPECT OBJECT
+  qrStyle = {},
+
+  // fallback (optional)
   eyeFrame = "square",
   eyeBall = "square",
 }) {
@@ -18,7 +152,15 @@ const StyledQRCode = memo(function StyledQRCode({
   const qr = useRef(null);
   const frame = useRef(null);
 
-  // Create QR only once
+  // ✅ Resolve styles safely
+  const bodyShape =
+    typeof qrStyle === "string"
+      ? qrStyle || "square"
+      : qrStyle?.bodyShape || "square";
+  const frameShape = qrStyle?.eyeFrame || eyeFrame || "square";
+  const ballShape = qrStyle?.eyeBall || eyeBall || "square";
+
+  // ✅ Create QR (ONLY ONCE)
   useEffect(() => {
     qr.current = new QRCodeStyling({
       width: size,
@@ -30,7 +172,7 @@ const StyledQRCode = memo(function StyledQRCode({
 
       dotsOptions: {
         color: fgColor,
-        type: qrStyle,
+        type: bodyShape,
       },
 
       backgroundOptions: {
@@ -47,12 +189,12 @@ const StyledQRCode = memo(function StyledQRCode({
 
       cornersSquareOptions: {
         color: fgColor,
-        type: eyeFrame,
+        type: frameShape,
       },
 
       cornersDotOptions: {
         color: fgColor,
-        type: eyeBall,
+        type: ballShape,
       },
     });
 
@@ -60,14 +202,11 @@ const StyledQRCode = memo(function StyledQRCode({
 
     return () => {
       cancelAnimationFrame(frame.current);
-
-      if (ref.current) {
-        ref.current.innerHTML = "";
-      }
+      if (ref.current) ref.current.innerHTML = "";
     };
   }, []);
 
-  // Update only when values change
+  // ✅ Update QR when props change
   useEffect(() => {
     if (!qr.current) return;
 
@@ -77,14 +216,13 @@ const StyledQRCode = memo(function StyledQRCode({
       qr.current.update({
         width: size,
         height: size,
-
         data: value || "",
 
         image: logoPlacement === "inside" ? logo : undefined,
 
         dotsOptions: {
           color: fgColor,
-          type: qrStyle,
+          type: bodyShape,
         },
 
         backgroundOptions: {
@@ -101,12 +239,12 @@ const StyledQRCode = memo(function StyledQRCode({
 
         cornersSquareOptions: {
           color: fgColor,
-          type: eyeFrame,
+          type: frameShape,
         },
 
         cornersDotOptions: {
           color: fgColor,
-          type: eyeBall,
+          type: ballShape,
         },
       });
     });
@@ -119,9 +257,9 @@ const StyledQRCode = memo(function StyledQRCode({
     logoOpacity,
     logoSize,
     logoPlacement,
-    qrStyle,
-    eyeFrame,
-    eyeBall,
+    bodyShape,
+    frameShape,
+    ballShape,
   ]);
 
   return <div ref={ref} />;
