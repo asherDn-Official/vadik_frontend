@@ -1382,6 +1382,12 @@ function RetentionBuilderView({
     value: "",
     valueTo: "",
   });
+  const [audiencePreview, setAudiencePreview] = useState({
+    loading: false,
+    count: 0,
+    customers: [],
+    error: "",
+  });
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
@@ -1443,6 +1449,47 @@ function RetentionBuilderView({
     fields,
   );
   const isEditingAutomation = Boolean(initialAutomation?._id);
+
+  useEffect(() => {
+    if (step !== audienceStep) return undefined;
+
+    const timer = setTimeout(() => {
+      const fetchAudiencePreview = async () => {
+        try {
+          setAudiencePreview((previous) => ({
+            ...previous,
+            loading: true,
+            error: "",
+          }));
+
+          const response = await api.post("/api/retention-automations/preview-audience", {
+            audienceRules: form.audienceRules,
+            search: "",
+            limit: 5,
+          });
+
+          setAudiencePreview({
+            loading: false,
+            count: response.data?.data?.count || 0,
+            customers: response.data?.data?.customers || [],
+            error: "",
+          });
+        } catch (error) {
+          setAudiencePreview((previous) => ({
+            ...previous,
+            loading: false,
+            error:
+              error.response?.data?.message ||
+              "Failed to preview the current audience",
+          }));
+        }
+      };
+
+      fetchAudiencePreview();
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [step, audienceStep, form.audienceRules, form.triggerType, form.triggerConfig]);
 
   const updateTemplate = (templateId) => {
     const template = templates.find((item) => item._id === templateId);
@@ -2375,6 +2422,125 @@ function RetentionBuilderView({
                           {field.label}
                         </span>
                       ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-[#313166]">
+                          Audience preview
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Live estimate based on the current audience rules.
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAudiencePreview((previous) => ({
+                            ...previous,
+                            loading: true,
+                            error: "",
+                          }));
+                          api
+                            .post("/api/retention-automations/preview-audience", {
+                              audienceRules: form.audienceRules,
+                              search: "",
+                              limit: 5,
+                            })
+                            .then((response) => {
+                              setAudiencePreview({
+                                loading: false,
+                                count: response.data?.data?.count || 0,
+                                customers: response.data?.data?.customers || [],
+                                error: "",
+                              });
+                            })
+                            .catch((error) => {
+                              setAudiencePreview((previous) => ({
+                                ...previous,
+                                loading: false,
+                                error:
+                                  error.response?.data?.message ||
+                                  "Failed to preview the current audience",
+                              }));
+                            });
+                        }}
+                        className="inline-flex items-center rounded-xl border border-[#313166] px-3 py-2 text-xs font-medium text-[#313166]"
+                      >
+                        Refresh preview
+                      </button>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-[#313166] px-4 py-4 text-white">
+                        <div className="text-xs uppercase tracking-[0.2em] text-white/60">
+                          Matching customers
+                        </div>
+                        <div className="mt-2 text-3xl font-semibold">
+                          {audiencePreview.loading ? "..." : audiencePreview.count}
+                        </div>
+                      </div>
+                      <div className="rounded-2xl bg-[#F4F5F9] px-4 py-4">
+                        <div className="text-xs uppercase tracking-[0.2em] text-gray-400">
+                          Preview state
+                        </div>
+                        <div className="mt-2 text-sm font-medium text-[#313166]">
+                          {audiencePreview.loading
+                            ? "Refreshing preview"
+                            : audiencePreview.error
+                              ? "Preview unavailable"
+                              : "Preview ready"}
+                        </div>
+                        <div className="mt-1 text-xs text-gray-500">
+                          {audiencePreview.error || "Shows the latest filtered audience."}
+                        </div>
+                      </div>
+                      <div className="rounded-2xl bg-[#F4F5F9] px-4 py-4">
+                        <div className="text-xs uppercase tracking-[0.2em] text-gray-400">
+                          Sample size
+                        </div>
+                        <div className="mt-2 text-3xl font-semibold text-[#313166]">
+                          {audiencePreview.customers?.length || 0}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+                        Sample customers
+                      </div>
+                      {audiencePreview.customers?.length ? (
+                        <div className="space-y-2">
+                          {audiencePreview.customers.map((customer) => (
+                            <div
+                              key={customer._id}
+                              className="flex items-center justify-between rounded-xl border border-gray-100 bg-[#FCFCFF] px-4 py-3 text-sm"
+                            >
+                              <div>
+                                <div className="font-medium text-[#313166]">
+                                  {[customer.firstname, customer.lastname]
+                                    .filter(Boolean)
+                                    .join(" ") || "Unknown Customer"}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {formatPhone(customer.countryCode, customer.mobileNumber)}
+                                </div>
+                              </div>
+                              <span className="rounded-full bg-[#31316610] px-3 py-1 text-[11px] font-medium text-[#313166]">
+                                Preview
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="rounded-xl border border-dashed border-gray-200 bg-[#FCFCFF] px-4 py-5 text-sm text-gray-500">
+                          {audiencePreview.loading
+                            ? "Loading matching customers..."
+                            : "No customers match the current preview."}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -3313,17 +3479,14 @@ export default function RetentionRhythmAutomation() {
   const handleSave = async (form) => {
     try {
       setSaving(true);
-      const payload = {
-        ...form,
-        analyticsSummary: {
-          audienceSize: editingAutomation?.audienceSize || 0,
-          sent: editingAutomation?.sent || 0,
-          delivered: editingAutomation?.delivered || 0,
-          read: editingAutomation?.read || 0,
-          replied: editingAutomation?.replied || 0,
-          failed: editingAutomation?.failed || 0,
-        },
-      };
+      const payload = { ...form };
+      delete payload.analyticsSummary;
+      delete payload.audienceSize;
+      delete payload.sent;
+      delete payload.delivered;
+      delete payload.read;
+      delete payload.replied;
+      delete payload.failed;
 
       if (editingAutomation?._id) {
         await api.put(
