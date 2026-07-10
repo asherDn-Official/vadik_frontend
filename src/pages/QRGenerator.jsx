@@ -47,13 +47,47 @@ const getWrappedLines = (ctx, text, maxWidth) => {
   const lines = [];
   let currentLine = "";
 
+  const splitLongWord = (word) => {
+    const chunks = [];
+    let chunk = "";
+
+    for (const char of word) {
+      const testChunk = chunk + char;
+      if (ctx.measureText(testChunk).width <= maxWidth || !chunk) {
+        chunk = testChunk;
+      } else {
+        chunks.push(chunk);
+        chunk = char;
+      }
+    }
+
+    if (chunk) chunks.push(chunk);
+    return chunks;
+  };
+
   words.forEach((word) => {
     const testLine = currentLine ? `${currentLine} ${word}` : word;
     if (ctx.measureText(testLine).width <= maxWidth || !currentLine) {
-      currentLine = testLine;
+      if (ctx.measureText(testLine).width <= maxWidth) {
+        currentLine = testLine;
+      } else {
+        const chunks = splitLongWord(word);
+        if (chunks.length > 0) {
+          lines.push(...chunks.slice(0, -1));
+          currentLine = chunks[chunks.length - 1];
+        }
+      }
     } else {
       lines.push(currentLine);
-      currentLine = word;
+      if (ctx.measureText(word).width <= maxWidth) {
+        currentLine = word;
+      } else {
+        const chunks = splitLongWord(word);
+        if (chunks.length > 0) {
+          lines.push(...chunks.slice(0, -1));
+          currentLine = chunks[chunks.length - 1];
+        }
+      }
     }
   });
 
@@ -1742,7 +1776,7 @@ const QRGenerator = () => {
                           </p>
                         )}
                         {qrSubtitle && (
-                          <p className="text-[11px] font-medium text-gray-400 mt-1 uppercase tracking-wider">
+                          <p className="mx-auto mt-1 max-w-[220px] text-[11px] font-medium uppercase tracking-wider text-gray-400 leading-snug break-words [overflow-wrap:anywhere]">
                             {qrSubtitle}
                           </p>
                         )}
