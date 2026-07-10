@@ -54,7 +54,7 @@ const triggerGroups = [
     name: "Customer",
     color: "#CB376D",
     items: [
-      { id: "all_customers", name: "All Customers", icon: Users },
+      // { id: "all_customers", name: "All Customers", icon: Users },
       { id: "new_customer", name: "New Customer", icon: UserPlus },
       {
         id: "customer_field_date",
@@ -1390,7 +1390,9 @@ function RetentionBuilderView({
   });
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
-
+ const hasAudienceDraftInput = Object.values(audienceDraftRule).some((value) =>
+    Boolean(String(value || "").trim()),
+  );
   useEffect(() => {
     setForm(normalizeAutomationForForm(initialAutomation));
   }, [initialAutomation]);
@@ -1399,10 +1401,27 @@ function RetentionBuilderView({
     setStep((current) => Math.min(current, totalSteps));
   }, [totalSteps]);
 
-  const goToStep = (nextStep) => {
-    setStep(Math.min(totalSteps, nextStep));
-  };
+const goToStep = (nextStep) => {
+  const movingPastAudienceStep =
+    audienceStep && nextStep > audienceStep;
 
+  if (movingPastAudienceStep) {
+    const hasDraftRuleReady = audienceRuleValidation.valid;
+
+    if (hasAudienceDraftInput) {
+      showToast(
+        hasDraftRuleReady
+          ? "Click Add Rule to add this audience rule before continuing."
+          : audienceRuleValidation.message ||
+            "Finish the current rule, then click Add Rule before continuing.",
+        "warning"
+      );
+      return;
+    }
+  }
+
+  setStep(Math.min(totalSteps, nextStep));
+};
   const selectedTriggerGroup =
     triggerGroups.find((group) =>
       group.items.some((item) => item.id === form.triggerType),

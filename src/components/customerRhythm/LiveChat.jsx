@@ -57,6 +57,7 @@ const LiveChat = ({ onUnreadCountChange }) => {
   const customersFetchInFlightRef = useRef(false);
   const lastCustomersFetchRef = useRef(0);
   const sendMessageLockRef = useRef(false);
+  const enterSubmitPendingRef = useRef(false);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -832,8 +833,17 @@ await fetchCustomers(false);
                         if (e.repeat || isSendingMessage || sendMessageLockRef.current) {
                           return;
                         }
+                        enterSubmitPendingRef.current = true;
+                      }
+                    }}
+                    onKeyUp={(e) => {
+                      if (e.key === 'Enter' && enterSubmitPendingRef.current) {
+                        enterSubmitPendingRef.current = false;
                         handleSendMessage();
                       }
+                    }}
+                    onBlur={() => {
+                      enterSubmitPendingRef.current = false;
                     }}
                     disabled={isUploading}
                   />
