@@ -50,11 +50,13 @@ const LiveChat = ({ onUnreadCountChange }) => {
   const [mediaDateFrom, setMediaDateFrom] = useState("");
   const [mediaDateTo, setMediaDateTo] = useState("");
   const [pendingMediaMessages, setPendingMediaMessages] = useState([]);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const customersAbortRef = useRef(null);
   const customersFetchInFlightRef = useRef(false);
   const lastCustomersFetchRef = useRef(0);
+  const sendMessageLockRef = useRef(false);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -312,7 +314,12 @@ fetchMediaUsage();
 };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedCustomer || isUploading) return;
+    if (!newMessage.trim() || !selectedCustomer || isUploading || isSendingMessage || sendMessageLockRef.current) {
+      return;
+    }
+
+    sendMessageLockRef.current = true;
+    setIsSendingMessage(true);
 
     try {
       const payload = {
@@ -329,6 +336,9 @@ await fetchCustomers(false);
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error(error.response?.data?.error || "Failed to send message");
+    } finally {
+      sendMessageLockRef.current = false;
+      setIsSendingMessage(false);
     }
   };
 
@@ -819,6 +829,9 @@ await fetchCustomers(false);
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
+                        if (e.repeat || isSendingMessage || sendMessageLockRef.current) {
+                          return;
+                        }
                         handleSendMessage();
                       }
                     }}
@@ -826,7 +839,7 @@ await fetchCustomers(false);
                   />
                   <button 
                     onClick={handleSendMessage}
-                    disabled={!newMessage.trim() || isUploading}
+                    disabled={!newMessage.trim() || isUploading || isSendingMessage}
                     className="p-2 bg-[#313166] text-white rounded-xl hover:bg-[#3d3b83] transition-all disabled:opacity-50 mb-1 mr-1"
                   >
                     <Send size={18} />
