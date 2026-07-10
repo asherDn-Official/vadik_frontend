@@ -1399,6 +1399,10 @@ function RetentionBuilderView({
     setStep((current) => Math.min(current, totalSteps));
   }, [totalSteps]);
 
+  const goToStep = (nextStep) => {
+    setStep(Math.min(totalSteps, nextStep));
+  };
+
   const selectedTriggerGroup =
     triggerGroups.find((group) =>
       group.items.some((item) => item.id === form.triggerType),
@@ -1740,14 +1744,7 @@ function RetentionBuilderView({
                 <button
                   key={label}
                   type="button"
-                  onClick={() => {
-  // 🚀 skip Audience if new_customer
-  if (form.triggerType === "new_customer" && step === 1) {
-    setStep(3); // jump directly to Action or Audience
-  } else {
-    setStep(Math.min(totalSteps, index + 1));
-  }
-}}
+                  onClick={() => goToStep(index + 1)}
                   className="rounded-full px-3 py-1 text-xs font-medium transition-all"
                   style={{
                     backgroundColor:
@@ -1798,17 +1795,10 @@ function RetentionBuilderView({
 
                 <div className="flex flex-wrap gap-2">
                   {steps.map((label, index) => (
-                    <button
+                  <button
                       key={label}
                       type="button"
-                      onClick={() => {
-  // 🚀 skip Audience if new_customer
-  if (form.triggerType === "new_customer" && step === 1) {
-    setStep(3); // jump directly to Action or Audience
-  } else {
-    setStep(Math.min(totalSteps, index + 1));
-  }
-}}
+                      onClick={() => goToStep(index + 1)}
                       className="rounded-full px-3 py-1 text-xs font-medium transition-all"
                       style={{
                         backgroundColor:
@@ -3001,9 +2991,7 @@ function RetentionBuilderView({
                 {step < totalSteps ? (
                   <button
                     type="button"
-                    onClick={() =>
-                      setStep((current) => Math.min(totalSteps, current + 1))
-                    }
+                    onClick={() => goToStep(step + 1)}
                     className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white"
                   >
                     Next Step
