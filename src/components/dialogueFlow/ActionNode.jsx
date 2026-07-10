@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Zap, Database, Bell, Tag, Plus, MessageSquare } from 'lucide-react';
 
@@ -29,6 +29,11 @@ const ActionNode = ({ data, selected }) => {
         <div>
           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Action</div>
           <div className="text-sm font-semibold text-gray-800">{data.label || info.label}</div>
+          {data.comingSoon && (
+            <div className="mt-1 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-600">
+              Coming Soon
+            </div>
+          )}
         </div>
         <button 
           onClick={(e) => { e.stopPropagation(); data.onAddNext(); }}

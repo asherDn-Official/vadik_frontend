@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -35,7 +35,6 @@ import FlowList from '../components/dialogueFlow/FlowList';
 import FlowAnalytics from '../components/dialogueFlow/FlowAnalytics';
 import api from '../api/apiconfig';
 import showToast from '../utils/ToastNotification';
-import ComingSoon from '../components/common/ComingSoon';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import Loader from '../utils/Loader';
@@ -169,6 +168,15 @@ const DialogueFlowInner = () => {
   const [validationErrors, setValidationErrors] = useState([]);
   const [validationWarnings, setValidationWarnings] = useState([]);
   const [showValidationModal, setShowValidationModal] = useState(false);
+
+  const getNodeDisplayName = (node) => node?.data?.label || node?.data?.header || node?.id || 'Untitled';
+
+  const removeEdgeById = (edgeId) => {
+    setEdges((eds) => eds.filter((edge) => edge.id !== edgeId));
+    setSelectedEdge((prev) => (prev?.id === edgeId ? null : prev));
+  };
+
+  const getOutgoingRoutes = (nodeId) => edges.filter((edge) => edge.source === nodeId);
 
   const fetchFlows = useCallback(async () => {
     try {
@@ -926,41 +934,50 @@ const DialogueFlowInner = () => {
                 <Zap size={12} /> Automation Actions
               </div>
               <div 
-                className="group flex flex-col p-3 border border-gray-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 cursor-grab active:cursor-grabbing transition-all mb-2"
-                onDragStart={(event) => onDragStart(event, 'action', { actionType: 'database', label: 'Update Profile' })}
+                className="group flex flex-col p-3 border border-blue-100 rounded-xl bg-blue-50/50 cursor-grab active:cursor-grabbing transition-all mb-2"
+                onDragStart={(event) => onDragStart(event, 'action', { actionType: 'database', label: 'Update Profile', comingSoon: true })}
                 draggable
               >
                 <div className="flex items-center gap-3 mb-1">
-                  <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-blue-500 group-hover:bg-blue-100 transition-colors">
+                  <div className="p-2 bg-white shadow-sm border border-blue-100 rounded-lg text-blue-500 transition-colors">
                     <Database size={18} />
                   </div>
                   <div className="flex-1 text-xs font-bold text-gray-700">Update DB</div>
+                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-blue-600">
+                    Coming Soon
+                  </span>
                 </div>
-                <p className="text-[9px] text-gray-400">Silently save user data or update customer records in your database.</p>
+                <p className="text-[9px] text-gray-400">Silently save user data or update customer records in your database once automation is enabled.</p>
               </div>
               <div 
-                className="group flex flex-col p-3 border border-gray-100 rounded-xl hover:border-amber-500 hover:bg-amber-50 cursor-grab active:cursor-grabbing transition-all mb-2"
-                onDragStart={(event) => onDragStart(event, 'action', { actionType: 'notification', label: 'Send Alert' })}
+                className="group flex flex-col p-3 border border-amber-100 rounded-xl bg-amber-50/50 cursor-grab active:cursor-grabbing transition-all mb-2"
+                onDragStart={(event) => onDragStart(event, 'action', { actionType: 'notification', label: 'Send Alert', comingSoon: true })}
                 draggable
               >
                 <div className="flex items-center gap-3 mb-1">
-                  <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-amber-500 group-hover:bg-amber-100 transition-colors">
+                  <div className="p-2 bg-white shadow-sm border border-amber-100 rounded-lg text-amber-500 transition-colors">
                     <Bell size={18} />
                   </div>
                   <div className="flex-1 text-xs font-bold text-gray-700">Notification</div>
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-amber-600">
+                    Coming Soon
+                  </span>
                 </div>
-                <p className="text-[9px] text-gray-400">Trigger alerts to staff or customers when this point in the flow is reached.</p>
+                <p className="text-[9px] text-gray-400">Trigger alerts to staff or customers when this point in the flow is reached, once the backend automation is connected.</p>
               </div>
               <div 
-                className="group flex flex-col p-3 border border-gray-100 rounded-xl hover:border-[#CB376D] hover:bg-[#CB376D]/5 cursor-grab active:cursor-grabbing transition-all mb-2"
-                onDragStart={(event) => onDragStart(event, 'action', { actionType: 'data_exchange', label: 'Meta Data Exchange' })}
+                className="group flex flex-col p-3 border border-[#CB376D]/15 rounded-xl bg-[#CB376D]/5 cursor-grab active:cursor-grabbing transition-all mb-2"
+                onDragStart={(event) => onDragStart(event, 'action', { actionType: 'data_exchange', label: 'Meta Data Exchange', comingSoon: true })}
                 draggable
               >
                 <div className="flex items-center gap-3 mb-1">
-                  <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-[#CB376D] group-hover:bg-[#CB376D]/10 transition-colors">
+                  <div className="p-2 bg-white shadow-sm border border-[#CB376D]/10 rounded-lg text-[#CB376D] transition-colors">
                     <MessageSquare size={18} />
                   </div>
                   <div className="flex-1 text-xs font-bold text-gray-700">Data Exchange</div>
+                  <span className="rounded-full bg-[#CB376D]/10 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-[#CB376D]">
+                    Coming Soon
+                  </span>
                 </div>
                 <p className="text-[9px] text-gray-400">Advanced: Exchange data with your server using Meta's Data Exchange API.</p>
               </div>
@@ -1022,8 +1039,10 @@ const DialogueFlowInner = () => {
             onDrop={onDrop}
             onDragOver={onDragOver}
             onNodeClick={onNodeClick}
+            onEdgeClick={onEdgeClick}
             onPaneClick={onPaneClick}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             defaultEdgeOptions={defaultEdgeOptions}
             fitView
           >
@@ -1076,6 +1095,62 @@ const DialogueFlowInner = () => {
                           <label className="text-[11px] font-semibold text-gray-600 mb-1 block">Footer Button Label</label>
                           <input type="text" placeholder="e.g. Continue" value={selectedNode.data.footerLabel || ''} onChange={(e) => updateNodeData(selectedNode.id, { footerLabel: e.target.value })} className="w-full px-3 py-1.5 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-[#CB376D] outline-none" />
                           <p className="text-[9px] text-gray-400 mt-1">Text shown on the primary action button at the bottom.</p>
+                        </div>
+
+                        <div className="pt-4 border-t border-gray-100">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <label className="text-[10px] font-bold text-gray-400 uppercase block">Outgoing Routes</label>
+                              <p className="text-[9px] text-gray-400">Review and remove page-to-page links from this screen.</p>
+                            </div>
+                            <span className="text-[9px] font-bold text-[#CB376D] bg-[#CB376D]/5 px-2 py-1 rounded-full">
+                              {getOutgoingRoutes(selectedNode.id).length} routes
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                            {getOutgoingRoutes(selectedNode.id).length > 0 ? (
+                              getOutgoingRoutes(selectedNode.id).map((edge) => {
+                                const targetNode = nodes.find((node) => node.id === edge.target);
+                                const condition = edge.data?.condition;
+                                const conditionLabel = condition?.field
+                                  ? `${condition.field} ${condition.operator || 'equals'} ${condition.value || ''}`.trim()
+                                  : null;
+
+                                return (
+                                  <div key={edge.id} className="p-3 rounded-lg border border-gray-200 bg-gray-50 flex items-start justify-between gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedEdge(edge)}
+                                      className="text-left flex-1"
+                                    >
+                                      <div className="text-xs font-semibold text-gray-700">{edge.data?.label || 'Route'}</div>
+                                      <div className="text-[9px] text-gray-500 mt-0.5">
+                                        Goes to: {getNodeDisplayName(targetNode)}
+                                      </div>
+                                      {conditionLabel && (
+                                        <div className="text-[9px] text-[#CB376D] mt-1">
+                                          If {conditionLabel}
+                                        </div>
+                                      )}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeEdgeById(edge.id)}
+                                      className="shrink-0 rounded-md border border-red-100 bg-white p-1.5 text-red-500 hover:bg-red-50"
+                                      title="Remove route"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-[10px] text-gray-400">
+                                No outgoing routes yet. Connect this screen to another page or action to create a transition.
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
