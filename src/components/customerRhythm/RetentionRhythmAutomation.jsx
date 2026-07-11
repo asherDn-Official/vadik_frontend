@@ -1387,12 +1387,16 @@ function RetentionBuilderView({
     count: 0,
     customers: [],
     error: "",
+    page: 1,
+    totalPages: 1,
+    limit: 5,
   });
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
- const hasAudienceDraftInput = Object.values(audienceDraftRule).some((value) =>
+  const hasAudienceDraftInput = Object.values(audienceDraftRule).some((value) =>
     Boolean(String(value || "").trim()),
   );
+
   useEffect(() => {
     setForm(normalizeAutomationForForm(initialAutomation));
   }, [initialAutomation]);
@@ -1401,27 +1405,28 @@ function RetentionBuilderView({
     setStep((current) => Math.min(current, totalSteps));
   }, [totalSteps]);
 
-const goToStep = (nextStep) => {
-  const movingPastAudienceStep =
-    audienceStep && nextStep > audienceStep;
+  const goToStep = (nextStep) => {
+    const movingPastAudienceStep =
+      audienceStep && nextStep > audienceStep;
 
-  if (movingPastAudienceStep) {
-    const hasDraftRuleReady = audienceRuleValidation.valid;
+    if (movingPastAudienceStep) {
+      const hasDraftRuleReady = audienceRuleValidation.valid;
 
-    if (hasAudienceDraftInput) {
-      showToast(
-        hasDraftRuleReady
-          ? "Click Add Rule to add this audience rule before continuing."
-          : audienceRuleValidation.message ||
-            "Finish the current rule, then click Add Rule before continuing.",
-        "warning"
-      );
-      return;
+      if (hasAudienceDraftInput) {
+        showToast(
+          hasDraftRuleReady
+            ? "Click Add Rule to add this audience rule before continuing."
+            : audienceRuleValidation.message ||
+              "Finish the current rule, then click Add Rule before continuing.",
+          "warning"
+        );
+        return;
+      }
     }
-  }
 
-  setStep(Math.min(totalSteps, nextStep));
-};
+    setStep(Math.min(totalSteps, nextStep));
+  };
+
   const selectedTriggerGroup =
     triggerGroups.find((group) =>
       group.items.some((item) => item.id === form.triggerType),
@@ -1473,42 +1478,48 @@ const goToStep = (nextStep) => {
   );
   const isEditingAutomation = Boolean(initialAutomation?._id);
 
+  // Updated audience preview fetch function with pagination
+  const fetchAudiencePreview = async (page = 1) => {
+    try {
+      setAudiencePreview((previous) => ({
+        ...previous,
+        loading: true,
+        error: "",
+      }));
+
+      const response = await api.post("/api/retention-automations/preview-audience", {
+        audienceRules: form.audienceRules,
+        search: "",
+        limit: audiencePreview.limit,
+        page: page,
+      });
+
+      setAudiencePreview((previous) => ({
+        ...previous,
+        loading: false,
+        count: response.data?.data?.count || 0,
+        customers: response.data?.data?.customers || [],
+        totalPages: response.data?.data?.totalPages || 1,
+        page: response.data?.data?.page || page,
+        error: "",
+      }));
+    } catch (error) {
+      setAudiencePreview((previous) => ({
+        ...previous,
+        loading: false,
+        error:
+          error.response?.data?.message ||
+          "Failed to preview the current audience",
+      }));
+    }
+  };
+
+  // Effect to fetch audience preview when step changes
   useEffect(() => {
     if (step !== audienceStep) return undefined;
 
     const timer = setTimeout(() => {
-      const fetchAudiencePreview = async () => {
-        try {
-          setAudiencePreview((previous) => ({
-            ...previous,
-            loading: true,
-            error: "",
-          }));
-
-          const response = await api.post("/api/retention-automations/preview-audience", {
-            audienceRules: form.audienceRules,
-            search: "",
-            limit: 5,
-          });
-
-          setAudiencePreview({
-            loading: false,
-            count: response.data?.data?.count || 0,
-            customers: response.data?.data?.customers || [],
-            error: "",
-          });
-        } catch (error) {
-          setAudiencePreview((previous) => ({
-            ...previous,
-            loading: false,
-            error:
-              error.response?.data?.message ||
-              "Failed to preview the current audience",
-          }));
-        }
-      };
-
-      fetchAudiencePreview();
+      fetchAudiencePreview(1);
     }, 350);
 
     return () => clearTimeout(timer);
@@ -1735,94 +1746,56 @@ const goToStep = (nextStep) => {
 
   const audienceRuleValidation = validateRuleDraft(audienceDraftRule, fields);
 
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > audiencePreview.totalPages) return;
+    fetchAudiencePreview(newPage);
+  };
+
+  const handleLimitChange = (newLimit) => {
+    setAudiencePreview((previous) => ({
+      ...previous,
+      limit: newLimit,
+      page: 1,
+    }));
+    fetchAudiencePreview(1);
+  };
+
   return (
     <>
-      <div className="space-y-6">
-        <div className="rounded-[28px] bg-gradient-to-r from-[#313166] to-[#3d3b83] px-6 py-6 text-white shadow-lg">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-                <Zap className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-white/60">
-                  {isEditingAutomation
-                    ? "Edit automation"
-                    : "Create automation"}
-                </p>
-                <h2 className="mt-1 text-2xl font-semibold">{form.name}</h2>
-                <p className="mt-2 max-w-3xl text-sm text-white/75">
-                  This builder now uses the real retention APIs, dynamic field
-                  registry, and template catalog.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {steps.map((label, index) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => goToStep(index + 1)}
-                  className="rounded-full px-3 py-1 text-xs font-medium transition-all"
-                  style={{
-                    backgroundColor:
-                      step === index + 1 ? "white" : "rgba(255,255,255,0.1)",
-                    color:
-                      step === index + 1 ? "#313166" : "rgba(255,255,255,0.8)",
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-white/15"
-            >
-              <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
-              Back to dashboard
-            </button>
-
-            <div className="text-xs uppercase tracking-[0.22em] text-white/55">
-              Retention rhythm automation builder
-            </div>
-          </div>
-        </div>
-
-        <div
-          className={`grid gap-6 ${step === actionStep || step === reviewStep ? "xl:grid-cols-[1.05fr_0.95fr]" : "grid-cols-1"}`}
-        >
-          <div className="space-y-6">
-            <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
-              <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <div className="text-sm uppercase tracking-[0.22em] text-gray-400">
-                    Step {step} of {totalSteps}
+    <div className="space-y-6">
+            <div className="rounded-[28px] bg-gradient-to-r from-[#313166] to-[#3d3b83] px-6 py-6 text-white shadow-lg">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+                    <Zap className="h-6 w-6" />
                   </div>
-                  <h3 className="mt-1 text-lg font-semibold text-[#313166]">
-                    {steps[step - 1]}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Use dynamic fields, typed operators, and approved templates.
-                  </p>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-white/60">
+                      {isEditingAutomation
+                        ? "Edit automation"
+                        : "Create automation"}
+                    </p>
+                    <h2 className="mt-1 text-2xl font-semibold">{form.name}</h2>
+                    <p className="mt-2 max-w-3xl text-sm text-white/75">
+                      This builder now uses the real retention APIs, dynamic field
+                      registry, and template catalog.
+                    </p>
+                  </div>
                 </div>
-
+    
                 <div className="flex flex-wrap gap-2">
                   {steps.map((label, index) => (
-                  <button
+                    <button
                       key={label}
                       type="button"
                       onClick={() => goToStep(index + 1)}
                       className="rounded-full px-3 py-1 text-xs font-medium transition-all"
                       style={{
                         backgroundColor:
-                          step === index + 1 ? "#313166" : "#F4F5F9",
-                        color: step === index + 1 ? "white" : "#313166",
+                          step === index + 1 ? "white" : "rgba(255,255,255,0.1)",
+                        color:
+                          step === index + 1 ? "#313166" : "rgba(255,255,255,0.8)",
                       }}
                     >
                       {label}
@@ -1830,733 +1803,807 @@ const goToStep = (nextStep) => {
                   ))}
                 </div>
               </div>
-
-              {step === 1 && (
-                <div className="space-y-4">
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-medium text-[#313166]">
-                      Automation name
-                    </span>
-                    <input
-                      value={form.name}
-                      onChange={(event) =>
-                        setForm((previous) => ({
-                          ...previous,
-                          name: event.target.value,
-                        }))
-                      }
-                      className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition-all focus:border-[#313166]"
-                      placeholder="Enter automation name"
-                    />
-                  </label>
-
-                  {/* <div className="grid gap-3 md:grid-cols-3">
-                  {journeyOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setForm({ ...form, journeyType: option.id })}
-                      className="rounded-2xl border p-4 text-left transition-all"
-                      style={{
-                        borderColor: form.journeyType === option.id ? "#CB376D" : "#E5E7EB",
-                        backgroundColor: form.journeyType === option.id ? "#CB376D08" : "white",
-                      }}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="font-semibold text-[#313166]">{option.title}</div>
-                          <div className="mt-1 text-sm text-gray-500">{option.note}</div>
-                        </div>
-                        {form.journeyType === option.id ? <CheckCircle2 className="h-5 w-5 text-[#CB376D]" /> : null}
-                      </div>
-                    </button>
-                  ))}
-                </div> */}
+    
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-white/15"
+                >
+                  <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
+                  Back to dashboard
+                </button>
+    
+                <div className="text-xs uppercase tracking-[0.22em] text-white/55">
+                  Retention rhythm automation builder
                 </div>
-              )}
-
-              {step === 2 && (
-                <div className="space-y-4">
-                  {triggerGroups.map((group) => (
-                    <div key={group.name}>
-                      <div className="mb-3 flex items-center gap-2">
-                        <span
-                          className="h-2.5 w-2.5 rounded-full"
-                          style={{ backgroundColor: group.color }}
-                        />
-                        <h4 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                          {group.name}
-                        </h4>
+              </div>
+            </div>
+    
+            <div
+              className={`grid gap-6 ${step === actionStep || step === reviewStep ? "xl:grid-cols-[1.05fr_0.95fr]" : "grid-cols-1"}`}
+            >
+              <div className="space-y-6">
+                <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+                  <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <div className="text-sm uppercase tracking-[0.22em] text-gray-400">
+                        Step {step} of {totalSteps}
                       </div>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {group.items.map((item) => {
-                          const Icon = item.icon;
-                          const active = form.triggerType === item.id;
-
-                          return (
-                            <button
-                              key={item.id}
-                              type="button"
-                              onClick={() => {
-                                setForm((prev) => ({
-                                  ...prev,
-                                  triggerType: item.id,
-                                }));
-
-                                // 🚀 ADD THIS
-                                if (item.id === "new_customer") {
-                                  setStep(3); // skip Audience for new customer
-                                }
-                              }}
-                              className="rounded-2xl border p-4 text-left transition-all"
-                              style={{
-                                borderColor: active ? group.color : "#E5E7EB",
-                                backgroundColor: active
-                                  ? `${group.color}08`
-                                  : "white",
-                              }}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className="flex h-10 w-10 items-center justify-center rounded-xl"
-                                  style={{
-                                    backgroundColor: `${group.color}15`,
-                                  }}
-                                >
-                                  <Icon
-                                    className="h-5 w-5"
-                                    style={{ color: group.color }}
-                                  />
-                                </div>
-                                <div>
-                                  <div className="font-semibold text-[#313166]">
-                                    {item.name}
-                                  </div>
-                                  <div className="text-sm text-gray-500">
-                                    Trigger this flow
-                                  </div>
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
+                      <h3 className="mt-1 text-lg font-semibold text-[#313166]">
+                        {steps[step - 1]}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        Use dynamic fields, typed operators, and approved templates.
+                      </p>
                     </div>
-                  ))}
-
-                  {form.triggerType === "customer_field_date" && (
-                    <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
-                      <div>
-                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Trigger on
-                        </label>
-                        <select
-                          value={form.triggerConfig.dateTriggerMode || "field"}
+    
+                    <div className="flex flex-wrap gap-2">
+                      {steps.map((label, index) => (
+                      <button
+                          key={label}
+                          type="button"
+                          onClick={() => goToStep(index + 1)}
+                          className="rounded-full px-3 py-1 text-xs font-medium transition-all"
+                          style={{
+                            backgroundColor:
+                              step === index + 1 ? "#313166" : "#F4F5F9",
+                            color: step === index + 1 ? "white" : "#313166",
+                          }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+    
+                  {step === 1 && (
+                    <div className="space-y-4">
+                      <label className="block">
+                        <span className="mb-2 block text-sm font-medium text-[#313166]">
+                          Automation name
+                        </span>
+                        <input
+                          value={form.name}
                           onChange={(event) =>
                             setForm((previous) => ({
                               ...previous,
-                              triggerConfig: {
-                                ...previous.triggerConfig,
-                                dateTriggerMode: event.target.value,
-                                fieldKey:
-                                  event.target.value === "inactive"
-                                    ? ""
-                                    : previous.triggerConfig.fieldKey || "",
-                                days:
-                                  event.target.value === "inactive"
-                                    ? Number(previous.triggerConfig.days) || 30
-                                    : previous.triggerConfig.days ?? 30,
-                              },
+                              name: event.target.value,
                             }))
                           }
-                          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition-all focus:border-[#313166]"
+                          placeholder="Enter automation name"
+                        />
+                      </label>
+    
+                      {/* <div className="grid gap-3 md:grid-cols-3">
+                      {journeyOptions.map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setForm({ ...form, journeyType: option.id })}
+                          className="rounded-2xl border p-4 text-left transition-all"
+                          style={{
+                            borderColor: form.journeyType === option.id ? "#CB376D" : "#E5E7EB",
+                            backgroundColor: form.journeyType === option.id ? "#CB376D08" : "white",
+                          }}
                         >
-                          <option value="field">Customer date field</option>
-                          <option value="inactive">Inactive days</option>
-                        </select>
-                      </div>
-
-                      {(form.triggerConfig.dateTriggerMode || "field") === "field" ? (
-                        <>
-                          <div>
-                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                              Date field
-                            </label>
-                            <select
-                              value={form.triggerConfig.fieldKey}
-                              onChange={(event) =>
-                                setForm((previous) => ({
-                                  ...previous,
-                                  triggerConfig: {
-                                    ...previous.triggerConfig,
-                                    fieldKey: event.target.value,
-                                  },
-                                }))
-                              }
-                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                            >
-                              <option value="">Choose a date field</option>
-                              {dateFields.map((field) => (
-                                <option key={field.fieldKey} value={field.fieldKey}>
-                                  {field.label} ({field.sourceSection})
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                              Days before
-                            </label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={form.triggerConfig.daysBefore ?? 0}
-                              onChange={(event) =>
-                                setForm((previous) => ({
-                                  ...previous,
-                                  triggerConfig: {
-                                    ...previous.triggerConfig,
-                                    daysBefore: Math.max(
-                                      0,
-                                      Number(event.target.value) || 0,
-                                    ),
-                                  },
-                                }))
-                              }
-                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                              placeholder="0"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                              Trigger time
-                            </label>
-                            <input
-                              type="time"
-                              value={form.triggerConfig.triggerTime || "09:00"}
-                              onChange={(event) =>
-                                setForm((previous) => ({
-                                  ...previous,
-                                  triggerConfig: {
-                                    ...previous.triggerConfig,
-                                    triggerTime: event.target.value,
-                                  },
-                                }))
-                              }
-                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                            />
-                          </div>
-
-                          <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
+                          <div className="flex items-start justify-between gap-3">
                             <div>
-                              {selectedDateField
-                                ? `${selectedDateField.label} will trigger ${Number(form.triggerConfig.daysBefore) || 0} day${Number(form.triggerConfig.daysBefore) === 1 ? "" : "s"} before the date at ${formatScheduleTime(form.triggerConfig.triggerTime || "09:00")}.`
-                                : "Pick a date field and set how many days before it should trigger."}
+                              <div className="font-semibold text-[#313166]">{option.title}</div>
+                              <div className="mt-1 text-sm text-gray-500">{option.note}</div>
                             </div>
-                            {selectedDateField &&
-                              (String(selectedDateField.fieldKey).toLowerCase().includes("birthday") ||
-                                String(selectedDateField.fieldKey).toLowerCase().includes("anniversary")) && (
-                                <div className="mt-1">
-                                  Birthday and anniversary fields repeat every year.
-                                </div>
-                              )}
+                            {form.journeyType === option.id ? <CheckCircle2 className="h-5 w-5 text-[#CB376D]" /> : null}
                           </div>
-                        </>
-                      ) : (
-                        <>
-                          <div>
-                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                              Inactive for how many days?
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              value={form.triggerConfig.days || ""}
-                              onChange={(event) =>
-                                setForm((previous) => ({
-                                  ...previous,
-                                  triggerConfig: {
-                                    ...previous.triggerConfig,
-                                    days: Math.max(1, Number(event.target.value) || 0),
-                                  },
-                                }))
-                              }
-                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                              placeholder="30"
-                            />
-                          </div>
-
-                          <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
-                            Customers who have been inactive for this many days will enter the flow.
-                          </div>
-                        </>
-                      )}
+                        </button>
+                      ))}
+                    </div> */}
                     </div>
                   )}
-
-                  {form.triggerType === "whatsapp_keyword" && (
-                    <input
-                      value={form.triggerConfig.keyword || ""}
-                      onChange={(event) =>
-                        setForm({
-                          ...form,
-                          triggerConfig: {
-                            ...form.triggerConfig,
-                            keyword: event.target.value,
-                          },
-                        })
-                      }
-                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                      placeholder="Enter keyword"
-                    />
-                  )}
-
-                  {form.triggerType === "customer_activity_completed" && (
-                    <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            Activity selection
-                          </label>
-                          <select
-                            value={form.triggerConfig.activityScope || "all"}
-                            onChange={(event) =>
-                              setForm((previous) => ({
-                                ...previous,
-                                triggerConfig: {
-                                  ...previous.triggerConfig,
-                                  activityScope: event.target.value,
-                                  activityType:
-                                    event.target.value === "all"
-                                      ? ""
-                                      : previous.triggerConfig.activityType || "spinWheel",
-                                  activityCampaignScope:
-                                    event.target.value === "all"
-                                      ? "all"
-                                      : previous.triggerConfig.activityCampaignScope || "all",
-                                  activityCampaignId:
-                                    event.target.value === "all"
-                                      ? ""
-                                      : previous.triggerConfig.activityCampaignId || "",
-                                },
-                              }))
-                            }
-                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                          >
-                            <option value="all">All activities</option>
-                            <option value="specific">Specific activity</option>
-                          </select>
+    
+                  {step === 2 && (
+                    <div className="space-y-4">
+                      {triggerGroups.map((group) => (
+                        <div key={group.name}>
+                          <div className="mb-3 flex items-center gap-2">
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: group.color }}
+                            />
+                            <h4 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                              {group.name}
+                            </h4>
+                          </div>
+                          <div className="grid gap-3 md:grid-cols-2">
+                            {group.items.map((item) => {
+                              const Icon = item.icon;
+                              const active = form.triggerType === item.id;
+    
+                              return (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setForm((prev) => ({
+                                      ...prev,
+                                      triggerType: item.id,
+                                    }));
+    
+                                    // 🚀 ADD THIS
+                                    if (item.id === "new_customer") {
+                                      setStep(3); // skip Audience for new customer
+                                    }
+                                  }}
+                                  className="rounded-2xl border p-4 text-left transition-all"
+                                  style={{
+                                    borderColor: active ? group.color : "#E5E7EB",
+                                    backgroundColor: active
+                                      ? `${group.color}08`
+                                      : "white",
+                                  }}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div
+                                      className="flex h-10 w-10 items-center justify-center rounded-xl"
+                                      style={{
+                                        backgroundColor: `${group.color}15`,
+                                      }}
+                                    >
+                                      <Icon
+                                        className="h-5 w-5"
+                                        style={{ color: group.color }}
+                                      />
+                                    </div>
+                                    <div>
+                                      <div className="font-semibold text-[#313166]">
+                                        {item.name}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        Trigger this flow
+                                      </div>
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-
-                        {form.triggerConfig.activityScope === "specific" && (
+                      ))}
+    
+                      {form.triggerType === "customer_field_date" && (
+                        <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
                           <div>
                             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                              Activity type
+                              Trigger on
                             </label>
                             <select
-                              value={form.triggerConfig.activityType || "spinWheel"}
+                              value={form.triggerConfig.dateTriggerMode || "field"}
                               onChange={(event) =>
                                 setForm((previous) => ({
                                   ...previous,
                                   triggerConfig: {
                                     ...previous.triggerConfig,
-                                    activityType: event.target.value,
-                                    activityCampaignId: "",
-                                    activityCampaignScope:
-                                      previous.triggerConfig.activityCampaignScope || "all",
+                                    dateTriggerMode: event.target.value,
+                                    fieldKey:
+                                      event.target.value === "inactive"
+                                        ? ""
+                                        : previous.triggerConfig.fieldKey || "",
+                                    days:
+                                      event.target.value === "inactive"
+                                        ? Number(previous.triggerConfig.days) || 30
+                                        : previous.triggerConfig.days ?? 30,
                                   },
                                 }))
                               }
                               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
                             >
-                              <option value="spinWheel">Spin Wheel</option>
-                              <option value="scratchCard">Scratch Card</option>
-                              <option value="quiz">Quiz</option>
+                              <option value="field">Customer date field</option>
+                              <option value="inactive">Inactive days</option>
                             </select>
                           </div>
-                        )}
-                      </div>
-
-                      {(form.triggerConfig.activityScope || "all") === "specific" && (
-                        <div className="grid gap-3 md:grid-cols-2">
-                          <div>
-                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                              Campaign scope
-                            </label>
-                            <select
-                              value={form.triggerConfig.activityCampaignScope || "all"}
-                              onChange={(event) =>
-                                setForm((previous) => ({
-                                  ...previous,
-                                  triggerConfig: {
-                                    ...previous.triggerConfig,
-                                    activityCampaignScope: event.target.value,
-                                    activityCampaignId:
-                                      event.target.value === "all" ? "" : previous.triggerConfig.activityCampaignId || "",
-                                  },
-                                }))
-                              }
-                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                            >
-                              <option value="all">All campaigns</option>
-                              <option value="specific">Specific campaign</option>
-                            </select>
-                          </div>
-
-                          {(form.triggerConfig.activityCampaignScope || "all") === "specific" && (
+    
+                          {(form.triggerConfig.dateTriggerMode || "field") === "field" ? (
+                            <>
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                  Date field
+                                </label>
+                                <select
+                                  value={form.triggerConfig.fieldKey}
+                                  onChange={(event) =>
+                                    setForm((previous) => ({
+                                      ...previous,
+                                      triggerConfig: {
+                                        ...previous.triggerConfig,
+                                        fieldKey: event.target.value,
+                                      },
+                                    }))
+                                  }
+                                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                                >
+                                  <option value="">Choose a date field</option>
+                                  {dateFields.map((field) => (
+                                    <option key={field.fieldKey} value={field.fieldKey}>
+                                      {field.label} ({field.sourceSection})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+    
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                  Days before
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={form.triggerConfig.daysBefore ?? 0}
+                                  onChange={(event) =>
+                                    setForm((previous) => ({
+                                      ...previous,
+                                      triggerConfig: {
+                                        ...previous.triggerConfig,
+                                        daysBefore: Math.max(
+                                          0,
+                                          Number(event.target.value) || 0,
+                                        ),
+                                      },
+                                    }))
+                                  }
+                                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                                  placeholder="0"
+                                />
+                              </div>
+    
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                  Trigger time
+                                </label>
+                                <input
+                                  type="time"
+                                  value={form.triggerConfig.triggerTime || "09:00"}
+                                  onChange={(event) =>
+                                    setForm((previous) => ({
+                                      ...previous,
+                                      triggerConfig: {
+                                        ...previous.triggerConfig,
+                                        triggerTime: event.target.value,
+                                      },
+                                    }))
+                                  }
+                                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                                />
+                              </div>
+    
+                              <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
+                                <div>
+                                  {selectedDateField
+                                    ? `${selectedDateField.label} will trigger ${Number(form.triggerConfig.daysBefore) || 0} day${Number(form.triggerConfig.daysBefore) === 1 ? "" : "s"} before the date at ${formatScheduleTime(form.triggerConfig.triggerTime || "09:00")}.`
+                                    : "Pick a date field and set how many days before it should trigger."}
+                                </div>
+                                {selectedDateField &&
+                                  (String(selectedDateField.fieldKey).toLowerCase().includes("birthday") ||
+                                    String(selectedDateField.fieldKey).toLowerCase().includes("anniversary")) && (
+                                    <div className="mt-1">
+                                      Birthday and anniversary fields repeat every year.
+                                    </div>
+                                  )}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                  Inactive for how many days?
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={form.triggerConfig.days || ""}
+                                  onChange={(event) =>
+                                    setForm((previous) => ({
+                                      ...previous,
+                                      triggerConfig: {
+                                        ...previous.triggerConfig,
+                                        days: Math.max(1, Number(event.target.value) || 0),
+                                      },
+                                    }))
+                                  }
+                                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                                  placeholder="30"
+                                />
+                              </div>
+    
+                              <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
+                                Customers who have been inactive for this many days will enter the flow.
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+    
+                      {form.triggerType === "whatsapp_keyword" && (
+                        <input
+                          value={form.triggerConfig.keyword || ""}
+                          onChange={(event) =>
+                            setForm({
+                              ...form,
+                              triggerConfig: {
+                                ...form.triggerConfig,
+                                keyword: event.target.value,
+                              },
+                            })
+                          }
+                          className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                          placeholder="Enter keyword"
+                        />
+                      )}
+    
+                      {form.triggerType === "customer_activity_completed" && (
+                        <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
+                          <div className="grid gap-3 md:grid-cols-2">
                             <div>
                               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                Select {activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label || "activity"} campaign
+                                Activity selection
                               </label>
                               <select
-                                value={
-                                  getCampaignSelectValue(
-                                    activityCampaigns,
-                                    form.triggerConfig.activityType,
-                                    form.triggerConfig.activityCampaignId,
-                                  )
-                                }
+                                value={form.triggerConfig.activityScope || "all"}
                                 onChange={(event) =>
                                   setForm((previous) => ({
                                     ...previous,
                                     triggerConfig: {
                                       ...previous.triggerConfig,
-                                      activityCampaignId: event.target.value,
+                                      activityScope: event.target.value,
+                                      activityType:
+                                        event.target.value === "all"
+                                          ? ""
+                                          : previous.triggerConfig.activityType || "spinWheel",
+                                      activityCampaignScope:
+                                        event.target.value === "all"
+                                          ? "all"
+                                          : previous.triggerConfig.activityCampaignScope || "all",
+                                      activityCampaignId:
+                                        event.target.value === "all"
+                                          ? ""
+                                          : previous.triggerConfig.activityCampaignId || "",
                                     },
                                   }))
                                 }
                                 className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
                               >
-                                <option value="">
-                                  Select a {activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label?.toLowerCase() || "campaign"}
-                                </option>
-                                {selectedActivityCampaigns.map((campaign) => (
-                                  <option key={campaign._id} value={campaign._id}>
-                                    {getCampaignLabel(campaign, form.triggerConfig.activityType)}
-                                  </option>
-                                ))}
+                                <option value="all">All activities</option>
+                                <option value="specific">Specific activity</option>
                               </select>
                             </div>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="text-xs text-gray-500">
-                        {(form.triggerConfig.activityScope || "all") === "all"
-                          ? "Watching all completed activities."
-                          : (form.triggerConfig.activityCampaignScope || "all") === "specific"
-                            ? `Watching ${activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label || "a specific activity"}: ${selectedActivityCampaign ? getCampaignLabel(selectedActivityCampaign, form.triggerConfig.activityType) : "specific campaign"}.`
-                            : `Watching ${activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label || "a specific activity"}.`}
-                      </div>
-                    </div>
-                  )}
-
-                  {form.triggerType === "scheduled_recurring" && (
-                    <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            Repeat
-                          </label>
-                          <select
-                            value={form.triggerConfig.scheduleType || "daily"}
-                            onChange={(event) =>
-                              setForm((previous) => ({
-                                ...previous,
-                                triggerConfig: {
-                                  ...previous.triggerConfig,
-                                  scheduleType: event.target.value,
-                                },
-                              }))
-                            }
-                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                          >
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            Exact time
-                          </label>
-                          <input
-                            type="time"
-                            value={form.triggerConfig.scheduleTime || "09:00"}
-                            onChange={(event) =>
-                              setForm((previous) => ({
-                                ...previous,
-                                triggerConfig: {
-                                  ...previous.triggerConfig,
-                                  scheduleTime: event.target.value,
-                                },
-                              }))
-                            }
-                            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {form.triggerConfig.scheduleType === "weekly" && (
-                          <div>
-                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                              Weekday
-                            </label>
-                            <select
-                              value={form.triggerConfig.scheduleDayOfWeek ?? 1}
-                              onChange={(event) =>
-                                setForm((previous) => ({
-                                  ...previous,
-                                  triggerConfig: {
-                                    ...previous.triggerConfig,
-                                    scheduleDayOfWeek: Number(event.target.value),
-                                  },
-                                }))
-                              }
-                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                            >
-                              {weekdayOptions.map((day) => (
-                                <option key={day.value} value={day.value}>
-                                  {day.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-
-                        {form.triggerConfig.scheduleType === "monthly" && (
-                          <div>
-                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                              Date
-                            </label>
-                            <select
-                              value={form.triggerConfig.scheduleDayOfMonth ?? 1}
-                              onChange={(event) =>
-                                setForm((previous) => ({
-                                  ...previous,
-                                  triggerConfig: {
-                                    ...previous.triggerConfig,
-                                    scheduleDayOfMonth: Number(event.target.value),
-                                  },
-                                }))
-                              }
-                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                            >
-                              {Array.from({ length: 31 }, (_, index) => index + 1).map(
-                                (day) => (
-                                  <option key={day} value={day}>
-                                    {day}
-                                  </option>
-                                ),
-                              )}
-                            </select>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
-                        {form.triggerConfig.scheduleType === "daily" &&
-                          `Runs every day at ${formatScheduleTime(form.triggerConfig.scheduleTime)}`}
-                        {form.triggerConfig.scheduleType === "weekly" &&
-                          `Runs every ${weekdayOptions.find((day) => day.value === Number(form.triggerConfig.scheduleDayOfWeek))?.label || "week day"} at ${formatScheduleTime(form.triggerConfig.scheduleTime)}`}
-                        {form.triggerConfig.scheduleType === "monthly" &&
-                          `Runs on day ${form.triggerConfig.scheduleDayOfMonth || 1} at ${formatScheduleTime(form.triggerConfig.scheduleTime)}`}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {audienceStep && step === audienceStep && (
-                <div className="space-y-4">
-                  <RuleComposer
-                    label="Audience rules"
-                    fields={fields}
-                    rules={form.audienceRules.conditions}
-                    draftRule={audienceDraftRule}
-                    onDraftChange={setAudienceDraftRule}
-                    onAddRule={() =>
-                      addRule("audienceRules", audienceDraftRule)
-                    }
-                    onRemoveRule={(index) => removeRule("audienceRules", index)}
-                    logic={form.audienceRules.logic}
-                    onLogicChange={(logic) =>
-                      setForm((previous) => ({
-                        ...previous,
-                        audienceRules: { ...previous.audienceRules, logic },
-                      }))
-                    }
-                    canAddRule={audienceRuleValidation.valid}
-                    addRuleHint={audienceRuleValidation.message}
-                  />
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    {previewQuickSegments.map((segment) => (
-                      <button
-                        key={segment.key}
-                        type="button"
-                        onClick={() => applyQuickSegment(segment)}
-                        className="rounded-2xl border px-4 py-3 text-left transition-all"
-                        style={{
-                          borderColor:
-                            form.audienceRules.conditions.length ===
-                            segment.rules.conditions.length
-                              ? "#313166"
-                              : "#E5E7EB",
-                          backgroundColor: "#fff",
-                        }}
-                      >
-                        <div className="font-semibold text-[#313166]">
-                          {segment.label}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Audience preset
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
-                    <div className="mb-2 text-sm font-semibold text-[#313166]">
-                      Dynamic customer fields
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {fields.map((field) => (
-                        <span
-                          key={field.fieldKey}
-                          className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#313166]"
-                        >
-                          {field.label}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="text-sm font-semibold text-[#313166]">
-                          Audience preview
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Live estimate based on the current audience rules.
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAudiencePreview((previous) => ({
-                            ...previous,
-                            loading: true,
-                            error: "",
-                          }));
-                          api
-                            .post("/api/retention-automations/preview-audience", {
-                              audienceRules: form.audienceRules,
-                              search: "",
-                              limit: 5,
-                            })
-                            .then((response) => {
-                              setAudiencePreview({
-                                loading: false,
-                                count: response.data?.data?.count || 0,
-                                customers: response.data?.data?.customers || [],
-                                error: "",
-                              });
-                            })
-                            .catch((error) => {
-                              setAudiencePreview((previous) => ({
-                                ...previous,
-                                loading: false,
-                                error:
-                                  error.response?.data?.message ||
-                                  "Failed to preview the current audience",
-                              }));
-                            });
-                        }}
-                        className="inline-flex items-center rounded-xl border border-[#313166] px-3 py-2 text-xs font-medium text-[#313166]"
-                      >
-                        Refresh preview
-                      </button>
-                    </div>
-
-                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-2xl bg-[#313166] px-4 py-4 text-white">
-                        <div className="text-xs uppercase tracking-[0.2em] text-white/60">
-                          Matching customers
-                        </div>
-                        <div className="mt-2 text-3xl font-semibold">
-                          {audiencePreview.loading ? "..." : audiencePreview.count}
-                        </div>
-                      </div>
-                      <div className="rounded-2xl bg-[#F4F5F9] px-4 py-4">
-                        <div className="text-xs uppercase tracking-[0.2em] text-gray-400">
-                          Preview state
-                        </div>
-                        <div className="mt-2 text-sm font-medium text-[#313166]">
-                          {audiencePreview.loading
-                            ? "Refreshing preview"
-                            : audiencePreview.error
-                              ? "Preview unavailable"
-                              : "Preview ready"}
-                        </div>
-                        <div className="mt-1 text-xs text-gray-500">
-                          {audiencePreview.error || "Shows the latest filtered audience."}
-                        </div>
-                      </div>
-                      <div className="rounded-2xl bg-[#F4F5F9] px-4 py-4">
-                        <div className="text-xs uppercase tracking-[0.2em] text-gray-400">
-                          Sample size
-                        </div>
-                        <div className="mt-2 text-3xl font-semibold text-[#313166]">
-                          {audiencePreview.customers?.length || 0}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
-                        Sample customers
-                      </div>
-                      {audiencePreview.customers?.length ? (
-                        <div className="space-y-2">
-                          {audiencePreview.customers.map((customer) => (
-                            <div
-                              key={customer._id}
-                              className="flex items-center justify-between rounded-xl border border-gray-100 bg-[#FCFCFF] px-4 py-3 text-sm"
-                            >
+    
+                            {form.triggerConfig.activityScope === "specific" && (
                               <div>
-                                <div className="font-medium text-[#313166]">
-                                  {[customer.firstname, customer.lastname]
-                                    .filter(Boolean)
-                                    .join(" ") || "Unknown Customer"}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {formatPhone(customer.countryCode, customer.mobileNumber)}
-                                </div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                  Activity type
+                                </label>
+                                <select
+                                  value={form.triggerConfig.activityType || "spinWheel"}
+                                  onChange={(event) =>
+                                    setForm((previous) => ({
+                                      ...previous,
+                                      triggerConfig: {
+                                        ...previous.triggerConfig,
+                                        activityType: event.target.value,
+                                        activityCampaignId: "",
+                                        activityCampaignScope:
+                                          previous.triggerConfig.activityCampaignScope || "all",
+                                      },
+                                    }))
+                                  }
+                                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                                >
+                                  <option value="spinWheel">Spin Wheel</option>
+                                  <option value="scratchCard">Scratch Card</option>
+                                  <option value="quiz">Quiz</option>
+                                </select>
                               </div>
-                              <span className="rounded-full bg-[#31316610] px-3 py-1 text-[11px] font-medium text-[#313166]">
-                                Preview
-                              </span>
+                            )}
+                          </div>
+    
+                          {(form.triggerConfig.activityScope || "all") === "specific" && (
+                            <div className="grid gap-3 md:grid-cols-2">
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                  Campaign scope
+                                </label>
+                                <select
+                                  value={form.triggerConfig.activityCampaignScope || "all"}
+                                  onChange={(event) =>
+                                    setForm((previous) => ({
+                                      ...previous,
+                                      triggerConfig: {
+                                        ...previous.triggerConfig,
+                                        activityCampaignScope: event.target.value,
+                                        activityCampaignId:
+                                          event.target.value === "all" ? "" : previous.triggerConfig.activityCampaignId || "",
+                                      },
+                                    }))
+                                  }
+                                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                                >
+                                  <option value="all">All campaigns</option>
+                                  <option value="specific">Specific campaign</option>
+                                </select>
+                              </div>
+    
+                              {(form.triggerConfig.activityCampaignScope || "all") === "specific" && (
+                                <div>
+                                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                    Select {activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label || "activity"} campaign
+                                  </label>
+                                  <select
+                                    value={
+                                      getCampaignSelectValue(
+                                        activityCampaigns,
+                                        form.triggerConfig.activityType,
+                                        form.triggerConfig.activityCampaignId,
+                                      )
+                                    }
+                                    onChange={(event) =>
+                                      setForm((previous) => ({
+                                        ...previous,
+                                        triggerConfig: {
+                                          ...previous.triggerConfig,
+                                          activityCampaignId: event.target.value,
+                                        },
+                                      }))
+                                    }
+                                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                                  >
+                                    <option value="">
+                                      Select a {activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label?.toLowerCase() || "campaign"}
+                                    </option>
+                                    {selectedActivityCampaigns.map((campaign) => (
+                                      <option key={campaign._id} value={campaign._id}>
+                                        {getCampaignLabel(campaign, form.triggerConfig.activityType)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
                             </div>
-                          ))}
+                          )}
+    
+                          <div className="text-xs text-gray-500">
+                            {(form.triggerConfig.activityScope || "all") === "all"
+                              ? "Watching all completed activities."
+                              : (form.triggerConfig.activityCampaignScope || "all") === "specific"
+                                ? `Watching ${activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label || "a specific activity"}: ${selectedActivityCampaign ? getCampaignLabel(selectedActivityCampaign, form.triggerConfig.activityType) : "specific campaign"}.`
+                                : `Watching ${activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label || "a specific activity"}.`}
+                          </div>
                         </div>
-                      ) : (
-                        <div className="rounded-xl border border-dashed border-gray-200 bg-[#FCFCFF] px-4 py-5 text-sm text-gray-500">
-                          {audiencePreview.loading
-                            ? "Loading matching customers..."
-                            : "No customers match the current preview."}
+                      )}
+    
+                      {form.triggerType === "scheduled_recurring" && (
+                        <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <div>
+                              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Repeat
+                              </label>
+                              <select
+                                value={form.triggerConfig.scheduleType || "daily"}
+                                onChange={(event) =>
+                                  setForm((previous) => ({
+                                    ...previous,
+                                    triggerConfig: {
+                                      ...previous.triggerConfig,
+                                      scheduleType: event.target.value,
+                                    },
+                                  }))
+                                }
+                                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                              >
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Exact time
+                              </label>
+                              <input
+                                type="time"
+                                value={form.triggerConfig.scheduleTime || "09:00"}
+                                onChange={(event) =>
+                                  setForm((previous) => ({
+                                    ...previous,
+                                    triggerConfig: {
+                                      ...previous.triggerConfig,
+                                      scheduleTime: event.target.value,
+                                    },
+                                  }))
+                                }
+                                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                              />
+                            </div>
+                          </div>
+    
+                          <div className="grid gap-3 md:grid-cols-2">
+                            {form.triggerConfig.scheduleType === "weekly" && (
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                  Weekday
+                                </label>
+                                <select
+                                  value={form.triggerConfig.scheduleDayOfWeek ?? 1}
+                                  onChange={(event) =>
+                                    setForm((previous) => ({
+                                      ...previous,
+                                      triggerConfig: {
+                                        ...previous.triggerConfig,
+                                        scheduleDayOfWeek: Number(event.target.value),
+                                      },
+                                    }))
+                                  }
+                                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                                >
+                                  {weekdayOptions.map((day) => (
+                                    <option key={day.value} value={day.value}>
+                                      {day.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+    
+                            {form.triggerConfig.scheduleType === "monthly" && (
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                  Date
+                                </label>
+                                <select
+                                  value={form.triggerConfig.scheduleDayOfMonth ?? 1}
+                                  onChange={(event) =>
+                                    setForm((previous) => ({
+                                      ...previous,
+                                      triggerConfig: {
+                                        ...previous.triggerConfig,
+                                        scheduleDayOfMonth: Number(event.target.value),
+                                      },
+                                    }))
+                                  }
+                                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                                >
+                                  {Array.from({ length: 31 }, (_, index) => index + 1).map(
+                                    (day) => (
+                                      <option key={day} value={day}>
+                                        {day}
+                                      </option>
+                                    ),
+                                  )}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+    
+                          <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
+                            {form.triggerConfig.scheduleType === "daily" &&
+                              `Runs every day at ${formatScheduleTime(form.triggerConfig.scheduleTime)}`}
+                            {form.triggerConfig.scheduleType === "weekly" &&
+                              `Runs every ${weekdayOptions.find((day) => day.value === Number(form.triggerConfig.scheduleDayOfWeek))?.label || "week day"} at ${formatScheduleTime(form.triggerConfig.scheduleTime)}`}
+                            {form.triggerConfig.scheduleType === "monthly" &&
+                              `Runs on day ${form.triggerConfig.scheduleDayOfMonth || 1} at ${formatScheduleTime(form.triggerConfig.scheduleTime)}`}
+                          </div>
                         </div>
                       )}
                     </div>
-                  </div>
+                  )}
+      {/* ... rest of your JSX remains the same until the audience preview section ... */}
 
+      {audienceStep && step === audienceStep && (
+        <div className="space-y-4">
+          <RuleComposer
+            label="Audience rules"
+            fields={fields}
+            rules={form.audienceRules.conditions}
+            draftRule={audienceDraftRule}
+            onDraftChange={setAudienceDraftRule}
+            onAddRule={() =>
+              addRule("audienceRules", audienceDraftRule)
+            }
+            onRemoveRule={(index) => removeRule("audienceRules", index)}
+            logic={form.audienceRules.logic}
+            onLogicChange={(logic) =>
+              setForm((previous) => ({
+                ...previous,
+                audienceRules: { ...previous.audienceRules, logic },
+              }))
+            }
+            canAddRule={audienceRuleValidation.valid}
+            addRuleHint={audienceRuleValidation.message}
+          />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {previewQuickSegments.map((segment) => (
+              <button
+                key={segment.key}
+                type="button"
+                onClick={() => applyQuickSegment(segment)}
+                className="rounded-2xl border px-4 py-3 text-left transition-all"
+                style={{
+                  borderColor:
+                    form.audienceRules.conditions.length ===
+                    segment.rules.conditions.length
+                      ? "#313166"
+                      : "#E5E7EB",
+                  backgroundColor: "#fff",
+                }}
+              >
+                <div className="font-semibold text-[#313166]">
+                  {segment.label}
+                </div>
+                <div className="text-xs text-gray-500">
+                  Audience preset
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
+            <div className="mb-2 text-sm font-semibold text-[#313166]">
+              Dynamic customer fields
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {fields.map((field) => (
+                <span
+                  key={field.fieldKey}
+                  className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#313166]"
+                >
+                  {field.label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-semibold text-[#313166]">
+                  Audience preview
+                </div>
+                <div className="text-xs text-gray-500">
+                  Live estimate based on the current audience rules.
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* <select
+                  value={audiencePreview.limit}
+                  onChange={(e) => handleLimitChange(Number(e.target.value))}
+                  className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                >
+                  <option value="5">5 per page</option>
+                  <option value="10">10 per page</option>
+                  <option value="25">25 per page</option>
+                  <option value="50">50 per page</option>
+                </select> */}
+                <button
+                  type="button"
+                  onClick={() => fetchAudiencePreview(audiencePreview.page)}
+                  className="inline-flex items-center rounded-xl border border-[#313166] px-3 py-2 text-xs font-medium text-[#313166]"
+                >
+                  Refresh preview
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-[#313166] px-4 py-4 text-white">
+                <div className="text-xs uppercase tracking-[0.2em] text-white/60">
+                  Matching customers
+                </div>
+                <div className="mt-2 text-3xl font-semibold">
+                  {audiencePreview.loading ? "..." : audiencePreview.count}
+                </div>
+              </div>
+              <div className="rounded-2xl bg-[#F4F5F9] px-4 py-4">
+                <div className="text-xs uppercase tracking-[0.2em] text-gray-400">
+                  Preview state
+                </div>
+                <div className="mt-2 text-sm font-medium text-[#313166]">
+                  {audiencePreview.loading
+                    ? "Refreshing preview"
+                    : audiencePreview.error
+                      ? "Preview unavailable"
+                      : "Preview ready"}
+                </div>
+                <div className="mt-1 text-xs text-gray-500">
+                  {audiencePreview.error || "Shows the latest filtered audience."}
+                </div>
+              </div>
+              <div className="rounded-2xl bg-[#F4F5F9] px-4 py-4">
+                <div className="text-xs uppercase tracking-[0.2em] text-gray-400">
+                  Showing
+                </div>
+                <div className="mt-2 text-lg font-semibold text-[#313166]">
+                  {audiencePreview.customers?.length || 0} customers
+                </div>
+                <div className="mt-1 text-xs text-gray-500">
+                  Page {audiencePreview.page} of {audiencePreview.totalPages}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+                  Sample customers
+                </div>
+                <span className="text-xs text-gray-400">
+                  Page {audiencePreview.page} of {audiencePreview.totalPages}
+                </span>
+              </div>
+              {audiencePreview.customers?.length ? (
+                <div className="space-y-2">
+                  {audiencePreview.customers.map((customer) => (
+                    <div
+                      key={customer._id}
+                      className="flex items-center justify-between rounded-xl border border-gray-100 bg-[#FCFCFF] px-4 py-3 text-sm"
+                    >
+                      <div>
+                        <div className="font-medium text-[#313166]">
+                          {[customer.firstname, customer.lastname]
+                            .filter(Boolean)
+                            .join(" ") || "Unknown Customer"}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {formatPhone(customer.countryCode, customer.mobileNumber)}
+                        </div>
+                      </div>
+                      <span className="rounded-full bg-[#31316610] px-3 py-1 text-[11px] font-medium text-[#313166]">
+                        Preview
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 bg-[#FCFCFF] px-4 py-5 text-sm text-gray-500">
+                  {audiencePreview.loading
+                    ? "Loading matching customers..."
+                    : "No customers match the current preview."}
                 </div>
               )}
 
-              {step === actionStep && (
+              {/* Pagination Controls */}
+              {!audiencePreview.loading && audiencePreview.customers?.length > 0 && (
+                <div className="mt-4 flex items-center justify-between gap-4 border-t border-gray-100 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(audiencePreview.page - 1)}
+                    disabled={audiencePreview.page <= 1}
+                    className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-[#313166] transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">
+                      Page {audiencePreview.page} of {audiencePreview.totalPages}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      ({audiencePreview.count} total)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(audiencePreview.page + 1)}
+                    disabled={audiencePreview.page >= audiencePreview.totalPages}
+                    className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-[#313166] transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+      )}
+ {step === actionStep && (
                 <div className="space-y-4">
                   <select
                     value={form.actionConfig.templateId}
@@ -3249,9 +3296,1906 @@ const goToStep = (nextStep) => {
           onSave(form);
         }}
       />
+      {/* ... rest of your JSX remains the same ... */}
     </>
   );
 }
+
+
+// function RetentionBuilderView({
+//   initialAutomation,
+//   fields,
+//   templates,
+//   activityCampaigns,
+//   onBack,
+//   onSave,
+//   saving,
+// }) {
+//   const [step, setStep] = useState(1);
+//   const [form, setForm] = useState(() =>
+//     normalizeAutomationForForm(initialAutomation),
+//   );
+//   const steps = getStepLabels(form.triggerType);
+//   const totalSteps = getTotalSteps(form.triggerType);
+//   const audienceStep = getAudienceStep(form.triggerType);
+//   const actionStep = getActionStep(form.triggerType);
+//   const reviewStep = getReviewStep(form.triggerType);
+//   const [audienceDraftRule, setAudienceDraftRule] = useState({
+//     fieldKey: "",
+//     operator: "",
+//     value: "",
+//     valueTo: "",
+//   });
+//   const [audiencePreview, setAudiencePreview] = useState({
+//     loading: false,
+//     count: 0,
+//     customers: [],
+//     error: "",
+//   });
+//   const [uploadingMedia, setUploadingMedia] = useState(false);
+//   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+//  const hasAudienceDraftInput = Object.values(audienceDraftRule).some((value) =>
+//     Boolean(String(value || "").trim()),
+//   );
+//   useEffect(() => {
+//     setForm(normalizeAutomationForForm(initialAutomation));
+//   }, [initialAutomation]);
+
+//   useEffect(() => {
+//     setStep((current) => Math.min(current, totalSteps));
+//   }, [totalSteps]);
+
+// const goToStep = (nextStep) => {
+//   const movingPastAudienceStep =
+//     audienceStep && nextStep > audienceStep;
+
+//   if (movingPastAudienceStep) {
+//     const hasDraftRuleReady = audienceRuleValidation.valid;
+
+//     if (hasAudienceDraftInput) {
+//       showToast(
+//         hasDraftRuleReady
+//           ? "Click Add Rule to add this audience rule before continuing."
+//           : audienceRuleValidation.message ||
+//             "Finish the current rule, then click Add Rule before continuing.",
+//         "warning"
+//       );
+//       return;
+//     }
+//   }
+
+//   setStep(Math.min(totalSteps, nextStep));
+// };
+//   const selectedTriggerGroup =
+//     triggerGroups.find((group) =>
+//       group.items.some((item) => item.id === form.triggerType),
+//     ) || triggerGroups[0];
+//   const selectedTemplate = templates.find(
+//     (template) => template._id === form.actionConfig.templateId,
+//   );
+//   const selectedActivityCampaigns = getCampaignList(
+//     activityCampaigns,
+//     form.triggerConfig.activityType,
+//   );
+//   const selectedActivityCampaign = selectedActivityCampaigns.find(
+//     (campaign) =>
+//       String(campaign?._id) === String(form.triggerConfig.activityCampaignId),
+//   );
+//   const dateFields = fields.filter((field) => field.type === "date");
+//   const selectedDateField = dateFields.find(
+//     (field) => field.fieldKey === form.triggerConfig.fieldKey,
+//   );
+//   const templateVariables = extractTemplateVariables(selectedTemplate);
+//   const templateHeaderMediaType = getTemplateHeaderMediaType(selectedTemplate);
+//   const templateHeader = getTemplateHeaderComponent(selectedTemplate);
+//   const templateBody = selectedTemplate?.components?.find(
+//     (component) => component.type === "BODY",
+//   );
+//   const templateFooter = selectedTemplate?.components?.find(
+//     (component) => component.type === "FOOTER",
+//   );
+//   const templateButtons =
+//     selectedTemplate?.components?.find((component) => component.type === "BUTTONS")
+//       ?.buttons || [];
+//   const previewHeaderText = getTemplatePreviewText(
+//     templateHeader?.text || "",
+//     "HEADER",
+//     form.actionConfig.variableMappings || [],
+//     fields,
+//   );
+//   const previewBodyText = getTemplatePreviewText(
+//     templateBody?.text || "",
+//     "BODY",
+//     form.actionConfig.variableMappings || [],
+//     fields,
+//   );
+//   const previewFooterText = getTemplatePreviewText(
+//     templateFooter?.text || "",
+//     "FOOTER",
+//     form.actionConfig.variableMappings || [],
+//     fields,
+//   );
+//   const isEditingAutomation = Boolean(initialAutomation?._id);
+
+//   useEffect(() => {
+//     if (step !== audienceStep) return undefined;
+
+//     const timer = setTimeout(() => {
+//       const fetchAudiencePreview = async () => {
+//         try {
+//           setAudiencePreview((previous) => ({
+//             ...previous,
+//             loading: true,
+//             error: "",
+//           }));
+
+//           const response = await api.post("/api/retention-automations/preview-audience", {
+//             audienceRules: form.audienceRules,
+//             search: "",
+//             limit: 5,
+//           });
+
+//           setAudiencePreview({
+//             loading: false,
+//             count: response.data?.data?.count || 0,
+//             customers: response.data?.data?.customers || [],
+//             error: "",
+//           });
+//         } catch (error) {
+//           setAudiencePreview((previous) => ({
+//             ...previous,
+//             loading: false,
+//             error:
+//               error.response?.data?.message ||
+//               "Failed to preview the current audience",
+//           }));
+//         }
+//       };
+
+//       fetchAudiencePreview();
+//     }, 350);
+
+//     return () => clearTimeout(timer);
+//   }, [step, audienceStep, form.audienceRules, form.triggerType, form.triggerConfig]);
+
+//   const updateTemplate = (templateId) => {
+//     const template = templates.find((item) => item._id === templateId);
+//     const nextVariables = extractTemplateVariables(template);
+//     const nextMappings = nextVariables.map(
+//       (descriptor) =>
+//         findVariableMapping(form.actionConfig.variableMappings, descriptor) || {
+//           componentType: descriptor.componentType,
+//           variable: descriptor.variable,
+//           sourceType: "customer_field",
+//           value: "firstname",
+//         },
+//     );
+//     const mediaType = getTemplateHeaderMediaType(template);
+
+//     setForm({
+//       ...form,
+//       actionConfig: {
+//         ...form.actionConfig,
+//         templateId,
+//         templateName: template?.name || "",
+//         languageCode: template?.language || "en_US",
+//         variableMappings: nextMappings,
+//         mediaType,
+//         mediaUrl:
+//           mediaType === form.actionConfig.mediaType
+//             ? form.actionConfig.mediaUrl
+//             : "",
+//       },
+//     });
+//   };
+
+//   const handleMediaUpload = async (event) => {
+//     const file = event.target.files?.[0];
+//     if (!file) return;
+
+//     // Validation for images
+//     if (templateHeaderMediaType === "IMAGE") {
+//       const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+//       if (!allowedTypes.includes(file.type)) {
+//         showToast(
+//           "Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.",
+//           "error",
+//         );
+//         event.target.value = "";
+//         return;
+//       }
+//       const maxImgSize = 1 * 1024 * 1024; // 1MB for consistency with other modules
+//       if (file.size > maxImgSize) {
+//         showToast(
+//           "Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.",
+//           "error",
+//         );
+//         event.target.value = "";
+//         return;
+//       }
+//     } else {
+//       // Validation for other media (VIDEO, DOCUMENT)
+//       const maxSize =
+//         templateHeaderMediaType === "VIDEO"
+//           ? 64 * 1024 * 1024
+//           : 5 * 1024 * 1024;
+//       if (file.size > maxSize) {
+//         showToast(
+//           `File too large. Max ${maxSize / (1024 * 1024)}MB.`,
+//           "warning",
+//         );
+//         event.target.value = "";
+//         return;
+//       }
+//     }
+
+//     const formData = new FormData();
+//     formData.append("file", file);
+
+//     try {
+//       setUploadingMedia(true);
+//       const response = await api.post(
+//         "/api/integrationManagement/whatsapp/media/upload",
+//         formData,
+//       );
+//       if (response.data?.status) {
+//         setForm((previous) => ({
+//           ...previous,
+//           actionConfig: {
+//             ...previous.actionConfig,
+//             mediaUrl: response.data.url || "",
+//             mediaType: templateHeaderMediaType,
+//           },
+//         }));
+//         showToast("Media uploaded successfully", "success");
+//       }
+//     } catch (error) {
+//       console.error("Error uploading template media:", error);
+//       const errorMsg =
+//         error.response?.data?.message ||
+//         "Image upload failed. Please verify the file and try again.";
+//       showToast(errorMsg, "error");
+//     } finally {
+//       setUploadingMedia(false);
+//       event.target.value = "";
+//     }
+//   };
+
+//   const addRule = (ruleType, draftRule) => {
+//     const validation = validateRuleDraft(draftRule, fields);
+//     if (!validation.valid) {
+//       showToast(validation.message, "warning");
+//       return;
+//     }
+
+//     setForm((previous) => ({
+//       ...previous,
+//       [ruleType]: {
+//         ...previous[ruleType],
+//         conditions: [...previous[ruleType].conditions, draftRule],
+//       },
+//     }));
+
+//     if (ruleType === "audienceRules") {
+//       setAudienceDraftRule({
+//         fieldKey: "",
+//         operator: "",
+//         value: "",
+//         valueTo: "",
+//       });
+//     }
+//   };
+
+//   const removeRule = (ruleType, index) => {
+//     setForm((previous) => ({
+//       ...previous,
+//       [ruleType]: {
+//         ...previous[ruleType],
+//         conditions: previous[ruleType].conditions.filter(
+//           (_, itemIndex) => itemIndex !== index,
+//         ),
+//       },
+//     }));
+//   };
+
+//   const applyQuickSegment = (segment) => {
+//     setForm((previous) => ({
+//       ...previous,
+//       audienceRules: segment.rules,
+//     }));
+//   };
+
+//   const handleSave = () => {
+//     if (!form.actionConfig.templateId) {
+//       showToast("Choose a WhatsApp template before saving", "warning");
+//       return;
+//     }
+
+//     if (form.triggerType === "customer_activity_completed") {
+//       if (
+//         (form.triggerConfig.activityScope || "all") === "specific" &&
+//         !form.triggerConfig.activityType
+//       ) {
+//         showToast("Choose a specific activity type", "warning");
+//         return;
+//       }
+//       if (
+//         (form.triggerConfig.activityCampaignScope || "all") === "specific" &&
+//         !form.triggerConfig.activityCampaignId
+//       ) {
+//         showToast("Choose a specific campaign for the selected activity", "warning");
+//         return;
+//       }
+//     }
+
+//     if (form.triggerType === "scheduled_recurring" && !form.triggerConfig.scheduleTime) {
+//       showToast("Choose an exact time for the recurring trigger", "warning");
+//       return;
+//     }
+
+//     if (
+//       form.triggerType === "whatsapp_keyword" &&
+//       !String(form.triggerConfig.keyword || "").trim()
+//     ) {
+//       showToast("Enter a keyword before saving this automation", "warning");
+//       return;
+//     }
+
+//     if (form.triggerType === "customer_field_date") {
+//       if ((form.triggerConfig.dateTriggerMode || "field") === "inactive") {
+//         if (Number(form.triggerConfig.days) < 1) {
+//           showToast("Enter how many inactive days should trigger this automation", "warning");
+//           return;
+//         }
+//       } else if (!form.triggerConfig.fieldKey) {
+//         showToast("Choose a date field for the trigger", "warning");
+//         return;
+//       }
+//     }
+
+//     const missingMappings = templateVariables.filter((descriptor) => {
+//       const mapping = findVariableMapping(
+//         form.actionConfig.variableMappings,
+//         descriptor,
+//       );
+//       return !mapping?.value?.trim();
+//     });
+
+//     if (missingMappings.length > 0) {
+//       showToast("Fill all template variables before saving", "warning");
+//       return;
+//     }
+
+//     if (templateHeaderMediaType && !form.actionConfig.mediaUrl?.trim()) {
+//       showToast(
+//         `Add a ${templateHeaderMediaType.toLowerCase()} header URL or upload media before saving`,
+//         "warning",
+//       );
+//       return;
+//     }
+
+//     setShowSaveConfirm(true);
+//   };
+
+//   const audienceRuleValidation = validateRuleDraft(audienceDraftRule, fields);
+
+//   return (
+//     <>
+//       <div className="space-y-6">
+//         <div className="rounded-[28px] bg-gradient-to-r from-[#313166] to-[#3d3b83] px-6 py-6 text-white shadow-lg">
+//           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+//             <div className="flex items-start gap-4">
+//               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
+//                 <Zap className="h-6 w-6" />
+//               </div>
+//               <div>
+//                 <p className="text-xs uppercase tracking-[0.24em] text-white/60">
+//                   {isEditingAutomation
+//                     ? "Edit automation"
+//                     : "Create automation"}
+//                 </p>
+//                 <h2 className="mt-1 text-2xl font-semibold">{form.name}</h2>
+//                 <p className="mt-2 max-w-3xl text-sm text-white/75">
+//                   This builder now uses the real retention APIs, dynamic field
+//                   registry, and template catalog.
+//                 </p>
+//               </div>
+//             </div>
+
+//             <div className="flex flex-wrap gap-2">
+//               {steps.map((label, index) => (
+//                 <button
+//                   key={label}
+//                   type="button"
+//                   onClick={() => goToStep(index + 1)}
+//                   className="rounded-full px-3 py-1 text-xs font-medium transition-all"
+//                   style={{
+//                     backgroundColor:
+//                       step === index + 1 ? "white" : "rgba(255,255,255,0.1)",
+//                     color:
+//                       step === index + 1 ? "#313166" : "rgba(255,255,255,0.8)",
+//                   }}
+//                 >
+//                   {label}
+//                 </button>
+//               ))}
+//             </div>
+//           </div>
+
+//           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
+//             <button
+//               type="button"
+//               onClick={onBack}
+//               className="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-white/15"
+//             >
+//               <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
+//               Back to dashboard
+//             </button>
+
+//             <div className="text-xs uppercase tracking-[0.22em] text-white/55">
+//               Retention rhythm automation builder
+//             </div>
+//           </div>
+//         </div>
+
+//         <div
+//           className={`grid gap-6 ${step === actionStep || step === reviewStep ? "xl:grid-cols-[1.05fr_0.95fr]" : "grid-cols-1"}`}
+//         >
+//           <div className="space-y-6">
+//             <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+//               <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+//                 <div>
+//                   <div className="text-sm uppercase tracking-[0.22em] text-gray-400">
+//                     Step {step} of {totalSteps}
+//                   </div>
+//                   <h3 className="mt-1 text-lg font-semibold text-[#313166]">
+//                     {steps[step - 1]}
+//                   </h3>
+//                   <p className="text-sm text-gray-500">
+//                     Use dynamic fields, typed operators, and approved templates.
+//                   </p>
+//                 </div>
+
+//                 <div className="flex flex-wrap gap-2">
+//                   {steps.map((label, index) => (
+//                   <button
+//                       key={label}
+//                       type="button"
+//                       onClick={() => goToStep(index + 1)}
+//                       className="rounded-full px-3 py-1 text-xs font-medium transition-all"
+//                       style={{
+//                         backgroundColor:
+//                           step === index + 1 ? "#313166" : "#F4F5F9",
+//                         color: step === index + 1 ? "white" : "#313166",
+//                       }}
+//                     >
+//                       {label}
+//                     </button>
+//                   ))}
+//                 </div>
+//               </div>
+
+//               {step === 1 && (
+//                 <div className="space-y-4">
+//                   <label className="block">
+//                     <span className="mb-2 block text-sm font-medium text-[#313166]">
+//                       Automation name
+//                     </span>
+//                     <input
+//                       value={form.name}
+//                       onChange={(event) =>
+//                         setForm((previous) => ({
+//                           ...previous,
+//                           name: event.target.value,
+//                         }))
+//                       }
+//                       className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition-all focus:border-[#313166]"
+//                       placeholder="Enter automation name"
+//                     />
+//                   </label>
+
+//                   {/* <div className="grid gap-3 md:grid-cols-3">
+//                   {journeyOptions.map((option) => (
+//                     <button
+//                       key={option.id}
+//                       type="button"
+//                       onClick={() => setForm({ ...form, journeyType: option.id })}
+//                       className="rounded-2xl border p-4 text-left transition-all"
+//                       style={{
+//                         borderColor: form.journeyType === option.id ? "#CB376D" : "#E5E7EB",
+//                         backgroundColor: form.journeyType === option.id ? "#CB376D08" : "white",
+//                       }}
+//                     >
+//                       <div className="flex items-start justify-between gap-3">
+//                         <div>
+//                           <div className="font-semibold text-[#313166]">{option.title}</div>
+//                           <div className="mt-1 text-sm text-gray-500">{option.note}</div>
+//                         </div>
+//                         {form.journeyType === option.id ? <CheckCircle2 className="h-5 w-5 text-[#CB376D]" /> : null}
+//                       </div>
+//                     </button>
+//                   ))}
+//                 </div> */}
+//                 </div>
+//               )}
+
+//               {step === 2 && (
+//                 <div className="space-y-4">
+//                   {triggerGroups.map((group) => (
+//                     <div key={group.name}>
+//                       <div className="mb-3 flex items-center gap-2">
+//                         <span
+//                           className="h-2.5 w-2.5 rounded-full"
+//                           style={{ backgroundColor: group.color }}
+//                         />
+//                         <h4 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+//                           {group.name}
+//                         </h4>
+//                       </div>
+//                       <div className="grid gap-3 md:grid-cols-2">
+//                         {group.items.map((item) => {
+//                           const Icon = item.icon;
+//                           const active = form.triggerType === item.id;
+
+//                           return (
+//                             <button
+//                               key={item.id}
+//                               type="button"
+//                               onClick={() => {
+//                                 setForm((prev) => ({
+//                                   ...prev,
+//                                   triggerType: item.id,
+//                                 }));
+
+//                                 // 🚀 ADD THIS
+//                                 if (item.id === "new_customer") {
+//                                   setStep(3); // skip Audience for new customer
+//                                 }
+//                               }}
+//                               className="rounded-2xl border p-4 text-left transition-all"
+//                               style={{
+//                                 borderColor: active ? group.color : "#E5E7EB",
+//                                 backgroundColor: active
+//                                   ? `${group.color}08`
+//                                   : "white",
+//                               }}
+//                             >
+//                               <div className="flex items-center gap-3">
+//                                 <div
+//                                   className="flex h-10 w-10 items-center justify-center rounded-xl"
+//                                   style={{
+//                                     backgroundColor: `${group.color}15`,
+//                                   }}
+//                                 >
+//                                   <Icon
+//                                     className="h-5 w-5"
+//                                     style={{ color: group.color }}
+//                                   />
+//                                 </div>
+//                                 <div>
+//                                   <div className="font-semibold text-[#313166]">
+//                                     {item.name}
+//                                   </div>
+//                                   <div className="text-sm text-gray-500">
+//                                     Trigger this flow
+//                                   </div>
+//                                 </div>
+//                               </div>
+//                             </button>
+//                           );
+//                         })}
+//                       </div>
+//                     </div>
+//                   ))}
+
+//                   {form.triggerType === "customer_field_date" && (
+//                     <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
+//                       <div>
+//                         <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                           Trigger on
+//                         </label>
+//                         <select
+//                           value={form.triggerConfig.dateTriggerMode || "field"}
+//                           onChange={(event) =>
+//                             setForm((previous) => ({
+//                               ...previous,
+//                               triggerConfig: {
+//                                 ...previous.triggerConfig,
+//                                 dateTriggerMode: event.target.value,
+//                                 fieldKey:
+//                                   event.target.value === "inactive"
+//                                     ? ""
+//                                     : previous.triggerConfig.fieldKey || "",
+//                                 days:
+//                                   event.target.value === "inactive"
+//                                     ? Number(previous.triggerConfig.days) || 30
+//                                     : previous.triggerConfig.days ?? 30,
+//                               },
+//                             }))
+//                           }
+//                           className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                         >
+//                           <option value="field">Customer date field</option>
+//                           <option value="inactive">Inactive days</option>
+//                         </select>
+//                       </div>
+
+//                       {(form.triggerConfig.dateTriggerMode || "field") === "field" ? (
+//                         <>
+//                           <div>
+//                             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                               Date field
+//                             </label>
+//                             <select
+//                               value={form.triggerConfig.fieldKey}
+//                               onChange={(event) =>
+//                                 setForm((previous) => ({
+//                                   ...previous,
+//                                   triggerConfig: {
+//                                     ...previous.triggerConfig,
+//                                     fieldKey: event.target.value,
+//                                   },
+//                                 }))
+//                               }
+//                               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                             >
+//                               <option value="">Choose a date field</option>
+//                               {dateFields.map((field) => (
+//                                 <option key={field.fieldKey} value={field.fieldKey}>
+//                                   {field.label} ({field.sourceSection})
+//                                 </option>
+//                               ))}
+//                             </select>
+//                           </div>
+
+//                           <div>
+//                             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                               Days before
+//                             </label>
+//                             <input
+//                               type="number"
+//                               min="0"
+//                               value={form.triggerConfig.daysBefore ?? 0}
+//                               onChange={(event) =>
+//                                 setForm((previous) => ({
+//                                   ...previous,
+//                                   triggerConfig: {
+//                                     ...previous.triggerConfig,
+//                                     daysBefore: Math.max(
+//                                       0,
+//                                       Number(event.target.value) || 0,
+//                                     ),
+//                                   },
+//                                 }))
+//                               }
+//                               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                               placeholder="0"
+//                             />
+//                           </div>
+
+//                           <div>
+//                             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                               Trigger time
+//                             </label>
+//                             <input
+//                               type="time"
+//                               value={form.triggerConfig.triggerTime || "09:00"}
+//                               onChange={(event) =>
+//                                 setForm((previous) => ({
+//                                   ...previous,
+//                                   triggerConfig: {
+//                                     ...previous.triggerConfig,
+//                                     triggerTime: event.target.value,
+//                                   },
+//                                 }))
+//                               }
+//                               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                             />
+//                           </div>
+
+//                           <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
+//                             <div>
+//                               {selectedDateField
+//                                 ? `${selectedDateField.label} will trigger ${Number(form.triggerConfig.daysBefore) || 0} day${Number(form.triggerConfig.daysBefore) === 1 ? "" : "s"} before the date at ${formatScheduleTime(form.triggerConfig.triggerTime || "09:00")}.`
+//                                 : "Pick a date field and set how many days before it should trigger."}
+//                             </div>
+//                             {selectedDateField &&
+//                               (String(selectedDateField.fieldKey).toLowerCase().includes("birthday") ||
+//                                 String(selectedDateField.fieldKey).toLowerCase().includes("anniversary")) && (
+//                                 <div className="mt-1">
+//                                   Birthday and anniversary fields repeat every year.
+//                                 </div>
+//                               )}
+//                           </div>
+//                         </>
+//                       ) : (
+//                         <>
+//                           <div>
+//                             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                               Inactive for how many days?
+//                             </label>
+//                             <input
+//                               type="number"
+//                               min="1"
+//                               value={form.triggerConfig.days || ""}
+//                               onChange={(event) =>
+//                                 setForm((previous) => ({
+//                                   ...previous,
+//                                   triggerConfig: {
+//                                     ...previous.triggerConfig,
+//                                     days: Math.max(1, Number(event.target.value) || 0),
+//                                   },
+//                                 }))
+//                               }
+//                               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                               placeholder="30"
+//                             />
+//                           </div>
+
+//                           <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
+//                             Customers who have been inactive for this many days will enter the flow.
+//                           </div>
+//                         </>
+//                       )}
+//                     </div>
+//                   )}
+
+//                   {form.triggerType === "whatsapp_keyword" && (
+//                     <input
+//                       value={form.triggerConfig.keyword || ""}
+//                       onChange={(event) =>
+//                         setForm({
+//                           ...form,
+//                           triggerConfig: {
+//                             ...form.triggerConfig,
+//                             keyword: event.target.value,
+//                           },
+//                         })
+//                       }
+//                       className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                       placeholder="Enter keyword"
+//                     />
+//                   )}
+
+//                   {form.triggerType === "customer_activity_completed" && (
+//                     <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
+//                       <div className="grid gap-3 md:grid-cols-2">
+//                         <div>
+//                           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                             Activity selection
+//                           </label>
+//                           <select
+//                             value={form.triggerConfig.activityScope || "all"}
+//                             onChange={(event) =>
+//                               setForm((previous) => ({
+//                                 ...previous,
+//                                 triggerConfig: {
+//                                   ...previous.triggerConfig,
+//                                   activityScope: event.target.value,
+//                                   activityType:
+//                                     event.target.value === "all"
+//                                       ? ""
+//                                       : previous.triggerConfig.activityType || "spinWheel",
+//                                   activityCampaignScope:
+//                                     event.target.value === "all"
+//                                       ? "all"
+//                                       : previous.triggerConfig.activityCampaignScope || "all",
+//                                   activityCampaignId:
+//                                     event.target.value === "all"
+//                                       ? ""
+//                                       : previous.triggerConfig.activityCampaignId || "",
+//                                 },
+//                               }))
+//                             }
+//                             className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                           >
+//                             <option value="all">All activities</option>
+//                             <option value="specific">Specific activity</option>
+//                           </select>
+//                         </div>
+
+//                         {form.triggerConfig.activityScope === "specific" && (
+//                           <div>
+//                             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                               Activity type
+//                             </label>
+//                             <select
+//                               value={form.triggerConfig.activityType || "spinWheel"}
+//                               onChange={(event) =>
+//                                 setForm((previous) => ({
+//                                   ...previous,
+//                                   triggerConfig: {
+//                                     ...previous.triggerConfig,
+//                                     activityType: event.target.value,
+//                                     activityCampaignId: "",
+//                                     activityCampaignScope:
+//                                       previous.triggerConfig.activityCampaignScope || "all",
+//                                   },
+//                                 }))
+//                               }
+//                               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                             >
+//                               <option value="spinWheel">Spin Wheel</option>
+//                               <option value="scratchCard">Scratch Card</option>
+//                               <option value="quiz">Quiz</option>
+//                             </select>
+//                           </div>
+//                         )}
+//                       </div>
+
+//                       {(form.triggerConfig.activityScope || "all") === "specific" && (
+//                         <div className="grid gap-3 md:grid-cols-2">
+//                           <div>
+//                             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                               Campaign scope
+//                             </label>
+//                             <select
+//                               value={form.triggerConfig.activityCampaignScope || "all"}
+//                               onChange={(event) =>
+//                                 setForm((previous) => ({
+//                                   ...previous,
+//                                   triggerConfig: {
+//                                     ...previous.triggerConfig,
+//                                     activityCampaignScope: event.target.value,
+//                                     activityCampaignId:
+//                                       event.target.value === "all" ? "" : previous.triggerConfig.activityCampaignId || "",
+//                                   },
+//                                 }))
+//                               }
+//                               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                             >
+//                               <option value="all">All campaigns</option>
+//                               <option value="specific">Specific campaign</option>
+//                             </select>
+//                           </div>
+
+//                           {(form.triggerConfig.activityCampaignScope || "all") === "specific" && (
+//                             <div>
+//                               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                                 Select {activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label || "activity"} campaign
+//                               </label>
+//                               <select
+//                                 value={
+//                                   getCampaignSelectValue(
+//                                     activityCampaigns,
+//                                     form.triggerConfig.activityType,
+//                                     form.triggerConfig.activityCampaignId,
+//                                   )
+//                                 }
+//                                 onChange={(event) =>
+//                                   setForm((previous) => ({
+//                                     ...previous,
+//                                     triggerConfig: {
+//                                       ...previous.triggerConfig,
+//                                       activityCampaignId: event.target.value,
+//                                     },
+//                                   }))
+//                                 }
+//                                 className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                               >
+//                                 <option value="">
+//                                   Select a {activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label?.toLowerCase() || "campaign"}
+//                                 </option>
+//                                 {selectedActivityCampaigns.map((campaign) => (
+//                                   <option key={campaign._id} value={campaign._id}>
+//                                     {getCampaignLabel(campaign, form.triggerConfig.activityType)}
+//                                   </option>
+//                                 ))}
+//                               </select>
+//                             </div>
+//                           )}
+//                         </div>
+//                       )}
+
+//                       <div className="text-xs text-gray-500">
+//                         {(form.triggerConfig.activityScope || "all") === "all"
+//                           ? "Watching all completed activities."
+//                           : (form.triggerConfig.activityCampaignScope || "all") === "specific"
+//                             ? `Watching ${activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label || "a specific activity"}: ${selectedActivityCampaign ? getCampaignLabel(selectedActivityCampaign, form.triggerConfig.activityType) : "specific campaign"}.`
+//                             : `Watching ${activityOptions.find((item) => item.value === form.triggerConfig.activityType)?.label || "a specific activity"}.`}
+//                       </div>
+//                     </div>
+//                   )}
+
+//                   {form.triggerType === "scheduled_recurring" && (
+//                     <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
+//                       <div className="grid gap-3 md:grid-cols-2">
+//                         <div>
+//                           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                             Repeat
+//                           </label>
+//                           <select
+//                             value={form.triggerConfig.scheduleType || "daily"}
+//                             onChange={(event) =>
+//                               setForm((previous) => ({
+//                                 ...previous,
+//                                 triggerConfig: {
+//                                   ...previous.triggerConfig,
+//                                   scheduleType: event.target.value,
+//                                 },
+//                               }))
+//                             }
+//                             className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                           >
+//                             <option value="daily">Daily</option>
+//                             <option value="weekly">Weekly</option>
+//                             <option value="monthly">Monthly</option>
+//                           </select>
+//                         </div>
+//                         <div>
+//                           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                             Exact time
+//                           </label>
+//                           <input
+//                             type="time"
+//                             value={form.triggerConfig.scheduleTime || "09:00"}
+//                             onChange={(event) =>
+//                               setForm((previous) => ({
+//                                 ...previous,
+//                                 triggerConfig: {
+//                                   ...previous.triggerConfig,
+//                                   scheduleTime: event.target.value,
+//                                 },
+//                               }))
+//                             }
+//                             className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                           />
+//                         </div>
+//                       </div>
+
+//                       <div className="grid gap-3 md:grid-cols-2">
+//                         {form.triggerConfig.scheduleType === "weekly" && (
+//                           <div>
+//                             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                               Weekday
+//                             </label>
+//                             <select
+//                               value={form.triggerConfig.scheduleDayOfWeek ?? 1}
+//                               onChange={(event) =>
+//                                 setForm((previous) => ({
+//                                   ...previous,
+//                                   triggerConfig: {
+//                                     ...previous.triggerConfig,
+//                                     scheduleDayOfWeek: Number(event.target.value),
+//                                   },
+//                                 }))
+//                               }
+//                               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                             >
+//                               {weekdayOptions.map((day) => (
+//                                 <option key={day.value} value={day.value}>
+//                                   {day.label}
+//                                 </option>
+//                               ))}
+//                             </select>
+//                           </div>
+//                         )}
+
+//                         {form.triggerConfig.scheduleType === "monthly" && (
+//                           <div>
+//                             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+//                               Date
+//                             </label>
+//                             <select
+//                               value={form.triggerConfig.scheduleDayOfMonth ?? 1}
+//                               onChange={(event) =>
+//                                 setForm((previous) => ({
+//                                   ...previous,
+//                                   triggerConfig: {
+//                                     ...previous.triggerConfig,
+//                                     scheduleDayOfMonth: Number(event.target.value),
+//                                   },
+//                                 }))
+//                               }
+//                               className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                             >
+//                               {Array.from({ length: 31 }, (_, index) => index + 1).map(
+//                                 (day) => (
+//                                   <option key={day} value={day}>
+//                                     {day}
+//                                   </option>
+//                                 ),
+//                               )}
+//                             </select>
+//                           </div>
+//                         )}
+//                       </div>
+
+//                       <div className="rounded-xl bg-[#F4F5F9] px-4 py-3 text-xs text-gray-500">
+//                         {form.triggerConfig.scheduleType === "daily" &&
+//                           `Runs every day at ${formatScheduleTime(form.triggerConfig.scheduleTime)}`}
+//                         {form.triggerConfig.scheduleType === "weekly" &&
+//                           `Runs every ${weekdayOptions.find((day) => day.value === Number(form.triggerConfig.scheduleDayOfWeek))?.label || "week day"} at ${formatScheduleTime(form.triggerConfig.scheduleTime)}`}
+//                         {form.triggerConfig.scheduleType === "monthly" &&
+//                           `Runs on day ${form.triggerConfig.scheduleDayOfMonth || 1} at ${formatScheduleTime(form.triggerConfig.scheduleTime)}`}
+//                       </div>
+//                     </div>
+//                   )}
+//                 </div>
+//               )}
+
+//               {audienceStep && step === audienceStep && (
+//                 <div className="space-y-4">
+//                   <RuleComposer
+//                     label="Audience rules"
+//                     fields={fields}
+//                     rules={form.audienceRules.conditions}
+//                     draftRule={audienceDraftRule}
+//                     onDraftChange={setAudienceDraftRule}
+//                     onAddRule={() =>
+//                       addRule("audienceRules", audienceDraftRule)
+//                     }
+//                     onRemoveRule={(index) => removeRule("audienceRules", index)}
+//                     logic={form.audienceRules.logic}
+//                     onLogicChange={(logic) =>
+//                       setForm((previous) => ({
+//                         ...previous,
+//                         audienceRules: { ...previous.audienceRules, logic },
+//                       }))
+//                     }
+//                     canAddRule={audienceRuleValidation.valid}
+//                     addRuleHint={audienceRuleValidation.message}
+//                   />
+//                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+//                     {previewQuickSegments.map((segment) => (
+//                       <button
+//                         key={segment.key}
+//                         type="button"
+//                         onClick={() => applyQuickSegment(segment)}
+//                         className="rounded-2xl border px-4 py-3 text-left transition-all"
+//                         style={{
+//                           borderColor:
+//                             form.audienceRules.conditions.length ===
+//                             segment.rules.conditions.length
+//                               ? "#313166"
+//                               : "#E5E7EB",
+//                           backgroundColor: "#fff",
+//                         }}
+//                       >
+//                         <div className="font-semibold text-[#313166]">
+//                           {segment.label}
+//                         </div>
+//                         <div className="text-xs text-gray-500">
+//                           Audience preset
+//                         </div>
+//                       </button>
+//                     ))}
+//                   </div>
+
+//                   <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
+//                     <div className="mb-2 text-sm font-semibold text-[#313166]">
+//                       Dynamic customer fields
+//                     </div>
+//                     <div className="flex flex-wrap gap-2">
+//                       {fields.map((field) => (
+//                         <span
+//                           key={field.fieldKey}
+//                           className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#313166]"
+//                         >
+//                           {field.label}
+//                         </span>
+//                       ))}
+//                     </div>
+//                   </div>
+
+//                   <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+//                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+//                       <div>
+//                         <div className="text-sm font-semibold text-[#313166]">
+//                           Audience preview
+//                         </div>
+//                         <div className="text-xs text-gray-500">
+//                           Live estimate based on the current audience rules.
+//                         </div>
+//                       </div>
+//                       <button
+//                         type="button"
+//                         onClick={() => {
+//                           setAudiencePreview((previous) => ({
+//                             ...previous,
+//                             loading: true,
+//                             error: "",
+//                           }));
+//                           api
+//                             .post("/api/retention-automations/preview-audience", {
+//                               audienceRules: form.audienceRules,
+//                               search: "",
+//                               limit: 5
+//                             })
+//                             .then((response) => {
+//                               setAudiencePreview({
+//                                 loading: false,
+//                                 count: response.data?.data?.count || 0,
+//                                 customers: response.data?.data?.customers || [],
+//                                 error: "",
+//                               });
+//                             })
+//                             .catch((error) => {
+//                               setAudiencePreview((previous) => ({
+//                                 ...previous,
+//                                 loading: false,
+//                                 error:
+//                                   error.response?.data?.message ||
+//                                   "Failed to preview the current audience",
+//                               }));
+//                             });
+//                         }}
+//                         className="inline-flex items-center rounded-xl border border-[#313166] px-3 py-2 text-xs font-medium text-[#313166]"
+//                       >
+//                         Refresh preview
+//                       </button>
+//                     </div>
+
+//                     <div className="mt-4 grid gap-3 sm:grid-cols-3">
+//                       <div className="rounded-2xl bg-[#313166] px-4 py-4 text-white">
+//                         <div className="text-xs uppercase tracking-[0.2em] text-white/60">
+//                           Matching customers
+//                         </div>
+//                         <div className="mt-2 text-3xl font-semibold">
+//                           {audiencePreview.loading ? "..." : audiencePreview.count}
+//                         </div>
+//                       </div>
+//                       <div className="rounded-2xl bg-[#F4F5F9] px-4 py-4">
+//                         <div className="text-xs uppercase tracking-[0.2em] text-gray-400">
+//                           Preview state
+//                         </div>
+//                         <div className="mt-2 text-sm font-medium text-[#313166]">
+//                           {audiencePreview.loading
+//                             ? "Refreshing preview"
+//                             : audiencePreview.error
+//                               ? "Preview unavailable"
+//                               : "Preview ready"}
+//                         </div>
+//                         <div className="mt-1 text-xs text-gray-500">
+//                           {audiencePreview.error || "Shows the latest filtered audience."}
+//                         </div>
+//                       </div>
+//                       <div className="rounded-2xl bg-[#F4F5F9] px-4 py-4">
+//                         <div className="text-xs uppercase tracking-[0.2em] text-gray-400">
+//                           Sample size
+//                         </div>
+//                         <div className="mt-2 text-3xl font-semibold text-[#313166]">
+//                           {audiencePreview.customers?.length || 0}
+//                         </div>
+//                       </div>
+//                     </div>
+
+//                     <div className="mt-4">
+//                       <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+//                         Sample customers
+//                       </div>
+//                       {audiencePreview.customers?.length ? (
+//                         <div className="space-y-2">
+//                           {audiencePreview.customers.map((customer) => (
+//                             <div
+//                               key={customer._id}
+//                               className="flex items-center justify-between rounded-xl border border-gray-100 bg-[#FCFCFF] px-4 py-3 text-sm"
+//                             >
+//                               <div>
+//                                 <div className="font-medium text-[#313166]">
+//                                   {[customer.firstname, customer.lastname]
+//                                     .filter(Boolean)
+//                                     .join(" ") || "Unknown Customer"}
+//                                 </div>
+//                                 <div className="text-xs text-gray-500">
+//                                   {formatPhone(customer.countryCode, customer.mobileNumber)}
+//                                 </div>
+//                               </div>
+//                               <span className="rounded-full bg-[#31316610] px-3 py-1 text-[11px] font-medium text-[#313166]">
+//                                 Preview
+//                               </span>
+//                             </div>
+//                           ))}
+//                         </div>
+//                       ) : (
+//                         <div className="rounded-xl border border-dashed border-gray-200 bg-[#FCFCFF] px-4 py-5 text-sm text-gray-500">
+//                           {audiencePreview.loading
+//                             ? "Loading matching customers..."
+//                             : "No customers match the current preview."}
+//                         </div>
+//                       )}
+//                     </div>
+//                   </div>
+
+//                 </div>
+//               )}
+
+//               {step === actionStep && (
+//                 <div className="space-y-4">
+//                   <select
+//                     value={form.actionConfig.templateId}
+//                     onChange={(event) => updateTemplate(event.target.value)}
+//                     className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                   >
+//                     <option value="">Choose WhatsApp template</option>
+//                     {templates.map((template) => (
+//                       <option key={template._id} value={template._id}>
+//                         {template.name} ({template.status})
+//                       </option>
+//                     ))}
+//                   </select>
+
+//                   {templateHeaderMediaType && (
+//                     <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
+//                       <div className="text-sm font-semibold text-[#313166]">
+//                         {templateHeaderMediaType} header media
+//                       </div>
+//                       <p className="text-sm text-gray-500">
+//                         This template uses a media header. Add the file URL or
+//                         upload the media that should be sent with the
+//                         automation.
+//                       </p>
+//                       <input
+//                         value={form.actionConfig.mediaUrl || ""}
+//                         onChange={(event) =>
+//                           setForm({
+//                             ...form,
+//                             actionConfig: {
+//                               ...form.actionConfig,
+//                               mediaUrl: event.target.value,
+//                               mediaType: templateHeaderMediaType,
+//                             },
+//                           })
+//                         }
+//                         className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                         placeholder={`Paste ${templateHeaderMediaType.toLowerCase()} URL here...`}
+//                       />
+//                       <div className="flex flex-wrap items-center gap-3">
+//                         <label className="inline-flex cursor-pointer items-center rounded-xl border border-[#313166] px-4 py-2 text-sm font-medium text-[#313166]">
+//                           <input
+//                             type="file"
+//                             className="hidden"
+//                             accept={
+//                               templateHeaderMediaType === "IMAGE"
+//                                 ? "image/*"
+//                                 : templateHeaderMediaType === "VIDEO"
+//                                   ? "video/*"
+//                                   : ".pdf,.doc,.docx"
+//                             }
+//                             onChange={handleMediaUpload}
+//                           />
+//                           {uploadingMedia
+//                             ? "Uploading..."
+//                             : form.actionConfig.mediaUrl
+//                               ? "Replace File"
+//                               : "Upload File"}
+//                         </label>
+//                         {form.actionConfig.mediaUrl ? (
+//                           <span className="truncate text-xs text-gray-500">
+//                             {form.actionConfig.mediaUrl}
+//                           </span>
+//                         ) : null}
+//                       </div>
+//                     </div>
+//                   )}
+
+//                   <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
+//                     <div className="flex flex-wrap gap-2">
+//                       {delayOptions.map((item) => {
+//                         const isSelected =
+//                           form.delay.mode === item.mode &&
+//                           form.delay.value === item.value &&
+//                           form.delay.unit === item.unit;
+
+//                         return (
+//                           <button
+//                             key={item.label}
+//                             type="button"
+//                             onClick={() =>
+//                               setForm((previous) => ({
+//                                 ...previous,
+//                                 delay: {
+//                                   mode: item.mode,
+//                                   value: item.value,
+//                                   unit: item.unit,
+//                                 },
+//                               }))
+//                             }
+//                             className="rounded-full border px-3 py-1 text-xs font-medium transition-all"
+//                             style={{
+//                               backgroundColor: isSelected ? "#313166" : "white",
+//                               color: isSelected ? "white" : "#313166",
+//                               borderColor: isSelected ? "#313166" : "#E5E7EB",
+//                             }}
+//                           >
+//                             {item.label}
+//                           </button>
+//                         );
+//                       })}
+//                     </div>
+
+//                     <div className="grid gap-3 sm:grid-cols-[1fr_160px]">
+//                       <div className="space-y-1">
+//                         <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+//                           Custom delay
+//                         </div>
+//                         <input
+//                           type="number"
+//                           min="0"
+//                           step="1"
+//                           value={form.delay.value}
+//                           onChange={(event) =>
+//                             setForm((previous) => ({
+//                               ...previous,
+//                               delay: {
+//                                 ...previous.delay,
+//                                 mode: Number(event.target.value) > 0 ? "delay" : "immediate",
+//                                 value: Number(event.target.value) || 0,
+//                               },
+//                             }))
+//                           }
+//                           className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                           placeholder="Enter a value"
+//                         />
+//                       </div>
+//                       <div className="space-y-1">
+//                         <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+//                           Unit
+//                         </div>
+//                         <select
+//                           value={form.delay.unit}
+//                           onChange={(event) =>
+//                             setForm((previous) => ({
+//                               ...previous,
+//                               delay: {
+//                                 ...previous.delay,
+//                                 mode: Number(previous.delay.value) > 0 ? "delay" : "immediate",
+//                                 unit: event.target.value,
+//                               },
+//                             }))
+//                           }
+//                           className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                         >
+//                           {delayUnitOptions.map((unit) => (
+//                             <option key={unit.value} value={unit.value}>
+//                               {unit.label}
+//                             </option>
+//                           ))}
+//                         </select>
+//                       </div>
+//                     </div>
+//                     <div className="text-xs text-gray-500">
+//                       Use the quick options above, or set a custom after delay in minutes, hours, or days.
+//                     </div>
+//                   </div>
+
+//                   {templateVariables.length > 0 && (
+//                     <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
+//                       <div className="text-sm font-semibold text-[#313166]">
+//                         Template variable mapping
+//                       </div>
+//                       {templateVariables.map((descriptor) => {
+//                         const mapping = findVariableMapping(
+//                           form.actionConfig.variableMappings,
+//                           descriptor,
+//                         ) || {
+//                           componentType: descriptor.componentType,
+//                           variable: descriptor.variable,
+//                           sourceType: "customer_field",
+//                           value: "firstname",
+//                         };
+//                         return (
+//                           <div
+//                             key={descriptor.key}
+//                             className="grid gap-3 md:grid-cols-3"
+//                           >
+//                             <div className="space-y-1">
+//                               <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+//                                 {descriptor.componentType}
+//                               </div>
+//                               <input
+//                                 value={descriptor.variable}
+//                                 readOnly
+//                                 className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm"
+//                               />
+//                             </div>
+//                             <select
+//                               value={mapping.sourceType}
+//                               onChange={(event) => {
+//                                 const nextMappings = upsertVariableMapping(
+//                                   form.actionConfig.variableMappings,
+//                                   descriptor,
+//                                   {
+//                                     ...mapping,
+//                                     sourceType: event.target.value,
+//                                     value: "",
+//                                   },
+//                                 );
+//                                 setForm({
+//                                   ...form,
+//                                   actionConfig: {
+//                                     ...form.actionConfig,
+//                                     variableMappings: nextMappings,
+//                                   },
+//                                 });
+//                               }}
+//                               className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                             >
+//                               <option value="customer_field">
+//                                 Customer field
+//                               </option>
+//                               <option value="static">Static value</option>
+//                               <option value="derived">Derived value</option>
+//                             </select>
+//                             {mapping.sourceType === "customer_field" ? (
+//                               <select
+//                                 value={mapping.value}
+//                                 onChange={(event) => {
+//                                   const nextMappings = upsertVariableMapping(
+//                                     form.actionConfig.variableMappings,
+//                                     descriptor,
+//                                     {
+//                                       ...mapping,
+//                                       value: event.target.value,
+//                                     },
+//                                   );
+//                                   setForm({
+//                                     ...form,
+//                                     actionConfig: {
+//                                       ...form.actionConfig,
+//                                       variableMappings: nextMappings,
+//                                     },
+//                                   });
+//                                 }}
+//                                 className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                               >
+//                                 <option value="">Choose field</option>
+//                                 {fields.map((field) => (
+//                                   <option
+//                                     key={field.fieldKey}
+//                                     value={field.fieldKey}
+//                                   >
+//                                     {field.label}
+//                                   </option>
+//                                 ))}
+//                               </select>
+//                             ) : mapping.sourceType === "derived" ? (
+//                               <select
+//                                 value={mapping.value}
+//                                 onChange={(event) => {
+//                                   const nextMappings = upsertVariableMapping(
+//                                     form.actionConfig.variableMappings,
+//                                     descriptor,
+//                                     {
+//                                       ...mapping,
+//                                       value: event.target.value,
+//                                     },
+//                                   );
+//                                   setForm({
+//                                     ...form,
+//                                     actionConfig: {
+//                                       ...form.actionConfig,
+//                                       variableMappings: nextMappings,
+//                                     },
+//                                   });
+//                                 }}
+//                                 className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                               >
+//                                 <option value="">Choose derived value</option>
+//                                 <option value="full_name">Full name</option>
+//                                 <option value="first_name">First name</option>
+//                                 <option value="last_name">Last name</option>
+//                                 <option value="mobile_number">
+//                                   Mobile number
+//                                 </option>
+//                                 <option value="loyalty_points">
+//                                   Loyalty points
+//                                 </option>
+//                                 <option value="store_name">Store name</option>
+//                                 <option value="current_date">
+//                                   Current date
+//                                 </option>
+//                               </select>
+//                             ) : (
+//                               <input
+//                                 value={mapping.value}
+//                                 onChange={(event) => {
+//                                   const nextMappings = upsertVariableMapping(
+//                                     form.actionConfig.variableMappings,
+//                                     descriptor,
+//                                     {
+//                                       ...mapping,
+//                                       value: event.target.value,
+//                                     },
+//                                   );
+//                                   setForm({
+//                                     ...form,
+//                                     actionConfig: {
+//                                       ...form.actionConfig,
+//                                       variableMappings: nextMappings,
+//                                     },
+//                                   });
+//                                 }}
+//                                 className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+//                                 placeholder="Static value"
+//                               />
+//                             )}
+//                           </div>
+//                         );
+//                       })}
+//                     </div>
+//                   )}
+//                 </div>
+//               )}
+
+//               {step === reviewStep && (
+//                 <div className="space-y-8 py-4">
+//                   <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FBFBFE] via-white to-[#F5F6FC] p-4 sm:p-6">
+//                     <div className="pointer-events-none absolute left-[27px] top-10 bottom-10 w-0.5 border-l-2 border-dashed border-gray-200 lg:hidden" />
+
+//                     <div className="relative flex flex-col gap-10 lg:flex-row lg:justify-between lg:gap-4">
+//                       <div className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-7 hidden border-t-2 border-dashed border-[#D8DBEC] lg:block" />
+
+//                       {/* Trigger Node */}
+//                       <div className="z-10 flex flex-1 flex-col items-center">
+//                         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm outline outline-4 outline-white">
+//                           <Zap size={24} />
+//                         </div>
+//                         <div className="mt-3 text-center">
+//                           <div className="text-xs font-semibold uppercase tracking-wider text-emerald-600">
+//                             Trigger
+//                           </div>
+//                           <div className="mt-1 text-sm font-bold text-[#313166]">
+//                             {form.triggerType.replaceAll("_", " ")}
+//                           </div>
+//                           <div className="mt-0.5 text-xs text-gray-500">
+//                             Starts the journey
+//                           </div>
+//                         </div>
+//                       </div>
+
+//                       {/* Delay Node */}
+//                       <div className="z-10 flex flex-1 flex-col items-center">
+//                         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 shadow-sm outline outline-4 outline-white">
+//                           <Clock size={24} />
+//                         </div>
+//                         <div className="mt-3 text-center">
+//                           <div className="text-xs font-semibold uppercase tracking-wider text-amber-600">
+//                             Delay
+//                           </div>
+//                           <div className="mt-1 text-sm font-bold text-[#313166]">
+//                             {formatDelayLabel(form.delay)}
+//                           </div>
+//                           <div className="mt-0.5 text-xs text-gray-500">
+//                             Wait before action
+//                           </div>
+//                         </div>
+//                       </div>
+
+//                       {/* Action Node */}
+//                       <div className="z-10 flex flex-1 flex-col items-center">
+//                         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#31316610] text-[#313166] shadow-sm outline outline-4 outline-white">
+//                           <MessageCircle size={24} />
+//                         </div>
+//                         <div className="mt-3 text-center">
+//                           <div className="text-xs font-semibold uppercase tracking-wider text-[#313166]">
+//                             Action
+//                           </div>
+//                           <div className="mt-1 text-sm font-bold text-[#313166]">
+//                             {selectedTemplate?.name || "WhatsApp Message"}
+//                           </div>
+//                           <div className="mt-0.5 text-xs text-gray-500">
+//                             Send template
+//                           </div>
+//                         </div>
+//                       </div>
+//                     </div>
+//                   </div>
+
+//                   {/* Configuration Summary Cards */}
+//                   <div className="grid gap-4 md:grid-cols-2">
+//                     {audienceStep ? (
+//                       <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-5">
+//                         <div className="mb-3 flex items-center justify-between">
+//                           <h4 className="text-sm font-bold text-[#313166]">
+//                             Audience Filtering
+//                           </h4>
+//                           <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+//                             {form.audienceRules.logic}
+//                           </span>
+//                         </div>
+//                         <div className="space-y-2">
+//                           {form.audienceRules.conditions.length > 0 ? (
+//                             form.audienceRules.conditions.map((rule, idx) => {
+//                               const field = fields.find(
+//                                 (f) => f.fieldKey === rule.fieldKey,
+//                               );
+//                               return (
+//                                 <div
+//                                   key={idx}
+//                                   className="flex items-center gap-2 text-xs text-gray-600"
+//                                 >
+//                                   <CheckCircle2
+//                                     size={12}
+//                                     className="text-emerald-500"
+//                                   />
+//                                   <span>
+//                                     <b>{field?.label || rule.fieldKey}</b>{" "}
+//                                     {operatorLabels[rule.operator] ||
+//                                       rule.operator}{" "}
+//                                     <b>{rule.value || ""}</b>
+//                                   </span>
+//                                 </div>
+//                               );
+//                             })
+//                           ) : (
+//                             <div className="text-xs text-gray-500 italic">
+//                               No audience rules (targeting all)
+//                             </div>
+//                           )}
+//                         </div>
+//                       </div>
+//                     ) : (
+//                       <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-5">
+//                         <div className="text-sm font-bold text-[#313166]">
+//                           Audience step skipped
+//                         </div>
+//                         <div className="mt-2 text-xs text-gray-500">
+//                           New customer journeys go straight from the trigger to
+//                           the action step.
+//                         </div>
+//                       </div>
+//                     )}
+//                   </div>
+//                 </div>
+//               )}
+
+//               <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-6">
+//                 <button
+//                   type="button"
+//                   onClick={onBack}
+//                   className="rounded-xl border border-[#313166] px-5 py-2.5 text-sm font-medium text-[#313166]"
+//                 >
+//                   Back to dashboard
+//                 </button>
+
+//                 <div className="text-sm text-gray-500">Step {step} of {totalSteps}</div>
+
+//                 {step < totalSteps ? (
+//                   <button
+//                     type="button"
+//                     onClick={() => goToStep(step + 1)}
+//                     className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white"
+//                   >
+//                     Next Step
+//                   </button>
+//                 ) : (
+//                   <button
+//                     type="button"
+//                     onClick={handleSave}
+//                     disabled={saving}
+//                     className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+//                   >
+//                     {saving
+//                       ? "Saving..."
+//                       : isEditingAutomation
+//                         ? "Update Automation"
+//                         : "Save Automation"}
+//                   </button>
+//                 )}
+//               </div>
+//             </div>
+//           </div>
+
+//           {step === actionStep && (
+//             <div className="space-y-6">
+//               <WhatsAppTemplatePreviewCard
+//                 template={selectedTemplate}
+//                 headerComponent={templateHeader}
+//                 headerText={previewHeaderText}
+//                 bodyText={previewBodyText}
+//                 footerText={previewFooterText}
+//                 buttons={templateButtons}
+//                 mediaType={templateHeaderMediaType}
+//                 mediaUrl={form.actionConfig.mediaUrl}
+//               />
+
+//               <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+//                 <div className="flex items-center justify-between">
+//                   <div>
+//                     <div className="text-xs uppercase tracking-[0.22em] text-gray-400">
+//                       Template Summary
+//                     </div>
+//                     <h4 className="mt-1 text-lg font-semibold text-[#313166]">
+//                       {selectedTemplate?.name || "No template selected"}
+//                     </h4>
+//                   </div>
+//                   <div className="rounded-full bg-[#F4F5F9] px-3 py-1 text-xs font-medium text-[#313166]">
+//                     Action step
+//                   </div>
+//                 </div>
+
+//                 <div className="mt-4 space-y-3 text-sm text-gray-600">
+//                   <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#F4F5F9] px-4 py-3">
+//                     <span>Body variables</span>
+//                     <span className="font-semibold text-[#313166]">
+//                       {templateVariables.filter((item) => item.componentType === "BODY").length}
+//                     </span>
+//                   </div>
+//                   <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#F4F5F9] px-4 py-3">
+//                     <span>Header type</span>
+//                     <span className="font-semibold text-[#313166]">
+//                       {templateHeader?.format || "TEXT"}
+//                     </span>
+//                   </div>
+//                   <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#F4F5F9] px-4 py-3">
+//                     <span>Buttons</span>
+//                     <span className="font-semibold text-[#313166]">
+//                       {templateButtons.length}
+//                     </span>
+//                   </div>
+//                   <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#F4F5F9] px-4 py-3">
+//                     <span>Media status</span>
+//                     <span className="font-semibold text-[#313166]">
+//                       {templateHeaderMediaType
+//                         ? form.actionConfig.mediaUrl?.trim()
+//                           ? "Ready"
+//                           : "Missing media"
+//                         : "Not required"}
+//                     </span>
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+//           )}
+
+//           {step === reviewStep && (
+//             <div className="space-y-6">
+//               <div className="rounded-3xl bg-[#313166] p-5 text-white shadow-lg">
+//                 <div className="flex items-center justify-between">
+//                   <div>
+//                     <div className="text-xs uppercase tracking-[0.25em] text-white/60">
+//                       Live Preview
+//                     </div>
+//                     <h3 className="mt-2 text-lg font-semibold">
+//                       WhatsApp Retention Flow
+//                     </h3>
+//                   </div>
+//                   <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
+//                     {selectedTriggerGroup.name}
+//                   </div>
+//                 </div>
+
+//                 <div className="mt-5 rounded-[28px] bg-[#171717] p-3 shadow-2xl">
+//                   <div className="overflow-hidden rounded-[22px] bg-[#0a0a0a]">
+//                     <div className="flex items-center gap-3 bg-[#075e54] px-4 py-3">
+//                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 font-semibold">
+//                         V
+//                       </div>
+//                       <div className="flex-1">
+//                         <div className="font-semibold">Vadik Business</div>
+//                         <div className="text-xs text-white/75">
+//                           retention automation preview
+//                         </div>
+//                       </div>
+//                     </div>
+
+//                     <div
+//                       className="min-h-[300px] space-y-3 px-4 py-4"
+//                       style={{
+//                         backgroundImage:
+//                           "repeating-linear-gradient(45deg, #0d1418 0px, #0d1418 10px, #0e1519 10px, #0e1519 20px)",
+//                       }}
+//                     >
+//                       <div className="flex justify-end">
+//                         <div className="max-w-[85%] overflow-hidden rounded-2xl rounded-tr-md bg-[#005c4b]">
+//                           {templateHeader?.format === "TEXT" &&
+//                           templateHeader?.text ? (
+//                             <div
+//                               className="border-b border-white/10 px-3 pb-2 pt-3 text-sm font-semibold text-white"
+//                               dangerouslySetInnerHTML={{
+//                                 __html: renderWhatsAppFormattedText(
+//                                   templateHeader.text,
+//                                 ),
+//                               }}
+//                             />
+//                           ) : null}
+
+//                           {templateHeaderMediaType ? (
+//                             <div className="border-b border-white/10 bg-black/10">
+//                               {form.actionConfig.mediaUrl ? (
+//                                 templateHeaderMediaType === "IMAGE" ? (
+//                                   <img
+//                                     src={form.actionConfig.mediaUrl}
+//                                     alt="Template header preview"
+//                                     className="max-h-64 w-full object-cover"
+//                                   />
+//                                 ) : templateHeaderMediaType === "VIDEO" ? (
+//                                   <video
+//                                     src={form.actionConfig.mediaUrl}
+//                                     controls
+//                                     className="max-h-64 w-full bg-black object-contain"
+//                                   />
+//                                 ) : (
+//                                   <div className="flex items-center gap-3 px-3 py-4 text-white">
+//                                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
+//                                       <FileText className="h-5 w-5" />
+//                                     </div>
+//                                     <div className="min-w-0">
+//                                       <div className="text-sm font-medium">
+//                                         Document attachment
+//                                       </div>
+//                                       <div className="truncate text-xs text-white/70">
+//                                         {form.actionConfig.mediaUrl}
+//                                       </div>
+//                                     </div>
+//                                   </div>
+//                                 )
+//                               ) : (
+//                                 <div className="flex min-h-[148px] flex-col items-center justify-center gap-2 px-4 py-6 text-center text-white/70">
+//                                   {templateHeaderMediaType === "IMAGE" && (
+//                                     <ImageIcon className="h-7 w-7" />
+//                                   )}
+//                                   {templateHeaderMediaType === "VIDEO" && (
+//                                     <Play className="h-7 w-7" />
+//                                   )}
+//                                   {templateHeaderMediaType === "DOCUMENT" && (
+//                                     <FileText className="h-7 w-7" />
+//                                   )}
+//                                   <div className="text-xs font-medium">
+//                                     {templateHeaderMediaType.toLowerCase()}{" "}
+//                                     header will appear here
+//                                   </div>
+//                                 </div>
+//                               )}
+//                             </div>
+//                           ) : null}
+
+//                           <div className="p-3">
+//                             <div
+//                               className="whitespace-pre-wrap text-sm text-white"
+//                               dangerouslySetInnerHTML={{
+//                                 __html:
+//                                   renderWhatsAppFormattedText(previewBodyText),
+//                               }}
+//                             />
+//                             <div className="mt-1 text-right text-xs text-white/60">
+//                               {formatScheduleTime(
+//                                 form.triggerConfig.scheduleTime || "09:00",
+//                               )}
+//                             </div>
+//                           </div>
+//                         </div>
+//                       </div>
+//                     </div>
+
+//                     <div className="flex items-center gap-2 bg-[#1f2c33] px-3 py-2">
+//                       <div className="flex-1 rounded-full bg-[#2a3942] px-4 py-2 text-sm text-[#8696a0]">
+//                         Type a message
+//                       </div>
+//                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00a884]">
+//                         <ArrowRight className="h-5 w-5 text-white" />
+//                       </div>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+
+//             </div>
+//           )}
+//         </div>
+//       </div>
+
+//       <ConfirmationDialog
+//         isOpen={showSaveConfirm}
+//         title={isEditingAutomation ? "Update Automation?" : "Save Automation?"}
+//         message={
+//           isEditingAutomation
+//             ? "Do you want to save these changes to this automation?"
+//             : "Do you want to save this automation now?"
+//         }
+//         confirmLabel={isEditingAutomation ? "Yes, Update" : "Yes, Save"}
+//         cancelLabel="No"
+//         loading={saving}
+//         onCancel={() => setShowSaveConfirm(false)}
+//         onConfirm={() => {
+//           setShowSaveConfirm(false);
+//           onSave(form);
+//         }}
+//       />
+//     </>
+//   );
+// }
 
 function AutomationLogsView({ automation, onBack }) {
   const [logs, setLogs] = useState([]);
