@@ -14,7 +14,7 @@ import { useChatNotification } from "../context/ChatNotificationContext";
   const { auth } = useAuth();
   const location = useLocation();
   const [soon, setSoon] = useState();
-  const [activeSection, setActiveSection] = useState("live_chat");
+ const [activeSection, setActiveSection] = useState("templates");
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [templateToCopy, setTemplateToCopy] = useState(null);
 
@@ -28,7 +28,7 @@ import { useChatNotification } from "../context/ChatNotificationContext";
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
-    if (section && ["templates", "send_campaign", "retention", "engagement", "live_chat"].includes(section)) {
+    if (section && ["templates", "send_campaign", "retention", "engagement"].includes(section)) {
       setActiveSection(section);
     }
   }, [location.search]);
@@ -51,7 +51,7 @@ import { useChatNotification } from "../context/ChatNotificationContext";
           
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="app-tabs-row rounded-xl bg-gray-100 p-1 shadow-inner">
-              <button
+              {/* <button
                 onClick={() => setActiveSection("live_chat")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                   activeSection === "live_chat"
@@ -61,7 +61,7 @@ import { useChatNotification } from "../context/ChatNotificationContext";
               >
                 <MessageCircle size={18} />
                 Live Chat
-              </button>
+              </button> */}
               <button
                 onClick={() => setActiveSection("templates")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
@@ -118,9 +118,9 @@ import { useChatNotification } from "../context/ChatNotificationContext";
 
       {/* Main Content Area */}
       <div className={`min-h-0 flex-1 overflow-auto ${isCreatingTemplate ? '' : 'rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm sm:p-5 lg:p-6'}`}>
-        {activeSection === "live_chat" && (
+        {/* {activeSection === "live_chat" && (
           <LiveChat />
-        )}
+        )} */}
         {activeSection === "templates" && (
           isCreatingTemplate ? (
             <TemplateBuilder 

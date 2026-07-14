@@ -26,6 +26,8 @@ import { useRef } from "react";
 import { toPng } from "html-to-image";
 import QRStyleOption from "../components/QRStyleOption";
 
+
+
 const loadImage = (src) =>
   new Promise((resolve, reject) => {
     if (!src) {
@@ -323,6 +325,38 @@ const QRGenerator = () => {
   const [eyeFrame, setEyeFrame] = useState("square");
 
   const [eyeBall, setEyeBall] = useState("square");
+
+  const [titleColor, setTitleColor] = useState("#1F2937");
+  const [subtitleColor, setSubtitleColor] = useState("#9CA3AF");
+  const [statementColor, setStatementColor] = useState("#374151");
+
+  const [tempTitleColor, setTempTitleColor] = useState(titleColor);
+  const [tempSubtitleColor, setTempSubtitleColor] = useState(subtitleColor);
+  const [tempStatementColor, setTempStatementColor] = useState(statementColor);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTitleColor(tempTitleColor);
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [tempTitleColor]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSubtitleColor(tempSubtitleColor);
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [tempSubtitleColor]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setStatementColor(tempStatementColor);
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [tempStatementColor]);
 
   // Eye frame
   const [eyeRadius, setEyeRadius] = useState([
@@ -784,9 +818,9 @@ const QRGenerator = () => {
       const hasHeader = Boolean(brandingName || topLogoImage || qrSubtitle);
       const headerHeight = hasHeader
         ? (topLogoImage ? logoSize * 2 : 0) +
-          (brandingName ? brandMeasure.height + 10 : 0) +
-          (qrSubtitle ? subtitleMeasure.height + 10 : 0) +
-          20
+        (brandingName ? brandMeasure.height + 10 : 0) +
+        (qrSubtitle ? subtitleMeasure.height + 10 : 0) +
+        20
         : 0;
 
       const footerHeight = qrStatement ? statementMeasure.height + 40 : 0;
@@ -969,6 +1003,8 @@ const QRGenerator = () => {
 
   const getSavedQrUrl = (qr) => `${landingPageBaseUrl}/q/${qr.qrId}`;
 
+
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -1002,18 +1038,16 @@ const QRGenerator = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
                   onClick={() => handleQrTypeChange("registration")}
-                  className={`group flex flex-col items-start p-4 rounded-xl border transition-all ${
-                    qrType === "registration"
+                  className={`group flex flex-col items-start p-4 rounded-xl border transition-all ${qrType === "registration"
                       ? "border-indigo-300 bg-indigo-50/30 shadow-sm"
                       : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50"
-                  }`}
+                    }`}
                 >
                   <div
-                    className={`p-2 rounded-xl mb-3 ${
-                      qrType === "registration"
+                    className={`p-2 rounded-xl mb-3 ${qrType === "registration"
                         ? "bg-indigo-100 text-indigo-600"
                         : "bg-gray-100 text-gray-400 group-hover:text-gray-500"
-                    }`}
+                      }`}
                   >
                     <UserPlus className="w-5 h-5" />
                   </div>
@@ -1029,18 +1063,16 @@ const QRGenerator = () => {
 
                 <button
                   onClick={() => handleQrTypeChange("activity")}
-                  className={`group flex flex-col items-start p-4 rounded-xl border transition-all ${
-                    qrType === "activity"
+                  className={`group flex flex-col items-start p-4 rounded-xl border transition-all ${qrType === "activity"
                       ? "border-rose-300 bg-rose-50/30 shadow-sm"
                       : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50"
-                  }`}
+                    }`}
                 >
                   <div
-                    className={`p-2 rounded-xl mb-3 ${
-                      qrType === "activity"
+                    className={`p-2 rounded-xl mb-3 ${qrType === "activity"
                         ? "bg-rose-100 text-rose-500"
                         : "bg-gray-100 text-gray-400 group-hover:text-gray-500"
-                    }`}
+                      }`}
                   >
                     <Gamepad2 className="w-5 h-5" />
                   </div>
@@ -1161,105 +1193,105 @@ const QRGenerator = () => {
                                 <div className="absolute top-full right-0 mt-1 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-80 overflow-y-auto">
                                   {categorizedPreferences.additionalData
                                     .length > 0 && (
-                                    <div className="p-2">
-                                      <div className="flex items-center gap-2 px-2 py-1 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                        <Database className="w-3 h-3" />{" "}
-                                        Additional Data
+                                      <div className="p-2">
+                                        <div className="flex items-center gap-2 px-2 py-1 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                          <Database className="w-3 h-3" />{" "}
+                                          Additional Data
+                                        </div>
+                                        {categorizedPreferences.additionalData.map(
+                                          (pref) => (
+                                            <button
+                                              key={pref.key}
+                                              type="button"
+                                              onClick={() => {
+                                                handlePreferenceKeyChange(
+                                                  index,
+                                                  pref.key,
+                                                  "additionalData",
+                                                );
+                                                togglePreferenceDropdown(index);
+                                              }}
+                                              className="w-full px-3 py-2 text-left text-sm hover:bg-indigo-50 transition-colors rounded-lg flex items-center justify-between"
+                                            >
+                                              <span className="text-gray-700">
+                                                {pref.key}
+                                              </span>
+                                              <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded uppercase">
+                                                {pref.type}
+                                              </span>
+                                            </button>
+                                          ),
+                                        )}
                                       </div>
-                                      {categorizedPreferences.additionalData.map(
-                                        (pref) => (
-                                          <button
-                                            key={pref.key}
-                                            type="button"
-                                            onClick={() => {
-                                              handlePreferenceKeyChange(
-                                                index,
-                                                pref.key,
-                                                "additionalData",
-                                              );
-                                              togglePreferenceDropdown(index);
-                                            }}
-                                            className="w-full px-3 py-2 text-left text-sm hover:bg-indigo-50 transition-colors rounded-lg flex items-center justify-between"
-                                          >
-                                            <span className="text-gray-700">
-                                              {pref.key}
-                                            </span>
-                                            <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded uppercase">
-                                              {pref.type}
-                                            </span>
-                                          </button>
-                                        ),
-                                      )}
-                                    </div>
-                                  )}
+                                    )}
 
                                   {categorizedPreferences.advancedDetails
                                     .length > 0 && (
-                                    <div className="p-2 bg-gray-50/50">
-                                      <div className="flex items-center gap-2 px-2 py-1 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                        <LayoutDashboard className="w-3 h-3" />{" "}
-                                        Advanced Details
+                                      <div className="p-2 bg-gray-50/50">
+                                        <div className="flex items-center gap-2 px-2 py-1 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                          <LayoutDashboard className="w-3 h-3" />{" "}
+                                          Advanced Details
+                                        </div>
+                                        {categorizedPreferences.advancedDetails.map(
+                                          (pref) => (
+                                            <button
+                                              key={pref.key}
+                                              type="button"
+                                              onClick={() => {
+                                                handlePreferenceKeyChange(
+                                                  index,
+                                                  pref.key,
+                                                  "advancedDetails",
+                                                );
+                                                togglePreferenceDropdown(index);
+                                              }}
+                                              className="w-full px-3 py-2 text-left text-sm hover:bg-indigo-50 transition-colors rounded-lg flex items-center justify-between"
+                                            >
+                                              <span className="text-gray-700">
+                                                {pref.key}
+                                              </span>
+                                              <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded uppercase">
+                                                {pref.type}
+                                              </span>
+                                            </button>
+                                          ),
+                                        )}
                                       </div>
-                                      {categorizedPreferences.advancedDetails.map(
-                                        (pref) => (
-                                          <button
-                                            key={pref.key}
-                                            type="button"
-                                            onClick={() => {
-                                              handlePreferenceKeyChange(
-                                                index,
-                                                pref.key,
-                                                "advancedDetails",
-                                              );
-                                              togglePreferenceDropdown(index);
-                                            }}
-                                            className="w-full px-3 py-2 text-left text-sm hover:bg-indigo-50 transition-colors rounded-lg flex items-center justify-between"
-                                          >
-                                            <span className="text-gray-700">
-                                              {pref.key}
-                                            </span>
-                                            <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded uppercase">
-                                              {pref.type}
-                                            </span>
-                                          </button>
-                                        ),
-                                      )}
-                                    </div>
-                                  )}
+                                    )}
 
                                   {categorizedPreferences.advancedPrivacyDetails
                                     .length > 0 && (
-                                    <div className="p-2">
-                                      <div className="flex items-center gap-2 px-2 py-1 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                        <ShieldCheck className="w-3 h-3" />{" "}
-                                        Privacy Details
+                                      <div className="p-2">
+                                        <div className="flex items-center gap-2 px-2 py-1 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                          <ShieldCheck className="w-3 h-3" />{" "}
+                                          Privacy Details
+                                        </div>
+                                        {categorizedPreferences.advancedPrivacyDetails.map(
+                                          (pref) => (
+                                            <button
+                                              key={pref.key}
+                                              type="button"
+                                              onClick={() => {
+                                                handlePreferenceKeyChange(
+                                                  index,
+                                                  pref.key,
+                                                  "advancedPrivacyDetails",
+                                                );
+                                                togglePreferenceDropdown(index);
+                                              }}
+                                              className="w-full px-3 py-2 text-left text-sm hover:bg-indigo-50 transition-colors rounded-lg flex items-center justify-between"
+                                            >
+                                              <span className="text-gray-700">
+                                                {pref.key}
+                                              </span>
+                                              <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded uppercase">
+                                                {pref.type}
+                                              </span>
+                                            </button>
+                                          ),
+                                        )}
                                       </div>
-                                      {categorizedPreferences.advancedPrivacyDetails.map(
-                                        (pref) => (
-                                          <button
-                                            key={pref.key}
-                                            type="button"
-                                            onClick={() => {
-                                              handlePreferenceKeyChange(
-                                                index,
-                                                pref.key,
-                                                "advancedPrivacyDetails",
-                                              );
-                                              togglePreferenceDropdown(index);
-                                            }}
-                                            className="w-full px-3 py-2 text-left text-sm hover:bg-indigo-50 transition-colors rounded-lg flex items-center justify-between"
-                                          >
-                                            <span className="text-gray-700">
-                                              {pref.key}
-                                            </span>
-                                            <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded uppercase">
-                                              {pref.type}
-                                            </span>
-                                          </button>
-                                        ),
-                                      )}
-                                    </div>
-                                  )}
+                                    )}
                                 </div>
                               )}
                             </div>
@@ -1318,6 +1350,22 @@ const QRGenerator = () => {
                   />
                 </div>
               </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Statement
+                        </label>
+
+                        <div className="flex items-center gap-2 p-2 border rounded-lg">
+                          <input
+                            type="color"
+                            value={tempStatementColor}
+                            onChange={(e) => setTempStatementColor(e.target.value)}
+                            className="w-8 h-8"
+                          />
+
+                          <span>{tempStatementColor}</span>
+                        </div>
+                      </div>
             </div>
 
             {/* Card 3: Activity Details */}
@@ -1343,11 +1391,10 @@ const QRGenerator = () => {
                             setActivityType(type);
                             setSelectedActivityId("");
                           }}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            activityType === type
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activityType === type
                               ? "bg-indigo-600 text-white shadow-sm"
                               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                          }`}
+                            }`}
                         >
                           {type.charAt(0).toUpperCase() + type.slice(1)}
                         </button>
@@ -1417,6 +1464,54 @@ const QRGenerator = () => {
                       placeholder="E.g., Your tagline or business type"
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition-all"
                     />
+                  </div>
+
+                  <div className="mt-6">
+                    <h3 className="text-sm font-semibold mb-4">
+                      Text Colors
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-4">
+
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Branding Title
+                        </label>
+
+                        <div className="flex items-center gap-2 p-2 border rounded-lg">
+                          <input
+                            type="color"
+                            value={tempTitleColor}
+                            onChange={(e) => setTempTitleColor(e.target.value)}
+                            className="w-8 h-8"
+                          />
+
+                          <span>{tempTitleColor}</span>
+                        </div>
+                      </div>
+
+
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Subtitle
+                        </label>
+
+                        <div className="flex items-center gap-2 p-2 border rounded-lg">
+                          <input
+                            type="color"
+                            value={tempSubtitleColor}
+                            onChange={(e) => setTempSubtitleColor(e.target.value)}
+                            className="w-8 h-8"
+                          />
+
+                          <span>{tempSubtitleColor}</span>
+                        </div>
+                      </div>
+
+
+                
+
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -1555,21 +1650,19 @@ const QRGenerator = () => {
                         <div className="flex gap-2 p-1 bg-gray-100/50 rounded-lg">
                           <button
                             onClick={() => setLogoPlacement("top")}
-                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
-                              logoPlacement === "top"
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${logoPlacement === "top"
                                 ? "bg-white text-indigo-600 shadow-sm"
                                 : "text-gray-500 hover:text-gray-700"
-                            }`}
+                              }`}
                           >
                             Top of Card
                           </button>
                           <button
                             onClick={() => setLogoPlacement("inside")}
-                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
-                              logoPlacement === "inside"
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${logoPlacement === "inside"
                                 ? "bg-white text-indigo-600 shadow-sm"
                                 : "text-gray-500 hover:text-gray-700"
-                            }`}
+                              }`}
                           >
                             Inside QR
                           </button>
@@ -1621,18 +1714,16 @@ const QRGenerator = () => {
                           setEyeFrame("square");
                           setEyeBall("square");
                         }}
-                        className={`group p-3 rounded-xl border-2 border-dashed transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                          !selectedDynamicQR
+                        className={`group p-3 rounded-xl border-2 border-dashed transition-all cursor-pointer flex items-center justify-center gap-2 ${!selectedDynamicQR
                             ? "border-indigo-300 bg-indigo-50/30"
                             : "border-gray-200 hover:border-indigo-200 hover:bg-gray-50"
-                        }`}
+                          }`}
                       >
                         <div
-                          className={`p-1.5 rounded-lg ${
-                            !selectedDynamicQR
+                          className={`p-1.5 rounded-lg ${!selectedDynamicQR
                               ? "bg-indigo-500 text-white"
                               : "bg-gray-100 text-gray-400 group-hover:bg-indigo-100 group-hover:text-indigo-500"
-                          }`}
+                            }`}
                         >
                           <Plus className="w-4 h-4" />
                         </div>
@@ -1647,11 +1738,10 @@ const QRGenerator = () => {
                         <div
                           key={qr._id}
                           onClick={() => handleSelectDynamicQR(qr)}
-                          className={`group relative p-3 rounded-xl border-2 transition-all cursor-pointer hover:shadow-sm ${
-                            selectedDynamicQR?._id === qr._id
+                          className={`group relative p-3 rounded-xl border-2 transition-all cursor-pointer hover:shadow-sm ${selectedDynamicQR?._id === qr._id
                               ? "border-indigo-300 bg-indigo-50/30"
                               : "border-gray-100 bg-white hover:border-indigo-200"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-start gap-3">
                             <div className="p-1 rounded-lg bg-white border border-gray-100 shadow-sm">
@@ -1677,11 +1767,10 @@ const QRGenerator = () => {
                               </h4>
                               <div className="flex flex-wrap gap-1 mt-1">
                                 <span
-                                  className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${
-                                    qr.type === "registration"
+                                  className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${qr.type === "registration"
                                       ? "bg-blue-100 text-blue-700"
                                       : "bg-rose-100 text-rose-600"
-                                  }`}
+                                    }`}
                                 >
                                   {qr.type}
                                 </span>
@@ -1771,19 +1860,21 @@ const QRGenerator = () => {
                     {(brandingName || qrSubtitle) && (
                       <div className="text-center mb-1 w-full px-2">
                         {brandingName && (
-                          <p className="font-extrabold text-gray-800 text-md lg:text-[12px] xl:text-[16px] leading-tight break-words">
+                          <p className="font-extrabold  text-md lg:text-[12px] xl:text-[16px] leading-tight break-words" style={{ color: tempTitleColor }}>
                             {brandingName}
                           </p>
                         )}
                         {qrSubtitle && (
-                          <p className="mx-auto mt-1 max-w-[220px] text-[11px] font-medium uppercase tracking-wider text-gray-400 leading-snug break-words [overflow-wrap:anywhere]">
+                          <p className="mx-auto mt-1 max-w-[220px] text-[11px] font-medium uppercase tracking-wider  leading-snug break-words [overflow-wrap:anywhere]" style={{ color: tempSubtitleColor }}>
                             {qrSubtitle}
                           </p>
                         )}
                       </div>
                     )}
 
-                    <div className="my-6 p-4 bg-white rounded-2xl border border-gray-50 shadow-md flex items-center justify-center min-w-[212px] min-h-[212px]">
+                    <div className="my-6 p-4  rounded-2xl  shadow-md flex items-center justify-center min-w-[212px] min-h-[212px]"  style={{
+    backgroundColor: bgColor,
+  }}>
                       {generatedUrl ? (
                         <StyledQRCode
                           value={generatedUrl}
@@ -1818,7 +1909,9 @@ const QRGenerator = () => {
                     </div>
 
                     {qrStatement && (
-                      <p className="text-sm font-bold text-gray-700 text-center leading-relaxed max-w-[200px] break-words">
+                      <p className="text-sm font-bold  text-center leading-relaxed max-w-[200px] break-words" style={{
+                        color: statementColor,
+                      }}>
                         {qrStatement}
                       </p>
                     )}
