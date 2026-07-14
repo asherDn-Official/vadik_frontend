@@ -541,7 +541,7 @@ await fetchCustomers(false);
   });
 
   return (
-    <div className="flex h-[calc(100vh-140px)] bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+    <div className="flex h-full bg-white overflow-hidden">
       {/* Left Sidebar - Customer List */}
       <div className={`w-full md:w-80 border-r border-gray-100 flex flex-col bg-gray-50/30 ${selectedCustomer ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-gray-100 bg-white">
