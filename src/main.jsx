@@ -7,14 +7,17 @@ import AuthContext from "../src/context/AuthContext.jsx";
 import { ToastContainer } from "react-toastify";
 import PlanProvider from "./context/PlanContext.jsx";
 import { UnsavedChangesProvider } from "./context/UnsavedChangesContext.jsx";
+import { NotificationProvider } from "./context/NotificationContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   // <StrictMode>
   <AuthContext>
     <UnsavedChangesProvider>
       <PlanProvider>
-        <ToastContainer />
-        <App />
+        <NotificationProvider>
+          <ToastContainer />
+          <App />
+        </NotificationProvider>
       </PlanProvider>
     </UnsavedChangesProvider>
   </AuthContext>

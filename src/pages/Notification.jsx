@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   FiBell, FiCalendar, FiGift, FiMessageSquare, 
   FiX, FiClock, FiArchive, FiCheck,
@@ -11,6 +11,7 @@ import 'react-calendar/dist/Calendar.css';
 import api from '../api/apiconfig';
 import showToast from '../utils/ToastNotification';
 import Loader from '../utils/Loader';
+import { useNotification } from '../context/NotificationContext';
 
 const Notification = () => {
   // State management
@@ -29,6 +30,7 @@ const Notification = () => {
     clvCustomers: true
   });
   
+  const { refreshUnreadCount } = useNotification();
   const [viewedNotifications, setViewedNotifications] = useState(new Set());
   const [notificationSettings, setNotificationSettings] = useState({ automatedGreeting: true, leadDays: 5 });
   const [isSettingsLoading, setIsSettingsLoading] = useState(true);
@@ -186,9 +188,11 @@ const Notification = () => {
   const handleMarkAsRead = async (notificationId) => {
     try {
       await api.put(`/api/notifications/${notificationId}/read`);
-      setNotifications(notifications.map(n => 
-        n._id === notificationId ? { ...n, isRead: true } : n
-      ));
+      setNotifications(prev =>
+        prev.map(n => n._id === notificationId ? { ...n, isRead: true } : n)
+      );
+      // Refresh the navbar unread badge
+      refreshUnreadCount();
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }

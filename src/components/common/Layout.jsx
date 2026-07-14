@@ -15,6 +15,7 @@ import { FiSearch } from "react-icons/fi";
 import { useLocation } from "react-router-dom";
 import { ChatNotificationProvider } from "../../context/ChatNotificationContext";
 import GlobalChatNotification from "../GlobalChatNotification.jsx";
+import { useNotification } from "../../context/NotificationContext.jsx";
 
 function Layout() {
   const [activeTour, setActiveTour] = useState(null);
@@ -26,7 +27,7 @@ function Layout() {
   const { currentPlans, refreshPlans, loading } = usePlan();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const { unreadCount } = useNotification();
 
   const [searchInput, setSearchInput] = useState("");
   const navigate = useNavigate();
@@ -93,31 +94,6 @@ function Layout() {
   }
 
 
-  async function getUnreadNotifications() {
-    try {
-
-      const response = await api.get(
-        "/api/notifications/stats"
-      );
-
-      // console.log(
-      //   "notification stats",
-      //   response.data
-      // );
-
-      setUnreadCount(
-        response.data?.overall?.unread || 0
-      );
-
-    } catch (error) {
-
-      console.log(
-        "Unread notification error:",
-        error
-      );
-
-    }
-  }
 
   const handleSearchSubmit = (e) => {
     if (e.key === "Enter" && searchInput.trim()) {
@@ -192,7 +168,6 @@ function Layout() {
     getTourStatus();
     getProfileData();
     refreshPlans();
-    getUnreadNotifications();
   }, []);
 
   const profileName = profileData?.fullName || "User";
