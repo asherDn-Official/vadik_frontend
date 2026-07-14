@@ -2671,10 +2671,9 @@ function RetentionBuilderView({
                       </div>
                     </div>
                   )}
-                  {/* <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4"> */}
 
-                  <div className="">
-                    {/* <div className="flex flex-wrap gap-2">
+                  <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
+                    <div className="flex flex-wrap gap-2">
                       {delayOptions.map((item) => {
                         const isSelected =
                           form.delay.mode === item.mode &&
@@ -2706,9 +2705,9 @@ function RetentionBuilderView({
                           </button>
                         );
                       })}
-                    </div> */}
+                    </div>
 
-                    {/* <div className="grid gap-3 sm:grid-cols-[1fr_160px]">
+                    <div className="grid gap-3 sm:grid-cols-[1fr_160px]">
                       <div className="space-y-1">
                         <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                           Custom delay
@@ -2757,10 +2756,10 @@ function RetentionBuilderView({
                           ))}
                         </select>
                       </div>
-                    </div> */}
-                    {/* <div className="text-xs text-gray-500">
+                    </div>
+                    <div className="text-xs text-gray-500">
                       Use the quick options above, or set a custom after delay in minutes, hours, or days.
-                    </div> */}
+                    </div>
                   </div>
 
                   {templateVariables.length > 0 && (
