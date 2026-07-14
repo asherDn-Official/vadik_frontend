@@ -423,7 +423,7 @@ const Notification = () => {
                     
                     {/* Action Buttons */}
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {notification.notificationType === 'event_reminder' && (
+                      {/* {notification.notificationType === 'event_reminder' && (
                         <button
                           onClick={() => handleSendGreeting(notification._id, notification.customerIds, notification.eventType)}
                           disabled={notification.status === 'sent'}
@@ -436,9 +436,9 @@ const Notification = () => {
                           <FiGift className="mr-1" /> 
                           {notification.status === 'sent' ? 'Sent' : 'Send Greeting'}
                         </button>
-                      )}
+                      )} */}
                       
-                      {notification.notificationType === 'whatsapp_failure' && notification.alertData?.actionLink && (
+                      {/* {notification.notificationType === 'whatsapp_failure' && notification.alertData?.actionLink && (
                         <a
                           href={notification.alertData.actionLink}
                           target="_blank"
@@ -447,21 +447,21 @@ const Notification = () => {
                         >
                           <FiAlertCircle className="mr-1" /> Fix Issue
                         </a>
-                      )}
+                      )} */}
                       
-                      <button
+                      {/* <button
                         onClick={() => handleSetReminder(notification._id, moment().add(1, 'day').toDate())}
                         className="flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50"
                       >
                         <FiClock className="mr-1" /> Remind Later
-                      </button>
+                      </button> */}
                       
-                      <button
+                      {/* <button
                         onClick={() => handleArchive(notification._id)}
                         className="flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50"
                       >
                         <FiArchive className="mr-1" /> Archive
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 </div>

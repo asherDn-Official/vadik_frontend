@@ -4,7 +4,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import { AnimatePresence, motion } from "framer-motion";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-
+import { useRef } from "react";
 import api from "../api/apiconfig";
 import { useAuth } from "../context/AuthContext";
 import { getModulePath } from "../utils/getModulePath";
@@ -13,7 +13,7 @@ import Loader from "../utils/Loader";
 const Login = () => {
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
-
+  const hasShownLoginNotification = useRef(false);
   const [activePortal, setActivePortal] = useState("retailer");
   const [retailerView, setRetailerView] = useState("login");
 
@@ -228,6 +228,15 @@ const Login = () => {
         data.retailer?.onboarding === true;
 
       if (data.token) {
+          if (!hasShownLoginNotification.current) {
+    hasShownLoginNotification.current = true;
+
+    if (Notification.permission === "granted") {
+      new Notification("Login Successful", {
+        body: "You have successfully logged in",
+      });
+    }
+  }
         if (activePortal === "retailer") {
           localStorage.setItem("email", credentials.email);
         }
