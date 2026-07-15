@@ -578,6 +578,9 @@ const QRGenerator = () => {
         fgColor,
         bgColor,
         brandingName,
+         titleColor,
+  subtitleColor,
+  statementColor,
         logo,
         logoSize,
         logoOpacity,
@@ -593,6 +596,7 @@ const QRGenerator = () => {
 
       let response;
       if (selectedDynamicQR) {
+      
         response = await api.patch(
           `/api/dynamic-qr/${selectedDynamicQR._id}`,
           payload,
@@ -602,13 +606,14 @@ const QRGenerator = () => {
         response = await api.post("/api/dynamic-qr", payload);
         showToast("QR created successfully!", "success");
       }
-
+ 
       if (response.data.status) {
         fetchSavedQRs();
         setSelectedDynamicQR(response.data.data);
         setIsDynamic(true);
       }
     } catch (error) {
+
       const errorMsg =
         error.response?.data?.message || "Failed to save QR. Please try again.";
       showToast(errorMsg, "error");
@@ -635,6 +640,13 @@ const QRGenerator = () => {
     setFgColor(qr.fgColor || "#000000");
     setBgColor(qr.bgColor || "#ffffff");
     setBrandingName(qr.brandingName || "");
+    setTitleColor(qr.titleColor || "#1F2937");
+setSubtitleColor(qr.subtitleColor || "#9CA3AF");
+setStatementColor(qr.statementColor || "#374151");
+
+setTempTitleColor(qr.titleColor || "#1F2937");
+setTempSubtitleColor(qr.subtitleColor || "#9CA3AF");
+setTempStatementColor(qr.statementColor || "#374151");
     setLogo(qr.logo || null);
     setLogoSize(Math.min(qr.logoSize || 40, 80));
     setLogoOpacity(qr.logoOpacity || 1);
