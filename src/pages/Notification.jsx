@@ -30,8 +30,13 @@ const Notification = () => {
     clvCustomers: true
   });
   
-  const { refreshUnreadCount } = useNotification();
+  const { decrementUnreadCount } = useNotification();
   const [viewedNotifications, setViewedNotifications] = useState(new Set());
+  // Use a ref so the IntersectionObserver always has access to the latest
+  // handleMarkAsRead without needing to re-subscribe on every render
+  const handleMarkAsReadRef = useRef(null);
+  // Use a ref for viewed IDs to avoid stale closures inside the observer
+  const viewedRef = useRef(new Set());
   const [notificationSettings, setNotificationSettings] = useState({ automatedGreeting: true, leadDays: 5 });
   const [isSettingsLoading, setIsSettingsLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
@@ -49,21 +54,32 @@ const Notification = () => {
         (n) => n.notificationType !== "event_reminder"
       );
 
-  // Create intersection observer to detect when notifications are viewed
+  // Keep the ref always pointing to the latest handleMarkAsRead
+  useEffect(() => {
+    handleMarkAsReadRef.current = handleMarkAsRead;
+  });
+
+  // Create intersection observer — depends only on notifications list changing
+  // Uses refs for handleMarkAsRead and viewed IDs to avoid stale closures
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             const notificationId = entry.target.dataset.id;
-            if (!viewedNotifications.has(notificationId)) {
-              handleMarkAsRead(notificationId);
+            // Use ref so we never close over stale viewedNotifications
+            if (!viewedRef.current.has(notificationId)) {
+              viewedRef.current.add(notificationId);
               setViewedNotifications(prev => new Set(prev).add(notificationId));
+              // Call via ref so we always get the latest handleMarkAsRead
+              if (handleMarkAsReadRef.current) {
+                handleMarkAsReadRef.current(notificationId);
+              }
             }
           }
         });
       },
-      { threshold: 0.5 } // Trigger when 50% of notification is visible
+      { threshold: 0.5 }
     );
 
     // Observe all notification elements
@@ -72,7 +88,7 @@ const Notification = () => {
     });
 
     return () => observer.disconnect();
-  }, [notifications, viewedNotifications]);
+  }, [notifications]); // Only re-subscribe when the notifications list itself changes
 
   // Fetch data on component mount
   useEffect(() => {
@@ -191,8 +207,8 @@ const Notification = () => {
       setNotifications(prev =>
         prev.map(n => n._id === notificationId ? { ...n, isRead: true } : n)
       );
-      // Refresh the navbar unread badge
-      refreshUnreadCount();
+      // Instantly decrement the navbar badge — no extra API round-trip needed
+      decrementUnreadCount();
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
