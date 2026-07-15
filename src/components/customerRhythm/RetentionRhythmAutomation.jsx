@@ -321,12 +321,16 @@ const createEmptyAutomation = () => ({
   },
   audienceRules: { logic: "AND", conditions: [] },
   actionConfig: {
+    actionType: "template",
     templateId: "",
     templateName: "",
     languageCode: "en_US",
     variableMappings: [],
     mediaUrl: "",
     mediaType: "",
+    flowId: "",
+    flowName: "",
+    flowButtonText: "Open",
   },
   delay: { mode: "immediate", value: 0, unit: "minutes" },
   safetyFlags: { preventDuplicateWindowHours: 24, stopIfOptedOut: true },
@@ -772,11 +776,18 @@ const normalizeAutomationForForm = (automation) => {
     actionConfig: {
       ...createEmptyAutomation().actionConfig,
       ...(restAutomation.actionConfig || {}),
+      actionType: restAutomation.actionConfig?.actionType || "template",
       templateId:
         restAutomation.actionConfig?.templateId?._id ||
         restAutomation.actionConfig?.templateId ||
         "",
       variableMappings: restAutomation.actionConfig?.variableMappings || [],
+      flowId:
+        restAutomation.actionConfig?.flowId?._id ||
+        restAutomation.actionConfig?.flowId ||
+        "",
+      flowName: restAutomation.actionConfig?.flowName || "",
+      flowButtonText: restAutomation.actionConfig?.flowButtonText || "Open",
     },
     triggerConfig: {
       ...createEmptyAutomation().triggerConfig,
@@ -1029,6 +1040,16 @@ function AutomationDashboardView({
                           <p className="mt-1 text-xs text-gray-400">
                             {describeTriggerConfig(automation, activityCampaigns)}
                           </p>
+                          <span
+                            className="mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                            style={
+                              automation.actionConfig?.actionType === "flow"
+                                ? { backgroundColor: "#DCFCE7", color: "#16A34A" }
+                                : { backgroundColor: "#EEF0FD", color: "#313166" }
+                            }
+                          >
+                            {automation.actionConfig?.actionType === "flow" ? "⚡ Meta Flow" : "📄 Template"}
+                          </span>
                         </div>
                       </div>
                     </button>
@@ -1362,6 +1383,7 @@ function RetentionBuilderView({
   initialAutomation,
   fields,
   templates,
+  flows,
   activityCampaigns,
   onBack,
   onSave,
@@ -1434,6 +1456,10 @@ function RetentionBuilderView({
   const selectedTemplate = templates.find(
     (template) => template._id === form.actionConfig.templateId,
   );
+  const selectedFlow = flows.find(
+    (flow) => flow._id === form.actionConfig.flowId,
+  );
+  const currentActionType = form.actionConfig.actionType || "template";
   const selectedActivityCampaigns = getCampaignList(
     activityCampaigns,
     form.triggerConfig.activityType,
@@ -1673,9 +1699,16 @@ function RetentionBuilderView({
   };
 
   const handleSave = () => {
-    if (!form.actionConfig.templateId) {
-      showToast("Choose a WhatsApp template before saving", "warning");
-      return;
+    if (currentActionType === "template") {
+      if (!form.actionConfig.templateId) {
+        showToast("Choose a WhatsApp template before saving", "warning");
+        return;
+      }
+    } else if (currentActionType === "flow") {
+      if (!form.actionConfig.flowId) {
+        showToast("Choose a Meta WhatsApp Flow before saving", "warning");
+        return;
+      }
     }
 
     if (form.triggerType === "customer_activity_completed") {
@@ -1720,25 +1753,27 @@ function RetentionBuilderView({
       }
     }
 
-    const missingMappings = templateVariables.filter((descriptor) => {
-      const mapping = findVariableMapping(
-        form.actionConfig.variableMappings,
-        descriptor,
-      );
-      return !mapping?.value?.trim();
-    });
+    if (currentActionType === "template") {
+      const missingMappings = templateVariables.filter((descriptor) => {
+        const mapping = findVariableMapping(
+          form.actionConfig.variableMappings,
+          descriptor,
+        );
+        return !mapping?.value?.trim();
+      });
 
-    if (missingMappings.length > 0) {
-      showToast("Fill all template variables before saving", "warning");
-      return;
-    }
+      if (missingMappings.length > 0) {
+        showToast("Fill all template variables before saving", "warning");
+        return;
+      }
 
-    if (templateHeaderMediaType && !form.actionConfig.mediaUrl?.trim()) {
-      showToast(
-        `Add a ${templateHeaderMediaType.toLowerCase()} header URL or upload media before saving`,
-        "warning",
-      );
-      return;
+      if (templateHeaderMediaType && !form.actionConfig.mediaUrl?.trim()) {
+        showToast(
+          `Add a ${templateHeaderMediaType.toLowerCase()} header URL or upload media before saving`,
+          "warning",
+        );
+        return;
+      }
     }
 
     setShowSaveConfirm(true);
@@ -2605,6 +2640,68 @@ function RetentionBuilderView({
       )}
  {step === actionStep && (
                 <div className="space-y-4">
+                  {/* Action Type Selector */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      {
+                        type: "template",
+                        label: "WhatsApp Template",
+                        description: "Send a pre-approved message template",
+                        icon: "📄",
+                        color: "#313166",
+                      },
+                      {
+                        type: "flow",
+                        label: "Meta WhatsApp Flow",
+                        description: "Send an interactive WhatsApp Flow",
+                        icon: "⚡",
+                        color: "#16A34A",
+                      },
+                    ].map((option) => {
+                      const isSelected = currentActionType === option.type;
+                      return (
+                        <button
+                          key={option.type}
+                          type="button"
+                          onClick={() =>
+                            setForm((prev) => ({
+                              ...prev,
+                              actionConfig: {
+                                ...prev.actionConfig,
+                                actionType: option.type,
+                              },
+                            }))
+                          }
+                          className="relative flex flex-col items-start gap-1.5 rounded-2xl border-2 p-4 text-left transition-all"
+                          style={{
+                            borderColor: isSelected ? option.color : "#E5E7EB",
+                            backgroundColor: isSelected ? `${option.color}08` : "white",
+                          }}
+                        >
+                          {isSelected && (
+                            <span
+                              className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full text-white text-[10px]"
+                              style={{ backgroundColor: option.color }}
+                            >
+                              ✓
+                            </span>
+                          )}
+                          <span className="text-2xl">{option.icon}</span>
+                          <span
+                            className="text-sm font-semibold"
+                            style={{ color: isSelected ? option.color : "#374151" }}
+                          >
+                            {option.label}
+                          </span>
+                          <span className="text-xs text-gray-500">{option.description}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Template selector — shown when actionType is "template" */}
+                  {currentActionType === "template" && (
+                    <>
                   <select
                     value={form.actionConfig.templateId}
                     onChange={(event) => updateTemplate(event.target.value)}
@@ -2920,6 +3017,146 @@ function RetentionBuilderView({
                       })}
                     </div>
                   )}
+                  </>
+                  )}
+
+                  {/* Flow picker — shown when actionType is "flow" */}
+                  {currentActionType === "flow" && (
+                    <div className="space-y-4">
+                      <div className="rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4 space-y-3">
+                        <div className="text-sm font-semibold text-[#313166]">Select a Published WhatsApp Flow</div>
+                        <p className="text-xs text-gray-500">
+                          Only published Meta WhatsApp Flows are available. Go to your Flows section to publish a draft flow.
+                        </p>
+                        <select
+                          value={form.actionConfig.flowId}
+                          onChange={(event) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              actionConfig: {
+                                ...prev.actionConfig,
+                                flowId: event.target.value,
+                                flowName: flows.find((f) => f._id === event.target.value)?.name || "",
+                              },
+                            }))
+                          }
+                          className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm"
+                        >
+                          <option value="">Choose a WhatsApp Flow</option>
+                          {flows.length === 0 && (
+                            <option disabled value="">
+                              No published flows found
+                            </option>
+                          )}
+                          {flows.map((flow) => (
+                            <option key={flow._id} value={flow._id}>
+                              {flow.name}
+                            </option>
+                          ))}
+                        </select>
+
+                        {form.actionConfig.flowId && (
+                          <div className="space-y-1">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">Button Text</div>
+                            <input
+                              type="text"
+                              value={form.actionConfig.flowButtonText || "Open"}
+                              onChange={(event) =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  actionConfig: {
+                                    ...prev.actionConfig,
+                                    flowButtonText: event.target.value,
+                                  },
+                                }))
+                              }
+                              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm"
+                              placeholder="e.g. Open, Start, Fill Form"
+                              maxLength={20}
+                            />
+                            <div className="text-[11px] text-gray-400">This text appears on the button that opens the flow for the customer.</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Delay section for flow too */}
+                      {form.triggerType !== "scheduled_recurring" && form.triggerType !== "customer_field_date" && (
+                      <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
+                        <div className="flex flex-wrap gap-2">
+                          {delayOptions.map((item) => {
+                            const isSelected =
+                              form.delay.mode === item.mode &&
+                              form.delay.value === item.value &&
+                              form.delay.unit === item.unit;
+                            return (
+                              <button
+                                key={item.label}
+                                type="button"
+                                onClick={() =>
+                                  setForm((previous) => ({
+                                    ...previous,
+                                    delay: { mode: item.mode, value: item.value, unit: item.unit },
+                                  }))
+                                }
+                                className="rounded-full border px-3 py-1 text-xs font-medium transition-all"
+                                style={{
+                                  backgroundColor: isSelected ? "#313166" : "white",
+                                  color: isSelected ? "white" : "#313166",
+                                  borderColor: isSelected ? "#313166" : "#E5E7EB",
+                                }}
+                              >
+                                {item.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-[1fr_160px]">
+                          <div className="space-y-1">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">Custom delay</div>
+                            <input
+                              type="number" min="0" step="1"
+                              value={form.delay.value}
+                              onChange={(event) =>
+                                setForm((previous) => ({
+                                  ...previous,
+                                  delay: {
+                                    ...previous.delay,
+                                    mode: Number(event.target.value) > 0 ? "delay" : "immediate",
+                                    value: Number(event.target.value) || 0,
+                                  },
+                                }))
+                              }
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                              placeholder="Enter a value"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">Unit</div>
+                            <select
+                              value={form.delay.unit}
+                              onChange={(event) =>
+                                setForm((previous) => ({
+                                  ...previous,
+                                  delay: {
+                                    ...previous.delay,
+                                    mode: Number(previous.delay.value) > 0 ? "delay" : "immediate",
+                                    unit: event.target.value,
+                                  },
+                                }))
+                              }
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                            >
+                              {delayUnitOptions.map((unit) => (
+                                <option key={unit.value} value={unit.value}>{unit.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500">Use the quick options above, or set a custom delay.</div>
+                      </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2979,10 +3216,12 @@ function RetentionBuilderView({
                             Action
                           </div>
                           <div className="mt-1 text-sm font-bold text-[#313166]">
-                            {selectedTemplate?.name || "WhatsApp Message"}
+                            {currentActionType === "flow"
+                              ? (selectedFlow?.name || form.actionConfig.flowName || "WhatsApp Flow")
+                              : (selectedTemplate?.name || "WhatsApp Message")}
                           </div>
                           <div className="mt-0.5 text-xs text-gray-500">
-                            Send template
+                            {currentActionType === "flow" ? "Send flow" : "Send template"}
                           </div>
                         </div>
                       </div>
@@ -3086,6 +3325,8 @@ function RetentionBuilderView({
 
           {step === actionStep && (
             <div className="space-y-6">
+              {currentActionType === "template" ? (
+                <>
               <WhatsAppTemplatePreviewCard
                 template={selectedTemplate}
                 headerComponent={templateHeader}
@@ -3143,6 +3384,48 @@ function RetentionBuilderView({
                   </div>
                 </div>
               </div>
+              </>
+              ) : (
+                /* Flow info card */
+                <div className="rounded-3xl border-2 border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.22em] text-emerald-600">Meta WhatsApp Flow</div>
+                      <h4 className="mt-1 text-lg font-semibold text-[#313166]">
+                        {selectedFlow?.name || form.actionConfig.flowName || "No flow selected"}
+                      </h4>
+                    </div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                      <span className="text-lg">⚡</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-3 text-sm text-gray-600">
+                    <div className="flex items-center justify-between gap-4 rounded-2xl bg-emerald-50 px-4 py-3">
+                      <span>Flow</span>
+                      <span className="font-semibold text-emerald-700">
+                        {selectedFlow?.name || "—"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 rounded-2xl bg-emerald-50 px-4 py-3">
+                      <span>Button text</span>
+                      <span className="font-semibold text-emerald-700">
+                        {form.actionConfig.flowButtonText || "Open"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 rounded-2xl bg-emerald-50 px-4 py-3">
+                      <span>Status</span>
+                      <span className="font-semibold text-emerald-700">
+                        {selectedFlow ? "PUBLISHED" : "Not selected"}
+                      </span>
+                    </div>
+                  </div>
+                  {!form.actionConfig.flowId && (
+                    <p className="mt-3 text-xs text-amber-600">
+                      ⚠️ Please select a published WhatsApp Flow before saving.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -3155,7 +3438,7 @@ function RetentionBuilderView({
                       Live Preview
                     </div>
                     <h3 className="mt-2 text-lg font-semibold">
-                      WhatsApp Retention Flow
+                      {currentActionType === "flow" ? "Meta WhatsApp Flow" : "WhatsApp Retention Flow"}
                     </h3>
                   </div>
                   <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
@@ -5358,6 +5641,7 @@ export default function RetentionRhythmAutomation() {
   const [automations, setAutomations] = useState([]);
   const [fields, setFields] = useState([]);
   const [templates, setTemplates] = useState([]);
+  const [flows, setFlows] = useState([]);
   const [activityCampaigns, setActivityCampaigns] = useState({
     spinWheel: [],
     scratchCard: [],
@@ -5370,15 +5654,17 @@ export default function RetentionRhythmAutomation() {
   const fetchRetentionData = async () => {
     try {
       setLoading(true);
-      const [automationsRes, fieldsRes, templatesRes] = await Promise.all([
+      const [automationsRes, fieldsRes, templatesRes, flowsRes] = await Promise.all([
         api.get("/api/retention-automations"),
         api.get("/api/retention-automations/field-registry/all"),
         api.get("/api/retention-automations/templates/all"),
+        api.get("/api/retention-automations/flows/all"),
       ]);
 
       setAutomations(automationsRes.data?.data || []);
       setFields(fieldsRes.data?.data || []);
       setTemplates(templatesRes.data?.data || []);
+      setFlows(flowsRes.data?.data || []);
     } catch (error) {
       console.error("Error loading retention data:", error);
       showToast("Failed to load retention automation data", "error");
@@ -5550,6 +5836,7 @@ export default function RetentionRhythmAutomation() {
         initialAutomation={editingAutomation}
         fields={fields}
         templates={templates}
+        flows={flows}
         activityCampaigns={activityCampaigns}
         onBack={handleBack}
         onSave={handleSave}
