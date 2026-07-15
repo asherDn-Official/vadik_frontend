@@ -35,6 +35,8 @@ const SubscriptionPopup = ({
   const { auth, setAuth } = useAuth();
   const isAutoPayEnabled = showAutopay && autoplay;
   
+  const canUseAutoPayForSelectedPlan = !!selectedPlan && !selectedPlan.isFreeTrial && !selectedPlan.isEnterprise && selectedPlan.name?.toLowerCase() !== "enterprise";
+  
   // Check if we should show tabs
   const shouldShowTabs = showSubscription && showAddon;
   
@@ -176,8 +178,6 @@ const SubscriptionPopup = ({
     });
     return total;
   };
-
-  const canUseAutoPayForSelectedPlan = !!selectedPlan && !selectedPlan.isFreeTrial && !selectedPlan.isEnterprise && selectedPlan.name?.toLowerCase() !== "enterprise";
 
   const verifyRazorpayPayment = async (response, subscriptionId) => {
     try {
