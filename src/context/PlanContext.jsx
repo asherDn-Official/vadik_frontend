@@ -19,10 +19,10 @@ const PlanProvider = ({ children }) => {
                 setCurrentPlans(null);
             }
         } catch (error) {
-            console.error("Error fetching current plans:", error);
             if (error.response?.status === 404) {
                 setCurrentPlans(null);
             } else {
+                console.error("Error fetching current plans:", error);
                 setError(error);
             }
         } finally {
