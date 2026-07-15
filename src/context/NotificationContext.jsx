@@ -48,6 +48,8 @@ export const NotificationProvider = ({ children }) => {
         unreadCount,
         setUnreadCount,
         refreshUnreadCount: fetchUnreadCount,
+        decrementUnreadCount: () =>
+          setUnreadCount(prev => Math.max(0, prev - 1)),
       }}
     >
       {children}
