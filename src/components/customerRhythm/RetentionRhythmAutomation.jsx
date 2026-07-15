@@ -2672,6 +2672,7 @@ function RetentionBuilderView({
                     </div>
                   )}
 
+                  {form.triggerType !== "scheduled_recurring" && form.triggerType !== "customer_field_date" && (
                   <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
                     <div className="flex flex-wrap gap-2">
                       {delayOptions.map((item) => {
@@ -2761,6 +2762,7 @@ function RetentionBuilderView({
                       Use the quick options above, or set a custom after delay in minutes, hours, or days.
                     </div>
                   </div>
+                  )}
 
                   {templateVariables.length > 0 && (
                     <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
@@ -2947,7 +2949,8 @@ function RetentionBuilderView({
                         </div>
                       </div>
 
-                      {/* Delay Node */}
+                      {/* Delay Node — hidden for scheduled_recurring and customer_field_date triggers */}
+                      {form.triggerType !== "scheduled_recurring" && form.triggerType !== "customer_field_date" && (
                       <div className="z-10 flex flex-1 flex-col items-center">
                         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 shadow-sm outline outline-4 outline-white">
                           <Clock size={24} />
@@ -2964,6 +2967,7 @@ function RetentionBuilderView({
                           </div>
                         </div>
                       </div>
+                      )}
 
                       {/* Action Node */}
                       <div className="z-10 flex flex-1 flex-col items-center">
