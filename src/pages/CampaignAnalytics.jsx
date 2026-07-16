@@ -11,6 +11,8 @@ import {
   Users,
   Activity,
   RefreshCw,
+  RotateCcw,
+  X,
 } from "lucide-react";
 import {
   AreaChart,
@@ -49,6 +51,11 @@ const CampaignAnalytics = () => {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
+
+  const [isRetryModalOpen, setIsRetryModalOpen] = useState(false);
+  const [retryStatus, setRetryStatus] = useState("failed");
+  const [retryReason, setRetryReason] = useState("");
+  const [retrying, setRetrying] = useState(false);
 
   const loadCampaignAnalytics = async ({ silent = false } = {}) => {
     if (!campaignId) return;
@@ -89,6 +96,37 @@ const CampaignAnalytics = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const handleRetryCampaign = async () => {
+    try {
+      setRetrying(true);
+      setError("");
+      
+      const payload = {
+        status: retryStatus,
+      };
+      if (retryStatus === "failed" && retryReason) {
+        payload.failureReason = retryReason;
+      }
+
+      const res = await api.post(
+        `/api/integrationManagement/whatsapp/campaigns/${campaignId}/retry`,
+        payload
+      );
+
+      setIsRetryModalOpen(false);
+      
+      if (res.data?.data?.campaignId) {
+        navigate(`/customerrhythm/campaign/${res.data.data.campaignId}`);
+      } else {
+        loadCampaignAnalytics();
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Failed to retry campaign");
+    } finally {
+      setRetrying(false);
     }
   };
 
@@ -176,14 +214,28 @@ const CampaignAnalytics = () => {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => loadCampaignAnalytics({ silent: true })}
-            className="inline-flex items-center gap-2 rounded-full border border-[#313166]/10 bg-[#313166] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(49,49,102,0.18)] transition hover:bg-[#262650]"
-          >
-            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-            Refresh
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => loadCampaignAnalytics({ silent: true })}
+              className="inline-flex items-center gap-2 rounded-full border border-[#313166]/10 bg-[#313166] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(49,49,102,0.18)] transition hover:bg-[#262650]"
+            >
+              <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRetryStatus("failed");
+                setRetryReason("");
+                setIsRetryModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-[#EEF1FF] bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(99,102,241,0.2)] transition hover:from-indigo-700 hover:to-purple-700"
+            >
+              <RotateCcw size={16} />
+              Retry Campaign
+            </button>
+          </div>
         </div>
 
         {campaign ? (
@@ -508,6 +560,101 @@ const CampaignAnalytics = () => {
           </div>
         </>
       ) : null}
+
+      {/* Retry Modal */}
+      {isRetryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg overflow-hidden rounded-[28px] border border-[#E8EBFF] bg-gradient-to-br from-white to-[#F9FAFF] shadow-[0_24px_70px_rgba(49,49,102,0.15)] animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-[#EEF1FF] px-6 py-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                  <RotateCcw size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#1F1C5C]">Retry Campaign</h3>
+                  <p className="text-xs text-[#8B90B2]">Rerun campaign for subset of contacts</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRetryModalOpen(false)}
+                className="rounded-full p-1.5 text-[#8B90B2] transition hover:bg-[#313166]/5 hover:text-[#1F1C5C]"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <label htmlFor="retryStatus" className="text-xs font-bold uppercase tracking-wider text-[#8B90B2]">
+                  Select Message Status to Target
+                </label>
+                <select
+                  id="retryStatus"
+                  value={retryStatus}
+                  onChange={(e) => {
+                    setRetryStatus(e.target.value);
+                    setRetryReason(""); // Reset reason filter
+                  }}
+                  className="w-full rounded-xl border border-[#E8EBFF] bg-white p-3 text-sm font-semibold text-[#1F1C5C] shadow-sm focus:border-[#313166] focus:outline-none"
+                >
+                  <option value="failed">Failed ({campaign?.failed || 0})</option>
+                  <option value="sent">Sent ({campaign?.sent || 0})</option>
+                  <option value="delivered">Delivered ({campaign?.delivered || 0})</option>
+                  <option value="read">Read ({campaign?.read || 0})</option>
+                  <option value="replied">Replied ({campaign?.replied || 0})</option>
+                </select>
+              </div>
+
+              {retryStatus === "failed" && failureReasons.length > 0 && (
+                <div className="space-y-2 animate-in slide-in-from-top-3 duration-200">
+                  <label htmlFor="retryReason" className="text-xs font-bold uppercase tracking-wider text-[#8B90B2]">
+                    Filter by Failure Reason
+                  </label>
+                  <select
+                    id="retryReason"
+                    value={retryReason}
+                    onChange={(e) => setRetryReason(e.target.value)}
+                    className="w-full rounded-xl border border-[#E8EBFF] bg-white p-3 text-sm font-semibold text-[#1F1C5C] shadow-sm focus:border-[#313166] focus:outline-none"
+                  >
+                    <option value="">All Failed Messages ({campaign?.failed || 0})</option>
+                    {failureReasons.map(([reason, count]) => (
+                      <option key={reason} value={reason}>
+                        {reason} ({count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="rounded-2xl border border-[#E8EBFF] bg-indigo-50/50 p-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-700">What will happen?</h4>
+                <p className="mt-1 text-xs leading-relaxed text-[#5A6084]">
+                  This will create a new campaign named <strong className="text-[#1F1C5C]">{campaignDetails?.name || campaign?.sourceName} (Retry...)</strong> targeting the customers matching your selection. It will run with the exact same template/flow and variables configured in the original campaign.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-[#EEF1FF] px-6 py-4 bg-[#FCFCFF]">
+              <button
+                type="button"
+                onClick={() => setIsRetryModalOpen(false)}
+                className="rounded-full border border-[#313166]/10 bg-white px-5 py-2 text-sm font-semibold text-[#313166] shadow-sm transition hover:bg-[#313166]/5"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={retrying}
+                onClick={handleRetryCampaign}
+                className="inline-flex items-center gap-2 rounded-full bg-[#313166] px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(49,49,102,0.18)] transition hover:bg-[#262650] disabled:opacity-50"
+              >
+                {retrying ? "Triggering..." : "Rerun Campaign"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
