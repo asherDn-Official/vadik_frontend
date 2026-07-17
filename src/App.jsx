@@ -373,7 +373,7 @@ function App() {
                 }
               />
               <Route
-                path="dialogue-flow"
+                path="flowbuilder"
                 element={
                   onboardingDone ? (
                     <DialogueFlow />

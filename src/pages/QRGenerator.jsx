@@ -405,7 +405,15 @@ const QRGenerator = () => {
   }, [auth, selectedDynamicQR]);
 
   const landingPageBaseUrl = "https://vadik.ai"; // Adjust as needed
+const MAX_QR_LIMIT = 5;
 
+const canCreateMoreQR = () => {
+  if (savedQRs.length >= MAX_QR_LIMIT) {
+    showToast("You can only create up to 5 QR codes.");
+    return false;
+  }
+  return true;
+};
   useEffect(() => {
     fetchActivities();
     fetchSavedQRs();
@@ -521,6 +529,7 @@ const QRGenerator = () => {
   };
 
   const handleSaveQR = async () => {
+      if (!canCreateMoreQR()) return;
     if (!qrName || qrName.trim().length < 3) {
       showToast("Please enter a valid QR name (min 3 characters)", "error");
       return;

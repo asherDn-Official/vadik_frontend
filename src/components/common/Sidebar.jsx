@@ -102,11 +102,11 @@ function Sidebar() {
       label: "Customer Rhythm",
     },
     {
-      path: "/dialogue-flow",
-      module: "Customer Rhythm",
+      path: "/flowbuilder",
+      module: "flow builder",
       icon: null,
       lucideIcon: MessageSquare,
-      label: "Dialogue Flow",
+      label: "Flow Builder",
     },
         {
       path: "/qr-generator",

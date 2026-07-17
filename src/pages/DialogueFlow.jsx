@@ -1284,7 +1284,7 @@ const DialogueFlowInner = () => {
                 <div className="p-6 space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-gray-800">Edge Properties</h3>
-                    <button onClick={() => { setEdges(eds => eds.filter(e => e.id !== selectedEdge.id)); setSelectedEdge(null); }} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg border border-red-100 transition-colors"> <X size={16} /> </button>
+                    <button onClick={() => { setEdges(eds => eds.filter(e => e.id !== selectedEdge.id)); setSelectedEdge(null); }} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg border border-red-100 transition-colors"> Remove </button>
                   </div>
                   
                   <div>
