@@ -1481,9 +1481,14 @@ function RetentionBuilderView({
   const templateFooter = selectedTemplate?.components?.find(
     (component) => component.type === "FOOTER",
   );
-  const templateButtons =
-    selectedTemplate?.components?.find((component) => component.type === "BUTTONS")
-      ?.buttons || [];
+  const templateButtons = (() => {
+    if (!selectedTemplate?.components) return [];
+    const btnComp = selectedTemplate.components.find((component) => component.type === "BUTTONS");
+    if (btnComp && Array.isArray(btnComp.buttons)) return btnComp.buttons;
+    return selectedTemplate.components.filter((c) =>
+      ["QUICK_REPLY", "URL", "PHONE_NUMBER", "FLOW", "CATALOG", "OTP", "COPY_CODE"].includes(c.type)
+    );
+  })();
   const previewHeaderText = getTemplatePreviewText(
     templateHeader?.text || "",
     "HEADER",

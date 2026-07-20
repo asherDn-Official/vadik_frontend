@@ -22,7 +22,9 @@ import {
   ArrowRight,
   Clock,
   Calendar,
-  Layers
+  Layers,
+  ExternalLink,
+  Phone
 } from "lucide-react";
 import api from "../../api/apiconfig";
 import { toast } from "react-toastify";
@@ -55,6 +57,18 @@ const countAppliedFilters = (activeFilters) =>
   Object.values(activeFilters).filter((filterValue) =>
     hasMeaningfulFilterValue(filterValue)
   ).length;
+
+const getTemplateButtons = (template) => {
+  if (!template?.components) return [];
+  const buttonsComp = template.components.find((c) => c.type === "BUTTONS");
+  if (buttonsComp && Array.isArray(buttonsComp.buttons)) {
+    return buttonsComp.buttons;
+  }
+  const directButtons = template.components.filter((c) =>
+    ["QUICK_REPLY", "URL", "PHONE_NUMBER", "FLOW", "CATALOG", "OTP", "COPY_CODE"].includes(c.type)
+  );
+  return directButtons;
+};
 
 const SendCampaign = () => {
   const navigate = useNavigate();
@@ -1361,11 +1375,36 @@ const SendCampaign = () => {
 
                   {/* Message Area */}
                   <div className="flex-1 p-3 bg-[#e5ddd5] space-y-2 overflow-y-auto custom-scrollbar" style={{ backgroundImage: "url('/whatsapp-bg.png')", backgroundSize: '150px' }}>
-                     {campaignData.template ? (
+                     {campaignData.type === "flow" && campaignData.flow ? (
+                       <div className="max-w-[85%] bg-white rounded-xl p-2.5 shadow-sm animate-in zoom-in-95 duration-300 origin-top-left border border-emerald-100">
+                          {/* Flow Header */}
+                          <div className="flex items-center gap-1.5 mb-2 pb-1 border-b border-gray-100 text-[#313166] font-bold text-[10px]">
+                             <Layers size={12} className="text-[#313166]" />
+                             <span>Meta WhatsApp Flow</span>
+                          </div>
+
+                          {/* Flow Body */}
+                          <div className="text-[10px] text-gray-800 whitespace-pre-wrap leading-relaxed">
+                             {campaignData.variables?.body || campaignData.flow.name || "Interactive Meta WhatsApp Flow"}
+                          </div>
+
+                          {/* Flow Button */}
+                          <div className="mt-3 border-t border-gray-100 pt-1.5">
+                             <div className="py-2 px-3 text-center text-[#00a884] font-bold text-[11px] flex items-center justify-center gap-1.5 bg-emerald-50/60 rounded-lg border border-emerald-100 hover:bg-emerald-100/60 transition-colors">
+                                <Layers size={12} />
+                                <span>{campaignData.flow.name || "Open Flow"}</span>
+                             </div>
+                          </div>
+
+                          <div className="flex justify-end mt-1">
+                             <span className="text-[7px] text-gray-300 font-medium">12:00 PM</span>
+                          </div>
+                       </div>
+                     ) : campaignData.template ? (
                        <div className="max-w-[85%] bg-white rounded-xl p-2 shadow-sm animate-in zoom-in-95 duration-300 origin-top-left">
                           {/* Header Preview */}
                           {(() => {
-                            const header = campaignData.template.components.find(c => c.type === "HEADER");
+                            const header = campaignData.template.components?.find(c => c.type === "HEADER");
                             if (!header) return null;
                             if (header.format === "TEXT") {
                               return (
@@ -1407,11 +1446,16 @@ const SendCampaign = () => {
                             className="text-[10px] text-gray-800 whitespace-pre-wrap leading-relaxed"
                             dangerouslySetInnerHTML={{
                               __html: (() => {
-                              let text = campaignData.template.components.find(c => c.type === "BODY")?.text || "";
-                              Object.entries(campaignData.variables).forEach(([key, val]) => {
-                                const placeholder = `{{${key.match(/\d+/)[0]}}}`;
-                                text = text.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), val || `<${key}>`);
-                              });
+                              let text = campaignData.template.components?.find(c => c.type === "BODY")?.text || "";
+                              if (campaignData.variables) {
+                                Object.entries(campaignData.variables).forEach(([key, val]) => {
+                                  const numMatch = key.match(/\d+/);
+                                  if (numMatch) {
+                                    const placeholder = `{{${numMatch[0]}}}`;
+                                    text = text.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), val || `<${key}>`);
+                                  }
+                                });
+                              }
                               // Also replace {{customer_name}} if it was added as a string
                               text = text.replace(/\{\{customer_name\}\}/g, "John Doe");
                               return renderWhatsAppFormattedText(text);
@@ -1420,7 +1464,7 @@ const SendCampaign = () => {
                           />
                           
                           {/* Footer Preview */}
-                          {campaignData.template.components.find(c => c.type === "FOOTER") && (
+                          {campaignData.template.components?.find(c => c.type === "FOOTER") && (
                             <div
                               className="mt-1 text-[8px] text-gray-400"
                               dangerouslySetInnerHTML={{
@@ -1431,6 +1475,27 @@ const SendCampaign = () => {
                             />
                           )}
 
+                          {/* Buttons Preview */}
+                          {(() => {
+                            const templateButtons = getTemplateButtons(campaignData.template);
+                            if (!templateButtons || templateButtons.length === 0) return null;
+                            return (
+                              <div className="border-t border-gray-100 mt-2">
+                                {templateButtons.map((btn, i) => (
+                                  <div
+                                    key={i}
+                                    className="py-2 px-3 text-center border-b border-gray-50 last:border-0 text-[#00a884] font-semibold text-[11px] flex items-center justify-center gap-1.5"
+                                  >
+                                    {btn.type === "URL" && <ExternalLink size={11} />}
+                                    {btn.type === "PHONE_NUMBER" && <Phone size={11} />}
+                                    {btn.type === "FLOW" && <Layers size={11} />}
+                                    <span>{btn.text || btn.url || btn.phone_number || "Button"}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
+
                           <div className="flex justify-end mt-1">
                             <span className="text-[7px] text-gray-300 font-medium">12:00 PM</span>
                           </div>
@@ -1440,7 +1505,7 @@ const SendCampaign = () => {
                          <div className="w-16 h-16 rounded-3xl bg-white/50 flex items-center justify-center border-2 border-dashed border-gray-300">
                             <LayoutTemplate size={32} className="opacity-20" />
                          </div>
-                         <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">Select a template to<br/>see live preview</p>
+                         <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">Select a template or flow to<br/>see live preview</p>
                        </div>
                      )}
                   </div>

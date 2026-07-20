@@ -6,7 +6,8 @@ import {
   Image as ImageIcon, 
   FileText, 
   ExternalLink, 
-  Phone 
+  Phone,
+  Layers
 } from "lucide-react";
 import { renderWhatsAppFormattedText } from "../../utils/whatsappTextFormatter";
 
@@ -16,7 +17,11 @@ const TemplatePreviewModal = ({ template, isOpen, onClose }) => {
   const header = template.components?.find(c => c.type === "HEADER");
   const body = template.components?.find(c => c.type === "BODY");
   const footer = template.components?.find(c => c.type === "FOOTER");
-  const buttons = template.components?.find(c => c.type === "BUTTONS")?.buttons || [];
+  
+  const buttonsComp = template.components?.find(c => c.type === "BUTTONS");
+  const buttons = (buttonsComp && Array.isArray(buttonsComp.buttons))
+    ? buttonsComp.buttons
+    : (template.components?.filter(c => ["QUICK_REPLY", "URL", "PHONE_NUMBER", "FLOW", "CATALOG", "OTP", "COPY_CODE"].includes(c.type)) || []);
 
   const formatText = (text) => {
     const variableValues = {};
@@ -187,7 +192,8 @@ const TemplatePreviewModal = ({ template, isOpen, onClose }) => {
                       <div key={i} className="py-2 px-3 text-center border-b border-gray-50 last:border-0 text-[#00a884] font-medium text-[13px] flex items-center justify-center gap-2">
                         {btn.type === "URL" && <ExternalLink size={12} />}
                         {btn.type === "PHONE_NUMBER" && <Phone size={12} />}
-                        {btn.text}
+                        {btn.type === "FLOW" && <Layers size={12} />}
+                        <span>{btn.text || btn.url || btn.phone_number || "Button"}</span>
                       </div>
                     ))}
                   </div>
