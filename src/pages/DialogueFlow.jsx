@@ -33,6 +33,8 @@ import ActionNode from '../components/dialogueFlow/ActionNode';
 import LabeledEdge from '../components/dialogueFlow/LabeledEdge';
 import FlowList from '../components/dialogueFlow/FlowList';
 import FlowAnalytics from '../components/dialogueFlow/FlowAnalytics';
+import AccountTemplateModal from '../components/dialogueFlow/AccountTemplateModal';
+import { convertTemplateToScreenData, convertTemplateToFlowGraph } from '../utils/templateFlowHelper';
 import api from '../api/apiconfig';
 import showToast from '../utils/ToastNotification';
 import { useAuth } from '../context/AuthContext';
@@ -168,6 +170,40 @@ const DialogueFlowInner = () => {
   const [validationErrors, setValidationErrors] = useState([]);
   const [validationWarnings, setValidationWarnings] = useState([]);
   const [showValidationModal, setShowValidationModal] = useState(false);
+  const [showAccountTemplateModal, setShowAccountTemplateModal] = useState(false);
+  const [templateImportMode, setTemplateImportMode] = useState('SCREEN'); // 'SCREEN' or 'NEW_FLOW'
+
+  const handleSelectAccountTemplate = (template) => {
+    if (templateImportMode === 'NEW_FLOW') {
+      const flowGraph = convertTemplateToFlowGraph(template);
+      if (flowGraph) {
+        setNodes(flowGraph.nodes);
+        setEdges(flowGraph.edges);
+        setCurrentFlowId(null);
+        setView('builder');
+        showToast(`Created flow from template "${template.name}"`, 'success');
+      }
+    } else {
+      const screenData = convertTemplateToScreenData(template);
+      if (screenData) {
+        if (selectedNode && selectedNode.type === 'screen') {
+          updateNodeData(selectedNode.id, screenData);
+          showToast(`Applied template "${template.name}" to screen "${selectedNode.data?.label || selectedNode.id}"`, 'success');
+        } else {
+          const newNodeId = getId();
+          const newNode = {
+            id: newNodeId,
+            type: 'screen',
+            position: { x: 300, y: 150 },
+            data: screenData,
+          };
+          setNodes((nds) => nds.concat(newNode));
+          setSelectedNode(newNode);
+          showToast(`Added screen from template "${template.name}"`, 'success');
+        }
+      }
+    }
+  };
 
   const getNodeDisplayName = (node) => node?.data?.label || node?.data?.header || node?.id || 'Untitled';
 
@@ -884,6 +920,16 @@ const DialogueFlowInner = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
+              setTemplateImportMode('NEW_FLOW');
+              setShowAccountTemplateModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors shadow-2xs"
+            title="Import content from your Meta WhatsApp templates into a new flow"
+          >
+            <Plus size={16} /> <Layout size={16} /> Use Account Template
+          </button>
+          <button
+            onClick={() => {
               const result = validateFlowJSON();
               setValidationErrors(result.errors);
               setValidationWarnings(result.warnings);
@@ -984,6 +1030,29 @@ const DialogueFlowInner = () => {
             </div>
 
             <div>
+              <div className="text-[10px] font-bold text-gray-400 uppercase mb-3 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <MessageSquare size={12} className="text-[#CB376D]" /> Meta Account Templates
+                </span>
+              </div>
+              <div 
+                className="group flex flex-col p-3 border border-emerald-200 bg-emerald-50/50 rounded-xl hover:border-emerald-500 hover:bg-emerald-100/60 cursor-pointer transition-all mb-2"
+                onClick={() => {
+                  setTemplateImportMode('SCREEN');
+                  setShowAccountTemplateModal(true);
+                }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-1.5 bg-white shadow-xs rounded-lg text-emerald-600">
+                    <Plus size={16} />
+                  </div>
+                  <div className="flex-1 text-xs font-bold text-gray-800">Use Meta Template</div>
+                </div>
+                <p className="text-[9px] text-gray-500">Pick an approved template from your Meta account to auto-fill header, body & choices.</p>
+              </div>
+            </div>
+
+            <div>
               <div className="text-[10px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
                 <Layout size={12} /> Screen Templates
               </div>
@@ -1076,7 +1145,17 @@ const DialogueFlowInner = () => {
                       <div className="pt-4 border-t border-gray-100 space-y-4">
                         <div className="flex items-center justify-between mb-1">
                           <label className="text-[10px] font-bold text-gray-400 uppercase block">Screen Layout</label>
-                          <span className="text-[9px] text-[#CB376D] font-medium">WhatsApp UI</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTemplateImportMode('SCREEN');
+                              setShowAccountTemplateModal(true);
+                            }}
+                            className="flex items-center gap-1 text-[10px] font-bold text-[#CB376D] bg-[#CB376D]/10 hover:bg-[#CB376D]/20 px-2 py-0.5 rounded transition-colors"
+                            title="Fill screen with content from a Meta WhatsApp Template"
+                          >
+                            <Plus size={10} /> Meta Template
+                          </button>
                         </div>
                         
                         <div>
@@ -1437,6 +1516,13 @@ const DialogueFlowInner = () => {
           </div>
         </div>
       )}
+
+      <AccountTemplateModal
+        isOpen={showAccountTemplateModal}
+        onClose={() => setShowAccountTemplateModal(false)}
+        onSelectTemplate={handleSelectAccountTemplate}
+        title={templateImportMode === 'NEW_FLOW' ? "Use Meta WhatsApp Template as New Flow" : "Populate Screen from Meta WhatsApp Template"}
+      />
 
       {showValidationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
