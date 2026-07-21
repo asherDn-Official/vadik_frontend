@@ -599,7 +599,6 @@ const CampaignAnalytics = () => {
                   className="w-full rounded-xl border border-[#E8EBFF] bg-white p-3 text-sm font-semibold text-[#1F1C5C] shadow-sm focus:border-[#313166] focus:outline-none"
                 >
                   <option value="failed">Failed ({campaign?.failed || 0})</option>
-                  <option value="sent">Sent ({campaign?.sent || 0})</option>
                   <option value="delivered">Delivered ({campaign?.delivered || 0})</option>
                   <option value="read">Read ({campaign?.read || 0})</option>
                   <option value="replied">Replied ({campaign?.replied || 0})</option>
