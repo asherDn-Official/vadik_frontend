@@ -232,9 +232,9 @@ const Login = () => {
     hasShownLoginNotification.current = true;
 
     if (Notification.permission === "granted") {
-      new Notification("Login Successful", {
-        body: "You have successfully logged in",
-      });
+      // new Notification("Login Successful", {
+      //   body: "You have successfully logged in",
+      // });
     }
   }
         if (activePortal === "retailer") {
