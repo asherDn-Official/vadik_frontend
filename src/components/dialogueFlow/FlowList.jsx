@@ -12,22 +12,11 @@ import {
   AlertCircle,
   BarChart2,
   CheckCircle2,
-  Star,
-  LayoutTemplate
+  Star
 } from 'lucide-react';
-import AccountTemplateModal from './AccountTemplateModal';
-import { convertTemplateToFlowGraph } from '../../utils/templateFlowHelper';
 
 const FlowList = ({ flows, onSelectFlow, onCreateFlow, onDeleteFlow, onPublishFlow, onShowAnalytics, onSetDefault, defaultFlowId, loading, onImportTemplate }) => {
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [showAccountTemplatesModal, setShowAccountTemplatesModal] = React.useState(false);
-
-  const handleSelectAccountTemplate = (template) => {
-    const flowGraph = convertTemplateToFlowGraph(template);
-    if (flowGraph) {
-      onImportTemplate(flowGraph);
-    }
-  };
 
   const templates = [
     {
@@ -93,22 +82,13 @@ const FlowList = ({ flows, onSelectFlow, onCreateFlow, onDeleteFlow, onPublishFl
             <h1 className="text-2xl font-bold text-gray-900">WhatsApp Flows</h1>
             <p className="text-sm text-gray-500 mt-1">Manage and publish interactive conversational flows for WhatsApp</p>
           </div>
-          <div className="flex items-center gap-3">
-            {/* <button 
-              onClick={() => setShowAccountTemplatesModal(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-600/20 active:scale-95 text-xs sm:text-sm"
-            >
-              <Plus size={18} />
-              Use Account Templates
-            </button> */}
-            <button 
-              onClick={onCreateFlow}
-              className="flex items-center gap-2 px-6 py-2.5 bg-[#CB376D] text-white rounded-xl font-bold hover:bg-[#b52d5e] transition-all shadow-lg shadow-[#CB376D]/20 active:scale-95 text-xs sm:text-sm"
-            >
-              <Plus size={18} />
-              Create New Flow
-            </button>
-          </div>
+          <button 
+            onClick={onCreateFlow}
+            className="flex items-center gap-2 px-6 py-2.5 bg-[#CB376D] text-white rounded-xl font-bold hover:bg-[#b52d5e] transition-all shadow-lg shadow-[#CB376D]/20 active:scale-95"
+          >
+            <Plus size={20} />
+            Create New Flow
+          </button>
         </div>
 
         <div className="relative">
@@ -125,67 +105,26 @@ const FlowList = ({ flows, onSelectFlow, onCreateFlow, onDeleteFlow, onPublishFl
       
       {/* Template Library */}
       <div className="px-8 pt-6 pb-2">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Globe size={18} className="text-[#CB376D]" />
-            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Flow Template Library</h2>
-          </div>
-          <button 
-            onClick={() => setShowAccountTemplatesModal(true)}
-            className="flex items-center gap-1.5 text-xs font-bold text-[#CB376D] hover:underline"
-          >
-            <LayoutTemplate size={14} />
-            + Use Content from Meta Templates
-          </button>
+        <div className="flex items-center gap-2 mb-4">
+          <Globe size={18} className="text-[#CB376D]" />
+          <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Flow Template Library</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* <div 
-            className="bg-gradient-to-br from-[#CB376D]/5 to-pink-50 p-4 rounded-xl border-2 border-dashed border-[#CB376D]/30 hover:border-[#CB376D] transition-all cursor-pointer group flex flex-col justify-between"
-            onClick={() => setShowAccountTemplatesModal(true)}
-          >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#CB376D] bg-white px-2 py-0.5 rounded shadow-2xs">
-                  Your Account
-                </span>
-                <Plus size={16} className="text-[#CB376D] group-hover:scale-110 transition-transform" />
-              </div>
-              <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#CB376D] transition-colors">
-                Meta Account Templates
-              </h3>
-              <p className="text-[10px] text-gray-500 mt-1 line-clamp-2">
-                Load approved WhatsApp templates from your Meta account directly into a new Flow.
-              </p>
-            </div>
-            <div className="mt-3 text-[10px] font-bold text-[#CB376D] flex items-center gap-1">
-              Select Meta Template →
-            </div>
-          </div> */}
-
           {templates.map(template => (
             <div 
               key={template.id}
-              className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-[#CB376D] hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+              className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-[#CB376D] hover:shadow-md transition-all cursor-pointer group"
               onClick={() => onImportTemplate(template)}
             >
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#CB376D]">{template.name}</h3>
-                  <Plus size={16} className="text-gray-400 group-hover:text-[#CB376D]" />
-                </div>
-                <p className="text-[10px] text-gray-500 line-clamp-2">{template.description}</p>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#CB376D]">{template.name}</h3>
+                <Plus size={16} className="text-gray-400 group-hover:text-[#CB376D]" />
               </div>
+              <p className="text-[10px] text-gray-500 line-clamp-2">{template.description}</p>
             </div>
           ))}
         </div>
       </div>
-
-      <AccountTemplateModal
-        isOpen={showAccountTemplatesModal}
-        onClose={() => setShowAccountTemplatesModal(false)}
-        onSelectTemplate={handleSelectAccountTemplate}
-        title="Import Meta WhatsApp Template into Flow"
-      />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-8">
