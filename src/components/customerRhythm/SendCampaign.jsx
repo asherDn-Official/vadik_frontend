@@ -102,6 +102,7 @@ const SendCampaign = () => {
   const [fetchingCustomers, setFetchingCustomers] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
   const [excludePreviousReceivers, setExcludePreviousReceivers] = useState(false);
   const [excludePreviousDelivered, setExcludePreviousDelivered] = useState(false);
   const [excludePreviousReaders, setExcludePreviousReaders] = useState(false);
@@ -132,6 +133,125 @@ const SendCampaign = () => {
     if (!campaign?._id) return;
 
     navigate(`/customerrhythm/campaign/${campaign._id}`);
+  };
+
+  const handleSaveAsDraft = async (exitAfterSave = false) => {
+    if (!campaignData.name) {
+      toast.error("Please enter a campaign name first");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload = {
+        name: campaignData.name,
+        templateId: campaignData.template?._id || undefined,
+        flowId: campaignData.flow?._id || undefined,
+        variables: campaignData.variables || {},
+        mediaUrl: campaignData.media?.url || undefined,
+        mediaType: campaignData.media?.type || undefined,
+        audience: campaignData.audience?.map(c => c._id) || [],
+        audienceSize: campaignData.audience?.length || 0,
+        status: "DRAFT"
+      };
+
+      if (campaignData.scheduledAt) {
+        payload.scheduledAt = campaignData.scheduledAt;
+      } else if (isScheduling && scheduleDate && scheduleTime) {
+        payload.scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`);
+      }
+
+      let res;
+      if (campaignData._id) {
+        res = await api.put(`/api/integrationManagement/whatsapp/campaigns/${campaignData._id}`, payload);
+      } else {
+        res = await api.post("/api/integrationManagement/whatsapp/campaigns", payload);
+      }
+
+      if (res.data.status) {
+        toast.success("Campaign saved as draft");
+        fetchInitialData();
+        if (exitAfterSave) {
+          setView("dashboard");
+        } else if (res.data.data?._id) {
+          setCampaignData(prev => ({
+            ...prev,
+            _id: res.data.data._id
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Save Draft Error:", error);
+      toast.error(error.response?.data?.message || "Failed to save draft campaign");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResumeDraft = (camp) => {
+    let type = "broadcast";
+    if (camp.flowId) {
+      type = "flow";
+    } else if (camp.scheduledAt) {
+      type = "template";
+    }
+
+    const initialVariables = {};
+    if (camp.variables) {
+      const rawVars = camp.variables instanceof Map 
+        ? Object.fromEntries(camp.variables) 
+        : camp.variables;
+      
+      Object.entries(rawVars).forEach(([key, val]) => {
+        initialVariables[key] = val;
+      });
+    }
+
+    setCampaignData({
+      _id: camp._id,
+      name: camp.name,
+      type: type,
+      template: camp.templateId || null,
+      flow: camp.flowId || null,
+      audience: camp.audience || [],
+      variables: initialVariables,
+      media: {
+        url: camp.mediaUrl || "",
+        type: camp.mediaType || ""
+      },
+      scheduledAt: camp.scheduledAt || null
+    });
+
+    if (camp.scheduledAt) {
+      setIsScheduling(true);
+      const sDate = new Date(camp.scheduledAt);
+      setScheduleDate(sDate.toISOString().split('T')[0]);
+      setScheduleTime(sDate.toTimeString().split(' ')[0].substring(0, 5));
+    } else {
+      setIsScheduling(false);
+      setScheduleDate("");
+      setScheduleTime("");
+    }
+
+    setCurrentStep(1);
+    setView("wizard");
+  };
+
+  const handleDeleteDraft = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this draft campaign?")) {
+      return;
+    }
+
+    try {
+      const res = await api.delete(`/api/integrationManagement/whatsapp/campaigns/${id}`);
+      if (res.data.status) {
+        toast.success("Draft campaign deleted successfully");
+        fetchInitialData();
+      }
+    } catch (error) {
+      console.error("Delete Draft Error:", error);
+      toast.error(error.response?.data?.message || "Failed to delete draft campaign");
+    }
   };
   
   // Backwards compatibility for wizard steps
@@ -558,7 +678,12 @@ const SendCampaign = () => {
         status: "SCHEDULED"
       };
 
-      const res = await api.post("/api/integrationManagement/whatsapp/campaigns", payload);
+      let res;
+      if (campaignData._id) {
+        res = await api.put(`/api/integrationManagement/whatsapp/campaigns/${campaignData._id}`, payload);
+      } else {
+        res = await api.post("/api/integrationManagement/whatsapp/campaigns", payload);
+      }
       if (res.data.status) {
         toast.success(`Campaign scheduled for ${scheduledDate.toLocaleString()}`);
         setView("dashboard");
@@ -599,8 +724,14 @@ const SendCampaign = () => {
         status: "COMPLETED"
       };
       
-      const campaignSaveRes = await api.post("/api/integrationManagement/whatsapp/campaigns", savePayload);
-      const savedCampaign = campaignSaveRes.data?.data;
+      let savedCampaign;
+      if (campaignData._id) {
+        const campaignUpdateRes = await api.put(`/api/integrationManagement/whatsapp/campaigns/${campaignData._id}`, savePayload);
+        savedCampaign = campaignUpdateRes.data?.data;
+      } else {
+        const campaignSaveRes = await api.post("/api/integrationManagement/whatsapp/campaigns", savePayload);
+        savedCampaign = campaignSaveRes.data?.data;
+      }
 
       // 2. Prepare payload for sending
       let payload = {
@@ -735,7 +866,13 @@ const SendCampaign = () => {
                 <tr
                   key={camp._id}
                   className="cursor-pointer hover:bg-gray-50/50 transition-colors"
-                  onClick={() => openCampaignAnalytics(camp)}
+                  onClick={() => {
+                    if (camp.status === "DRAFT") {
+                      handleResumeDraft(camp);
+                    } else {
+                      openCampaignAnalytics(camp);
+                    }
+                  }}
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -768,22 +905,42 @@ const SendCampaign = () => {
                       camp.status === "COMPLETED" ? "bg-green-50 text-green-600" :
                       camp.status === "SCHEDULED" ? "bg-blue-50 text-blue-600" :
                       camp.status === "FAILED" ? "bg-red-50 text-red-600" :
+                      camp.status === "DRAFT" ? "bg-amber-50 text-amber-600 border border-amber-100" :
                       "bg-yellow-50 text-yellow-600"
                     }`}>
                       {camp.status || "Completed"}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        openCampaignAnalytics(camp);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#313166]/10 bg-[#313166]/5 px-3 py-2 text-xs font-semibold text-[#313166] transition-all hover:bg-[#313166]/10"
-                    >
-                      View analytics
-                    </button>
+                    {camp.status === "DRAFT" ? (
+                      <div className="flex justify-end gap-2" onClick={(event) => event.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => handleResumeDraft(camp)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-[#313166]/10 bg-[#313166]/5 px-3 py-2 text-xs font-semibold text-[#313166] transition-all hover:bg-[#313166]/10"
+                        >
+                          Resume
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDraft(camp._id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition-all hover:bg-red-100/50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openCampaignAnalytics(camp);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#313166]/10 bg-[#313166]/5 px-3 py-2 text-xs font-semibold text-[#313166] transition-all hover:bg-[#313166]/10"
+                      >
+                        View analytics
+                      </button>
+                    )}
                   </td>
                 </tr>
               )) : (
@@ -853,7 +1010,13 @@ const SendCampaign = () => {
             ))}
           </div>
           <button 
-            onClick={() => setView("dashboard")}
+            onClick={() => {
+              if (campaignData.name) {
+                setShowExitConfirmModal(true);
+              } else {
+                setView("dashboard");
+              }
+            }}
             className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-400"
           >
             <X size={20} />
@@ -1331,21 +1494,31 @@ const SendCampaign = () => {
                 ))}
               </div>
 
-              {steps.findIndex(s => s.id === currentStep) < steps.length - 1 ? (
-                <button 
-                  onClick={handleNext}
-                  disabled={
-                    (currentStep === 1 && !campaignData.name) ||
-                    (currentStep === 2 && !campaignData.template) ||
-                    (currentStep === 3 && campaignData.audience.length === 0)
-                  }
-                  className="px-8 py-2.5 bg-[#313166] text-white rounded-xl text-sm font-bold hover:bg-[#3d3b83] transition-all flex items-center gap-2 disabled:opacity-30 shadow-lg shadow-[#313166]/10"
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleSaveAsDraft(false)}
+                  disabled={loading || !campaignData.name}
+                  className="px-6 py-2.5 border border-gray-200 bg-white text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-50 transition-all disabled:opacity-50"
                 >
-                  Continue <ChevronRight size={16} />
+                  Save Draft
                 </button>
-              ) : (
-                <div className="w-[110px]"></div>
-              )}
+                {steps.findIndex(s => s.id === currentStep) < steps.length - 1 ? (
+                  <button 
+                    onClick={handleNext}
+                    disabled={
+                      (currentStep === 1 && !campaignData.name) ||
+                      (currentStep === 2 && !campaignData.template) ||
+                      (currentStep === 3 && campaignData.audience.length === 0)
+                    }
+                    className="px-8 py-2.5 bg-[#313166] text-white rounded-xl text-sm font-bold hover:bg-[#3d3b83] transition-all flex items-center gap-2 disabled:opacity-30 shadow-lg shadow-[#313166]/10"
+                  >
+                    Continue <ChevronRight size={16} />
+                  </button>
+                ) : (
+                  <div className="w-[10px]"></div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1580,6 +1753,50 @@ const SendCampaign = () => {
     <div className="h-full">
       {view === "dashboard" ? renderDashboard() : renderWizard()}
       
+      {/* Exit Confirmation Modal */}
+      {showExitConfirmModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-6 animate-in zoom-in duration-300">
+            <div className="space-y-2 text-center">
+              <div className="mx-auto w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-500 mb-2">
+                <AlertCircle size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Unsaved Changes</h3>
+              <p className="text-sm text-gray-500">Would you like to save this campaign as a draft before exiting?</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowExitConfirmModal(false);
+                  await handleSaveAsDraft(true);
+                }}
+                className="w-full py-2.5 bg-[#313166] text-white rounded-xl font-bold hover:bg-[#3d3b83] transition-all shadow-lg shadow-[#313166]/10 text-sm"
+              >
+                Save as Draft
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowExitConfirmModal(false);
+                  setView("dashboard");
+                }}
+                className="w-full py-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold transition-all text-sm"
+              >
+                Discard Changes
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowExitConfirmModal(false)}
+                className="w-full py-2.5 bg-gray-50 text-gray-500 hover:bg-gray-100 rounded-xl font-bold transition-all text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Selection Progress Overlay */}
       {selectionProgress.isSelecting && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm">
