@@ -21,6 +21,7 @@ import {
   Tag,
   FileText,
   Filter,
+  ChevronDown,
 } from "lucide-react";
 
 import ReactSlider from "react-slider";
@@ -263,7 +264,7 @@ const FilterPanel = ({
           source: getSource?.data?.data,
           loyaltyPoints: { type: "number" },
           isActive: ['true', 'false'],
-          labels: { type: "string" },
+          labels: { type: "select", options: apiData.uniqueLabels || [] },
         };
 
         // Process dynamic filters from mergedData.allData
@@ -429,6 +430,36 @@ const FilterPanel = ({
               aria-label={`Clear ${filterKey}`}
             >
               Clear
+            </button>
+          )}
+        </div>
+      );
+    } else if (filterConfig?.type === "select") {
+      return (
+        <div className="mt-2 relative">
+          <select
+            className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10 appearance-none cursor-pointer"
+            value={filters[filterKey] || ""}
+            onChange={(e) => onFilterChange(filterKey, e.target.value)}
+          >
+            <option value="">Select a label</option>
+            {(filterConfig.options || []).map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={16}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+          />
+          {filters[filterKey] && (
+            <button
+              className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              onClick={() => onFilterChange(filterKey, '')}
+              aria-label={`Clear ${filterKey}`}
+            >
+              <X size={14} />
             </button>
           )}
         </div>
