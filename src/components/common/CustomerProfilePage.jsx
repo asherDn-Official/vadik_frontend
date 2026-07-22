@@ -5,6 +5,8 @@ import api from "../../api/apiconfig";
 import { FiArrowLeft, FiFilter } from "react-icons/fi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import showToast from "../../utils/ToastNotification";
+import { FaCoins } from "react-icons/fa";
 
 function CustomerProfilePage() {
   //   const { id } = useParams();
@@ -18,10 +20,13 @@ function CustomerProfilePage() {
   const [statistics, setStatistics] = useState(null);
   const [orderHistory, setOrderHistory] = useState([]);
   const [claimedCoupons, setClaimedCoupons] = useState([]);
+  const [loyaltyClaims, setLoyaltyClaims] = useState([]);
+  const [loyaltyRule, setLoyaltyRule] = useState(null);
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [showFilters, setShowFilters] = useState(true);
+  
   // Filters
   const [filters, setFilters] = useState({
     minAmount: "",
@@ -35,20 +40,37 @@ function CustomerProfilePage() {
 
   useEffect(() => {
     fetchCustomerData();
+    fetchLoyaltyRule();
   }, [customerId]);
+
+  const fetchLoyaltyRule = async () => {
+    try {
+      const res = await api.get("/api/loyalty/rule");
+      setLoyaltyRule(res.data);
+    } catch (err) {
+      console.error("Failed to fetch loyalty rule in customer profile:", err);
+    }
+  };
 
   const fetchCustomerData = async () => {
     setLoading(true);
     try {
       const res = await api.get(`/api/customerQuickSearch/${customerId}`);
 
-      const { customer, statistics, orderHistory, claimedCoupons } =
+      const { customer, statistics, orderHistory, claimedCoupons, loyaltyClaims } =
         res.data.data || {};
 
       setCustomerData(customer);
       setStatistics(statistics);
-      setOrderHistory(orderHistory?.orders || []);
-      setClaimedCoupons(claimedCoupons?.coupons || []);
+      
+      // Support both direct array format and nested object structures
+      setOrderHistory(
+        Array.isArray(orderHistory) ? orderHistory : (orderHistory?.orders || [])
+      );
+      setClaimedCoupons(
+        Array.isArray(claimedCoupons) ? claimedCoupons : (claimedCoupons?.coupons || [])
+      );
+      setLoyaltyClaims(loyaltyClaims || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -131,6 +153,7 @@ function CustomerProfilePage() {
                 { name: "overview" },
                 { name: "orders", count: orderHistory.length },
                 { name: "coupons", count: claimedCoupons.length },
+                { name: "loyalty", count: loyaltyClaims.length },
               ].map((tab) => (
                 <button
                   key={tab.name}
@@ -760,9 +783,207 @@ function CustomerProfilePage() {
                     </div>
                   </>
                 )}
+
+                {activeTab === "loyalty" && (
+                  <LoyaltyTabContent
+                    customerData={customerData}
+                    loyaltyRule={loyaltyRule}
+                    loyaltyClaims={loyaltyClaims}
+                    setCustomerData={setCustomerData}
+                    setLoyaltyClaims={setLoyaltyClaims}
+                  />
+                )}
               </>
             )}
           </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LoyaltyTabContent({
+  customerData,
+  loyaltyRule,
+  loyaltyClaims,
+  setCustomerData,
+  setLoyaltyClaims,
+}) {
+  const [claimPoints, setClaimPoints] = useState("");
+  const [claiming, setClaiming] = useState(false);
+
+  const conversionPoints = loyaltyRule?.isActive && loyaltyRule?.points ? loyaltyRule.points : 100;
+  const conversionRupees = loyaltyRule?.isActive && loyaltyRule?.rupees !== undefined ? loyaltyRule.rupees : 10;
+  
+  // Real-time calculation of rupees
+  const currentPoints = customerData?.loyaltyPoints || 0;
+  const currentRupeesEquivalent = Math.floor((currentPoints * conversionRupees) / conversionPoints);
+  
+  const claimPointsNum = parseFloat(claimPoints) || 0;
+  const claimRupeesEquivalent = Math.floor((claimPointsNum * conversionRupees) / conversionPoints);
+
+  const handleClaim = async (e) => {
+    e.preventDefault();
+    if (claimPointsNum <= 0) {
+      showToast("Please enter a valid amount of points to claim", "error");
+      return;
+    }
+    if (claimPointsNum > currentPoints) {
+      showToast("Insufficient points balance", "error");
+      return;
+    }
+
+    setClaiming(true);
+    try {
+      const res = await api.post("/api/loyalty/claim", {
+        customerId: customerData.customerId,
+        pointsToClaim: claimPointsNum,
+      });
+
+      showToast("Loyalty points claimed successfully!", "success");
+      
+      // Update customer points balance in frontend state
+      setCustomerData((prev) => ({
+        ...prev,
+        loyaltyPoints: res.data.data.currentPointsBalance,
+      }));
+
+      // Add the new claim to the top of the history list
+      setLoyaltyClaims((prev) => [res.data.data.claim, ...prev]);
+      setClaimPoints("");
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to claim points";
+      showToast(msg, "error");
+    } finally {
+      setClaiming(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fadeIn">
+      {/* Cards Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Balance Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-[#313166] mb-1">Points Balance</h3>
+            <p className="text-xs text-gray-400">Your customer's current redeemable loyalty points</p>
+          </div>
+          
+          <div className="my-6">
+            <p className="text-4xl font-extrabold text-[#313166] flex items-baseline gap-2">
+              {currentPoints.toLocaleString()}
+              <span className="text-sm font-medium text-gray-400">pts</span>
+            </p>
+            <p className="text-sm font-medium text-green-600 mt-1">
+              Equivalent to ≈ ₹{currentRupeesEquivalent.toLocaleString()}
+            </p>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-500 border border-gray-100">
+            Conversion Rate: <span className="font-semibold text-[#313166]">{conversionPoints} points = ₹{conversionRupees}</span>
+          </div>
+        </div>
+
+        {/* Claim Form Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-[#313166] mb-1">Claim Points</h3>
+          <p className="text-xs text-gray-400 mb-4">Deduct loyalty points and give equivalent cash or discount</p>
+
+          <form onSubmit={handleClaim} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                Points to Claim
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  max={currentPoints}
+                  value={claimPoints}
+                  onChange={(e) => setClaimPoints(e.target.value)}
+                  placeholder="Enter amount (e.g. 100)"
+                  className="w-full px-4 py-2.5 outline-none border border-gray-300 rounded-xl focus:border-[#EC396F] focus:ring-1 focus:ring-[#EC396F] transition-all"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setClaimPoints(currentPoints.toString())}
+                  className="absolute right-3 top-2.5 text-xs text-[#EC396F] font-semibold hover:underline"
+                >
+                  Claim All
+                </button>
+              </div>
+            </div>
+
+            {claimPointsNum > 0 && (
+              <div className="bg-[#FFF8FA] border border-[#FEE2E2] rounded-xl p-3.5 text-sm text-[#313166]">
+                <p className="font-medium">
+                  Claiming Value: <span className="text-[#EC396F] font-bold text-base">₹{claimRupeesEquivalent}</span>
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Remaining points after claim: {(currentPoints - claimPointsNum).toLocaleString()} pts
+                </p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={claiming || claimPointsNum <= 0 || claimPointsNum > currentPoints}
+              className="w-full bg-[#EC396F] text-white py-3 px-6 rounded-xl font-medium hover:bg-[#d62e60] disabled:opacity-55 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+            >
+              {claiming ? "Processing..." : `Claim ₹${claimRupeesEquivalent} Now`}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Claims History Card */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h3 className="text-lg font-semibold text-[#313166] mb-1">Claim History</h3>
+        <p className="text-xs text-gray-400 mb-4">Record of previous loyalty point redemptions</p>
+
+        {loyaltyClaims.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm text-left border-separate border-spacing-y-1.5">
+              <thead className="bg-gray-50 text-gray-500 font-medium">
+                <tr>
+                  <th className="px-4 py-3 rounded-l-lg">Date</th>
+                  <th className="px-4 py-3">Points Claimed</th>
+                  <th className="px-4 py-3">Value (Rupees)</th>
+                  <th className="px-4 py-3 rounded-r-lg">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loyaltyClaims.map((claim) => (
+                  <tr key={claim._id} className="bg-white border-b hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-gray-600">
+                      {new Date(claim.claimDate || claim.createdAt).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-[#313166]">
+                      {claim.pointsClaimed} pts
+                    </td>
+                    <td className="px-4 py-3 text-green-600 font-semibold">
+                      ₹{claim.rupeesEquivalent}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {claim.status || "claimed"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-10 text-gray-400 space-y-2 border border-dashed rounded-2xl">
+            <div className="flex justify-center text-yellow-500 opacity-60">
+              <FaCoins size={36} className="animate-bounce" />
+            </div>
+            <p className="text-base font-semibold text-gray-500">No redemptions yet</p>
+            <p className="text-xs max-w-xs mx-auto">This customer has not claimed any loyalty points yet.</p>
+          </div>
         )}
       </div>
     </div>
