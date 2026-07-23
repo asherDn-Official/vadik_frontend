@@ -142,7 +142,7 @@ function LoyaltyPoint() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Active Toggle Card */}
-              <div className="flex items-center justify-between p-5 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+              {/* <div className="flex items-center justify-between p-5 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
                 <div>
                   <h3 className="font-semibold text-gray-900">Enable Loyalty Program</h3>
                   <p className="text-sm text-gray-500">Enable or disable loyalty rewards for your customers</p>
@@ -162,7 +162,7 @@ function LoyaltyPoint() {
                     </label>
                   )}
                 />
-              </div>
+              </div> */}
 
               {/* Conversion Rules Panel */}
               <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-6">
