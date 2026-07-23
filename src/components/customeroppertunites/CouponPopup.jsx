@@ -36,7 +36,8 @@ const CouponPopup = ({ onClose, onSelect }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState({
-        isActive: "",
+        isActive: "true",
+        isExpired: "false",
         couponType: "",
         expiryDate: "",
         productId: "",
@@ -327,7 +328,8 @@ const CouponPopup = ({ onClose, onSelect }) => {
 
     const clearFilters = () => {
         setFilters({
-            isActive: "",
+            isActive: "true",
+            isExpired: "false",
             couponType: "",
             expiryDate: "",
             productId: "",
