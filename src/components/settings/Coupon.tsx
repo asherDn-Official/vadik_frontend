@@ -52,6 +52,7 @@ const CouponManagement = () => {
 
   const [filters, setFilters] = useState({
     isActive: "",
+    isExpired: "false",
     couponType: "",
     expiryDate: "",
     productId: "",
@@ -404,6 +405,7 @@ const CouponManagement = () => {
   const clearFilters = () => {
     setFilters({
       isActive: "",
+      isExpired: "false",
       couponType: "",
       expiryDate: "",
       productId: "",
@@ -973,6 +975,23 @@ const CouponManagement = () => {
                     <option value="">All Statuses</option>
                     <option value="true">Active</option>
                     <option value="false">Inactive</option>
+                  </select>
+                </div>
+
+                {/* Expiry Status Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Expiry Status
+                  </label>
+                  <select
+                    name="isExpired"
+                    value={filters.isExpired}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="false">Valid coupons only</option>
+                    <option value="">All coupons</option>
+                    <option value="true">Expired coupons only</option>
                   </select>
                 </div>
 

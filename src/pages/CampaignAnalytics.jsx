@@ -80,9 +80,8 @@ const CampaignAnalytics = () => {
   const [retryReason, setRetryReason] = useState("");
   const [retrying, setRetrying] = useState(false);
 
-  // New retry strategy, template, and flow config states
-  const [retryType, setRetryType] = useState("same"); // "same" or "different"
-  const [newCampaignType, setNewCampaignType] = useState("template"); // "template" or "flow"
+  // Retry mode controls whether we reuse the original message setup or swap in a new template/flow.
+  const [retryVariant, setRetryVariant] = useState("same"); // "same", "template", or "flow"
   const [templates, setTemplates] = useState([]);
   const [flows, setFlows] = useState([]);
   const [fetchingConfigData, setFetchingConfigData] = useState(false);
@@ -137,8 +136,7 @@ const CampaignAnalytics = () => {
   const handleOpenRetryModal = async () => {
     setRetryStatus("failed");
     setRetryReason("");
-    setRetryType("same");
-    setNewCampaignType("template");
+    setRetryVariant("same");
     setSelectedTemplate(null);
     setSelectedFlow(null);
     setVariables({});
@@ -239,51 +237,53 @@ const CampaignAnalytics = () => {
       
       const payload = {
         status: retryStatus,
+        retryMode: retryVariant,
       };
       if (retryStatus === "failed" && retryReason) {
         payload.failureReason = retryReason;
       }
 
-      if (retryType === "different") {
-        if (newCampaignType === "template") {
-          if (!selectedTemplate) {
-            setError("Please select a template");
-            setRetrying(false);
-            return;
-          }
-          const missingVars = Object.entries(variables).filter(([_, val]) => !val.trim());
-          if (missingVars.length > 0) {
-            setError("Please fill all template variables");
-            setRetrying(false);
-            return;
-          }
-          if (media.type && !media.url) {
-            setError("Please upload the required media file");
-            setRetrying(false);
-            return;
-          }
-
-          payload.templateId = selectedTemplate._id;
-          payload.variables = variables;
-          if (media.url) {
-            payload.mediaUrl = media.url;
-            payload.mediaType = media.type;
-          }
-        } else {
-          if (!selectedFlow) {
-            setError("Please select a flow");
-            setRetrying(false);
-            return;
-          }
-          if (!variables.body?.trim()) {
-            setError("Please fill the body text for the flow");
-            setRetrying(false);
-            return;
-          }
-
-          payload.flowId = selectedFlow._id;
-          payload.variables = variables;
+      if (retryVariant === "template") {
+        if (!selectedTemplate) {
+          setError("Please select a template");
+          setRetrying(false);
+          return;
         }
+
+        const missingVars = Object.entries(variables).filter(([, val]) => !val.trim());
+        if (missingVars.length > 0) {
+          setError("Please fill all template variables");
+          setRetrying(false);
+          return;
+        }
+
+        if (media.type && !media.url) {
+          setError("Please upload the required media file");
+          setRetrying(false);
+          return;
+        }
+
+        payload.templateId = selectedTemplate._id;
+        payload.variables = variables;
+        if (media.url) {
+          payload.mediaUrl = media.url;
+          payload.mediaType = media.type;
+        }
+      } else if (retryVariant === "flow") {
+        if (!selectedFlow) {
+          setError("Please select a flow");
+          setRetrying(false);
+          return;
+        }
+
+        if (!variables.body?.trim()) {
+          setError("Please fill the body text for the flow");
+          setRetrying(false);
+          return;
+        }
+
+        payload.flowId = selectedFlow._id;
+        payload.variables = variables;
       }
 
       const res = await api.post(
@@ -735,7 +735,7 @@ const CampaignAnalytics = () => {
       {/* Retry Modal */}
       {isRetryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className={`w-full overflow-hidden rounded-[28px] border border-[#E8EBFF] bg-gradient-to-br from-white to-[#F9FAFF] shadow-[0_24px_70px_rgba(49,49,102,0.15)] animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] ${retryType === 'different' ? 'max-w-4xl' : 'max-w-lg'}`}>
+          <div className={`w-full overflow-hidden rounded-[28px] border border-[#E8EBFF] bg-gradient-to-br from-white to-[#F9FAFF] shadow-[0_24px_70px_rgba(49,49,102,0.15)] animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] ${retryVariant === "same" ? "max-w-lg" : "max-w-4xl"}`}>
             <div className="flex items-center justify-between border-b border-[#EEF1FF] px-6 py-4">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
@@ -755,7 +755,7 @@ const CampaignAnalytics = () => {
               </button>
             </div>
 
-            <div className={`p-6 space-y-5 overflow-y-auto flex-1 ${retryType === 'different' ? 'grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6 space-y-0' : ''}`}>
+            <div className={`p-6 space-y-5 overflow-y-auto flex-1 ${retryVariant === "same" ? "" : "grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6 space-y-0"}`}>
               {/* Left Form Panel */}
               <div className="space-y-5">
                 {/* 1. Target Audience status Selection */}
@@ -805,67 +805,53 @@ const CampaignAnalytics = () => {
                   <label className="text-xs font-bold uppercase tracking-wider text-[#8B90B2]">
                     Retry Strategy
                   </label>
-                  <div className="grid grid-cols-2 gap-2 bg-gray-50 p-1 rounded-xl border border-gray-100">
+                  <div className="grid grid-cols-3 gap-2 bg-gray-50 p-1 rounded-xl border border-gray-100">
                     <button
                       type="button"
-                      onClick={() => setRetryType("same")}
-                      className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${retryType === 'same' ? 'bg-[#313166] text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                      onClick={() => {
+                        setRetryVariant("same");
+                        setSelectedTemplate(null);
+                        setSelectedFlow(null);
+                        setVariables({});
+                        setMedia({ url: "", type: "" });
+                      }}
+                      className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${retryVariant === "same" ? "bg-[#313166] text-white shadow-sm" : "text-gray-500 hover:text-gray-800"}`}
                     >
-                      Same Template/Flow
+                      Same Setup
                     </button>
                     <button
                       type="button"
-                      onClick={() => setRetryType("different")}
-                      className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${retryType === 'different' ? 'bg-[#313166] text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                      onClick={() => {
+                        setRetryVariant("template");
+                        setSelectedFlow(null);
+                        setVariables({});
+                        setMedia({ url: "", type: "" });
+                      }}
+                      className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${retryVariant === "template" ? "bg-[#313166] text-white shadow-sm" : "text-gray-500 hover:text-gray-800"}`}
                     >
-                      Different Template/Flow
+                      Different Template
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRetryVariant("flow");
+                        setSelectedTemplate(null);
+                        setVariables({ body: "Please fill this form" });
+                        setMedia({ url: "", type: "" });
+                      }}
+                      className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${retryVariant === "flow" ? "bg-[#313166] text-white shadow-sm" : "text-gray-500 hover:text-gray-800"}`}
+                    >
+                      Different Flow
                     </button>
                   </div>
                 </div>
 
                 {/* 3. Different Template/Flow Configuration Form */}
-                {retryType === "different" && (
+                {retryVariant !== "same" && (
                   <div className="space-y-5 border-t border-gray-100 pt-4 animate-in fade-in duration-200">
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="newCampaignType"
-                          value="template"
-                          checked={newCampaignType === "template"}
-                          onChange={() => {
-                            setNewCampaignType("template");
-                            setSelectedTemplate(null);
-                            setSelectedFlow(null);
-                            setVariables({});
-                            setMedia({ url: "", type: "" });
-                          }}
-                          className="text-[#313166] focus:ring-[#313166]"
-                        />
-                        Template
-                      </label>
-                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="newCampaignType"
-                          value="flow"
-                          checked={newCampaignType === "flow"}
-                          onChange={() => {
-                            setNewCampaignType("flow");
-                            setSelectedTemplate(null);
-                            setSelectedFlow(null);
-                            setVariables({});
-                            setMedia({ url: "", type: "" });
-                          }}
-                          className="text-[#313166] focus:ring-[#313166]"
-                        />
-                        Flow
-                      </label>
-                    </div>
-
                     {fetchingConfigData ? (
                       <div className="text-xs text-gray-500 italic animate-pulse">Loading available options...</div>
-                    ) : newCampaignType === "template" ? (
+                    ) : retryVariant === "template" ? (
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <label htmlFor="newTemplateSelect" className="text-xs font-bold uppercase tracking-wider text-[#8B90B2]">
@@ -880,12 +866,12 @@ const CampaignAnalytics = () => {
                             }}
                             className="w-full rounded-xl border border-[#E8EBFF] bg-white p-3 text-sm font-semibold text-[#1F1C5C] shadow-sm focus:border-[#313166] focus:outline-none"
                           >
-                            <option value="">-- Choose Template --</option>
-                            {templates.map(t => (
-                              <option key={t._id} value={t._id}>{t.name} ({t.language})</option>
-                            ))}
-                          </select>
-                        </div>
+                              <option value="">-- Choose Template --</option>
+                              {templates.map(t => (
+                                <option key={t._id} value={t._id}>{t.name} ({t.language})</option>
+                              ))}
+                            </select>
+                          </div>
 
                         {selectedTemplate && (
                           <>
@@ -1007,17 +993,17 @@ const CampaignAnalytics = () => {
                 <div className="rounded-2xl border border-[#E8EBFF] bg-indigo-50/50 p-4">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-700">What will happen?</h4>
                   <p className="mt-1 text-xs leading-relaxed text-[#5A6084]">
-                    {retryType === 'same' ? (
-                      <>This will create a new campaign named <strong className="text-[#1F1C5C]">{campaignDetails?.name || campaign?.sourceName} (Retry...)</strong> targeting the customers matching your selection. It will run with the exact same template/flow and variables configured in the original campaign.</>
+                    {retryVariant === "same" ? (
+                      <>This will create a new campaign named <strong className="text-[#1F1C5C]">{campaignDetails?.name || campaign?.sourceName} (Retry...)</strong> targeting the customers matching your selection. It will run with the exact same template or flow and variables configured in the original campaign.</>
                     ) : (
-                      <>This will create a new campaign targeting the selected customers. It will run using the newly selected <strong className="text-[#1F1C5C]">{newCampaignType === "template" ? (selectedTemplate?.name || "template") : (selectedFlow?.name || "flow")}</strong> and new variables configuration.</>
+                      <>This will create a new campaign targeting the selected customers. It will run using the newly selected <strong className="text-[#1F1C5C]">{retryVariant === "template" ? (selectedTemplate?.name || "template") : (selectedFlow?.name || "flow")}</strong> and new variables configuration.</>
                     )}
                   </p>
                 </div>
               </div>
 
               {/* Right Preview Panel (only for Different Template/Flow) */}
-              {retryType === 'different' && (
+              {retryVariant !== "same" && (
                 <div className="hidden lg:block lg:sticky lg:top-0 space-y-4">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Live Preview</h4>
@@ -1042,7 +1028,7 @@ const CampaignAnalytics = () => {
 
                     {/* Message Area */}
                     <div className="flex-1 p-2 bg-[#e5ddd5] space-y-1.5 overflow-y-auto custom-scrollbar" style={{ backgroundImage: "url('/whatsapp-bg.png')", backgroundSize: '100px' }}>
-                      {newCampaignType === "flow" && selectedFlow ? (
+                      {retryVariant === "flow" && selectedFlow ? (
                         <div className="max-w-[85%] bg-white rounded-xl p-2 shadow-sm border border-emerald-100">
                           <div className="flex items-center gap-1 mb-1 pb-1 border-b border-gray-100 text-[#313166] font-bold text-[8px]">
                             <Layers size={10} className="text-[#313166]" />
