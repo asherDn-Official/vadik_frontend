@@ -26,6 +26,51 @@ function CustomerProfilePage() {
   const [copiedId, setCopiedId] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [showFilters, setShowFilters] = useState(true);
+
+  const normalizeClaimedCoupons = (value) => {
+    const list = Array.isArray(value) ? value : value?.coupons || [];
+
+    return list.map((item) => ({
+      ...item,
+      claimId: item.claimId || item._id,
+      coupon: item.coupon || null,
+    }));
+  };
+
+  const getCouponAvailability = (coupon) => {
+    if (!coupon) return { label: "Unknown", className: "bg-gray-100 text-gray-600" };
+
+    if (!coupon.isActive) {
+      return { label: "Inactive", className: "bg-red-100 text-red-700" };
+    }
+
+    if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date()) {
+      return { label: "Expired", className: "bg-amber-100 text-amber-700" };
+    }
+
+    return { label: "Active", className: "bg-green-100 text-green-700" };
+  };
+
+  const getClaimStatusStyle = (status) => {
+    switch (status) {
+      case "used":
+        return "bg-green-100 text-green-700";
+      case "expired":
+        return "bg-red-100 text-red-700";
+      case "cancelled":
+        return "bg-gray-100 text-gray-700";
+      default:
+        return "bg-yellow-100 text-yellow-700";
+    }
+  };
+
+  const formatCouponValue = (coupon) => {
+    if (!coupon) return "Offer";
+    if (coupon.couponType === "product") return "Product reward";
+    if (!coupon.discount) return "No Offer";
+    const suffix = coupon.couponType === "percentage" ? "%" : "₹";
+    return `${coupon.discount}${suffix} OFF`;
+  };
   
   // Filters
   const [filters, setFilters] = useState({
@@ -67,14 +112,24 @@ function CustomerProfilePage() {
       setOrderHistory(
         Array.isArray(orderHistory) ? orderHistory : (orderHistory?.orders || [])
       );
-      setClaimedCoupons(
-        Array.isArray(claimedCoupons) ? claimedCoupons : (claimedCoupons?.coupons || [])
-      );
+      setClaimedCoupons(normalizeClaimedCoupons(claimedCoupons));
       setLoyaltyClaims(loyaltyClaims || []);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMarkAsUsed = async (claimId) => {
+    if (!claimId) return;
+
+    try {
+      await api.put(`/api/coupons/claim/${claimId}/mark-used`);
+      showToast("Coupon marked as used.", "success");
+      await fetchCustomerData();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to mark coupon as used", "error");
     }
   };
 
@@ -391,16 +446,16 @@ function CustomerProfilePage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {claimedCoupons.map((c) => (
                             <div
-                              key={c.claimId}
+                              key={c.claimId || c.couponId}
                               className="group border rounded-xl p-4 bg-white hover:shadow-md hover:border-[#EC396F] transition-all cursor-pointer"
                             >
                               {/* Top Row */}
                               <div className="flex justify-between items-start mb-3">
                                 {/* Discount Highlight */}
                                 <div className="bg-[#FEE2E2] text-[#EC396F] text-xs font-semibold px-2 py-1 rounded">
-                                  {c.coupon.discount
+                                  {c.coupon?.discount
                                     ? `${c.coupon.discount}${
-                                        c.coupon.couponType === "percentage"
+                                        c.coupon?.couponType === "percentage"
                                           ? "%"
                                           : "₹"
                                       } OFF`
@@ -409,33 +464,72 @@ function CustomerProfilePage() {
 
                                 {/* Status */}
                                 <span
-                                  className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                    c.status === "used"
-                                      ? "bg-green-100 text-green-700"
-                                      : c.status === "expired"
-                                        ? "bg-red-100 text-red-600"
-                                        : "bg-yellow-100 text-yellow-700"
-                                  }`}
+                                  className={`text-xs px-2 py-1 rounded-full font-medium ${getClaimStatusStyle(c.status)}`}
                                 >
-                                  {c.status}
+                                  {c.status || "claimed"}
                                 </span>
+                                <span
+                                  className={`text-xs px-2 py-1 rounded-full font-medium ${getCouponAvailability(c.coupon).className}`}
+                                >
+                                  {getCouponAvailability(c.coupon).label}
+                                </span>
+                              </div>
+
+                              {c.coupon?.productImage && (
+                                <div className="mb-3 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
+                                  <img
+                                    src={c.coupon.productImage}
+                                    alt={c.coupon?.name || "Coupon"}
+                                    className="h-36 w-full object-cover"
+                                  />
+                                </div>
+                              )}
+
+                              <div className="mb-3 space-y-2 rounded-xl bg-[#FAFAFC] p-3 text-xs text-gray-600">
+                                <div className="flex flex-wrap gap-2">
+                                  <span className="rounded-full bg-white px-2 py-1 font-medium text-gray-700 border">
+                                    {c.coupon?.couponType || "coupon"}
+                                  </span>
+                                  {c.coupon?.condition && (
+                                    <span className="rounded-full bg-white px-2 py-1 font-medium text-gray-700 border">
+                                      {c.coupon.conditionType || "condition"}{" "}
+                                      {c.coupon.conditionValue ?? ""}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm font-semibold text-[#313166]">
+                                  {formatCouponValue(c.coupon)}
+                                </p>
+                                {c.coupon?.description && (
+                                  <p className="leading-5 text-gray-600">
+                                    {c.coupon.description}
+                                  </p>
+                                )}
+                                {c.coupon?.productNames && (
+                                  <p>
+                                    Product:{" "}
+                                    <span className="font-medium text-gray-800">
+                                      {c.coupon.productNames}
+                                    </span>
+                                  </p>
+                                )}
                               </div>
 
                               {/* Name */}
                               <p className="font-semibold text-[#313166] text-sm mb-1">
-                                {c.coupon.name}
+                                {c.coupon?.name || "Coupon"}
                               </p>
 
                               {/* Code */}
                               <p className="text-xs text-gray-500 mb-2">
                                 Code:{" "}
                                 <span className="font-medium">
-                                  {c.coupon.code}
+                                  {c.coupon?.code || "-"}
                                 </span>
                               </p>
 
                               {/* Expiry */}
-                              {c.coupon.expiryDate && (
+                              {c.coupon?.expiryDate && (
                                 <p className="text-xs text-gray-400 mb-3">
                                   Expires on{" "}
                                   {new Date(
@@ -446,26 +540,45 @@ function CustomerProfilePage() {
 
                               {/* Actions */}
                               <div className="flex justify-between items-center pt-2 border-t">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigator.clipboard.writeText(
-                                      c.coupon.code,
-                                    );
-                                    setCopiedId(c.claimId);
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText(
+                                        c.coupon?.code || "",
+                                      );
+                                      setCopiedId(c.claimId || c.couponId);
 
-                                    setTimeout(() => setCopiedId(null), 1500);
-                                  }}
-                                  className="text-xs text-blue-600 hover:underline"
-                                >
-                                  {copiedId === c.claimId ? "Copied!" : "Copy"}
-                                </button>
+                                      setTimeout(() => setCopiedId(null), 1500);
+                                    }}
+                                    className="text-xs text-blue-600 hover:underline"
+                                  >
+                                    {copiedId === (c.claimId || c.couponId)
+                                      ? "Copied!"
+                                      : "Copy"}
+                                  </button>
 
-                                {c.status === "claimed" && (
-                                  <span className="text-xs text-gray-400">
-                                    Not used
-                                  </span>
-                                )}
+                                  {c.status === "claimed" && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleMarkAsUsed(c.claimId || c._id);
+                                      }}
+                                      className="rounded-full border border-[#EC396F] px-3 py-1 text-xs font-semibold text-[#EC396F] transition hover:bg-[#EC396F] hover:text-white"
+                                    >
+                                      Mark as Used
+                                    </button>
+                                  )}
+                                </div>
+
+                                <span className="text-xs text-gray-400">
+                                  {c.claimedFor
+                                    ? `From ${c.claimedFor}`
+                                    : c.status === "claimed"
+                                      ? "Not used"
+                                      : ""}
+                                </span>
                               </div>
                             </div>
                           ))}
