@@ -1099,23 +1099,25 @@ const EngagementDashboard = () => {
                         ) : (
                           <div className="divide-y divide-gray-100">
                             {selectedItemLogs.map((log) => (
-                              <div key={log._id} className="p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between hover:bg-gray-50/50 transition-all group">
-                                <div className="flex-1 min-w-0">
+                              <div key={log._id} className="p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between hover:bg-gray-50/50 transition-all group">
+                                <div className="flex-1 min-w-[140px]">
                                   <Link 
                                     to={`/customers/customer-profile/${log.customerId?._id || log.customerId}`}
-                                    className="font-bold text-gray-900 hover:text-[#313166] hover:underline decoration-2 underline-offset-2 flex items-center gap-2 group-hover:translate-x-1 transition-transform"
+                                    className="font-bold text-gray-900 hover:text-[#313166] hover:underline decoration-2 underline-offset-2 flex items-center gap-2 group-hover:translate-x-1 transition-transform min-w-0"
                                   >
-                                    {log.firstname || log.lastname ? `${log.firstname} ${log.lastname}` : "Unknown Customer"}
-                                    <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <span className="truncate">
+                                      {log.firstname || log.lastname ? `${log.firstname} ${log.lastname}` : "Unknown Customer"}
+                                    </span>
+                                    <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                                   </Link>
                                   <div className="text-xs text-gray-500 font-medium flex items-center gap-2 mt-0.5">
-                                    {log.mobileNumber}
+                                    <span className="shrink-0">{log.mobileNumber}</span>
                                     {log.messageCategory && (
-                                      <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] uppercase">{log.messageCategory}</span>
+                                      <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] uppercase shrink-0">{log.messageCategory}</span>
                                     )}
                                   </div>
                                 </div>
-                                <div className="text-sm text-gray-600 max-w-md truncate md:px-4 italic" title={log.messageContent}>
+                                <div className="text-sm text-gray-600 flex-1 min-w-0 max-w-md truncate md:px-4 italic" title={log.messageContent}>
                                   "{log.messageContent}"
                                 </div>
                                 {log.status === "replied" && (
@@ -1136,13 +1138,13 @@ const EngagementDashboard = () => {
                                     </div>
                                   </div>
                                 )}
-                                <div className="flex items-center gap-3 shrink-0">
+                                <div className="flex flex-wrap items-center gap-2 md:gap-3 shrink-0">
                                   {log.status === "failed" && (
-                                    <div className="text-[10px] text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100 font-semibold shadow-sm max-w-[200px] truncate" title={getWhatsappErrorDescription(log.failureCode) || log.failureReason}>
+                                    <div className="text-[10px] text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100 font-semibold shadow-sm max-w-[150px] md:max-w-[200px] truncate" title={getWhatsappErrorDescription(log.failureCode) || log.failureReason}>
                                       {getWhatsappErrorDescription(log.failureCode) || log.failureReason || "Failed"}
                                     </div>
                                   )}
-                                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase shadow-sm ${
+                                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase shadow-sm shrink-0 ${
                                     log.status === "read"
                                       ? "bg-blue-50 text-blue-700 border border-blue-100"
                                       : log.status === "delivered"
@@ -1153,7 +1155,7 @@ const EngagementDashboard = () => {
                                   }`}>
                                     {log.status}
                                   </span>
-                                  <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-100 whitespace-nowrap">
+                                  <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-100 whitespace-nowrap shrink-0">
                                     {moment(log.timestamp).format("MMM DD, HH:mm")}
                                   </span>
                                 </div>
