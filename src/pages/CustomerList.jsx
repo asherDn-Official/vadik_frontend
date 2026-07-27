@@ -530,11 +530,11 @@ const CustomerList = () => {
                       <thead className="border-b border-[#EEF1FF] bg-[#F8F9FF]">
                         <tr className="">
                           <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
-                            First Name
+                            Name
                           </th>
-                          <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                          {/* <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                             Last Name
-                          </th>
+                          </th> */}
                           <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
                             Mobile Number
                           </th>
@@ -576,9 +576,9 @@ const CustomerList = () => {
                                 <span>{getCustomerName(customer)}</span>
                               </div>
                             </td>
-                            <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
+                            {/* <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               {getCustomerLastName(customer)}
-                            </td>
+                            </td> */}
                             <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               {`${formatIndianMobile(customer.countryCode + " " + customer.mobileNumber)}`}
                             </td>
