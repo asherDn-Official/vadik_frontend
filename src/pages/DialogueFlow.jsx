@@ -226,12 +226,28 @@ const DialogueFlowInner = () => {
   const normalizeScreenId = (value) =>
     (value || '')
       .toUpperCase()
-      .replace(/[^A-Z0-9]+/g, '_')
-      .replace(/^_+|_+$/g, '');
+      .replace(/[0-9]+/g, (m) => {
+        const map = { '0': 'ZERO', '1': 'ONE', '2': 'TWO', '3': 'THREE', '4': 'FOUR', '5': 'FIVE', '6': 'SIX', '7': 'SEVEN', '8': 'EIGHT', '9': 'NINE' };
+        return m.split('').map(d => map[d] || d).join('');
+      })
+      .replace(/[^A-Z_]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .replace(/_+/g, '_');
 
   const getScreenNodeId = (node) => {
     if (!node) return null;
     return normalizeScreenId(node.data?.label) || normalizeScreenId(node.id);
+  };
+
+  const getFieldName = (field = {}) => {
+    const explicitName = (field.name || '').trim();
+    if (explicitName) return explicitName;
+
+    return (field.label || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
   };
 
   const resolveNextScreenNode = (sourceNodeId, graphNodes, graphEdges, contextData = null, visited = new Set()) => {
@@ -307,6 +323,28 @@ const DialogueFlowInner = () => {
   const generateMetaJSON = (sourceNodes = null, sourceEdges = null) => {
     const graphNodes = sourceNodes || nodes;
     const graphEdges = sourceEdges || edges;
+
+    const getTargetScreenIdForHandle = (sourceNodeId, handleId) => {
+      const edge = graphEdges.find(e => e.source === sourceNodeId && e.sourceHandle === handleId);
+      if (!edge) return null;
+      
+      const resolveTargetScreen = (nodeId, visited = new Set()) => {
+        if (visited.has(nodeId)) return null;
+        visited.add(nodeId);
+        const targetNode = graphNodes.find(node => node.id === nodeId);
+        if (!targetNode) return null;
+        if (targetNode.type === 'screen') return targetNode;
+        if (targetNode.type === 'action') {
+          const outgoing = graphEdges.find(e => e.source === nodeId);
+          if (outgoing) return resolveTargetScreen(outgoing.target, visited);
+        }
+        return null;
+      };
+      
+      const targetScreen = resolveTargetScreen(edge.target);
+      return targetScreen ? (normalizeScreenId(targetScreen.data?.label) || normalizeScreenId(targetScreen.id)) : null;
+    };
+
     const screens = graphNodes.filter(n => n.type === 'screen').map(n => {
       const screenId = getScreenNodeId(n) || n.id.toUpperCase();
       const outgoingEdges = graphEdges.filter(e => e.source === n.id);
@@ -358,8 +396,10 @@ const DialogueFlowInner = () => {
                   checkbox: 'CheckboxGroup'
                 };
 
-                const options = (f.options || []).map((o) => {
-                  const optionId = o.value || o.label.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                const options = (f.options || []).map((o, oIdx) => {
+                  const handleId = `choice_${f.id}_${oIdx}`;
+                  const targetScreenId = getTargetScreenIdForHandle(n.id, handleId);
+                  const optionId = targetScreenId || normalizeScreenId(o.value || o.label);
                   return {
                     id: optionId,
                     title: o.label
@@ -424,13 +464,25 @@ const DialogueFlowInner = () => {
     (params) => {
       const sourceNode = nodes.find(n => n.id === params.source);
       let label = '';
+      let condition = null;
       
       if (params.sourceHandle?.startsWith('choice_')) {
         const parts = params.sourceHandle.split('_');
         const fieldId = parts[1];
-        const optionIdx = parts[2];
+        const optionIdx = parseInt(parts[2], 10);
         const field = sourceNode?.data?.fields?.find(f => f.id.toString() === fieldId);
-        label = field?.options?.[optionIdx]?.label || 'Branch';
+        const option = field?.options?.[optionIdx];
+        label = option?.label || 'Branch';
+        
+        if (field) {
+          const fieldName = field.name || (field.label || '').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+          const optionValue = option?.value || option?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || '';
+          condition = {
+            field: fieldName,
+            operator: 'equals',
+            value: optionValue
+          };
+        }
       } else if (params.sourceHandle === 'submit') {
         label = 'Submit';
       }
@@ -438,7 +490,7 @@ const DialogueFlowInner = () => {
       setEdges((eds) => addEdge({ 
         ...params, 
         type: 'labeled',
-        data: { label },
+        data: { label, ...(condition ? { condition } : {}) },
         animated: true, 
         style: { stroke: '#CB376D', strokeWidth: 2 } 
       }, eds));
@@ -478,11 +530,37 @@ const DialogueFlowInner = () => {
       data: { label: 'New Screen', fields: [], header: 'Next Step', body: 'Continue the conversation...' },
     };
 
+    let label = '';
+    let condition = null;
+    
+    if (sourceHandleId?.startsWith('choice_')) {
+      const parts = sourceHandleId.split('_');
+      const fieldId = parts[1];
+      const optionIdx = parseInt(parts[2], 10);
+      const field = sourceNode?.data?.fields?.find(f => f.id.toString() === fieldId);
+      const option = field?.options?.[optionIdx];
+      label = option?.label || 'Branch';
+      
+      if (field) {
+        const fieldName = field.name || (field.label || '').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        const optionValue = option?.value || option?.label?.toLowerCase().replace(/[^a-z0-9]+/g, '_') || '';
+        condition = {
+          field: fieldName,
+          operator: 'equals',
+          value: optionValue
+        };
+      }
+    } else if (sourceHandleId === 'submit') {
+      label = 'Submit';
+    }
+
     const newEdge = {
       id: `e-${sourceNodeId}-${newNodeId}`,
       source: sourceNodeId,
       target: newNodeId,
       sourceHandle: sourceHandleId,
+      type: 'labeled',
+      data: { label, ...(condition ? { condition } : {}) },
       animated: true,
       style: { stroke: '#CB376D', strokeWidth: 2 }
     };
@@ -496,14 +574,36 @@ const DialogueFlowInner = () => {
     }, 100);
   }, [nodes, setNodes, setEdges]);
 
-  // Inject addNextNode into node data
-  const nodesWithCallbacks = nodes.map(node => ({
-    ...node,
-    data: {
-      ...node.data,
-      onAddNext: (handleId) => addNextNode(node.id, handleId)
-    }
-  }));
+  // Inject addNextNode and validation status into node data
+  const nodesWithCallbacks = nodes.map(node => {
+    const screenId = getScreenNodeId(node);
+    const screenLabel = node.data?.label || '';
+    
+    const screenErrors = validationErrors.filter(err => 
+      err.includes(`Screen "${screenLabel}"`) || 
+      err.includes(`Screen ID "${screenId}"`) ||
+      (screenId && err.includes(`screen "${screenId}"`)) ||
+      (screenId && err.toLowerCase().includes(`screen ${screenId.toLowerCase()}`))
+    );
+    const screenWarnings = validationWarnings.filter(warn => 
+      warn.includes(`Screen "${screenLabel}"`) || 
+      warn.includes(`Screen ID "${screenId}"`) ||
+      (screenId && warn.includes(`screen "${screenId}"`)) ||
+      (screenId && warn.toLowerCase().includes(`screen ${screenId.toLowerCase()}`))
+    );
+
+    return {
+      ...node,
+      data: {
+        ...node.data,
+        hasError: screenErrors.length > 0,
+        hasWarning: screenWarnings.length > 0,
+        errors: screenErrors,
+        warnings: screenWarnings,
+        onAddNext: (handleId) => addNextNode(node.id, handleId)
+      }
+    };
+  });
 
   const updateNodeData = (nodeId, newData) => {
     setNodes((nds) =>
@@ -517,14 +617,77 @@ const DialogueFlowInner = () => {
     setSelectedNode((prev) => (prev?.id === nodeId ? { ...prev, data: { ...prev.data, ...newData } } : prev));
   };
 
+  const getNormalizedEdges = (nodesList, edgesList) => {
+    return edgesList.map(edge => {
+      if (edge.sourceHandle?.startsWith('choice_')) {
+        const sourceNode = nodesList.find(n => n.id === edge.source);
+        const parts = edge.sourceHandle.split('_');
+        const fieldId = parts[1];
+        const optionIdx = parseInt(parts[2], 10);
+        const field = sourceNode?.data?.fields?.find(f => f.id.toString() === fieldId);
+        
+        if (field) {
+          const fieldName = field.name || (field.label || '').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+          
+          const resolveTargetScreen = (nodeId, visited = new Set()) => {
+            if (visited.has(nodeId)) return null;
+            visited.add(nodeId);
+            const tNode = nodesList.find(n => n.id === nodeId);
+            if (!tNode) return null;
+            if (tNode.type === 'screen') return tNode;
+            if (tNode.type === 'action') {
+              const outgoing = edgesList.find(e => e.source === nodeId);
+              if (outgoing) return resolveTargetScreen(outgoing.target, visited);
+            }
+            return null;
+          };
+          
+          const targetScreen = resolveTargetScreen(edge.target);
+          const targetScreenId = targetScreen ? (normalizeScreenId(targetScreen.data?.label) || normalizeScreenId(targetScreen.id)) : null;
+          
+          const option = field?.options?.[optionIdx];
+          const optionValue = targetScreenId || normalizeScreenId(option?.value || option?.label || '');
+          
+          const condition = {
+            field: fieldName,
+            operator: 'equals',
+            value: optionValue
+          };
+          
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              condition
+            }
+          };
+        }
+      }
+      return edge;
+    });
+  };
+
   const saveFlow = async () => {
     try {
+      const normalizedEdges = getNormalizedEdges(nodes, edges);
+      setEdges(normalizedEdges);
+
+      const validation = validateFlowJSON(nodes, normalizedEdges);
+      setValidationErrors(validation.errors);
+      setValidationWarnings(validation.warnings);
+
+      if (validation.errors.length > 0) {
+        setShowValidationModal(true);
+        showToast('Fix the flow errors before saving', 'error');
+        return null;
+      }
+
       const flowData = {
         name: nodes[0]?.data?.label || "New WhatsApp Flow",
         description: "Created via visual builder",
         visualGraph: {
           nodes,
-          edges,
+          edges: normalizedEdges,
         },
       };
 
@@ -535,7 +698,7 @@ const DialogueFlowInner = () => {
       } else {
         response = await api.post('/api/whatsappFlow', flowData);
         setCurrentFlowId(response.data._id);
-        showToast('Flow saved successfully!', 'success');
+        showToast(validation.warnings.length > 0 ? 'Flow saved with validation warnings' : 'Flow saved successfully!', 'success');
       }
       fetchFlows();
       return response.data;
@@ -584,6 +747,13 @@ const DialogueFlowInner = () => {
     const graphEdges = sourceEdges || edges;
     const errors = [];
     const warnings = [];
+    const nodeById = new Map(graphNodes.map((node) => [node.id, node]));
+    const supportedFieldTypes = new Set(['radio', 'select', 'checkbox', 'textarea', 'text', 'input', 'optin']);
+
+    if (graphNodes.length === 0) {
+      errors.push('Flow has no nodes. Add at least one Screen node.');
+      return { errors, warnings, isValid: false };
+    }
 
     const screenNodes = graphNodes.filter(n => n.type === 'screen');
 
@@ -591,6 +761,29 @@ const DialogueFlowInner = () => {
       errors.push('Flow has no screens. Add at least one Screen node.');
       return { errors, warnings, isValid: false };
     }
+
+    graphNodes.forEach((node) => {
+      if (!node?.id) {
+        errors.push('Every node must have an id.');
+      }
+
+      if (!node?.type) {
+        errors.push(`Node "${node?.id || 'unknown'}" is missing a type.`);
+      }
+
+      if (node?.type && !['screen', 'action'].includes(node.type)) {
+        warnings.push(`Node "${node.id}" uses an unsupported node type "${node.type}".`);
+      }
+
+      if (node?.type === 'action') {
+        if (!node?.data?.label) {
+          errors.push(`Action node "${node.id}" is missing a label.`);
+        }
+        if (!node?.data?.actionType) {
+          warnings.push(`Action node "${getNodeDisplayName(node)}" is missing actionType metadata.`);
+        }
+      }
+    });
 
     const idMap = {};
     screenNodes.forEach(n => {
@@ -614,7 +807,7 @@ const DialogueFlowInner = () => {
     screenNodes.forEach(n => {
       const fieldNames = [];
       (n.data.fields || []).forEach(f => {
-        const name = (f.name || '').trim() || (f.label || '').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        const name = getFieldName(f);
         if (!name) {
           errors.push(`Screen "${n.data.label}": A field is missing both a variable name and a label.`);
           return;
@@ -623,6 +816,30 @@ const DialogueFlowInner = () => {
           errors.push(`Screen "${n.data.label}": Duplicate field variable name "${name}". Each field on a screen must have a unique variable name.`);
         } else {
           fieldNames.push(name);
+        }
+        if (!f.label) {
+          errors.push(`Screen "${n.data.label}": Field "${name}" is missing a label.`);
+        }
+        if (f.type && !supportedFieldTypes.has(f.type)) {
+          warnings.push(`Screen "${n.data.label}" uses unsupported field type "${f.type}" for "${name}".`);
+        }
+        if (['radio', 'select', 'checkbox'].includes(f.type)) {
+          const options = Array.isArray(f.options) ? f.options : [];
+          if (options.length === 0) {
+            errors.push(`Screen "${n.data.label}": Field "${name}" must have at least one option.`);
+          }
+          const optionValues = new Set();
+          options.forEach((opt, oIdx) => {
+            const optionLabel = (opt?.label || '').trim();
+            const optionValue = (opt?.value || optionLabel || `option_${oIdx}`).toString().trim();
+            if (!optionLabel) {
+              errors.push(`Screen "${n.data.label}": Field "${name}" has an option without a label.`);
+            }
+            if (optionValues.has(optionValue)) {
+              errors.push(`Screen "${n.data.label}": Field "${name}" has duplicate option value "${optionValue}".`);
+            }
+            optionValues.add(optionValue);
+          });
         }
       });
 
@@ -643,6 +860,24 @@ const DialogueFlowInner = () => {
       });
     });
 
+    graphEdges.forEach((edge, edgeIndex) => {
+      if (!edge?.source) {
+        errors.push(`Edge "${edge?.id || edgeIndex}" is missing a source node.`);
+      } else if (!nodeById.has(edge.source)) {
+        errors.push(`Edge "${edge?.id || edgeIndex}" references an unknown source node "${edge.source}".`);
+      }
+
+      if (!edge?.target) {
+        errors.push(`Edge "${edge?.id || edgeIndex}" is missing a target node.`);
+      } else if (!nodeById.has(edge.target)) {
+        errors.push(`Edge "${edge?.id || edgeIndex}" references an unknown target node "${edge.target}".`);
+      }
+
+      if (edge?.source && edge?.target && edge.source === edge.target) {
+        errors.push(`Edge "${edge?.id || edgeIndex}" cannot point back to the same node "${edge.source}".`);
+      }
+    });
+
     const allEdgeTargets = graphEdges.map(e => e.target);
     const firstScreen = screenNodes[0];
     screenNodes.forEach(n => {
@@ -651,15 +886,143 @@ const DialogueFlowInner = () => {
       }
     });
 
+    // Phase 2: Validate the generated Flow JSON structure
+    let def = null;
+    try {
+      def = JSON.parse(generateMetaJSON(graphNodes, graphEdges));
+    } catch (e) {
+      errors.push("Failed to generate Flow JSON: " + e.message);
+      return { errors, warnings, isValid: false };
+    }
+
+    const screenIds = new Set(def.screens?.map(s => s.id) || []);
+
+    (def.screens || []).forEach(screen => {
+      if (!/^[A-Z_]+$/.test(screen.id)) {
+        errors.push(`Screen ID "${screen.id}" must use only uppercase letters and underscores (no numbers). Meta rejects IDs with numbers. Rename the screen label to remove numbers.`);
+      }
+
+      const layoutChildren = screen.layout?.children || [];
+      const findFields = (children) => {
+        let fields = [];
+        children.forEach(child => {
+          if (child.type === "Form" && Array.isArray(child.children)) {
+            fields.push(...child.children.filter(c => c.type !== "Footer"));
+          } else if (child.type !== "Footer" && child.type !== "TextHeading" && child.type !== "TextBody") {
+            fields.push(child);
+          }
+        });
+        return fields;
+      };
+
+      const fields = findFields(layoutChildren);
+      fields.forEach(field => {
+        if (["RadioButtonsGroup", "Dropdown", "CheckboxGroup"].includes(field.type)) {
+          const options = field["data-source"] || [];
+          options.forEach(opt => {
+            const routingTargets = def.routing_model?.[screen.id] || [];
+            if (routingTargets.length > 0) {
+              if (!routingTargets.includes(opt.id)) {
+                errors.push(`Screen "${screen.title || screen.id}": Option "${opt.title}" (ID "${opt.id}") does not match any routing targets. Connect this option to the correct screen.`);
+              }
+            }
+            if (!/^[A-Z_]+$/.test(opt.id)) {
+              errors.push(`Screen "${screen.title || screen.id}": Option "${opt.title}" has invalid ID "${opt.id}" — Meta only allows uppercase letters and underscores (no numbers or special characters).`);
+            }
+          });
+        }
+      });
+    });
+
+    Object.entries(def.routing_model || {}).forEach(([sourceId, targets]) => {
+      targets.forEach(target => {
+        if (!screenIds.has(target)) {
+          errors.push(`Routing model for screen "${sourceId}" references unknown target screen "${target}".`);
+        }
+      });
+    });
+
+    // Phase 3: Deep structural validations
+    (def.screens || []).forEach(screen => {
+      const layoutChildren = screen.layout?.children || [];
+
+      // Check terminal screens with interactive forms
+      if (screen.terminal) {
+        const findRadioGroups = (children) => {
+          let groups = [];
+          children.forEach(child => {
+            if (child.type === "Form" && Array.isArray(child.children)) {
+              groups.push(...child.children.filter(c => 
+                ["RadioButtonsGroup", "Dropdown", "CheckboxGroup"].includes(c.type)
+              ));
+            } else if (["RadioButtonsGroup", "Dropdown", "CheckboxGroup"].includes(child.type)) {
+              groups.push(child);
+            }
+          });
+          return groups;
+        };
+
+        const radioGroups = findRadioGroups(layoutChildren);
+        const routingTargets = def.routing_model?.[screen.id] || [];
+        
+        if (radioGroups.length > 0 && routingTargets.length === 0) {
+          const footer = layoutChildren.find(c => c.type === "Footer") || 
+            layoutChildren.filter(c => c.type === "Form").flatMap(f => f.children || []).find(c => c.type === "Footer");
+          
+          if (footer?.["on-click-action"]?.name === "data_exchange") {
+            errors.push(`Screen "${screen.title || screen.id}": This screen is terminal but uses "data_exchange" with selection fields. Terminal screens must use "complete" action or have outgoing routes.`);
+          }
+          
+          if (footer?.["on-click-action"]?.name === "complete") {
+            radioGroups.forEach(rg => {
+              const options = rg["data-source"] || [];
+              options.forEach(opt => {
+                if (screenIds.has(opt.id) && opt.id !== screen.id) {
+                  warnings.push(`Screen "${screen.title || screen.id}": Option "${opt.title}" (ID "${opt.id}") references another screen, but this is a terminal screen with "complete" action — the selection won't navigate anywhere.`);
+                }
+              });
+            });
+          }
+        }
+      }
+
+      // Check text content issues
+      layoutChildren.forEach(child => {
+        if (child.type === "TextHeading" || child.type === "TextBody") {
+          if (child.text && child.text !== child.text.trim()) {
+            warnings.push(`Screen "${screen.title || screen.id}": ${child.type} has leading or trailing whitespace.`);
+          }
+        }
+      });
+
+      // Check screen title length (Meta limit: 60 chars)
+      if (screen.title && screen.title.length > 60) {
+        errors.push(`Screen "${screen.title}": Title exceeds 60 characters (${screen.title.length} chars).`);
+      }
+    });
+
     return { errors, warnings, isValid: errors.length === 0 };
   };
 
-  const publishFlow = async (flow = null) => {
+  useEffect(() => {
+    if (view !== 'builder') return;
+    const result = validateFlowJSON();
+    setValidationErrors(result.errors);
+    setValidationWarnings(result.warnings);
+  }, [nodes, edges, view]);
+
+  const publishFlow = async (flow = null, forcePublish = false) => {
     const nodesToValidate = flow?.visualGraph?.nodes || nodes;
-    const edgesToValidate = flow?.visualGraph?.edges || edges;
+    const rawEdgesToValidate = flow?.visualGraph?.edges || edges;
+    const edgesToValidate = getNormalizedEdges(nodesToValidate, rawEdgesToValidate);
+
+    if (!flow) {
+      setEdges(edgesToValidate);
+    }
+
     const validation = validateFlowJSON(nodesToValidate, edgesToValidate);
 
-    if (!validation.isValid) {
+    if (!forcePublish && (validation.errors.length > 0 || validation.warnings.length > 0)) {
       setValidationErrors(validation.errors);
       setValidationWarnings(validation.warnings);
       setShowValidationModal(true);
@@ -684,10 +1047,10 @@ const DialogueFlowInner = () => {
       let nodesToUse, edgesToUse;
       if (flow && flow.visualGraph?.nodes?.length) {
         nodesToUse = flow.visualGraph.nodes;
-        edgesToUse = flow.visualGraph.edges || [];
+        edgesToUse = getNormalizedEdges(flow.visualGraph.nodes, flow.visualGraph.edges || []);
       } else {
         nodesToUse = nodes;
-        edgesToUse = edges;
+        edgesToUse = edgesToValidate;
       }
 
       const freshMetaJSONStr = generateMetaJSON(nodesToUse, edgesToUse);
@@ -710,8 +1073,20 @@ const DialogueFlowInner = () => {
       fetchFlows();
     } catch (error) {
       console.error('Error publishing flow:', error);
-      const errorMsg = error.response?.data?.error || error.message || 'Failed to publish flow';
-      showToast(errorMsg, 'error');
+      const errorData = error.response?.data || {};
+      const errorMsg = errorData.error || error.message || 'Failed to publish flow';
+      
+      if (Array.isArray(errorData.validationErrors) && errorData.validationErrors.length > 0) {
+        setValidationErrors(errorData.validationErrors);
+        setValidationWarnings([]);
+        setShowValidationModal(true);
+        showToast(`Publish failed: ${errorData.validationErrors.length} validation error(s) found by Meta.`, 'error');
+      } else {
+        setValidationErrors([errorMsg]);
+        setValidationWarnings([]);
+        setShowValidationModal(true);
+        showToast("Publish failed.", 'error');
+      }
     }
   };
 
@@ -896,14 +1271,35 @@ const DialogueFlowInner = () => {
           <button onClick={() => setShowJsonPreview(true)} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
             <Code size={18} /> Preview JSON
           </button>
-          <button onClick={saveFlow} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+          <button onClick={saveFlow} disabled={validationErrors.length > 0} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border rounded-lg shadow-sm transition-colors ${validationErrors.length > 0 ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed' : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'}`}>
             <Save size={18} /> Save as Draft
           </button>
-          <button onClick={() => publishFlow()} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#CB376D] rounded-lg hover:bg-[#b52d5e] transition-colors shadow-sm">
+          <button onClick={() => publishFlow()} disabled={validationErrors.length > 0} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg shadow-sm transition-colors ${validationErrors.length > 0 ? 'text-white bg-[#CB376D]/50 cursor-not-allowed' : 'text-white bg-[#CB376D] hover:bg-[#b52d5e]'}`}>
             <Play size={18} /> Publish to Meta
           </button>
         </div>
       </div>
+
+      {view === 'builder' && (validationErrors.length > 0 || validationWarnings.length > 0) && (
+        <div className={`mx-6 mt-4 rounded-2xl border px-4 py-3 flex items-center justify-between gap-4 ${validationErrors.length > 0 ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
+          <div>
+            <p className={`text-sm font-bold ${validationErrors.length > 0 ? 'text-red-700' : 'text-amber-700'}`}>
+              {validationErrors.length > 0 ? `${validationErrors.length} validation error${validationErrors.length !== 1 ? 's' : ''} need attention` : `${validationWarnings.length} validation warning${validationWarnings.length !== 1 ? 's' : ''} detected`}
+            </p>
+            <p className="text-xs text-gray-600 mt-1">
+              {validationErrors.length > 0
+                ? 'Fix these issues before saving or publishing so the flow does not break later.'
+                : 'Warnings will not block saving, but they can affect how the flow behaves in Meta.'}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowValidationModal(true)}
+            className={`px-4 py-2 text-sm font-bold rounded-lg ${validationErrors.length > 0 ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-amber-600 text-white hover:bg-amber-700'}`}
+          >
+            Review Issues
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 flex overflow-hidden">
         <div className="w-72 bg-white border-r border-gray-200 flex flex-col">
@@ -1209,14 +1605,20 @@ const DialogueFlowInner = () => {
                                 {['select', 'radio', 'checkbox'].includes(field.type) && (
                                   <div className="mt-2 space-y-2 border-t border-gray-200 pt-2">
                                     <div className="flex items-center justify-between">
-                                      <span className="text-[9px] font-bold text-gray-400 uppercase">Options (Branches)</span>
-                                      <button onClick={() => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: [...(f.options || []), { label: `Option ${(f.options?.length || 0) + 1}`, value: `val_${(f.options?.length || 0) + 1}` }] } : f) })} className="text-[9px] font-bold text-[#CB376D] hover:underline">+ OPTION</button>
+                                      <button onClick={() => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: [...(f.options || []), { label: `Option ${(f.options?.length || 0) + 1}`, value: `OPTION_${String.fromCharCode(65 + (f.options?.length || 0))}` }] } : f) })} className="text-[9px] font-bold text-[#CB376D] hover:underline">+ OPTION</button>
                                     </div>
-                                    <div className="grid grid-cols-1 gap-1.5">
+                                    <div className="grid grid-cols-1 gap-2">
                                       {(field.options || []).map((opt, oIdx) => (
-                                        <div key={oIdx} className="flex items-center gap-1 group/opt">
-                                          <input type="text" placeholder="Option Label" value={opt.label} onChange={(e) => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: f.options.map((o, i) => i === oIdx ? { ...o, label: e.target.value, value: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') } : o) } : f) })} className="flex-1 px-2 py-1 border border-gray-100 rounded text-[10px] focus:border-[#CB376D] outline-none" />
-                                          <button onClick={() => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: f.options.filter((_, i) => i !== oIdx) } : f) })} className="text-gray-300 hover:text-red-400 transition-colors"><X size={10} /></button>
+                                        <div key={oIdx} className="flex flex-col gap-1 p-2 bg-gray-50 border border-gray-100 rounded-lg group/opt">
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-[8px] font-bold text-gray-400 uppercase w-10">Label</span>
+                                            <input type="text" placeholder="Option Label" value={opt.label} onChange={(e) => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: f.options.map((o, i) => i === oIdx ? { ...o, label: e.target.value, value: e.target.value.toUpperCase().replace(/[^A-Z_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') } : o) } : f) })} className="flex-1 px-2 py-1 bg-white border border-gray-200 rounded text-[10px] focus:border-[#CB376D] outline-none" />
+                                            <button onClick={() => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: f.options.filter((_, i) => i !== oIdx) } : f) })} className="text-gray-300 hover:text-red-400 transition-colors"><X size={10} /></button>
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-[8px] font-bold text-gray-400 uppercase w-10">Value ID</span>
+                                            <input type="text" placeholder="Option Value ID" value={opt.value} onChange={(e) => updateNodeData(selectedNode.id, { fields: selectedNode.data.fields.map(f => f.id === field.id ? { ...f, options: f.options.map((o, i) => i === oIdx ? { ...o, value: e.target.value.toUpperCase().replace(/[^A-Z_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') } : o) } : f) })} className="flex-1 px-2 py-1 bg-white border border-gray-200 rounded text-[10px] focus:border-[#CB376D] outline-none font-mono" />
+                                          </div>
                                         </div>
                                       ))}
                                     </div>
@@ -1514,8 +1916,19 @@ const DialogueFlowInner = () => {
                 onClick={() => setShowValidationModal(false)}
                 className="px-6 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                {validationErrors.length > 0 ? 'Fix Issues' : 'Close'}
+                {validationErrors.length > 0 ? 'Fix Issues' : 'Cancel'}
               </button>
+              {validationErrors.length === 0 && validationWarnings.length > 0 && (
+                <button
+                  onClick={() => {
+                    setShowValidationModal(false);
+                    publishFlow(null, true);
+                  }}
+                  className="px-6 py-2 text-sm font-bold text-white bg-[#CB376D] rounded-lg hover:bg-[#b52d5e] transition-colors"
+                >
+                  Publish Anyway
+                </button>
+              )}
             </div>
           </div>
         </div>
