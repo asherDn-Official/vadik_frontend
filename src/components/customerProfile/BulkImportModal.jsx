@@ -95,7 +95,7 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   const downloadTemplate = async () => {
-    const response = await api.get("/api/customers/bulk-upload/template", {
+    const response = await api.get(`/api/customers/bulk-upload/template/${retailerId}`, {
       responseType: "blob",
     });
 
@@ -242,11 +242,10 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
             </div>
             <div className="text-xs text-gray-500 mt-1">
-              Required columns: First Name, Mobile Number, Country Code, Source, First Visit (DD-MM-YYYY). Last Name and Labels are optional.
+              Required columns: First Name, Mobile Number, Country Code, Source, First Visit (DD-MM-YYYY). Optional: Last Name, Gender, Labels, and customer preference fields (Additional, Advanced, Privacy). Download the template for all available columns.
             </div>
             <div className="text-xs text-[#313166] mt-4 p-3 bg-blue-50 rounded-lg">
-              <b>Pro Tip:</b> Our new system handles 1,00,000+ records with ease. 
-              The process runs in the background, so you'll see a progress bar once started.
+              <b>Pro Tip:</b> Our system handles 1,00,000+ records with ease. Customer preference columns are optional — invalid values won't block creation, the field will use defaults. Download the template to see all available preference fields with valid values in the Instructions sheet.
             </div>
           </>
         ) : (
@@ -292,24 +291,34 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
 
             {jobDetails?.importErrors?.length > 0 && (
               <div className="mt-4">
-                <p className="text-sm font-bold text-[#1F1C5C] mb-2">Recent Errors (First 100)</p>
+                <p className="text-sm font-bold text-[#1F1C5C] mb-2">Recent Issues (First 100)</p>
                 <div className="max-h-40 overflow-y-auto rounded-xl border border-[#EEF1FF] bg-[#FCFCFF]">
                   <table className="min-w-full text-xs">
                     <thead className="bg-gray-50 sticky top-0">
                       <tr>
                         <th className="px-3 py-2 text-left">Row</th>
+                        <th className="px-3 py-2 text-left">Type</th>
                         <th className="px-3 py-2 text-left">Details</th>
                         <th className="px-3 py-2 text-left">Message</th>
                       </tr>
                     </thead>
                     <tbody>
                       {jobDetails.importErrors.map((err, idx) => (
-                        <tr key={idx} className="border-t border-gray-50">
+                        <tr key={idx} className={`border-t ${err.isWarning ? 'border-amber-50 bg-amber-50/30' : 'border-gray-50'}`}>
                           <td className="px-3 py-2 font-medium">{err.row || '-'}</td>
+                          <td className="px-3 py-2">
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                              err.isWarning 
+                                ? 'bg-amber-100 text-amber-700' 
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {err.isWarning ? 'Warning' : 'Error'}
+                            </span>
+                          </td>
                           <td className="px-3 py-2 text-gray-500">
                             {err.data?.countryCode ? `+${err.data.countryCode} ${err.data.mobileNumber}` : '-'}
                           </td>
-                          <td className="px-3 py-2 text-red-600">{err.message}</td>
+                          <td className={`px-3 py-2 ${err.isWarning ? 'text-amber-600' : 'text-red-600'}`}>{err.message}</td>
                         </tr>
                       ))}
                     </tbody>
