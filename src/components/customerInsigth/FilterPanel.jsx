@@ -435,33 +435,102 @@ const FilterPanel = ({
         </div>
       );
     } else if (filterConfig?.type === "select") {
+      const selectedLabels = Array.isArray(filters[filterKey]) ? filters[filterKey] : (filters[filterKey] ? [filters[filterKey]] : []);
+      const options = filterConfig.options || [];
+      const [labelSearch, setLabelSearch] = React.useState("");
+      const filteredOptions = options.filter((opt) =>
+        opt.toLowerCase().includes(labelSearch.toLowerCase())
+      );
+
+      const toggleLabel = (label) => {
+        const updated = selectedLabels.includes(label)
+          ? selectedLabels.filter((l) => l !== label)
+          : [...selectedLabels, label];
+        onFilterChange(filterKey, updated.length > 0 ? updated : "");
+      };
+
       return (
-        <div className="mt-2 relative">
-          <select
-            className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10 appearance-none cursor-pointer"
-            value={filters[filterKey] || ""}
-            onChange={(e) => onFilterChange(filterKey, e.target.value)}
-          >
-            <option value="">Select a label</option>
-            {(filterConfig.options || []).map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={16}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-          />
-          {filters[filterKey] && (
-            <button
-              className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-              onClick={() => onFilterChange(filterKey, '')}
-              aria-label={`Clear ${filterKey}`}
-            >
-              <X size={14} />
-            </button>
+        <div className="mt-2 space-y-2">
+          {/* Selected count & clear */}
+          {selectedLabels.length > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[#313166]">
+                {selectedLabels.length} label{selectedLabels.length > 1 ? "s" : ""} selected
+              </span>
+              <button
+                className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
+                onClick={() => onFilterChange(filterKey, "")}
+                aria-label={`Clear ${filterKey}`}
+              >
+                <X size={12} /> Clear
+              </button>
+            </div>
           )}
+
+          {/* Selected labels tags */}
+          {selectedLabels.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {selectedLabels.map((label) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#2e2d5f] px-2 py-0.5 text-[10px] font-medium text-white"
+                >
+                  {label}
+                  <button
+                    onClick={() => toggleLabel(label)}
+                    className="ml-0.5 hover:text-red-200 transition-colors"
+                    aria-label={`Remove ${label}`}
+                  >
+                    <X size={10} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Search box */}
+          {options.length > 5 && (
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search labels..."
+                className="w-full rounded-lg border border-[#E4E8F6] bg-[#FCFCFF] py-1.5 pl-7 pr-3 text-xs text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10"
+                value={labelSearch}
+                onChange={(e) => setLabelSearch(e.target.value)}
+              />
+              <Search
+                size={12}
+                className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+            </div>
+          )}
+
+          {/* Checkbox list */}
+          <div className="max-h-48 space-y-0.5 overflow-y-auto rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2">
+            {filteredOptions.length === 0 ? (
+              <p className="text-xs text-gray-400 py-2 text-center">No labels found</p>
+            ) : (
+              filteredOptions.map((option) => {
+                const isChecked = selectedLabels.includes(option);
+                return (
+                  <label
+                    key={option}
+                    className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition-colors hover:bg-[#F3F5FF] ${
+                      isChecked ? "bg-[#F3F5FF] font-medium text-[#313166]" : "text-[#5C628B]"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleLabel(option)}
+                      className="h-3.5 w-3.5 rounded border-gray-300 text-[#2e2d5f] focus:ring-[#2e2d5f] accent-[#2e2d5f]"
+                    />
+                    <span className="truncate">{option}</span>
+                  </label>
+                );
+              })
+            )}
+          </div>
         </div>
       );
     } else if (filterConfig?.type === "string") {

@@ -58,19 +58,21 @@ const CustomerPersonalisation = () => {
           value:
             typeof value === "string"
               ? value.trim()
-              : typeof value === "object" && value !== null
-                ? {
-                    ...value,
-                    value:
-                      typeof value.value === "string"
-                        ? value.value.trim()
-                        : value.value,
-                    valueTo:
-                      typeof value.valueTo === "string"
-                        ? value.valueTo.trim()
-                        : value.valueTo,
-                  }
-                : value,
+              : Array.isArray(value)
+                ? value
+                : typeof value === "object" && value !== null
+                  ? {
+                      ...value,
+                      value:
+                        typeof value.value === "string"
+                          ? value.value.trim()
+                          : value.value,
+                      valueTo:
+                        typeof value.valueTo === "string"
+                          ? value.valueTo.trim()
+                          : value.valueTo,
+                    }
+                  : value,
         }));
 
       // Prepare the request payload
@@ -127,19 +129,21 @@ const CustomerPersonalisation = () => {
           value:
             typeof value === "string"
               ? value.trim()
-              : typeof value === "object" && value !== null
-                ? {
-                    ...value,
-                    value:
-                      typeof value.value === "string"
-                        ? value.value.trim()
-                        : value.value,
-                    valueTo:
-                      typeof value.valueTo === "string"
-                        ? value.valueTo.trim()
-                        : value.valueTo,
-                  }
-                : value,
+              : Array.isArray(value)
+                ? value
+                : typeof value === "object" && value !== null
+                  ? {
+                      ...value,
+                      value:
+                        typeof value.value === "string"
+                          ? value.value.trim()
+                          : value.value,
+                      valueTo:
+                        typeof value.valueTo === "string"
+                          ? value.valueTo.trim()
+                          : value.valueTo,
+                    }
+                  : value,
         }));
 
       const payload = {
