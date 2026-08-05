@@ -333,6 +333,8 @@ const SendCampaign = () => {
           value:
             typeof value === "string"
               ? value.trim()
+              : Array.isArray(value)
+              ? value
               : typeof value === "object" && value !== null
               ? {
                   ...value,
@@ -526,6 +528,8 @@ const SendCampaign = () => {
           value:
             typeof value === "string"
               ? value.trim()
+              : Array.isArray(value)
+              ? value
               : typeof value === "object" && value !== null
               ? {
                   ...value,
