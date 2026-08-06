@@ -123,29 +123,6 @@ const DialogueFlowInner = () => {
   // Check if WhatsApp is connected via embedded signup
   const isWhatsAppConnected = auth?.data?.isUsingOwnWhatsapp;
 
-  if (authLoading) {
-    return <Loader fullHeight={true} text="Verifying access..." />;
-  }
-
-  if (!isWhatsAppConnected) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[500px] p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 m-6">
-        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6">
-          <MessageSquare className="text-green-500" size={40} />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-3">Connect Your WhatsApp Account</h2>
-        <p className="text-gray-500 max-w-md mb-8">
-          To build and publish interactive WhatsApp Flows, you need to connect your WhatsApp Business account using Meta's Embedded Signup.
-        </p>
-        <Link 
-          to="/integration" 
-          className="px-8 py-3 bg-[#CB376D] text-white font-bold rounded-xl hover:bg-[#b52d5e] transition-all flex items-center gap-2 shadow-lg shadow-[#CB376D]/20"
-        >
-          Go to Integrations <ChevronRight size={18} />
-        </Link>
-      </div>
-    );
-  }
 
   const reactFlowWrapper = useRef(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -179,6 +156,11 @@ const DialogueFlowInner = () => {
   const getOutgoingRoutes = (nodeId) => edges.filter((edge) => edge.source === nodeId);
 
   const fetchFlows = useCallback(async () => {
+    if (authLoading || !isWhatsAppConnected) {
+      setFlowsLoading(false);
+      return;
+    }
+
     try {
       setFlowsLoading(true);
       const response = await api.get('/api/whatsappFlow');
@@ -189,16 +171,18 @@ const DialogueFlowInner = () => {
     } finally {
       setFlowsLoading(false);
     }
-  }, []);
+  }, [authLoading, isWhatsAppConnected]);
 
   const fetchDefaultFlow = useCallback(async () => {
+    if (authLoading || !isWhatsAppConnected) return;
+
     try {
       const response = await api.get('/api/whatsappFlow/default/current');
       setDefaultFlowId(response.data.defaultFlow?._id || response.data.defaultFlow);
     } catch (error) {
       console.error('Error fetching default flow:', error);
     }
-  }, []);
+  }, [authLoading, isWhatsAppConnected]);
 
   useEffect(() => {
     fetchFlows();
@@ -456,7 +440,7 @@ const DialogueFlowInner = () => {
       routing_model: buildRoutingModel(graphNodes, graphEdges),
       screens: screens,
     };
-    console.log("📋 [generateMetaJSON] Generated flow JSON:", JSON.stringify(finalJson, null, 2));
+    console.log("[generateMetaJSON] Generated flow JSON:", JSON.stringify(finalJson, null, 2));
     return JSON.stringify(finalJson, null, 2);
   };
 
@@ -799,7 +783,7 @@ const DialogueFlowInner = () => {
     Object.entries(idMap).forEach(([id, labels]) => {
       if (labels.length > 1) {
         errors.push(
-          `Duplicate screen name detected: "${labels[0]}" — ${labels.length} screens resolve to the same ID "${id}". Each screen must have a unique name. Same node names are not allowed for multiple screens.`
+          `Duplicate screen name detected: "${labels[0]}" - ${labels.length} screens resolve to the same ID "${id}". Each screen must have a unique name. Same node names are not allowed for multiple screens.`
         );
       }
     });
@@ -845,7 +829,7 @@ const DialogueFlowInner = () => {
 
       const outgoing = graphEdges.filter(e => e.source === n.id);
       if (outgoing.length === 0) {
-        warnings.push(`Screen "${n.data.label || n.id}" has no outgoing connections — it will be treated as a terminal (end) screen.`);
+        warnings.push(`Screen "${n.data.label || n.id}" has no outgoing connections - it will be treated as a terminal (end) screen.`);
       }
 
       const radioFields = (n.data.fields || []).filter(f => f.type === 'radio');
@@ -882,7 +866,7 @@ const DialogueFlowInner = () => {
     const firstScreen = screenNodes[0];
     screenNodes.forEach(n => {
       if (n.id !== firstScreen?.id && !allEdgeTargets.includes(n.id)) {
-        warnings.push(`Screen "${n.data.label || n.id}" is unreachable — no connections lead to it.`);
+        warnings.push(`Screen "${n.data.label || n.id}" is unreachable - no connections lead to it.`);
       }
     });
 
@@ -927,7 +911,7 @@ const DialogueFlowInner = () => {
               }
             }
             if (!/^[A-Z_]+$/.test(opt.id)) {
-              errors.push(`Screen "${screen.title || screen.id}": Option "${opt.title}" has invalid ID "${opt.id}" — Meta only allows uppercase letters and underscores (no numbers or special characters).`);
+              errors.push(`Screen "${screen.title || screen.id}": Option "${opt.title}" has invalid ID "${opt.id}" - Meta only allows uppercase letters and underscores (no numbers or special characters).`);
             }
           });
         }
@@ -978,7 +962,7 @@ const DialogueFlowInner = () => {
               const options = rg["data-source"] || [];
               options.forEach(opt => {
                 if (screenIds.has(opt.id) && opt.id !== screen.id) {
-                  warnings.push(`Screen "${screen.title || screen.id}": Option "${opt.title}" (ID "${opt.id}") references another screen, but this is a terminal screen with "complete" action — the selection won't navigate anywhere.`);
+                  warnings.push(`Screen "${screen.title || screen.id}": Option "${opt.title}" (ID "${opt.id}") references another screen, but this is a terminal screen with "complete" action - the selection won't navigate anywhere.`);
                 }
               });
             });
@@ -1036,7 +1020,7 @@ const DialogueFlowInner = () => {
         showToast('Saving flow before publishing...', 'info');
         flowToPublish = await saveFlow();
         if (!flowToPublish?._id) {
-          console.error("❌ [publishFlow] Flow saving failed, cannot publish.");
+          console.error("[publishFlow] Flow saving failed, cannot publish.");
           return;
         }
       }
@@ -1054,7 +1038,7 @@ const DialogueFlowInner = () => {
       }
 
       const freshMetaJSONStr = generateMetaJSON(nodesToUse, edgesToUse);
-      console.log("📤 [publishFlow] Generated Meta JSON:", freshMetaJSONStr);
+      console.log("[publishFlow] Generated Meta JSON:", freshMetaJSONStr);
       const freshMetaJSON = JSON.parse(freshMetaJSONStr);
       
       const payload = {
@@ -1067,7 +1051,7 @@ const DialogueFlowInner = () => {
         return;
       }
 
-      console.log(`🚀 [publishFlow] Publishing flow ${flowId} to backend...`);
+      console.log(`[publishFlow] Publishing flow ${flowId} to backend...`);
       const response = await api.post(`/api/whatsappFlow/${flowId}/publish`, payload);
       showToast(response.data?.message || 'Flow published successfully!', 'success');
       fetchFlows();
@@ -1211,7 +1195,29 @@ const DialogueFlowInner = () => {
     setView('builder');
     showToast(`${template.name} imported!`, 'success');
   };
+  if (authLoading) {
+    return <Loader fullHeight={true} text="Verifying access..." />;
+  }
 
+  if (!isWhatsAppConnected) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[500px] p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 m-6">
+        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6">
+          <MessageSquare className="text-green-500" size={40} />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-3">Connect Your WhatsApp Account</h2>
+        <p className="text-gray-500 max-w-md mb-8">
+          To build and publish interactive WhatsApp Flows, you need to connect your WhatsApp Business account using Meta&apos;s Embedded Signup.
+        </p>
+        <Link
+          to="/integration"
+          className="px-8 py-3 bg-[#CB376D] text-white font-bold rounded-xl hover:bg-[#b52d5e] transition-all flex items-center gap-2 shadow-lg shadow-[#CB376D]/20"
+        >
+          Go to Integrations <ChevronRight size={18} />
+        </Link>
+      </div>
+    );
+  }
   if (view === 'list') {
     return (
       <FlowList 
@@ -1375,7 +1381,7 @@ const DialogueFlowInner = () => {
                     Coming Soon
                   </span>
                 </div>
-                <p className="text-[9px] text-gray-400">Advanced: Exchange data with your server using Meta's Data Exchange API.</p>
+                <p className="text-[9px] text-gray-400">Advanced: Exchange data with your server using Meta&apos;s Data Exchange API.</p>
               </div>
             </div>
 
@@ -1855,7 +1861,7 @@ const DialogueFlowInner = () => {
                   </div>
                 )}
                 <h3 className="text-lg font-bold text-gray-800">
-                  {validationErrors.length > 0 ? 'Flow Has Errors — Cannot Publish' : 'Flow Warnings'}
+                  {validationErrors.length > 0 ? 'Flow Has Errors - Cannot Publish' : 'Flow Warnings'}
                 </h3>
               </div>
               <button onClick={() => setShowValidationModal(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
@@ -1877,7 +1883,7 @@ const DialogueFlowInner = () => {
               {validationErrors.length > 0 && (
                 <div>
                   <p className="text-xs font-bold text-red-600 uppercase tracking-widest mb-3">
-                    {validationErrors.length} Error{validationErrors.length !== 1 ? 's' : ''} — Fix these before publishing
+                    {validationErrors.length} Error{validationErrors.length !== 1 ? 's' : ''} - Fix these before publishing
                   </p>
                   <div className="space-y-2">
                     {validationErrors.map((err, i) => (

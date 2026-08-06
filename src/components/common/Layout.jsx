@@ -81,15 +81,9 @@ function Layout() {
         setProfileCompletion(
           percentage
         );
-
-        console.log(
-          "PROFILE COMPLETION:",
-          percentage
-        );
-
       }
     } catch (error) {
-      console.log("Profile fetch error:", error);
+      console.error("Profile fetch error:", error);
     }
   }
 
@@ -150,7 +144,7 @@ function Layout() {
       const response = await api.get(`/api/retailer/demo/status/${email}`);
       setDemo(response?.data?.data?.demo);
     } catch (error) {
-      console.log("error", error);
+      console.error("Layout request error:", error);
     }
   }
 
@@ -159,7 +153,7 @@ function Layout() {
       const res = await api.get("/api/auth/tour/status");
       setIsTourComplete(res.data.isTourCompleted);
     } catch (error) {
-      console.log("error", error);
+      console.error("Layout request error:", error);
     }
   }
 

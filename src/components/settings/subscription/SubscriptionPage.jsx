@@ -8,6 +8,7 @@ import WhatsAppCredits from "./components/WhatsAppCredits";
 import api from "../../../api/apiconfig";
 import { useAuth } from "../../../context/AuthContext";
 import showToast from "../../../utils/ToastNotification";
+import { loadRazorpayCheckout } from "../../../utils/razorpayCheckout";
 
 export default function SubscriptionPage() {
   const [activeTab, setActiveTab] = useState("subscription");
@@ -427,6 +428,11 @@ export default function SubscriptionPage() {
         options.order_id = order.id;
       }
 
+      const razorpayReady = await loadRazorpayCheckout();
+      if (!razorpayReady || !window.Razorpay) {
+        throw new Error("Razorpay SDK failed to load");
+      }
+
       const razorpay = new window.Razorpay(options);
       razorpay.on("payment.failed", function (response) {
         console.error("Razorpay payment failed:", response.error);
@@ -511,6 +517,11 @@ export default function SubscriptionPage() {
           color: "#D3285B",
         },
       };
+
+      const razorpayReady = await loadRazorpayCheckout();
+      if (!razorpayReady || !window.Razorpay) {
+        throw new Error("Razorpay SDK failed to load");
+      }
 
       const razorpay = new window.Razorpay(options);
       razorpay.on("payment.failed", function (response) {

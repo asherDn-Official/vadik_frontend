@@ -7,19 +7,15 @@ import { messaging } from "./firebase";
 
 import api from "./api/apiconfig";
 
-export const requestPermission =
+export const registerNotificationToken =
   async (retailerId) => {
 
     try {
 
-      /*
-        Browser Permission
-      */
-
-      const permission =
-        await Notification.requestPermission();
-
-      if (permission !== "granted") {
+      if (
+        typeof Notification !== "undefined" &&
+        Notification.permission !== "granted"
+      ) {
         return;
       }
 
@@ -36,14 +32,6 @@ export const requestPermission =
 
 await navigator.serviceWorker.ready;
 
-      /*
-        Existing Token
-      */
-
-      const existingToken =
-        localStorage.getItem(
-          "fcmToken"
-        );
 
       /*
         Generate Token
@@ -118,6 +106,35 @@ console.log(
 console.log(
   "Login Notification Sent"
 );
+
+    } catch (error) {
+
+      console.error("FCM Error:", error);
+console.error("Code:", error.code);
+console.error("Message:", error.message);
+console.error("Stack:", error.stack);
+console.log(
+  "VAPID KEY:",
+  import.meta.env.VITE_FIREBASE_VAPID_KEY
+);
+
+    }
+
+};
+
+export const requestPermission =
+  async (retailerId) => {
+
+    try {
+
+      const permission =
+        await Notification.requestPermission();
+
+      if (permission !== "granted") {
+        return;
+      }
+
+      await registerNotificationToken(retailerId);
 
     } catch (error) {
 

@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 
 import {
-  requestPermission,
+  registerNotificationToken,
   listenNotifications,
 } from "./notification";
 import { useState, useEffect } from "react";
@@ -39,7 +39,6 @@ import MyProfile from "./components/settings/MyProfile";
 import SearchPage from "./components/common/SearchPage";
 import CustomerProfilePage from "./components/common/CustomerProfilePage";
 import Loader from "./utils/Loader";
-import GlobalChatNotification from "./components/GlobalChatNotification";
 // import api from "./api/apiconfig";
 // import { useChatNotification } from "./context/ChatNotificationContext";
 
@@ -93,13 +92,17 @@ function App() {
   //   auth?.user?._id
   // );
 
-  if (auth?.user?._id) {
+  if (
+    auth?.user?._id &&
+    typeof Notification !== "undefined" &&
+    Notification.permission === "granted"
+  ) {
 
     // console.log(
     //   "CALLING requestPermission"
     // );
 
-    requestPermission(
+    registerNotificationToken(
       auth.user._id
     );
 
@@ -140,7 +143,7 @@ function App() {
 
 
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <CustomerImportProvider>
         <Routes>
           {/* Public */}

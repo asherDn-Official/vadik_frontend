@@ -6,9 +6,30 @@ on:
       - main
 
 jobs:
+  verify:
+    name: Verify React Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Focused Phase 0 Tests
+        run: npm run test:phase0
+
+      - name: Critical Lint
+        run: npm run lint:critical
+
+      - name: Build React App
+        run: npm run build
+
   deploy:
     name: Deploy React Frontend
     runs-on: ubuntu-latest
+    needs: verify
 
     steps:
       - name: Checkout Code

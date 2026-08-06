@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, react/no-unescaped-entities */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   FiBell, FiCalendar, FiGift, FiMessageSquare, 
@@ -12,6 +13,8 @@ import api from '../api/apiconfig';
 import showToast from '../utils/ToastNotification';
 import Loader from '../utils/Loader';
 import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
+import { requestPermission, listenNotifications } from '../notification';
 
 const Notification = () => {
   // State management
@@ -31,6 +34,14 @@ const Notification = () => {
   });
   
   const { decrementUnreadCount } = useNotification();
+  const { auth } = useAuth();
+  const [browserNotificationPermission, setBrowserNotificationPermission] = useState(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      return 'unsupported';
+    }
+
+    return window.Notification.permission;
+  });
   const [viewedNotifications, setViewedNotifications] = useState(new Set());
   // Use a ref so the IntersectionObserver always has access to the latest
   // handleMarkAsRead without needing to re-subscribe on every render
@@ -118,6 +129,29 @@ const Notification = () => {
     } catch (error) {
       console.error('Error fetching notification settings:', error);
       setIsSettingsLoading(false);
+    }
+  };
+
+  const handleEnablePushNotifications = async () => {
+    if (!auth?.user?._id) {
+      showToast('Please log in again to enable notifications', 'error');
+      return;
+    }
+
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      showToast('Browser notifications are not supported', 'error');
+      return;
+    }
+
+    await requestPermission(auth.user._id);
+    const nextPermission = window.Notification.permission;
+    setBrowserNotificationPermission(nextPermission);
+
+    if (nextPermission === 'granted') {
+      listenNotifications();
+      showToast('Notifications enabled', 'success');
+    } else {
+      showToast('Notifications were not enabled', 'info');
     }
   };
 
@@ -311,13 +345,25 @@ const Notification = () => {
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">Notification</h1>
-            <button 
-              onClick={() => setShowSettings(!showSettings)}
-              className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <FiSettings className={`mr-2 ${showSettings ? 'animate-spin' : ''}`} />
-              Settings
-            </button>
+            <div className="flex items-center gap-2">
+              {browserNotificationPermission !== 'granted' && browserNotificationPermission !== 'unsupported' && (
+                <button
+                  type="button"
+                  onClick={handleEnablePushNotifications}
+                  className="flex items-center px-4 py-2 bg-indigo-600 border border-indigo-600 rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+                >
+                  <FiBell className="mr-2" />
+                  Enable Push
+                </button>
+              )}
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <FiSettings className={`mr-2 ${showSettings ? 'animate-spin' : ''}`} />
+                Settings
+              </button>
+            </div>
           </div>
           
           {showSettings && (

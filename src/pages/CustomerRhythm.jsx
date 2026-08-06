@@ -1,28 +1,43 @@
 import { useState, useEffect } from "react";
-import { Zap, LayoutTemplate, Target, Megaphone, MessageCircle } from "lucide-react";
+import { Zap, LayoutTemplate, Target, Megaphone } from "lucide-react";
 import TemplateDashboard from "../components/customerRhythm/TemplateDashboard";
 import TemplateBuilder from "../components/customerRhythm/TemplateBuilder";
 import SendCampaign from "../components/customerRhythm/SendCampaign";
 import EngagementDashboard from "../components/customerRhythm/EngagementDashboard";
-import LiveChat from "../components/customerRhythm/LiveChat";
 import RetentionRhythmAutomation from "../components/customerRhythm/RetentionRhythmAutomation";
 import { useAuth } from "../context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
-import { useChatNotification } from "../context/ChatNotificationContext";
-  const CustomerRhythm = () => {
+
+const CustomerRhythm = () => {
   const { auth } = useAuth();
   const location = useLocation();
-  const [soon, setSoon] = useState();
- const [activeSection, setActiveSection] = useState("templates");
+  const [soon, setSoon] = useState(null);
+  const [activeSection, setActiveSection] = useState("templates");
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [templateToCopy, setTemplateToCopy] = useState(null);
 
   useEffect(() => {
-    fetch("/assets/comingSoon.json")
-      .then((res) => res.json())
-      .then(setSoon)
-      .catch(console.error);
+    const loadComingSoonAnimation = async () => {
+      try {
+        const response = await fetch("/assets/Comingsoon.json");
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!response.ok) {
+          throw new Error(`Comingsoon.json failed with ${response.status}`);
+        }
+
+        if (!contentType.includes("application/json")) {
+          throw new Error("Comingsoon.json did not return JSON");
+        }
+
+        setSoon(await response.json());
+      } catch {
+        setSoon(null);
+      }
+    };
+
+    loadComingSoonAnimation();
   }, []);
 
   useEffect(() => {
@@ -51,17 +66,6 @@ import { useChatNotification } from "../context/ChatNotificationContext";
           
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="app-tabs-row rounded-xl bg-gray-100 p-1 shadow-inner">
-              {/* <button
-                onClick={() => setActiveSection("live_chat")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                  activeSection === "live_chat"
-                    ? "bg-white text-[#313166] shadow-md"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                <MessageCircle size={18} />
-                Live Chat
-              </button> */}
               <button
                 onClick={() => setActiveSection("templates")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
@@ -108,7 +112,6 @@ import { useChatNotification } from "../context/ChatNotificationContext";
               </button>
             </div>
             <VideoPopupWithShare
-              // video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ?si=JGtmQtyRIt_K6Dt5"
               animationData={soon}
               buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
             />
@@ -118,9 +121,6 @@ import { useChatNotification } from "../context/ChatNotificationContext";
 
       {/* Main Content Area */}
       <div className={`min-h-0 flex-1 overflow-auto ${isCreatingTemplate ? '' : 'rounded-[24px] border border-gray-100 bg-white p-4 shadow-sm sm:p-5 lg:p-6'}`}>
-        {/* {activeSection === "live_chat" && (
-          <LiveChat />
-        )} */}
         {activeSection === "templates" && (
           isCreatingTemplate ? (
             <TemplateBuilder 

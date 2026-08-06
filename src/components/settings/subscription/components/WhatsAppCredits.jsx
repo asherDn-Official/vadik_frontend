@@ -5,6 +5,7 @@ import "react-tooltip/dist/react-tooltip.css";
 import api from "../../../../api/apiconfig";
 import showToast from "../../../../utils/ToastNotification";
 import { useAuth } from "../../../../context/AuthContext";
+import { loadRazorpayCheckout } from "../../../../utils/razorpayCheckout";
 import TopupConfirmationModal from "./TopupConfirmationModal";
 
 const TEMPLATE_PRICING = {
@@ -73,24 +74,6 @@ export default function WhatsAppCredits() {
     fetchBalance();
     fetchHistory();
   }, []);
-const loadRazorpayScript = () => {
-  return new Promise((resolve) => {
-    if (window.Razorpay) {
-      resolve(true);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-
-    document.body.appendChild(script);
-  });
-};
-
   const handleTopup = async () => {
     if (topupAmount <= 0) {
       showToast("Please enter a valid amount", "error");
@@ -122,7 +105,7 @@ const handleConfirmTopup = async () => {
   setIsTopupLoading(true);
 
   try {
-    const loaded = await loadRazorpayScript();
+    const loaded = await loadRazorpayCheckout();
 
     if (!loaded || !window.Razorpay) {
       showToast("Razorpay SDK failed to load", "error");

@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:phase0": "node --test tests/phase0/*.test.js",
+    "lint:critical": "npx eslint src/pages/DialogueFlow.jsx src/pages/ForgotPassword.jsx",
+    "verify": "npm run test:phase0 && npm run lint:critical && npm run build"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -93,7 +93,6 @@ const MyProfile = () => {
 
         if (response.data.status === "success") {
           const retailerData = response.data.data;
-          console.log(retailerData);
           const id = retailerData._id;
           setRetailerId(id);
           fetchImportHistory(id);

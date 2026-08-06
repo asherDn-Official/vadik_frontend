@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -43,7 +43,6 @@ function ForgotPassword() {
 
   const [step, setStep] = useState(1); // 1: email step, 2: OTP and password step
   const [email, setEmail] = useState(location.state?.email || "");
-  const [otpSent, setOtpSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -112,7 +111,6 @@ function ForgotPassword() {
       const response = await api.post("/api/auth/password/send-otp", { email: data.email });
       showToasts(response.data.message || "OTP sent successfully", "success");
       setEmail(data.email);
-      setOtpSent(true);
       setStep(2);
     } catch (err) {
       console.log(err);
@@ -125,7 +123,7 @@ function ForgotPassword() {
   // Function to resend OTP
   const handleResendOtp = async () => {
     if (!email) {
-      showToast("Email not found. Please try the password reset process again.", "error");
+      showToasts("Email not found. Please try the password reset process again.", "error");
       return;
     }
 
@@ -145,7 +143,7 @@ function ForgotPassword() {
 
   const onSubmit = async (payload) => {
     if (!email) {
-      showToast("Email not found. Please try the password reset process again.", "error");
+      showToasts("Email not found. Please try the password reset process again.", "error");
       return;
     }
 

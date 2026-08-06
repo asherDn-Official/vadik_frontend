@@ -1,4 +1,6 @@
+/* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import SubscriptionCard from "./components/SubscriptionCard";
 import ConfirmationModal from "./components/ConfirmationModal";
 import BillingDetailsModal from "./components/BillingDetailsModal";
@@ -6,6 +8,7 @@ import WhatsAppCredits from "./components/WhatsAppCredits";
 import api from "../../../api/apiconfig";
 import { useAuth } from "../../../context/AuthContext";
 import { calculateTotalWithGST } from "../../../utils/billingUtils";
+import { loadRazorpayCheckout } from "../../../utils/razorpayCheckout";
 
 const SubscriptionPopup = ({
   onClose,
@@ -29,6 +32,7 @@ const SubscriptionPopup = ({
   const [addonQuantities, setAddonQuantities] = useState({});
   const [billingDetails, setBillingDetails] = useState(null);
   const [showBillingModal, setShowBillingModal] = useState(false);
+  const navigate = useNavigate();
   
   
   const retailerid = localStorage.getItem("retailerId");
@@ -477,6 +481,11 @@ const SubscriptionPopup = ({
         options.order_id = order.id;
       }
 
+      const razorpayReady = await loadRazorpayCheckout();
+      if (!razorpayReady || !window.Razorpay) {
+        throw new Error("Razorpay SDK failed to load");
+      }
+
       const razorpay = new window.Razorpay(options);
       razorpay.on("payment.failed", function (response) {
         console.error("Razorpay payment failed:", response.error);
@@ -563,6 +572,11 @@ const SubscriptionPopup = ({
         },
       };
 
+      const razorpayReady = await loadRazorpayCheckout();
+      if (!razorpayReady || !window.Razorpay) {
+        throw new Error("Razorpay SDK failed to load");
+      }
+
       const razorpay = new window.Razorpay(options);
       razorpay.on("payment.failed", function (response) {
         console.error("Razorpay payment failed:", response.error);
@@ -607,8 +621,6 @@ const SubscriptionPopup = ({
 
   if (!open) return null;
 
-  // Check if current plan has free trial
-  const isCurrentPlanFreeTrial = currentPlans?.subscription?.isTrial || false;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">

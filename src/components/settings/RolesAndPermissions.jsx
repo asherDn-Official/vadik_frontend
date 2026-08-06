@@ -26,14 +26,15 @@ const RolesAndPermissions = () => {
       const subscription = async () => {
         try {
           const res = await api.get("/api/subscriptions/credit/usage");
-          const data = res.data;
-          setSubscriptionData(data.subscription.plan.toLowerCase());
-          console.log("subscription data plan:", subscriptionData);
+          const plan = res.data?.subscription?.plan;
+          setSubscriptionData(typeof plan === "string" ? plan.toLowerCase() : null);
         }catch (error) {
-        console.log("error", error);
-      } 
+        if (error.response?.status !== 401) {
+          console.error("Failed to fetch subscription data:", error);
+        }
       }
-      subscription();      
+      }
+      subscription();
     },[])
 
   // API base URL
