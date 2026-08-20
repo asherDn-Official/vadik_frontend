@@ -247,20 +247,23 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
       }
 
       // First row contains headers
-      const rawHeaders = (jsonData[0] || [])
-        .map((h) => String(h || "").trim())
-        .filter((h) => h !== "");
+      const rawHeaderRow = (jsonData[0] || []).map((h) => String(h || "").trim());
+      const rawHeaders = rawHeaderRow.filter((h) => h !== "");
 
       if (rawHeaders.length === 0) {
         throw new Error("No column headers found in first row.");
       }
 
-      // Extract sample data rows (first 3 data rows)
-      const dataRows = jsonData.slice(1).filter((row) => row.some((cell) => cell !== "" && cell !== null));
+      // Extract sample data rows (filter out empty rows)
+      const dataRows = jsonData.slice(1).filter((row) =>
+        row.some((cell) => cell !== "" && cell !== null && String(cell).trim() !== "")
+      );
       const samples = dataRows.slice(0, 3).map((row) => {
         const rowObj = {};
-        rawHeaders.forEach((h, idx) => {
-          rowObj[h] = row[idx] !== undefined && row[idx] !== null ? String(row[idx]).trim() : "";
+        rawHeaderRow.forEach((h, idx) => {
+          if (h) {
+            rowObj[h] = row[idx] !== undefined && row[idx] !== null ? String(row[idx]).trim() : "";
+          }
         });
         return rowObj;
       });
