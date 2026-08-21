@@ -447,13 +447,15 @@ const SendCampaign = () => {
 
     const header = template.components?.find(c => c.type === "HEADER");
     const mediaType = header && ["IMAGE", "VIDEO", "DOCUMENT"].includes(header.format) ? header.format : "";
-    const existingMediaUrl = header?.mediaUrl || (Array.isArray(header?.example?.header_handle) && header.example.header_handle[0]?.startsWith("http") ? header.example.header_handle[0] : "");
+    // Note: header?.example?.header_handle is a Meta CDN URL (scontent.whatsapp.net) — do NOT use
+    // it as media.url since Meta rejects its own CDN URLs as 'link' parameters in template sends.
+    // The user must upload a fresh copy via the media upload step.
 
     setCampaignData({
       ...campaignData,
       template,
       variables: initialVariables,
-      media: { url: existingMediaUrl || "", type: mediaType }
+      media: { url: "", type: mediaType }
     });
     setCurrentStep(3); // Auto-advance to audience after template selection
   };
@@ -711,7 +713,12 @@ const SendCampaign = () => {
     if (missingVars.length > 0) return toast.error("Please fill all variables");
 
     if (campaignData.media.type && !campaignData.media.url) {
-      return toast.error(`Please provide ${campaignData.media.type.toLowerCase()} URL or upload media`);
+      return toast.error(`Please upload the ${campaignData.media.type.toLowerCase()} file for the template header`);
+    }
+
+    // Guard: reject Meta CDN URLs — they expire and cannot be used as direct links
+    if (campaignData.media.url && campaignData.media.url.includes("scontent.whatsapp.net")) {
+      return toast.error("Please upload a fresh image/file — the template preview image cannot be used directly. Use the Upload File button.");
     }
 
     setLoading(true);
