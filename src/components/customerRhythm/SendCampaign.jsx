@@ -445,14 +445,15 @@ const SendCampaign = () => {
     const initialVariables = {};
     uniqueVars.forEach(v => initialVariables[v] = "");
 
-    const header = template.components.find(c => c.type === "HEADER");
+    const header = template.components?.find(c => c.type === "HEADER");
     const mediaType = header && ["IMAGE", "VIDEO", "DOCUMENT"].includes(header.format) ? header.format : "";
+    const existingMediaUrl = header?.mediaUrl || (Array.isArray(header?.example?.header_handle) && header.example.header_handle[0]?.startsWith("http") ? header.example.header_handle[0] : "");
 
     setCampaignData({
       ...campaignData,
       template,
       variables: initialVariables,
-      media: { url: "", type: mediaType }
+      media: { url: existingMediaUrl || "", type: mediaType }
     });
     setCurrentStep(3); // Auto-advance to audience after template selection
   };

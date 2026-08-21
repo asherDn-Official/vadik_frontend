@@ -1520,6 +1520,8 @@ function RetentionBuilderView({
 
       const response = await api.post("/api/retention-automations/preview-audience", {
         audienceRules: form.audienceRules,
+        triggerType: form.triggerType,
+        triggerConfig: form.triggerConfig,
         search: "",
         limit: audiencePreview.limit,
         page: page,
@@ -1532,6 +1534,8 @@ function RetentionBuilderView({
         customers: response.data?.data?.customers || [],
         totalPages: response.data?.data?.totalPages || 1,
         page: response.data?.data?.page || page,
+        isEventTrigger: response.data?.data?.isEventTrigger || false,
+        explanation: response.data?.data?.explanation || "",
         error: "",
       }));
     } catch (error) {
@@ -2535,10 +2539,17 @@ function RetentionBuilderView({
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl bg-[#313166] px-4 py-4 text-white">
                 <div className="text-xs uppercase tracking-[0.2em] text-white/60">
-                  Matching customers
+                  {audiencePreview.isEventTrigger ? "Matching sample" : "Matching customers"}
                 </div>
-                <div className="mt-2 text-3xl font-semibold">
-                  {audiencePreview.loading ? "..." : audiencePreview.count}
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-3xl font-semibold">
+                    {audiencePreview.loading ? "..." : audiencePreview.count}
+                  </span>
+                  {audiencePreview.isEventTrigger && (
+                    <span className="text-[10px] uppercase tracking-wide text-emerald-300 font-medium">
+                      (On-event)
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="rounded-2xl bg-[#F4F5F9] px-4 py-4">
@@ -2553,7 +2564,7 @@ function RetentionBuilderView({
                       : "Preview ready"}
                 </div>
                 <div className="mt-1 text-xs text-gray-500">
-                  {audiencePreview.error || "Shows the latest filtered audience."}
+                  {audiencePreview.explanation || audiencePreview.error || "Shows the latest filtered audience."}
                 </div>
               </div>
               <div className="rounded-2xl bg-[#F4F5F9] px-4 py-4">
@@ -2572,7 +2583,9 @@ function RetentionBuilderView({
             <div className="mt-4">
               <div className="mb-2 flex items-center justify-between">
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
-                  Sample customers
+                  {audiencePreview.isEventTrigger
+                    ? "Sample matching customers (from existing list)"
+                    : "Sample customers"}
                 </div>
                 <span className="text-xs text-gray-400">
                   Page {audiencePreview.page} of {audiencePreview.totalPages}
