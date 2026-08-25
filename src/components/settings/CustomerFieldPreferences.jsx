@@ -33,6 +33,7 @@ const CustomerFieldPreferences = () => {
   const [newFieldOptions, setNewFieldOptions] = useState([]);
   const [currentOption, setCurrentOption] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [retailerId] = useState(localStorage.getItem("retailerId") || "");
   const [preferenceId, setPreferenceId] = useState(null);
@@ -173,9 +174,13 @@ const CustomerFieldPreferences = () => {
     setShowIconSelector(false);
   };
 
-  const updatePreferences = async (updatedFields) => {
+  const updatePreferences = async (
+    updatedFields,
+    successMessage = "Preferences updated successfully"
+  ) => {
     if (!preferenceId) return;
 
+    setIsSaving(true);
     try {
       const payload = {
         advancedDetails: updatedFields["Advance Details"],
@@ -184,10 +189,16 @@ const CustomerFieldPreferences = () => {
       };
 
       await api.put(`/api/customer-preferences/${retailerId}`, payload);
+      if (successMessage) {
+        showToast(successMessage, "success");
+      }
       fetchPreferences();
     } catch (err) {
       console.error("Error updating preferences:", err);
       setError("Failed to update preferences. Please try again.");
+      showToast("Failed to update preferences", "error");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -243,7 +254,10 @@ const CustomerFieldPreferences = () => {
     }
 
     setFields(updatedFields);
-    await updatePreferences(updatedFields);
+    await updatePreferences(
+      updatedFields,
+      isEditingField ? "Field updated successfully" : "Field added successfully"
+    );
     startAddingField(); // Reset form for adding a new field
   };
 
@@ -254,7 +268,7 @@ const CustomerFieldPreferences = () => {
     };
 
     setFields(updatedFields);
-    await updatePreferences(updatedFields);
+    await updatePreferences(updatedFields, "Field deleted successfully");
   };
 
   const selectIcon = (iconUrl, iconName) => {
@@ -702,7 +716,8 @@ const CustomerFieldPreferences = () => {
                   )}
                   <button
                     onClick={handleSaveField}
-                    className="
+                    disabled={isSaving}
+                    className={`
   flex items-center gap-2
 
   rounded-2xl
@@ -717,12 +732,15 @@ const CustomerFieldPreferences = () => {
 
   transition-all duration-200
 
-  hover:scale-[1.02]
-  hover:bg-[#272757]
-"
+  ${isSaving ? "opacity-70 cursor-not-allowed" : "hover:scale-[1.02] hover:bg-[#272757]"}
+`}
                   >
                     <FiSave className="mr-2" />{" "}
-                    {isEditingField ? "Update Field" : "Add Field"}
+                    {isSaving
+                      ? "Saving..."
+                      : isEditingField
+                        ? "Update Field"
+                        : "Add Field"}
                   </button>
                 </div>
               </div>
