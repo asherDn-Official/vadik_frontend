@@ -22,10 +22,15 @@ import {
   Tag,
   MessageSquare,
   ChevronRight,
+  ChevronLeft,
   Code,
   Eye,
   X,
-  ArrowLeft
+  ArrowLeft,
+  PanelLeftClose,
+  PanelRightClose,
+  PanelLeftOpen,
+  PanelRightOpen,
 } from 'lucide-react';
 
 import ScreenNode from '../components/dialogueFlow/ScreenNode';
@@ -33,6 +38,7 @@ import ActionNode from '../components/dialogueFlow/ActionNode';
 import LabeledEdge from '../components/dialogueFlow/LabeledEdge';
 import FlowList from '../components/dialogueFlow/FlowList';
 import FlowAnalytics from '../components/dialogueFlow/FlowAnalytics';
+import AutoReplyRules from '../components/dialogueFlow/AutoReplyRules';
 import api from '../api/apiconfig';
 import showToast from '../utils/ToastNotification';
 import { useAuth } from '../context/AuthContext';
@@ -145,6 +151,11 @@ const DialogueFlowInner = () => {
   const [validationErrors, setValidationErrors] = useState([]);
   const [validationWarnings, setValidationWarnings] = useState([]);
   const [showValidationModal, setShowValidationModal] = useState(false);
+  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  const [validationBannerDismissed, setValidationBannerDismissed] = useState(false);
+  // Templates for AutoReplyRules component — fetched once when builder is opened
+  const [approvedTemplates, setApprovedTemplates] = useState([]);
 
   const getNodeDisplayName = (node) => node?.data?.label || node?.data?.header || node?.id || 'Untitled';
 
@@ -188,6 +199,22 @@ const DialogueFlowInner = () => {
     fetchFlows();
     fetchDefaultFlow();
   }, [fetchFlows, fetchDefaultFlow]);
+
+  // Fetch approved WhatsApp templates for the AutoReplyRules component
+  useEffect(() => {
+    if (!isWhatsAppConnected || authLoading) return;
+    const fetchTemplates = async () => {
+      try {
+        const resp = await api.get('/api/integrationManagement/whatsapp/custom-templates');
+        // Endpoint returns { status: true, data: [...] }
+        const templates = resp.data?.data || resp.data || [];
+        setApprovedTemplates(Array.isArray(templates) ? templates : []);
+      } catch (err) {
+        console.error('[DialogueFlow] Failed to fetch templates for AutoReplyRules:', err);
+      }
+    };
+    fetchTemplates();
+  }, [isWhatsAppConnected, authLoading]);
 
   const onDeleteFlow = async (flowId) => {
     if (!window.confirm('Are you sure you want to delete this flow?')) return;
@@ -993,6 +1020,7 @@ const DialogueFlowInner = () => {
     const result = validateFlowJSON();
     setValidationErrors(result.errors);
     setValidationWarnings(result.warnings);
+    setValidationBannerDismissed(false); // re-show banner when issues change
   }, [nodes, edges, view]);
 
   const publishFlow = async (flow = null, forcePublish = false) => {
@@ -1286,9 +1314,9 @@ const DialogueFlowInner = () => {
         </div>
       </div>
 
-      {view === 'builder' && (validationErrors.length > 0 || validationWarnings.length > 0) && (
+      {view === 'builder' && !validationBannerDismissed && (validationErrors.length > 0 || validationWarnings.length > 0) && (
         <div className={`mx-6 mt-4 rounded-2xl border px-4 py-3 flex items-center justify-between gap-4 ${validationErrors.length > 0 ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className={`text-sm font-bold ${validationErrors.length > 0 ? 'text-red-700' : 'text-amber-700'}`}>
               {validationErrors.length > 0 ? `${validationErrors.length} validation error${validationErrors.length !== 1 ? 's' : ''} need attention` : `${validationWarnings.length} validation warning${validationWarnings.length !== 1 ? 's' : ''} detected`}
             </p>
@@ -1298,136 +1326,195 @@ const DialogueFlowInner = () => {
                 : 'Warnings will not block saving, but they can affect how the flow behaves in Meta.'}
             </p>
           </div>
-          <button
-            onClick={() => setShowValidationModal(true)}
-            className={`px-4 py-2 text-sm font-bold rounded-lg ${validationErrors.length > 0 ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-amber-600 text-white hover:bg-amber-700'}`}
-          >
-            Review Issues
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => setShowValidationModal(true)}
+              className={`px-4 py-2 text-sm font-bold rounded-lg ${validationErrors.length > 0 ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-amber-600 text-white hover:bg-amber-700'}`}
+            >
+              Review Issues
+            </button>
+            <button
+              onClick={() => setValidationBannerDismissed(true)}
+              className={`p-2 rounded-lg transition-colors ${validationErrors.length > 0 ? 'text-red-400 hover:bg-red-100 hover:text-red-600' : 'text-amber-400 hover:bg-amber-100 hover:text-amber-600'}`}
+              title="Dismiss this banner"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
       )}
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-72 bg-white border-r border-gray-200 flex flex-col">
-          <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Components</h2>
+        {/* LEFT SIDEBAR — Components (minimizable) */}
+        <div className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${leftSidebarCollapsed ? 'w-12' : 'w-72'}`}>
+          {/* Header with collapse toggle */}
+          <div className={`flex items-center border-b border-gray-100 bg-gray-50/50 ${leftSidebarCollapsed ? 'justify-center p-3' : 'justify-between px-4 py-3'}`}>
+            {!leftSidebarCollapsed && (
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Components</h2>
+            )}
+            <button
+              onClick={() => setLeftSidebarCollapsed(v => !v)}
+              className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0"
+              title={leftSidebarCollapsed ? 'Expand components panel' : 'Collapse components panel'}
+            >
+              {leftSidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            <div>
-              <div className="text-[10px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-                <Layout size={12} /> User Interface
-              </div>
-              <div 
-                className="group flex flex-col p-3 border border-gray-100 rounded-xl hover:border-[#CB376D] hover:bg-[#CB376D]/5 cursor-grab active:cursor-grabbing transition-all mb-2"
+
+          {/* Collapsed icon strip */}
+          {leftSidebarCollapsed ? (
+            <div className="flex flex-col items-center gap-3 p-2 pt-4">
+              <div
+                className="p-2 bg-gray-50 border border-gray-100 rounded-lg text-gray-500 hover:text-[#CB376D] hover:border-[#CB376D] cursor-grab active:cursor-grabbing transition-all"
+                title="Form Screen"
                 onDragStart={(event) => onDragStart(event, 'screen', { label: 'New Screen', header: 'Welcome', body: 'Hello!' })}
                 draggable
               >
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg group-hover:text-[#CB376D]">
-                    <Layout size={18} />
-                  </div>
-                  <div className="flex-1 text-xs font-bold text-gray-700">Form Screen</div>
-                </div>
-                <p className="text-[9px] text-gray-400">A visual screen with header, body, and input fields for users to interact with.</p>
+                <Layout size={16} />
               </div>
-            </div>
-            <div>
-              <div className="text-[10px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-                <Zap size={12} /> Automation Actions
-              </div>
-              <div 
-                className="group flex flex-col p-3 border border-blue-100 rounded-xl bg-blue-50/50 cursor-grab active:cursor-grabbing transition-all mb-2"
+              <div
+                className="p-2 bg-blue-50 border border-blue-100 rounded-lg text-blue-500 cursor-grab active:cursor-grabbing transition-all"
+                title="Update DB"
                 onDragStart={(event) => onDragStart(event, 'action', { actionType: 'database', label: 'Update Profile', comingSoon: true })}
                 draggable
               >
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="p-2 bg-white shadow-sm border border-blue-100 rounded-lg text-blue-500 transition-colors">
-                    <Database size={18} />
-                  </div>
-                  <div className="flex-1 text-xs font-bold text-gray-700">Update DB</div>
-                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-blue-600">
-                    Coming Soon
-                  </span>
-                </div>
-                <p className="text-[9px] text-gray-400">Silently save user data or update customer records in your database once automation is enabled.</p>
+                <Database size={16} />
               </div>
-              <div 
-                className="group flex flex-col p-3 border border-amber-100 rounded-xl bg-amber-50/50 cursor-grab active:cursor-grabbing transition-all mb-2"
+              <div
+                className="p-2 bg-amber-50 border border-amber-100 rounded-lg text-amber-500 cursor-grab active:cursor-grabbing transition-all"
+                title="Notification"
                 onDragStart={(event) => onDragStart(event, 'action', { actionType: 'notification', label: 'Send Alert', comingSoon: true })}
                 draggable
               >
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="p-2 bg-white shadow-sm border border-amber-100 rounded-lg text-amber-500 transition-colors">
-                    <Bell size={18} />
-                  </div>
-                  <div className="flex-1 text-xs font-bold text-gray-700">Notification</div>
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-amber-600">
-                    Coming Soon
-                  </span>
-                </div>
-                <p className="text-[9px] text-gray-400">Trigger alerts to staff or customers when this point in the flow is reached, once the backend automation is connected.</p>
+                <Bell size={16} />
               </div>
-              <div 
-                className="group flex flex-col p-3 border border-[#CB376D]/15 rounded-xl bg-[#CB376D]/5 cursor-grab active:cursor-grabbing transition-all mb-2"
+              <div
+                className="p-2 bg-[#CB376D]/5 border border-[#CB376D]/15 rounded-lg text-[#CB376D] cursor-grab active:cursor-grabbing transition-all"
+                title="Data Exchange"
                 onDragStart={(event) => onDragStart(event, 'action', { actionType: 'data_exchange', label: 'Meta Data Exchange', comingSoon: true })}
                 draggable
               >
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="p-2 bg-white shadow-sm border border-[#CB376D]/10 rounded-lg text-[#CB376D] transition-colors">
+                <MessageSquare size={16} />
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+                  <Layout size={12} /> User Interface
+                </div>
+                <div 
+                  className="group flex flex-col p-3 border border-gray-100 rounded-xl hover:border-[#CB376D] hover:bg-[#CB376D]/5 cursor-grab active:cursor-grabbing transition-all mb-2"
+                  onDragStart={(event) => onDragStart(event, 'screen', { label: 'New Screen', header: 'Welcome', body: 'Hello!' })}
+                  draggable
+                >
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg group-hover:text-[#CB376D]">
+                      <Layout size={18} />
+                    </div>
+                    <div className="flex-1 text-xs font-bold text-gray-700">Form Screen</div>
+                  </div>
+                  <p className="text-[9px] text-gray-400">A visual screen with header, body, and input fields for users to interact with.</p>
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+                  <Zap size={12} /> Automation Actions
+                </div>
+                <div 
+                  className="group flex flex-col p-3 border border-blue-100 rounded-xl bg-blue-50/50 cursor-grab active:cursor-grabbing transition-all mb-2"
+                  onDragStart={(event) => onDragStart(event, 'action', { actionType: 'database', label: 'Update Profile', comingSoon: true })}
+                  draggable
+                >
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="p-2 bg-white shadow-sm border border-blue-100 rounded-lg text-blue-500 transition-colors">
+                      <Database size={18} />
+                    </div>
+                    <div className="flex-1 text-xs font-bold text-gray-700">Update DB</div>
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-blue-600">
+                      Coming Soon
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-gray-400">Silently save user data or update customer records in your database once automation is enabled.</p>
+                </div>
+                <div 
+                  className="group flex flex-col p-3 border border-amber-100 rounded-xl bg-amber-50/50 cursor-grab active:cursor-grabbing transition-all mb-2"
+                  onDragStart={(event) => onDragStart(event, 'action', { actionType: 'notification', label: 'Send Alert', comingSoon: true })}
+                  draggable
+                >
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="p-2 bg-white shadow-sm border border-amber-100 rounded-lg text-amber-500 transition-colors">
+                      <Bell size={18} />
+                    </div>
+                    <div className="flex-1 text-xs font-bold text-gray-700">Notification</div>
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-amber-600">
+                      Coming Soon
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-gray-400">Trigger alerts to staff or customers when this point in the flow is reached, once the backend automation is connected.</p>
+                </div>
+                <div 
+                  className="group flex flex-col p-3 border border-[#CB376D]/15 rounded-xl bg-[#CB376D]/5 cursor-grab active:cursor-grabbing transition-all mb-2"
+                  onDragStart={(event) => onDragStart(event, 'action', { actionType: 'data_exchange', label: 'Meta Data Exchange', comingSoon: true })}
+                  draggable
+                >
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="p-2 bg-white shadow-sm border border-[#CB376D]/10 rounded-lg text-[#CB376D] transition-colors">
+                      <MessageSquare size={18} />
+                    </div>
+                    <div className="flex-1 text-xs font-bold text-gray-700">Data Exchange</div>
+                    <span className="rounded-full bg-[#CB376D]/10 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-[#CB376D]">
+                      Coming Soon
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-gray-400">Advanced: Exchange data with your server using Meta&apos;s Data Exchange API.</p>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+                  <Layout size={12} /> Screen Templates
+                </div>
+                <div 
+                  className="group flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:border-emerald-500 hover:bg-emerald-50 cursor-grab active:cursor-grabbing transition-all mb-2"
+                  onDragStart={(event) => onDragStart(event, 'screen', { 
+                    label: 'Customer Feedback', 
+                    header: 'Feedback', 
+                    body: 'How was your experience?', 
+                    fields: [
+                      { id: 1, type: 'radio', label: 'Rating', options: [{ label: 'Excellent' }, { label: 'Good' }, { label: 'Average' }, { label: 'Poor' }] },
+                      { id: 2, type: 'textarea', label: 'Comments' }
+                    ] 
+                  })}
+                  draggable
+                >
+                  <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-emerald-500">
                     <MessageSquare size={18} />
                   </div>
-                  <div className="flex-1 text-xs font-bold text-gray-700">Data Exchange</div>
-                  <span className="rounded-full bg-[#CB376D]/10 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-[#CB376D]">
-                    Coming Soon
-                  </span>
+                  <div className="flex-1 text-xs font-bold text-gray-700">Feedback Form</div>
                 </div>
-                <p className="text-[9px] text-gray-400">Advanced: Exchange data with your server using Meta&apos;s Data Exchange API.</p>
+                <div 
+                  className="group flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 cursor-grab active:cursor-grabbing transition-all mb-2"
+                  onDragStart={(event) => onDragStart(event, 'screen', { 
+                    label: 'Lead Registration', 
+                    header: 'Register', 
+                    body: 'Join our loyalty program!', 
+                    fields: [
+                      { id: 1, type: 'text', label: 'Full Name' },
+                      { id: 2, type: 'text', label: 'Email Address' },
+                      { id: 3, type: 'select', label: 'Preferred Store', options: [{ label: 'Store A' }, { label: 'Store B' }] }
+                    ] 
+                  })}
+                  draggable
+                >
+                  <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-indigo-500">
+                    <Plus size={18} />
+                  </div>
+                  <div className="flex-1 text-xs font-bold text-gray-700">Lead Gen</div>
+                </div>
               </div>
             </div>
-
-            <div>
-              <div className="text-[10px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-                <Layout size={12} /> Screen Templates
-              </div>
-              <div 
-                className="group flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:border-emerald-500 hover:bg-emerald-50 cursor-grab active:cursor-grabbing transition-all mb-2"
-                onDragStart={(event) => onDragStart(event, 'screen', { 
-                  label: 'Customer Feedback', 
-                  header: 'Feedback', 
-                  body: 'How was your experience?', 
-                  fields: [
-                    { id: 1, type: 'radio', label: 'Rating', options: [{ label: 'Excellent' }, { label: 'Good' }, { label: 'Average' }, { label: 'Poor' }] },
-                    { id: 2, type: 'textarea', label: 'Comments' }
-                  ] 
-                })}
-                draggable
-              >
-                <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-emerald-500">
-                  <MessageSquare size={18} />
-                </div>
-                <div className="flex-1 text-xs font-bold text-gray-700">Feedback Form</div>
-              </div>
-              <div 
-                className="group flex items-center gap-3 p-3 border border-gray-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 cursor-grab active:cursor-grabbing transition-all mb-2"
-                onDragStart={(event) => onDragStart(event, 'screen', { 
-                  label: 'Lead Registration', 
-                  header: 'Register', 
-                  body: 'Join our loyalty program!', 
-                  fields: [
-                    { id: 1, type: 'text', label: 'Full Name' },
-                    { id: 2, type: 'text', label: 'Email Address' },
-                    { id: 3, type: 'select', label: 'Preferred Store', options: [{ label: 'Store A' }, { label: 'Store B' }] }
-                  ] 
-                })}
-                draggable
-              >
-                <div className="p-2 bg-white shadow-sm border border-gray-100 rounded-lg text-indigo-500">
-                  <Plus size={18} />
-                </div>
-                <div className="flex-1 text-xs font-bold text-gray-700">Lead Gen</div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="flex-1 relative bg-[#f8fafc]" ref={reactFlowWrapper}>
@@ -1454,12 +1541,35 @@ const DialogueFlowInner = () => {
           </ReactFlow>
         </div>
 
-        <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
-          <div className="flex border-b border-gray-100">
-            <button onClick={() => setActiveTab('properties')} className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors ${activeTab === 'properties' ? 'text-[#CB376D] border-b-2 border-[#CB376D]' : 'text-gray-400'}`}>Properties</button>
-            <button onClick={() => setActiveTab('preview')} className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors ${activeTab === 'preview' ? 'text-[#CB376D] border-b-2 border-[#CB376D]' : 'text-gray-400'}`}>Preview</button>
+        {/* RIGHT SIDEBAR — Properties & Preview (minimizable) */}
+        <div className={`bg-white border-l border-gray-200 flex flex-col transition-all duration-300 ${rightSidebarCollapsed ? 'w-12' : 'w-80'}`}>
+          {/* Tab row with collapse toggle */}
+          <div className="flex border-b border-gray-100 items-center">
+            {rightSidebarCollapsed ? (
+              /* Collapsed: just show the toggle button centered */
+              <button
+                onClick={() => setRightSidebarCollapsed(false)}
+                className="flex-1 flex justify-center items-center py-3 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+                title="Expand properties panel"
+              >
+                <PanelRightOpen size={16} />
+              </button>
+            ) : (
+              <>
+                <button onClick={() => setActiveTab('properties')} className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors ${activeTab === 'properties' ? 'text-[#CB376D] border-b-2 border-[#CB376D]' : 'text-gray-400'}`}>Properties</button>
+                <button onClick={() => setActiveTab('preview')} className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest transition-colors ${activeTab === 'preview' ? 'text-[#CB376D] border-b-2 border-[#CB376D]' : 'text-gray-400'}`}>Preview</button>
+                <button
+                  onClick={() => setRightSidebarCollapsed(true)}
+                  className="px-2 py-3 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors flex-shrink-0"
+                  title="Collapse properties panel"
+                >
+                  <PanelRightClose size={16} />
+                </button>
+              </>
+            )}
           </div>
           
+          {!rightSidebarCollapsed && (
           <div className="flex-1 overflow-y-auto">
             {activeTab === 'properties' ? (
               selectedNode ? (
@@ -1637,6 +1747,17 @@ const DialogueFlowInner = () => {
                         </div>
                       </div>
                     </div>
+                  )}
+
+                  {/* Auto-Reply Rules — only for screen nodes */}
+                  {selectedNode.type === 'screen' && (
+                    <AutoReplyRules
+                      node={selectedNode}
+                      templates={approvedTemplates}
+                      onUpdate={(newAutoReplies) =>
+                        updateNodeData(selectedNode.id, { autoReplies: newAutoReplies })
+                      }
+                    />
                   )}
 
                   {selectedNode.type === 'action' && (
@@ -1827,6 +1948,7 @@ const DialogueFlowInner = () => {
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
 
