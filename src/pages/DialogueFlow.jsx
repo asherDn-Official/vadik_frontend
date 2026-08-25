@@ -22,7 +22,6 @@ import {
   Tag,
   MessageSquare,
   ChevronRight,
-  ChevronLeft,
   Code,
   Eye,
   X,
@@ -123,6 +122,116 @@ const initialEdges = [
 let id = 10;
 const getId = () => `node_${id++}`;
 
+const getNodeDisplayName = (node) => node?.data?.label || node?.data?.header || node?.id || 'Untitled';
+
+const defaultEdgeOptions = {
+  animated: true,
+  type: 'labeled',
+  style: { stroke: '#CB376D', strokeWidth: 2 },
+};
+
+const evaluateCondition = (condition, data) => {
+  if (!condition) return true;
+  const { field, operator, value } = condition;
+  const fieldValue = data[field];
+
+  switch (operator) {
+    case 'equals': return fieldValue === value;
+    case 'not_equals': return fieldValue !== value;
+    case 'contains': return String(fieldValue).includes(value);
+    case 'greater_than': return Number(fieldValue) > Number(value);
+    case 'less_than': return Number(fieldValue) < Number(value);
+    default: return true;
+  }
+};
+
+const normalizeScreenId = (value) =>
+  (value || '')
+    .toUpperCase()
+    .replace(/[0-9]+/g, (m) => {
+      const map = { '0': 'ZERO', '1': 'ONE', '2': 'TWO', '3': 'THREE', '4': 'FOUR', '5': 'FIVE', '6': 'SIX', '7': 'SEVEN', '8': 'EIGHT', '9': 'NINE' };
+      return m.split('').map(d => map[d] || d).join('');
+    })
+    .replace(/[^A-Z_]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/_+/g, '_');
+
+const getScreenNodeId = (node) => {
+  if (!node) return null;
+  return normalizeScreenId(node.data?.label) || normalizeScreenId(node.id);
+};
+
+const getFieldName = (field = {}) => {
+  const explicitName = (field.name || '').trim();
+  if (explicitName) return explicitName;
+
+  return (field.label || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+};
+
+const resolveNextScreenNode = (sourceNodeId, graphNodes, graphEdges, contextData = null, visited = new Set()) => {
+  if (!sourceNodeId || visited.has(sourceNodeId)) return null;
+  visited.add(sourceNodeId);
+
+  const outgoing = graphEdges.filter((edge) => edge.source === sourceNodeId);
+  if (outgoing.length === 0) return null;
+
+  const nextEdge =
+    outgoing.find((edge) => contextData && edge.data?.condition && evaluateCondition(edge.data.condition, contextData)) ||
+    outgoing.find((edge) => !edge.data?.condition) ||
+    outgoing[0];
+
+  const targetNode = graphNodes.find((node) => node.id === nextEdge.target);
+  if (!targetNode) return null;
+
+  if (targetNode.type === 'action') {
+    return resolveNextScreenNode(targetNode.id, graphNodes, graphEdges, contextData, visited);
+  }
+
+  return targetNode;
+};
+
+const getReachableScreenIds = (sourceNodeId, graphNodes, graphEdges, visited = new Set()) => {
+  if (!sourceNodeId || visited.has(sourceNodeId)) return [];
+  visited.add(sourceNodeId);
+
+  const outgoing = graphEdges.filter((edge) => edge.source === sourceNodeId);
+  const reachable = [];
+
+  outgoing.forEach((edge) => {
+    const targetNode = graphNodes.find((node) => node.id === edge.target);
+    if (!targetNode) return;
+
+    if (targetNode.type === 'screen') {
+      const targetScreenId = getScreenNodeId(targetNode);
+      if (targetScreenId) reachable.push(targetScreenId);
+      return;
+    }
+
+    if (targetNode.type === 'action') {
+      reachable.push(...getReachableScreenIds(targetNode.id, graphNodes, graphEdges, visited));
+    }
+  });
+
+  return [...new Set(reachable)];
+};
+
+const buildRoutingModel = (graphNodes, graphEdges) => {
+  const routingModel = {};
+
+  graphNodes
+    .filter((node) => node.type === 'screen')
+    .forEach((node) => {
+      const screenId = getScreenNodeId(node);
+      routingModel[screenId] = getReachableScreenIds(node.id, graphNodes, graphEdges);
+    });
+
+  return routingModel;
+};
+
 const DialogueFlowInner = () => {
   const { auth, loading: authLoading } = useAuth();
   
@@ -156,8 +265,6 @@ const DialogueFlowInner = () => {
   const [validationBannerDismissed, setValidationBannerDismissed] = useState(false);
   // Templates for AutoReplyRules component — fetched once when builder is opened
   const [approvedTemplates, setApprovedTemplates] = useState([]);
-
-  const getNodeDisplayName = (node) => node?.data?.label || node?.data?.header || node?.id || 'Untitled';
 
   const removeEdgeById = (edgeId) => {
     setEdges((eds) => eds.filter((edge) => edge.id !== edgeId));
@@ -228,99 +335,6 @@ const DialogueFlowInner = () => {
     }
   };
 
-  const defaultEdgeOptions = {
-    animated: true,
-    type: 'labeled',
-    style: { stroke: '#CB376D', strokeWidth: 2 },
-  };
-
-  const normalizeScreenId = (value) =>
-    (value || '')
-      .toUpperCase()
-      .replace(/[0-9]+/g, (m) => {
-        const map = { '0': 'ZERO', '1': 'ONE', '2': 'TWO', '3': 'THREE', '4': 'FOUR', '5': 'FIVE', '6': 'SIX', '7': 'SEVEN', '8': 'EIGHT', '9': 'NINE' };
-        return m.split('').map(d => map[d] || d).join('');
-      })
-      .replace(/[^A-Z_]+/g, '_')
-      .replace(/^_+|_+$/g, '')
-      .replace(/_+/g, '_');
-
-  const getScreenNodeId = (node) => {
-    if (!node) return null;
-    return normalizeScreenId(node.data?.label) || normalizeScreenId(node.id);
-  };
-
-  const getFieldName = (field = {}) => {
-    const explicitName = (field.name || '').trim();
-    if (explicitName) return explicitName;
-
-    return (field.label || '')
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-  };
-
-  const resolveNextScreenNode = (sourceNodeId, graphNodes, graphEdges, contextData = null, visited = new Set()) => {
-    if (!sourceNodeId || visited.has(sourceNodeId)) return null;
-    visited.add(sourceNodeId);
-
-    const outgoing = graphEdges.filter((edge) => edge.source === sourceNodeId);
-    if (outgoing.length === 0) return null;
-
-    const nextEdge =
-      outgoing.find((edge) => contextData && edge.data?.condition && evaluateCondition(edge.data.condition, contextData)) ||
-      outgoing.find((edge) => !edge.data?.condition) ||
-      outgoing[0];
-
-    const targetNode = graphNodes.find((node) => node.id === nextEdge.target);
-    if (!targetNode) return null;
-
-    if (targetNode.type === 'action') {
-      return resolveNextScreenNode(targetNode.id, graphNodes, graphEdges, contextData, visited);
-    }
-
-    return targetNode;
-  };
-
-  const getReachableScreenIds = (sourceNodeId, graphNodes, graphEdges, visited = new Set()) => {
-    if (!sourceNodeId || visited.has(sourceNodeId)) return [];
-    visited.add(sourceNodeId);
-
-    const outgoing = graphEdges.filter((edge) => edge.source === sourceNodeId);
-    const reachable = [];
-
-    outgoing.forEach((edge) => {
-      const targetNode = graphNodes.find((node) => node.id === edge.target);
-      if (!targetNode) return;
-
-      if (targetNode.type === 'screen') {
-        const targetScreenId = getScreenNodeId(targetNode);
-        if (targetScreenId) reachable.push(targetScreenId);
-        return;
-      }
-
-      if (targetNode.type === 'action') {
-        reachable.push(...getReachableScreenIds(targetNode.id, graphNodes, graphEdges, visited));
-      }
-    });
-
-    return [...new Set(reachable)];
-  };
-
-  const buildRoutingModel = (graphNodes, graphEdges) => {
-    const routingModel = {};
-
-    graphNodes
-      .filter((node) => node.type === 'screen')
-      .forEach((node) => {
-        const screenId = getScreenNodeId(node);
-        routingModel[screenId] = getReachableScreenIds(node.id, graphNodes, graphEdges);
-      });
-
-    return routingModel;
-  };
-
   useEffect(() => {
     if (activeTab !== 'preview') return;
     if (selectedNode?.type === 'screen') {
@@ -331,7 +345,7 @@ const DialogueFlowInner = () => {
     }
   }, [activeTab, selectedNode, activePreviewScreenId, nodes]);
 
-  const generateMetaJSON = (sourceNodes = null, sourceEdges = null) => {
+  const generateMetaJSON = useCallback((sourceNodes = null, sourceEdges = null) => {
     const graphNodes = sourceNodes || nodes;
     const graphEdges = sourceEdges || edges;
 
@@ -469,7 +483,7 @@ const DialogueFlowInner = () => {
     };
     console.log("[generateMetaJSON] Generated flow JSON:", JSON.stringify(finalJson, null, 2));
     return JSON.stringify(finalJson, null, 2);
-  };
+  }, [nodes, edges]);
 
   const onConnect = useCallback(
     (params) => {
@@ -753,7 +767,7 @@ const DialogueFlowInner = () => {
     setView('analytics');
   };
 
-  const validateFlowJSON = (sourceNodes = null, sourceEdges = null) => {
+  const validateFlowJSON = useCallback((sourceNodes = null, sourceEdges = null) => {
     const graphNodes = sourceNodes || nodes;
     const graphEdges = sourceEdges || edges;
     const errors = [];
@@ -1013,7 +1027,7 @@ const DialogueFlowInner = () => {
     });
 
     return { errors, warnings, isValid: errors.length === 0 };
-  };
+  }, [nodes, edges, generateMetaJSON]);
 
   useEffect(() => {
     if (view !== 'builder') return;
@@ -1021,7 +1035,7 @@ const DialogueFlowInner = () => {
     setValidationErrors(result.errors);
     setValidationWarnings(result.warnings);
     setValidationBannerDismissed(false); // re-show banner when issues change
-  }, [nodes, edges, view]);
+  }, [view, validateFlowJSON]);
 
   const publishFlow = async (flow = null, forcePublish = false) => {
     const nodesToValidate = flow?.visualGraph?.nodes || nodes;
@@ -1138,21 +1152,6 @@ const DialogueFlowInner = () => {
     },
     [reactFlowInstance, setNodes]
   );
-
-  const evaluateCondition = (condition, data) => {
-    if (!condition) return true;
-    const { field, operator, value } = condition;
-    const fieldValue = data[field];
-
-    switch (operator) {
-      case 'equals': return fieldValue === value;
-      case 'not_equals': return fieldValue !== value;
-      case 'contains': return String(fieldValue).includes(value);
-      case 'greater_than': return Number(fieldValue) > Number(value);
-      case 'less_than': return Number(fieldValue) < Number(value);
-      default: return true;
-    }
-  };
 
   const handlePreviewSubmit = () => {
     if (!activePreviewScreen) return;
