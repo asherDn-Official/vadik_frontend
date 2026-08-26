@@ -321,12 +321,11 @@ const CustomerFieldPreferences = () => {
     );
   }
 
-  const handleCancelBtn = (activeTab, key) => {
-    const onConfirm = () => {
-      handleRemoveField(activeTab, key);
-      showToast("Deleted successfully", "success");
+  const handleCancelBtn = (tabName, key) => {
+    const onConfirm = async () => {
+      await handleRemoveField(tabName, key);
     };
-    deleteConfirmTostNotification("", onConfirm);
+    deleteConfirmTostNotification(`"${key}" field`, onConfirm);
   };
 
   const inputStyles = `
