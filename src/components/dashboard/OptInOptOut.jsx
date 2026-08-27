@@ -85,7 +85,7 @@ function OptInOptOut() {
           Customer Loyalty
         </h2>
         <p className="mt-1 text-xs font-medium text-[#7E85A8]">
-          Customers created within {loyalCustomerPeriodDays} days are counted as loyal
+          Based on customer Opt-In (Start) and Opt-Out (Stop) status
         </p>
       </div>
 
