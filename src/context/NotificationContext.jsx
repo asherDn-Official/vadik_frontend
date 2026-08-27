@@ -42,6 +42,15 @@ export const NotificationProvider = ({ children }) => {
     };
   }, [fetchUnreadCount]);
 
+  const markAllAsRead = useCallback(async () => {
+    try {
+      await api.put("/api/notifications/read-all");
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
+  }, []);
+
   return (
     <NotificationContext.Provider
       value={{
@@ -50,6 +59,7 @@ export const NotificationProvider = ({ children }) => {
         refreshUnreadCount: fetchUnreadCount,
         decrementUnreadCount: () =>
           setUnreadCount(prev => Math.max(0, prev - 1)),
+        markAllAsRead,
       }}
     >
       {children}

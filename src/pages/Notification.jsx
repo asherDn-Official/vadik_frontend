@@ -33,7 +33,7 @@ const Notification = () => {
     clvCustomers: true
   });
   
-  const { decrementUnreadCount } = useNotification();
+  const { decrementUnreadCount, markAllAsRead } = useNotification();
   const { auth } = useAuth();
   const [browserNotificationPermission, setBrowserNotificationPermission] = useState(() => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
@@ -171,7 +171,14 @@ const Notification = () => {
   const fetchNotifications = async () => {
     try {
       const response = await api.get('/api/notifications');
-      setNotifications(response.data.notifications);
+      const list = response.data.notifications || [];
+      setNotifications(list);
+      // Pre-populate viewedRef with IDs of notifications that are already read
+      list.forEach(n => {
+        if (n.isRead) {
+          viewedRef.current.add(n._id);
+        }
+      });
       setLoading(prev => ({ ...prev, notifications: false }));
     } catch (error) {
       showToast('Failed to fetch notifications', 'error');
@@ -235,16 +242,28 @@ const Notification = () => {
   };
 
   // Action handlers
-  const handleMarkAsRead = async (notificationId) => {
-    try {
-      await api.put(`/api/notifications/${notificationId}/read`);
-      setNotifications(prev =>
-        prev.map(n => n._id === notificationId ? { ...n, isRead: true } : n)
-      );
-      // Instantly decrement the navbar badge — no extra API round-trip needed
+  const handleMarkAsRead = useCallback(async (notificationId) => {
+    setNotifications(prev => {
+      const target = prev.find(n => n._id === notificationId);
+      if (!target || target.isRead) return prev;
+
+      api.put(`/api/notifications/${notificationId}/read`).catch(error => {
+        console.error('Error marking notification as read:', error);
+      });
       decrementUnreadCount();
+
+      return prev.map(n => n._id === notificationId ? { ...n, isRead: true } : n);
+    });
+  }, [decrementUnreadCount]);
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      notifications.forEach(n => viewedRef.current.add(n._id));
+      showToast('All notifications marked as read', 'success');
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      showToast('Failed to mark all as read', 'error');
     }
   };
 
@@ -344,8 +363,25 @@ const Notification = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Notification</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+              {notifications.some(n => !n.isRead) && (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                  {notifications.filter(n => !n.isRead).length} unread
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
+              {notifications.some(n => !n.isRead) && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllAsRead}
+                  className="flex items-center px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-md shadow-sm text-sm font-medium text-indigo-600 hover:bg-indigo-100 transition-colors"
+                >
+                  <FiCheck className="mr-1.5" />
+                  Mark all as read
+                </button>
+              )}
               {browserNotificationPermission !== 'granted' && browserNotificationPermission !== 'unsupported' && (
                 <button
                   type="button"
@@ -453,7 +489,6 @@ const Notification = () => {
             </div>
           ) : (
             filteredNotifications.map(notification => (
-              console.log("notification", notification),
               <div 
                 key={notification._id}
                 ref={el => notificationRefs.current[notification._id] = el}
@@ -476,12 +511,23 @@ const Notification = () => {
                           {moment(notification.createdAt).fromNow()}
                         </span>
                         {!notification.isRead ? (
-                          <span className="flex h-3 w-3 relative">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleMarkAsRead(notification._id)}
+                            title="Click to mark as read"
+                            className="flex h-5 items-center gap-1 rounded px-1.5 py-0.5 text-xs text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          >
+                            <span className="flex h-2.5 w-2.5 relative">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+                            </span>
+                            <span className="text-[11px] font-medium">Unread</span>
+                          </button>
                         ) : (
-                          <FiCheck className="text-green-500" />
+                          <span className="flex items-center text-xs text-green-600 gap-1">
+                            <FiCheck className="text-green-500" />
+                            <span className="text-[11px]">Read</span>
+                          </span>
                         )}
                       </div>
                     </div>
