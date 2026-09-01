@@ -5,7 +5,7 @@ import AddOption from "../common/AddOption";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 
-const QuizForm = ({ quiz, onSave, onCancel }) => {
+const QuizForm = ({ quiz, onSave, onCancel, buildWithAI = false }) => {
   const {
     register,
     handleSubmit,
@@ -227,8 +227,217 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
     return true;
   };
 
+  const [aiTopic, setAiTopic] = useState("");
+const [aiQuestionCount, setAiQuestionCount] = useState(5);
+const [aiDifficulty, setAiDifficulty] = useState("easy");
+const [aiDescription, setAiDescription] = useState("");
+const [aiLanguage, setAiLanguage] = useState("English");
+const [aiInstructions, setAiInstructions] = useState("");
+
+const [isGenerating, setIsGenerating] = useState(false);
+
+const handleGenerateWithAI = async () => {
+  if (!aiTopic.trim()) {
+    showToast("Please enter a quiz topic", "error");
+    return;
+  }
+
+  try {
+    setIsGenerating(true);
+
+    const response = await api.post("/api/quiz/ai/draft", {
+      topic: aiTopic.trim(),
+      questionCount: Number(aiQuestionCount),
+      difficulty: aiDifficulty,
+      description: aiDescription.trim(),
+      language: aiLanguage,
+      instructions: aiInstructions.trim(),
+    });
+
+    console.log("AI Quiz Response:", response.data);
+
+    const draft = response.data?.draft;
+
+    if (!draft) {
+      throw new Error("AI did not return a quiz draft");
+    }
+
+    setValue("title", draft.title || "");
+
+
+    setValue("description", draft.description || "");
+
+
+    const generatedQuestions = (draft.questions || []).map(
+      (question, index) => ({
+        id: Date.now() + index,
+        key: "",
+        question: question.question || "",
+        type: question.type || "options",
+        section: "additionalData",
+        options: Array.isArray(question.options)
+          ? question.options
+          : [],
+        iconUrl: "",
+        iconName: "",
+      })
+    );
+
+    setValue("questions", generatedQuestions, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    // Reset dropdown state for generated questions
+    setIsPreferenceDropdownOpen(
+      new Array(generatedQuestions.length).fill(false)
+    );
+
+    showToast("Quiz generated successfully!", "success");
+  } catch (error) {
+    console.error("AI Quiz Error:", error);
+
+    showToast(
+      error.response?.data?.message ||
+        error.message ||
+        "Failed to generate quiz",
+      "error"
+    );
+  } finally {
+    setIsGenerating(false);
+  }
+};
+
   return (
     <div className="mx-auto">
+      {buildWithAI && (
+  <div className="bg-white border rounded-xl p-6 mb-6">
+    <div className="flex items-center justify-between mb-6">
+      <div>
+        <h2 className="text-xl font-semibold text-slate-800">
+          Build Quiz with AI
+        </h2>
+
+        <p className="text-sm text-slate-500 mt-1">
+          Tell AI what kind of quiz you want to create.
+        </p>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      
+      {/* Topic */}
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Quiz Topic *
+        </label>
+
+        <input
+          type="text"
+          value={aiTopic}
+          onChange={(e) => setAiTopic(e.target.value)}
+          placeholder="Example: Gold Jewellery"
+          className="w-full border rounded-lg px-4 py-3"
+        />
+      </div>
+
+      {/* Question Count */}
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Number of Questions
+        </label>
+
+        <select
+          value={aiQuestionCount}
+          onChange={(e) => setAiQuestionCount(e.target.value)}
+          className="w-full border rounded-lg px-4 py-3"
+        >
+          <option value={5}>5 Questions</option>
+          <option value={10}>10 Questions</option>
+          <option value={15}>15 Questions</option>
+          <option value={20}>20 Questions</option>
+        </select>
+      </div>
+
+      {/* Difficulty */}
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Difficulty
+        </label>
+
+        <select
+          value={aiDifficulty}
+          onChange={(e) => setAiDifficulty(e.target.value)}
+          className="w-full border rounded-lg px-4 py-3"
+        >
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+
+      {/* Language */}
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Language
+        </label>
+
+        <select
+          value={aiLanguage}
+          onChange={(e) => setAiLanguage(e.target.value)}
+          className="w-full border rounded-lg px-4 py-3"
+        >
+          <option value="English">English</option>
+          <option value="Tamil">Tamil</option>
+          <option value="Hindi">Hindi</option>
+        </select>
+      </div>
+    </div>
+
+    {/* Description */}
+    <div className="mt-5">
+      <label className="block text-sm font-medium mb-2">
+        Description
+      </label>
+
+      <textarea
+        value={aiDescription}
+        onChange={(e) => setAiDescription(e.target.value)}
+        placeholder="Describe what kind of quiz you want..."
+        rows={3}
+        className="w-full border rounded-lg px-4 py-3"
+      />
+    </div>
+
+    {/* Instructions */}
+    <div className="mt-5">
+      <label className="block text-sm font-medium mb-2">
+        Additional Instructions
+      </label>
+
+      <textarea
+        value={aiInstructions}
+        onChange={(e) => setAiInstructions(e.target.value)}
+        placeholder="Example: Generate simple questions suitable for customers"
+        rows={3}
+        className="w-full border rounded-lg px-4 py-3"
+      />
+    </div>
+
+    <div className="mt-6">
+      <button
+        type="button"
+        onClick={handleGenerateWithAI}
+        disabled={isGenerating}
+        className="px-6 py-3 bg-[#313166] text-white rounded-lg hover:opacity-90 disabled:opacity-60"
+      >
+        {isGenerating
+          ? "Generating Quiz..."
+          : " Generate with AI"}
+      </button>
+    </div>
+  </div>
+)}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-slate-800">
           {quiz ? "Edit Quiz" : "Create Quiz"}
