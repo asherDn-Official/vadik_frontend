@@ -236,6 +236,7 @@ const [aiInstructions, setAiInstructions] = useState("");
 
 const [isGenerating, setIsGenerating] = useState(false);
 
+
 const handleGenerateWithAI = async () => {
 
 

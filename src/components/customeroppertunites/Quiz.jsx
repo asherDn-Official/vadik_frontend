@@ -7,6 +7,14 @@ import showToast from "../../utils/ToastNotification";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 
 const Quiz = ({ backButton = true, onClose }) => {
+  const AI_ENABLED_RETAILER_ID =
+  "68a8219ecfbeaf1f70936f07";
+
+const retailerId =
+  localStorage.getItem("retailerId");
+
+const canBuildWithAI =
+  retailerId === AI_ENABLED_RETAILER_ID;
   const [quizzes, setQuizzes] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState(null);
@@ -122,12 +130,14 @@ const Quiz = ({ backButton = true, onClose }) => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleBuildWithAI}
-            className="flex items-center px-4 py-2 text-white bg-[#313166] rounded-[10px] hover:opacity-90 transition-colors"
-          >
-            Build with AI
-          </button>
+          {canBuildWithAI && (
+  <button
+    onClick={handleBuildWithAI}
+    className="flex items-center px-4 py-2 text-white bg-[#313166] rounded-[10px] hover:opacity-90 transition-colors"
+  >
+    Build with AI
+  </button>
+)}
 
           <button
             onClick={handleCreate}
