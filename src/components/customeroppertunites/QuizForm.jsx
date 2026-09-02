@@ -227,32 +227,43 @@ const QuizForm = ({ quiz, onSave, onCancel, buildWithAI = false }) => {
     return true;
   };
 
-  const [aiTopic, setAiTopic] = useState("");
+ const [aiPurpose, setAiPurpose] = useState("");
+const [aiAudience, setAiAudience] = useState("");
+const [aiGoal, setAiGoal] = useState("");
 const [aiQuestionCount, setAiQuestionCount] = useState(5);
-const [aiDifficulty, setAiDifficulty] = useState("easy");
-const [aiDescription, setAiDescription] = useState("");
 const [aiLanguage, setAiLanguage] = useState("English");
 const [aiInstructions, setAiInstructions] = useState("");
 
 const [isGenerating, setIsGenerating] = useState(false);
 
 const handleGenerateWithAI = async () => {
-  if (!aiTopic.trim()) {
-    showToast("Please enter a quiz topic", "error");
+
+
+   if (!aiPurpose.trim()) {
+    showToast("Please enter the quiz purpose", "error");
     return;
   }
 
+  if (!aiAudience.trim()) {
+    showToast("Please enter the target audience", "error");
+    return;
+  }
+
+  if (!aiGoal.trim()) {
+    showToast("Please enter the quiz goal", "error");
+    return;
+  }
   try {
     setIsGenerating(true);
 
-    const response = await api.post("/api/quiz/ai/draft", {
-      topic: aiTopic.trim(),
-      questionCount: Number(aiQuestionCount),
-      difficulty: aiDifficulty,
-      description: aiDescription.trim(),
-      language: aiLanguage,
-      instructions: aiInstructions.trim(),
-    });
+  const response = await api.post("/api/quiz/ai/draft", {
+  purpose: aiPurpose.trim(),
+  audience: aiAudience.trim(),
+  goal: aiGoal.trim(),
+  questionCount: Number(aiQuestionCount),
+  language: aiLanguage,
+  instructions: aiInstructions.trim(),
+});
 
     console.log("AI Quiz Response:", response.data);
 
@@ -268,20 +279,27 @@ const handleGenerateWithAI = async () => {
     setValue("description", draft.description || "");
 
 
-    const generatedQuestions = (draft.questions || []).map(
-      (question, index) => ({
-        id: Date.now() + index,
-        key: "",
-        question: question.question || "",
-        type: question.type || "options",
-        section: "additionalData",
-        options: Array.isArray(question.options)
-          ? question.options
-          : [],
-        iconUrl: "",
-        iconName: "",
-      })
-    );
+   const generatedQuestions = (draft.questions || []).map(
+  (question, index) => ({
+    id: Date.now() + index,
+
+    key: question.key || "",
+
+    question: question.question || "",
+
+    type: question.type || "options",
+
+    section: question.section || "additionalData",
+
+    options: Array.isArray(question.options)
+      ? question.options
+      : [],
+
+    iconUrl: question.iconUrl || "",
+
+    iconName: question.iconName || "",
+  })
+);
 
     setValue("questions", generatedQuestions, {
       shouldValidate: true,
@@ -326,22 +344,48 @@ const handleGenerateWithAI = async () => {
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       
-      {/* Topic */}
+     
       <div>
-        <label className="block text-sm font-medium mb-2">
-          Quiz Topic *
-        </label>
+  <label className="block text-sm font-medium mb-2">
+    Purpose *
+  </label>
 
-        <input
-          type="text"
-          value={aiTopic}
-          onChange={(e) => setAiTopic(e.target.value)}
-          placeholder="Example: Gold Jewellery"
-          className="w-full border rounded-lg px-4 py-3"
-        />
-      </div>
+  <input
+    type="text"
+    value={aiPurpose}
+    onChange={(e) => setAiPurpose(e.target.value)}
+    placeholder="Example: Customer engagement"
+    className="w-full border rounded-lg px-4 py-3"
+  />
+</div>
+<div>
+  <label className="block text-sm font-medium mb-2">
+    Audience *
+  </label>
 
-      {/* Question Count */}
+  <input
+    type="text"
+    value={aiAudience}
+    onChange={(e) => setAiAudience(e.target.value)}
+    placeholder="Example: Existing customers"
+    className="w-full border rounded-lg px-4 py-3"
+  />
+</div>
+<div>
+  <label className="block text-sm font-medium mb-2">
+    Goal *
+  </label>
+
+  <input
+    type="text"
+    value={aiGoal}
+    onChange={(e) => setAiGoal(e.target.value)}
+    placeholder="Example: Understand customer preferences"
+    className="w-full border rounded-lg px-4 py-3"
+  />
+</div>
+
+   
       <div>
         <label className="block text-sm font-medium mb-2">
           Number of Questions
@@ -359,22 +403,6 @@ const handleGenerateWithAI = async () => {
         </select>
       </div>
 
-      {/* Difficulty */}
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Difficulty
-        </label>
-
-        <select
-          value={aiDifficulty}
-          onChange={(e) => setAiDifficulty(e.target.value)}
-          className="w-full border rounded-lg px-4 py-3"
-        >
-          <option value="easy">Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
-        </select>
-      </div>
 
       {/* Language */}
       <div>
@@ -394,20 +422,6 @@ const handleGenerateWithAI = async () => {
       </div>
     </div>
 
-    {/* Description */}
-    <div className="mt-5">
-      <label className="block text-sm font-medium mb-2">
-        Description
-      </label>
-
-      <textarea
-        value={aiDescription}
-        onChange={(e) => setAiDescription(e.target.value)}
-        placeholder="Describe what kind of quiz you want..."
-        rows={3}
-        className="w-full border rounded-lg px-4 py-3"
-      />
-    </div>
 
     {/* Instructions */}
     <div className="mt-5">
