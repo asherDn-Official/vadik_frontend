@@ -261,7 +261,17 @@ const CustomerFieldPreferences = () => {
     startAddingField(); // Reset form for adding a new field
   };
 
+  const isProtectedField = (key) => {
+    const normalized = String(key || "").trim().toLowerCase();
+    return normalized === "birthday" || normalized === "anniversary";
+  };
+
   const handleRemoveField = async (tabName, fieldKey) => {
+    if (isProtectedField(fieldKey)) {
+      showToast("Birthday and Anniversary fields cannot be deleted", "error");
+      return;
+    }
+
     const updatedFields = {
       ...fields,
       [tabName]: fields[tabName].filter((field) => field.key !== fieldKey),
@@ -322,6 +332,10 @@ const CustomerFieldPreferences = () => {
   }
 
   const handleCancelBtn = (tabName, key) => {
+    if (isProtectedField(key)) {
+      showToast("Birthday and Anniversary fields cannot be deleted", "error");
+      return;
+    }
     const onConfirm = async () => {
       await handleRemoveField(tabName, key);
     };
@@ -868,15 +882,17 @@ const CustomerFieldPreferences = () => {
                                   >
                                     <FiEdit size={18} />
                                   </button>
-                                  <button
-                                    onClick={() =>
-                                      handleCancelBtn(activeTab, field.key)
-                                    }
-                                    className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                    title="Remove field"
-                                  >
-                                    <X size={18} />
-                                  </button>
+                                  {!isProtectedField(field.key) && (
+                                    <button
+                                      onClick={() =>
+                                        handleCancelBtn(activeTab, field.key)
+                                      }
+                                      className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                      title="Remove field"
+                                    >
+                                      <X size={18} />
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>

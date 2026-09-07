@@ -13,6 +13,7 @@ import { format, isValid } from "date-fns";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 import ManageSourcesPopup from "./components/ManageSourcesPopup.jsx";
+import CustomerLabelInput from "../common/CustomerLabelInput";
 import {
   MAX_CUSTOMER_LABELS,
   normalizeCustomerLabels,
@@ -621,81 +622,41 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
 
           <div className="space-y-2">
             <label className="mb-2 block text-sm font-medium text-[#313166]">
-              Labels (comma-separated)
+              Labels
             </label>
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="VIP, New, Summer Sale"
-                {...register("labels", {
-                  validate: (value) => {
-                    const labels = normalizeCustomerLabels(value);
+            <Controller
+              name="labels"
+              control={control}
+              rules={{
+                validate: (value) => {
+                  const labels = normalizeCustomerLabels(value);
 
-                    // ✅ Max label count validation
-                    if (labels.length > MAX_CUSTOMER_LABELS) {
-                      return `You can add up to ${MAX_CUSTOMER_LABELS} labels only`;
-                    }
+                  // Max label count validation
+                  if (labels.length > MAX_CUSTOMER_LABELS) {
+                    return `You can add up to ${MAX_CUSTOMER_LABELS} labels only`;
+                  }
 
-                    // ✅ Each label length validation (max 50 chars)
-                    const invalidLabel = labels.find(
-                      (label) => label.length > 20,
-                    );
+                  // Each label length validation (max 20 chars)
+                  const invalidLabel = labels.find(
+                    (label) => label.length > 20,
+                  );
 
-                    if (invalidLabel) {
-                      return `Each label must not exceed 20 characters (Invalid: "${invalidLabel}")`;
-                    }
+                  if (invalidLabel) {
+                    return `Each label must not exceed 20 characters (Invalid: "${invalidLabel}")`;
+                  }
 
-                    return true;
-                  },
-                })}
-                className={inputStyles}
-              />
-              {errors.labels && (
-                <p className="text-red-500 text-xs">{errors.labels.message}</p>
+                  return true;
+                },
+              }}
+              render={({ field: { value, onChange } }) => (
+                <CustomerLabelInput
+                  value={value}
+                  onChange={onChange}
+                  suggestions={uniqueLabels}
+                  error={errors.labels?.message}
+                />
               )}
-
-              {uniqueLabels.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  <span className="text-xs text-[#8B90B2] w-full mb-1">
-                    Quick Add:
-                  </span>
-                  {uniqueLabels.map((label) => (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => {
-                        const currentLabels = normalizeCustomerLabels(
-                          getValues("labels") || "",
-                        );
-                        const existingKeys = new Set(
-                          currentLabels.map((item) => item.toLowerCase()),
-                        );
-
-                        if (existingKeys.has(label.toLowerCase())) {
-                          return;
-                        }
-
-                        if (currentLabels.length >= MAX_CUSTOMER_LABELS) {
-                          showToast(
-                            `You can add up to ${MAX_CUSTOMER_LABELS} labels only.`,
-                            "error",
-                          );
-                          return;
-                        }
-
-                        setValue(
-                          "labels",
-                          [...currentLabels, label].join(", "),
-                        );
-                      }}
-                      className="px-2 py-1 text-[10px] bg-[#F3F5FF] text-[#313166] rounded-full border border-[#E8ECF8] hover:bg-[#E8ECF8] transition-colors"
-                    >
-                      + {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            />
             <p className="text-xs text-[#8B90B2]">
               Add tags to group and filter customers
             </p>
