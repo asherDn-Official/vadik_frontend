@@ -7,6 +7,7 @@ import BillingDetailsModal from "./components/BillingDetailsModal";
 import WhatsAppCredits from "./components/WhatsAppCredits";
 import api from "../../../api/apiconfig";
 import { useAuth } from "../../../context/AuthContext";
+import { usePlan } from "../../../context/PlanContext";
 import { calculateTotalWithGST } from "../../../utils/billingUtils";
 import { loadRazorpayCheckout } from "../../../utils/razorpayCheckout";
 
@@ -37,6 +38,7 @@ const SubscriptionPopup = ({
   
   const retailerid = localStorage.getItem("retailerId");
   const { auth, setAuth } = useAuth();
+  const { refreshPlans } = usePlan();
   const isAutoPayEnabled = showAutopay && autoplay;
   
   const canUseAutoPayForSelectedPlan = !!selectedPlan && !selectedPlan.isFreeTrial && !selectedPlan.isEnterprise && selectedPlan.name?.toLowerCase() !== "enterprise";
@@ -231,8 +233,11 @@ const SubscriptionPopup = ({
       setSelectedPlan(null);
       setSelectedAddons([]);
       setAddonQuantities({});
-      getCurrentPlanDetails();
-      getActiveSubscription();
+      if (refreshPlans) {
+        await refreshPlans();
+      }
+      await getCurrentPlanDetails();
+      await getActiveSubscription();
       handleClose();
     } catch (error) {
       console.error("Payment verification failed:", error);
@@ -288,7 +293,10 @@ const SubscriptionPopup = ({
       setShowConfirmation(false);
       setSelectedAddons([]);
       setAddonQuantities({});
-      getCurrentPlanDetails();
+      if (refreshPlans) {
+        await refreshPlans();
+      }
+      await getCurrentPlanDetails();
       handleClose();
     } catch (error) {
       console.error("Credits payment verification failed:", error);
@@ -332,8 +340,11 @@ const SubscriptionPopup = ({
         isTrial: true,
       });
 
-      getCurrentPlanDetails();
-      getActiveSubscription();
+      if (refreshPlans) {
+        await refreshPlans();
+      }
+      await getCurrentPlanDetails();
+      await getActiveSubscription();
       handleClose();
     } catch (error) {
       console.error("❌ Trial subscription failed:", {

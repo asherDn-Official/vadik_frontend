@@ -34,7 +34,9 @@ export default function SubscriptionCard({
       return 'bg-gray-400 text-white cursor-not-allowed opacity-60';
     }
     if (hasActiveSubscription && !isAddon && !isCurrentPlan) {
-      return 'bg-gray-400 text-white cursor-not-allowed opacity-60';
+      return variant === 'primary'
+        ? 'bg-white text-pink-700 hover:bg-gray-100'
+        : 'bg-pink-700 text-white hover:bg-pink-800';
     }
     if (isAddon && isCurrentPlanFreeTrial) {
       return 'bg-gray-400 text-white cursor-not-allowed opacity-60';
@@ -55,7 +57,7 @@ export default function SubscriptionCard({
       return 'Subscribed';
     }
     if (hasActiveSubscription && !isAddon && !isCurrentPlan) {
-      return 'Not Available';
+      return 'Switch Plan';
     }
     if (isAddon && hasActiveSubscription) {
       if (isCurrentPlanFreeTrial) {
@@ -67,7 +69,7 @@ export default function SubscriptionCard({
   };
 
   const handleCardClick = (e) => {
-    if (!isAddon && (isCurrentPlan || (hasActiveSubscription && !isCurrentPlan))) {
+    if (!isAddon && isCurrentPlan) {
       return;
     }
     if (isAddon && isCurrentPlanFreeTrial) {
