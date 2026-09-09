@@ -40,6 +40,7 @@ import api from "../../api/apiconfig";
 import CustomerJourneyPanel from "./CustomerJourneyPanel";
 import { getCustomerProfilePictureSrc } from "../../utils/customerImageUtils";
 import LabelPreview from "../common/LabelPreview";
+import CustomerLabelInput from "../common/CustomerLabelInput";
 import {
   MAX_CUSTOMER_LABELS,
   normalizeCustomerLabels,
@@ -48,44 +49,6 @@ import {
 const MAX_PROFILE_PICTURE_SIZE_BYTES = 2 * 1024 * 1024;
 const PROFILE_PICTURE_SIZE_ERROR =
   "Profile picture must be 2 MB or smaller. Please upload a smaller image.";
-
-const LabelSuggestions = ({ currentLabels, onLabelAdd }) => {
-  const [labels, setLabels] = useState([]);
-  const retailerId = localStorage.getItem("retailerId");
-
-  useEffect(() => {
-    const fetchLabels = async () => {
-      try {
-        if (!retailerId) return;
-        const response = await api.get(`/api/customer-preferences/${retailerId}`);
-        if (response.data && response.data.uniqueLabels) {
-          setLabels(response.data.uniqueLabels);
-        }
-      } catch (error) {
-        console.error("Error fetching labels:", error);
-      }
-    };
-    fetchLabels();
-  }, [retailerId]);
-
-  if (labels.length === 0) return null;
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      <span className="text-[10px] text-[#8B90B2] w-full mb-0.5">Quick Add:</span>
-      {labels.map((label) => (
-        <button
-          key={label}
-          type="button"
-          onClick={() => onLabelAdd(label)}
-          className="px-2 py-0.5 text-[10px] bg-[#F3F5FF] text-[#313166] rounded-full border border-[#E8ECF8] hover:bg-[#E8ECF8] transition-colors"
-        >
-          + {label}
-        </button>
-      ))}
-    </div>
-  );
-};
 
 const FieldItem = React.memo(
   ({
@@ -672,32 +635,6 @@ const CustomerDetails = ({
       handleInputChange("basic", "lastname", last);
     },
     [handleInputChange],
-  );
-
-  const handleLabelAdd = useCallback(
-    (newLabel) => {
-      const currentLabels = normalizeCustomerLabels(
-        formData?.basic?.labels || "",
-      );
-      const existingKeys = new Set(
-        currentLabels.map((label) => label.toLowerCase()),
-      );
-
-      if (existingKeys.has(newLabel.toLowerCase())) {
-        return;
-      }
-
-      if (currentLabels.length >= MAX_CUSTOMER_LABELS) {
-        showToast(
-          `You can add up to ${MAX_CUSTOMER_LABELS} labels only.`,
-          "error",
-        );
-        return;
-      }
-
-      handleInputChange("basic", "labels", [...currentLabels, newLabel].join(", "));
-    },
-    [formData?.basic?.labels, handleInputChange],
   );
 
   // Validate form in real-time
@@ -1313,29 +1250,13 @@ const CustomerDetails = ({
                           Labels
                         </p>
                         {isEditing ? (
-                          <div className="space-y-3">
-                            <input
-                              type="text"
-                              value={formData?.basic?.labels || ""}
-                              onChange={(e) => handleInputChange("basic", "labels", e.target.value)}
-                              className="h-11 w-full rounded-xl border bg-white px-4 text-sm font-medium text-[#1F1C5C] outline-none transition-all duration-200 focus:border-[#313166]/30 focus:shadow-[0_0_0_4px_rgba(49,49,102,0.06)]"
-                              placeholder="VIP, New, Summer Sale"
-                            />
-                            {errors.basic?.labels && (
-                              <p className="text-xs text-red-500">{errors.basic.labels}</p>
-                            )}
-                            {sourceOptions && sourceOptions.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {/* Use a separate labels fetch if needed, or if we can get it from preferences */}
-                              </div>
-                            )}
-                            {/* Adding Label Suggestions here */}
-                            <LabelSuggestions 
-                              currentLabels={formData?.basic?.labels || ""} 
-                              onLabelAdd={handleLabelAdd}
-                            />
-                            <p className="text-[10px] text-[#8B90B2] mt-1">Comma-separated</p>
-                          </div>
+                          <CustomerLabelInput
+                            value={formData?.basic?.labels || ""}
+                            onChange={(val) =>
+                              handleInputChange("basic", "labels", val)
+                            }
+                            error={errors.basic?.labels}
+                          />
                         ) : (
                           <LabelPreview
                             labels={formData?.basic?.labels}
