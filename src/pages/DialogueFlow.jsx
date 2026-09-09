@@ -58,11 +58,11 @@ const initialNodes = [
     id: 'node_1',
     type: 'screen',
     data: { 
-      label: 'Welcome & Consent', 
+      label: 'Welcome', 
       header: 'Welcome to Vadik AI', 
-      body: 'Would you like to provide feedback about your recent order?', 
+      body: 'Please enter your details to continue.', 
       fields: [
-        { id: 101, type: 'radio', label: 'Response', name: 'user_consent', options: [{ label: 'Yes, sure', value: 'yes' }, { label: 'No, thanks', value: 'no' }] }
+        { id: 101, type: 'text', label: 'Your Name', name: 'user_name', required: true }
       ] 
     },
     position: { x: 100, y: 150 },
@@ -71,52 +71,24 @@ const initialNodes = [
     id: 'node_2',
     type: 'screen',
     data: { 
-      label: 'Feedback Form', 
-      header: 'Your Feedback', 
-      body: 'How would you rate our service?', 
-      fields: [
-        { id: 102, type: 'radio', label: 'Rating', name: 'rating', options: [{ label: '5 - Excellent', value: '5' }, { label: '3 - Average', value: '3' }, { label: '1 - Poor', value: '1' }] },
-        { id: 103, type: 'textarea', label: 'Comments', name: 'comments' }
-      ] 
-    },
-    position: { x: 500, y: 50 },
-  },
-  {
-    id: 'node_3',
-    type: 'screen',
-    data: { 
-      label: 'Exit Screen', 
-      header: 'Goodbye', 
-      body: 'No problem! Have a great day ahead.', 
-      fields: [] 
-    },
-    position: { x: 500, y: 300 },
-  },
-  {
-    id: 'node_4',
-    type: 'action',
-    data: { label: 'Notify Support', actionType: 'notification' },
-    position: { x: 900, y: 0 },
-  },
-  {
-    id: 'node_5',
-    type: 'screen',
-    data: { 
       label: 'Thank You', 
-      header: 'Success', 
-      body: 'Thank you for your feedback! We appreciate your time.', 
+      header: 'Thank You!', 
+      body: 'Thank you for your response. Have a wonderful day!', 
       fields: [] 
     },
-    position: { x: 900, y: 150 },
+    position: { x: 500, y: 150 },
   },
 ];
 
 const initialEdges = [
-  { id: 'e1-2', source: 'node_1', target: 'node_2', sourceHandle: 'choice_101_0', type: 'labeled', data: { label: 'Yes' } },
-  { id: 'e1-3', source: 'node_1', target: 'node_3', sourceHandle: 'choice_101_1', type: 'labeled', data: { label: 'No' } },
-  { id: 'e2-4', source: 'node_2', target: 'node_4', sourceHandle: 'submit', type: 'labeled', data: { label: 'Bad Rating', condition: { field: 'rating', operator: 'less_than', value: '4' } } },
-  { id: 'e2-5', source: 'node_2', target: 'node_5', sourceHandle: 'submit', type: 'labeled', data: { label: 'Good Rating', condition: { field: 'rating', operator: 'greater_than', value: '3' } } },
-  { id: 'e4-5', source: 'node_4', target: 'node_5', type: 'labeled', data: { label: 'Next' } },
+  { 
+    id: 'e1-2', 
+    source: 'node_1', 
+    target: 'node_2', 
+    sourceHandle: 'submit', 
+    type: 'labeled', 
+    data: { label: 'Next' } 
+  },
 ];
 
 let id = 10;
