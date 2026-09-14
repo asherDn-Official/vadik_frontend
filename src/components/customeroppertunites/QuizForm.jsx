@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { Plus, X, Check, ChevronDown } from "lucide-react";
 import AddOption from "../common/AddOption";
@@ -64,7 +64,7 @@ const QuizForm = ({ quiz, onSave, onCancel, buildWithAI = false }) => {
         })) || []),
       ];
 
-      setAllPreferences(combinedPreferences);
+      setAllPreferences(combinedPreferences.filter((item) => ["options", "string", "date"].includes(item.type)));
       setIsPreferenceDropdownOpen(
         new Array(combinedPreferences.length).fill(false)
       );
@@ -266,9 +266,7 @@ const handleGenerateWithAI = async () => {
   instructions: aiInstructions.trim(),
 });
 
-    console.log("AI Quiz Response:", response.data);
-
-    const draft = response.data?.draft;
+const draft = response.data?.draft;
 
     if (!draft) {
       throw new Error("AI did not return a quiz draft");
@@ -314,9 +312,8 @@ const handleGenerateWithAI = async () => {
 
     showToast("Quiz generated successfully!", "success");
   } catch (error) {
-    console.error("AI Quiz Error:", error);
 
-    showToast(
+showToast(
       error.response?.data?.message ||
         error.message ||
         "Failed to generate quiz",
@@ -709,3 +706,4 @@ const handleGenerateWithAI = async () => {
 };
 
 export default QuizForm;
+
