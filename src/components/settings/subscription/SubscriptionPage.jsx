@@ -7,6 +7,7 @@ import CancelConfirmationModal from "./components/CancelConfirmationModal";
 import WhatsAppCredits from "./components/WhatsAppCredits";
 import api from "../../../api/apiconfig";
 import { useAuth } from "../../../context/AuthContext";
+import { usePlan } from "../../../context/PlanContext";
 import showToast from "../../../utils/ToastNotification";
 import { loadRazorpayCheckout } from "../../../utils/razorpayCheckout";
 
@@ -29,6 +30,7 @@ export default function SubscriptionPage() {
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const retailerid = localStorage.getItem("retailerId");
   const { auth } = useAuth();
+  const { refreshPlans } = usePlan();
 
   // Addon quantities state
   const [addonQuantities, setAddonQuantities] = useState({});
@@ -207,8 +209,11 @@ export default function SubscriptionPage() {
       setSelectedPlan(null);
       setSelectedAddons([]);
       setAddonQuantities({});
-      getCurrentPlanDetails();
-      getActiveSubscription();
+      if (refreshPlans) {
+        await refreshPlans();
+      }
+      await getCurrentPlanDetails();
+      await getActiveSubscription();
     } catch (error) {
       console.error("Payment verification failed:", error);
       showToast(
@@ -262,7 +267,11 @@ export default function SubscriptionPage() {
       setShowConfirmation(false);
       setSelectedAddons([]);
       setAddonQuantities({});
-      getCurrentPlanDetails();
+      if (refreshPlans) {
+        await refreshPlans();
+      }
+      await getCurrentPlanDetails();
+      await getActiveSubscription();
     } catch (error) {
       console.error("Credits payment verification failed:", error);
       showToast(
@@ -570,8 +579,11 @@ export default function SubscriptionPage() {
         isTrial: true,
       });
 
-      getCurrentPlanDetails();
-      getActiveSubscription();
+      if (refreshPlans) {
+        await refreshPlans();
+      }
+      await getCurrentPlanDetails();
+      await getActiveSubscription();
     } catch (error) {
       console.error("❌ Trial subscription failed:", {
         message: error.message,
@@ -599,8 +611,11 @@ export default function SubscriptionPage() {
         showToast(response.data.message, "success");
 
         // Refresh data
-        getCurrentPlanDetails();
-        getActiveSubscription();
+        if (refreshPlans) {
+          await refreshPlans();
+        }
+        await getCurrentPlanDetails();
+        await getActiveSubscription();
 
         setShowCancelConfirmation(false);
       } else {
@@ -631,6 +646,9 @@ export default function SubscriptionPage() {
       setSubscriptionDetails((prev) =>
         prev ? { ...prev, autoPay: updatedAutoPay } : prev,
       );
+      if (refreshPlans) {
+        await refreshPlans();
+      }
       showToast(
         `AutoPay ${updatedAutoPay?.enabled ? "enabled" : "disabled"} successfully`,
         "success",
