@@ -699,6 +699,8 @@ const TemplateFlowCanvasContent = ({
 
     const triggerNode = nodes.find((n) => n.type === "trigger");
     const rootTemplateNode = nodes.find((n) => n.type === "template");
+    const rootTemplateName = rootTemplateNode?.data?.templateName || "";
+    const matchedRootTemplate = templates.find((t) => t.name === rootTemplateName || t._id === rootTemplateName);
 
     const payload = {
       ...initialAutomation,
@@ -711,7 +713,8 @@ const TemplateFlowCanvasContent = ({
       },
       actionConfig: {
         actionType: "template",
-        templateName: rootTemplateNode?.data?.templateName || "",
+        templateId: matchedRootTemplate?._id || null,
+        templateName: rootTemplateName,
         languageCode: rootTemplateNode?.data?.language || "en_US",
       },
       flowGraph: {
