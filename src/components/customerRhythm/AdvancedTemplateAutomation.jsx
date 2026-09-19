@@ -274,6 +274,30 @@ const AdvancedTemplateAutomation = () => {
     }
   };
 
+  // ─── Overlapping Keyword Detection ─────────────────────────────────────────
+  // Finds pairs of ACTIVE automations that share the same trigger keyword.
+  // These fire simultaneously on the same inbound message → customer receives
+  // two bot replies at once.
+  const overlappingKeywordWarnings = useMemo(() => {
+    const active = automations.filter((a) => a.status === "active" && a.triggerConfig?.keyword);
+    const warnings = [];
+    for (let i = 0; i < active.length; i++) {
+      const kwsA = active[i].triggerConfig.keyword.split(",").map((k) => k.trim().toLowerCase()).filter(Boolean);
+      for (let j = i + 1; j < active.length; j++) {
+        const kwsB = active[j].triggerConfig.keyword.split(",").map((k) => k.trim().toLowerCase()).filter(Boolean);
+        const shared = kwsA.filter((k) => kwsB.includes(k));
+        if (shared.length > 0) {
+          warnings.push({
+            automationA: active[i].name,
+            automationB: active[j].name,
+            sharedKeywords: shared.map((k) => k.toUpperCase()),
+          });
+        }
+      }
+    }
+    return warnings;
+  }, [automations]);
+
   // Metrics
   const stats = useMemo(() => {
     const total = automations.length;
@@ -402,6 +426,39 @@ const AdvancedTemplateAutomation = () => {
           </div>
         </div>
       </div>
+
+      {/* ─── Overlapping Keyword Warning Banner ──────────────────────────────── */}
+      {overlappingKeywordWarnings.length > 0 && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 flex gap-3">
+          <AlertCircle className="text-amber-500 w-5 h-5 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-800 mb-1">
+              ⚠️ Overlapping Trigger Keywords Detected
+            </p>
+            <p className="text-xs text-amber-700 mb-2">
+              The following active automations share the same trigger keywords. When a customer sends one
+              of these words, <strong>both automations will fire at the same time</strong>, sending two
+              different messages simultaneously. Fix this by removing the shared keywords from one of the
+              automations.
+            </p>
+            <ul className="space-y-1">
+              {overlappingKeywordWarnings.map((w, i) => (
+                <li key={i} className="text-xs text-amber-800 flex flex-wrap items-center gap-1">
+                  <span className="font-semibold">"{w.automationA}"</span>
+                  <span className="text-amber-600">and</span>
+                  <span className="font-semibold">"{w.automationB}"</span>
+                  <span className="text-amber-600">both trigger on:</span>
+                  {w.sharedKeywords.map((kw) => (
+                    <span key={kw} className="px-1.5 py-0.5 bg-amber-200 text-amber-900 rounded font-mono font-bold text-[10px]">
+                      {kw}
+                    </span>
+                  ))}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* Blueprints Section */}
       <div className="space-y-3">
