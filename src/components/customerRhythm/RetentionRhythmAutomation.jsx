@@ -5679,7 +5679,11 @@ export default function RetentionRhythmAutomation() {
         api.get("/api/retention-automations/flows/all"),
       ]);
 
-      setAutomations(automationsRes.data?.data || []);
+      const allAutos = automationsRes.data?.data || [];
+      const standardAutos = allAutos.filter(
+        (a) => a.journeyType !== "advanced_template" && (!a.flowGraph?.nodes || a.flowGraph.nodes.length === 0)
+      );
+      setAutomations(standardAutos);
       setFields(fieldsRes.data?.data || []);
       setTemplates(templatesRes.data?.data || []);
       setFlows(flowsRes.data?.data || []);
