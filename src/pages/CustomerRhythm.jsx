@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Zap, LayoutTemplate, Target, Megaphone } from "lucide-react";
+import { Zap, LayoutTemplate, Target, Megaphone, GitFork } from "lucide-react";
 import TemplateDashboard from "../components/customerRhythm/TemplateDashboard";
 import TemplateBuilder from "../components/customerRhythm/TemplateBuilder";
 import SendCampaign from "../components/customerRhythm/SendCampaign";
 import EngagementDashboard from "../components/customerRhythm/EngagementDashboard";
 import RetentionRhythmAutomation from "../components/customerRhythm/RetentionRhythmAutomation";
+import AdvancedTemplateAutomation from "../components/customerRhythm/AdvancedTemplateAutomation";
 import { useAuth } from "../context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
@@ -16,6 +17,9 @@ const CustomerRhythm = () => {
   const [activeSection, setActiveSection] = useState("templates");
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [templateToCopy, setTemplateToCopy] = useState(null);
+
+  const userEmail = (auth?.data?.email || auth?.user?.email || "").toLowerCase().trim();
+  const isAdvancedAutomationUser = userEmail === "anbumanickam1972@gmail.com";
 
   useEffect(() => {
     const loadComingSoonAnimation = async () => {
@@ -43,10 +47,20 @@ const CustomerRhythm = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
-    if (section && ["templates", "send_campaign", "retention", "engagement"].includes(section)) {
-      setActiveSection(section);
+    if (section && ["templates", "send_campaign", "retention", "advanced_automation", "engagement"].includes(section)) {
+      if (section === "advanced_automation" && !isAdvancedAutomationUser) {
+        setActiveSection("templates");
+      } else {
+        setActiveSection(section);
+      }
     }
-  }, [location.search]);
+  }, [location.search, isAdvancedAutomationUser]);
+
+  useEffect(() => {
+    if (activeSection === "advanced_automation" && !isAdvancedAutomationUser) {
+      setActiveSection("templates");
+    }
+  }, [activeSection, isAdvancedAutomationUser]);
 
   if (!auth?.data?.isUsingOwnWhatsapp) {
     return <Navigate to="/dashboard" replace />;
@@ -99,6 +113,19 @@ const CustomerRhythm = () => {
                 <Target size={18} />
                 Retention Rhythm
               </button>
+              {isAdvancedAutomationUser && (
+                <button
+                  onClick={() => setActiveSection("advanced_automation")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                    activeSection === "advanced_automation"
+                      ? "bg-white text-[#313166] shadow-md"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <GitFork size={18} />
+                  Advanced Automation
+                </button>
+              )}
               <button
                 onClick={() => setActiveSection("engagement")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs  font-medium transition-all whitespace-nowrap ${
@@ -154,6 +181,10 @@ const CustomerRhythm = () => {
 
         {activeSection === "retention" && (
           <RetentionRhythmAutomation />
+        )}
+
+        {activeSection === "advanced_automation" && isAdvancedAutomationUser && (
+          <AdvancedTemplateAutomation />
         )}
 
         {activeSection === "engagement" && (
