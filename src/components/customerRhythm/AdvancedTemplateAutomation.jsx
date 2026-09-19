@@ -86,6 +86,11 @@ const AdvancedTemplateAutomation = () => {
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
   const [currentEditingAutomation, setCurrentEditingAutomation] = useState(null);
 
+  // Individual Analytics State
+  const [analyticsModalAutomation, setAnalyticsModalAutomation] = useState(null);
+  const [executions, setExecutions] = useState([]);
+  const [loadingExecutions, setLoadingExecutions] = useState(false);
+
   // Load Data
   const fetchData = async () => {
     try {
@@ -110,6 +115,43 @@ const AdvancedTemplateAutomation = () => {
       toast.error("Failed to load automation data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenAnalytics = async (auto) => {
+    setAnalyticsModalAutomation(auto);
+    try {
+      setLoadingExecutions(true);
+      const res = await api.get(`/api/retention-automations/${auto._id}/executions`);
+      if (res.data?.status) {
+        setExecutions(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to load executions:", err);
+      toast.error("Could not fetch execution history");
+    } finally {
+      setLoadingExecutions(false);
+    }
+  };
+
+  const handleRefreshExecutions = async () => {
+    if (!analyticsModalAutomation) return;
+    try {
+      setLoadingExecutions(true);
+      const res = await api.get(`/api/retention-automations/${analyticsModalAutomation._id}/executions`);
+      if (res.data?.status) {
+        setExecutions(res.data.data || []);
+      }
+      // Also refresh automation object
+      const autoRes = await api.get("/api/retention-automations");
+      if (autoRes.data?.data) {
+        const updated = autoRes.data.data.find((a) => a._id === analyticsModalAutomation._id);
+        if (updated) setAnalyticsModalAutomation(updated);
+      }
+    } catch (err) {
+      console.error("Refresh executions error:", err);
+    } finally {
+      setLoadingExecutions(false);
     }
   };
 
@@ -523,12 +565,22 @@ const AdvancedTemplateAutomation = () => {
 
                   <div className="flex items-center gap-2">
                     <button
+                      onClick={() => handleOpenAnalytics(auto)}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-pink-50 hover:bg-pink-100 text-[#CB376D] rounded-xl text-xs font-semibold transition-colors border border-pink-100 shadow-xs"
+                      title="View Detailed Analytics & Performance"
+                    >
+                      <BarChart3 size={14} />
+                      <span>Analytics</span>
+                    </button>
+
+                    <button
                       onClick={() => handleToggleStatus(auto)}
                       className={`p-2 rounded-xl border transition-all ${
                         auto.status === "active"
                           ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
                           : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
                       }`}
+                      title={auto.status === "active" ? "Pause Automation" : "Activate Automation"}
                     >
                       {auto.status === "active" ? <Pause size={15} /> : <Play size={15} />}
                     </button>
@@ -536,6 +588,7 @@ const AdvancedTemplateAutomation = () => {
                     <button
                       onClick={() => handleEdit(auto)}
                       className="flex items-center gap-1.5 px-3 py-2 bg-[#313166] hover:bg-[#252550] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
+                      title="Edit Flow in Visual Canvas"
                     >
                       <GitFork size={13} />
                       Open Flow Builder
@@ -544,6 +597,7 @@ const AdvancedTemplateAutomation = () => {
                     <button
                       onClick={() => handleDelete(auto._id)}
                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                      title="Delete Automation"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -554,6 +608,239 @@ const AdvancedTemplateAutomation = () => {
           </div>
         )}
       </div>
+
+      {/* Individual Journey Analytics & Execution Modal */}
+      {analyticsModalAutomation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-gray-100">
+            {/* Modal Header */}
+            <div className="px-6 py-5 bg-gradient-to-r from-[#313166] to-[#4A4A8A] text-white flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-[10px] font-bold uppercase tracking-wider text-pink-200">
+                    Journey Performance Analytics
+                  </span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                      analyticsModalAutomation.status === "active"
+                        ? "bg-emerald-500/30 text-emerald-200 border border-emerald-400/40"
+                        : "bg-amber-500/30 text-amber-200 border border-amber-400/40"
+                    }`}
+                  >
+                    {analyticsModalAutomation.status}
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold mt-1">{analyticsModalAutomation.name}</h3>
+                <p className="text-xs text-gray-200 mt-0.5">
+                  Trigger: <strong className="text-white">{analyticsModalAutomation.triggerConfig?.keyword || "Keyword Match"}</strong> • {analyticsModalAutomation.flowGraph?.nodes?.length || 0} Flow Nodes
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRefreshExecutions}
+                  disabled={loadingExecutions}
+                  className="p-2 bg-white/10 hover:bg-white/20 rounded-xl text-white transition-colors flex items-center gap-1.5 text-xs font-semibold"
+                  title="Refresh Live Execution Data"
+                >
+                  <RefreshCw size={14} className={loadingExecutions ? "animate-spin" : ""} />
+                  <span className="hidden sm:inline">Refresh</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setAnalyticsModalAutomation(null);
+                    setExecutions([]);
+                  }}
+                  className="p-2 hover:bg-white/10 rounded-xl text-white/80 hover:text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content Body */}
+            <div className="p-6 overflow-y-auto space-y-6">
+              {/* Funnel KPI Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Sent</p>
+                  <p className="text-2xl font-black text-[#313166] mt-1">{analyticsModalAutomation.analyticsSummary?.sent || 0}</p>
+                  <span className="text-[10px] text-gray-500 mt-1 block">Triggered Executions</span>
+                </div>
+
+                <div className="p-4 bg-blue-50/60 border border-blue-100 rounded-2xl">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-500">Delivered</p>
+                  <p className="text-2xl font-black text-blue-700 mt-1">{analyticsModalAutomation.analyticsSummary?.delivered || 0}</p>
+                  <span className="text-[10px] text-blue-600 font-semibold mt-1 block">
+                    {analyticsModalAutomation.analyticsSummary?.sent > 0
+                      ? Math.round(((analyticsModalAutomation.analyticsSummary?.delivered || 0) / analyticsModalAutomation.analyticsSummary.sent) * 100)
+                      : 0}
+                    % Delivery Rate
+                  </span>
+                </div>
+
+                <div className="p-4 bg-purple-50/60 border border-purple-100 rounded-2xl">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-purple-500">Read</p>
+                  <p className="text-2xl font-black text-purple-700 mt-1">{analyticsModalAutomation.analyticsSummary?.read || 0}</p>
+                  <span className="text-[10px] text-purple-600 font-semibold mt-1 block">
+                    {analyticsModalAutomation.analyticsSummary?.sent > 0
+                      ? Math.round(((analyticsModalAutomation.analyticsSummary?.read || 0) / analyticsModalAutomation.analyticsSummary.sent) * 100)
+                      : 0}
+                    % Read Rate
+                  </span>
+                </div>
+
+                <div className="p-4 bg-pink-50/60 border border-pink-100 rounded-2xl">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-pink-500">Replied / Clicked</p>
+                  <p className="text-2xl font-black text-[#CB376D] mt-1">{analyticsModalAutomation.analyticsSummary?.replied || 0}</p>
+                  <span className="text-[10px] text-[#CB376D] font-semibold mt-1 block">
+                    {analyticsModalAutomation.analyticsSummary?.sent > 0
+                      ? Math.round(((analyticsModalAutomation.analyticsSummary?.replied || 0) / analyticsModalAutomation.analyticsSummary.sent) * 100)
+                      : 0}
+                    % Reply Rate
+                  </span>
+                </div>
+
+                <div className="p-4 bg-red-50/60 border border-red-100 rounded-2xl">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-red-500">Failed</p>
+                  <p className="text-2xl font-black text-red-600 mt-1">{analyticsModalAutomation.analyticsSummary?.failed || 0}</p>
+                  <span className="text-[10px] text-red-500 mt-1 block">Delivery Failures</span>
+                </div>
+              </div>
+
+              {/* Real-time Customer Execution Activity Log */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-[#313166] flex items-center gap-2">
+                    <Activity size={16} className="text-[#CB376D]" />
+                    <span>Real-time Inbound & Outbound Execution Log</span>
+                  </h4>
+                  <span className="text-xs text-gray-400">
+                    {executions.length} recorded events
+                  </span>
+                </div>
+
+                {loadingExecutions ? (
+                  <div className="py-12 flex justify-center">
+                    <Loader />
+                  </div>
+                ) : executions.length === 0 ? (
+                  <div className="p-8 text-center border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                    <Clock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-gray-500">No execution activity logged yet</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      When customers send trigger keywords or click interactive buttons, events will appear here in real-time.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto border border-gray-100 rounded-2xl shadow-xs">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-gray-50 border-b border-gray-100 text-gray-500 font-semibold uppercase text-[10px] tracking-wider">
+                        <tr>
+                          <th className="px-4 py-3">Customer</th>
+                          <th className="px-4 py-3">Trigger / Button</th>
+                          <th className="px-4 py-3">Template Sent</th>
+                          <th className="px-4 py-3">Status</th>
+                          <th className="px-4 py-3 text-right">Time</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 text-gray-700">
+                        {executions.map((exec) => {
+                          const cust = exec.customerId || {};
+                          const phone = cust.mobileNumber ? `${cust.countryCode || ""}${cust.mobileNumber}` : "WhatsApp User";
+                          const name = `${cust.firstname || ""} ${cust.lastname || ""}`.trim() || phone;
+                          const triggerText = exec.triggerSnapshot?.messageContent || exec.triggerSnapshot?.keyword || "Inbound";
+                          const templateName = exec.templateUsed?.name || exec.triggerSnapshot?.targetTemplateName || analyticsModalAutomation.actionConfig?.templateName || "Template Step";
+                          const status = exec.sendResult || "sent";
+
+                          return (
+                            <tr key={exec._id} className="hover:bg-gray-50/70 transition-colors">
+                              <td className="px-4 py-3">
+                                <p className="font-bold text-[#313166]">{name}</p>
+                                <p className="text-[10px] text-gray-400">{phone}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="inline-block px-2 py-0.5 bg-gray-100 rounded-md font-mono text-[11px] text-gray-800">
+                                  {triggerText}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="inline-flex items-center gap-1 text-purple-700 font-medium">
+                                  <FileText size={12} />
+                                  {templateName}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                    status === "replied"
+                                      ? "bg-pink-100 text-[#CB376D]"
+                                      : status === "read"
+                                      ? "bg-purple-100 text-purple-700"
+                                      : status === "delivered"
+                                      ? "bg-blue-100 text-blue-700"
+                                      : status === "failed"
+                                      ? "bg-red-100 text-red-700"
+                                      : "bg-emerald-100 text-emerald-700"
+                                  }`}
+                                >
+                                  {status === "replied" ? (
+                                    <TrendingUp size={10} />
+                                  ) : status === "read" ? (
+                                    <Eye size={10} />
+                                  ) : status === "failed" ? (
+                                    <AlertCircle size={10} />
+                                  ) : (
+                                    <CheckCircle2 size={10} />
+                                  )}
+                                  {status}
+                                </span>
+                                {exec.failureReason && (
+                                  <p className="text-[10px] text-red-500 mt-0.5 max-w-xs truncate" title={exec.failureReason}>
+                                    {exec.failureReason}
+                                  </p>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-right text-gray-400 whitespace-nowrap text-[11px]">
+                                {new Date(exec.runAt || exec.createdAt).toLocaleString()}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  const autoToEdit = analyticsModalAutomation;
+                  setAnalyticsModalAutomation(null);
+                  handleEdit(autoToEdit);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#313166] text-white rounded-xl text-xs font-bold hover:bg-[#252550] transition-colors"
+              >
+                <GitFork size={14} />
+                <span>Open in Flow Builder</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setAnalyticsModalAutomation(null);
+                  setExecutions([]);
+                }}
+                className="px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 rounded-xl text-xs font-bold transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
