@@ -19,6 +19,29 @@ const CustomerRhythm = () => {
   const [templateToCopy, setTemplateToCopy] = useState(null);
 
   useEffect(() => {
+    const loadComingSoonAnimation = async () => {
+      try {
+        const response = await fetch("/assets/Comingsoon.json");
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!response.ok) {
+          throw new Error(`Comingsoon.json failed with ${response.status}`);
+        }
+
+        if (!contentType.includes("application/json")) {
+          throw new Error("Comingsoon.json did not return JSON");
+        }
+
+        setSoon(await response.json());
+      } catch {
+        setSoon(null);
+      }
+    };
+
+    loadComingSoonAnimation();
+  }, []);
+
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
     if (section && ["templates", "send_campaign", "retention", "advanced_automation", "engagement"].includes(section)) {
