@@ -72,8 +72,10 @@ const TriggerNode = ({ data, selected }) => {
             </div>
           </div>
         ) : (
-          <p className="text-xs text-gray-600 font-medium">
-            {data.description || "Triggers automated response immediately upon receiving user message."}
+          <p className="text-xs text-emerald-800 font-medium bg-emerald-50/50 p-2 rounded-lg border border-emerald-100">
+            {triggerType === "all_inbound"
+              ? "⚡ Triggers automatically on any incoming WhatsApp message."
+              : data.description || "Triggers automated response immediately upon receiving user message."}
           </p>
         )}
       </div>

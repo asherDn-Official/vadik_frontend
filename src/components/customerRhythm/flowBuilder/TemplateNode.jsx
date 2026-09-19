@@ -7,10 +7,8 @@ import {
   AlertCircle,
   Plus,
   CornerDownRight,
-  MessageSquare,
-  Sparkles,
-  Layers,
-  ArrowRight
+  XCircle,
+  HelpCircle,
 } from "lucide-react";
 import { renderWhatsAppFormattedText } from "../../../utils/whatsappTextFormatter";
 
@@ -19,13 +17,38 @@ const TemplateNode = ({ data, selected }) => {
   const templateName = data.templateName || template.name || "Untitled Template";
   const language = data.language || template.language || "en_US";
   const status = data.status || template.status || "APPROVED";
-  const bodyText = data.bodyText || template.components?.find((c) => c.type === "BODY")?.text || "Please choose an option:";
+  const bodyText =
+    data.bodyText ||
+    template.components?.find((c) => c.type === "BODY")?.text ||
+    "Please choose an option:";
 
   const buttonsComp = template.components?.find((c) => c.type === "BUTTONS");
   const buttons = (buttonsComp?.buttons || data.buttons || []).map((b) => ({
     text: b.text || b.label || (typeof b === "string" ? b : "Option"),
     type: b.type || "QUICK_REPLY",
   }));
+
+  // ── Status-based styling ────────────────────────────────────────────────────
+  const isApproved = status === "APPROVED";
+  const isPending = status === "PENDING";
+  const isRejected = status === "REJECTED";
+  const isUnknown = !isApproved && !isPending && !isRejected;
+
+  // Border color
+  const borderClass = selected
+    ? isApproved
+      ? "border-[#313166] ring-4 ring-[#313166]/20"
+      : "border-red-500 ring-4 ring-red-300/40"
+    : isApproved
+    ? "border-purple-200 hover:border-purple-400"
+    : "border-red-400 hover:border-red-500";
+
+  // Header gradient
+  const headerClass = isApproved
+    ? "bg-gradient-to-r from-[#313166] to-[#4A4A8A]"
+    : isRejected
+    ? "bg-gradient-to-r from-red-600 to-red-500"
+    : "bg-gradient-to-r from-orange-500 to-amber-500";
 
   const getStatusBadge = () => {
     switch (status) {
@@ -38,22 +61,23 @@ const TemplateNode = ({ data, selected }) => {
         );
       case "PENDING":
         return (
-          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-[9px] font-bold rounded-full flex items-center gap-1">
+          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-900 text-[9px] font-bold rounded-full flex items-center gap-1">
             <Clock size={10} className="text-yellow-600" />
-            Meta Review
+            Pending Review
           </span>
         );
       case "REJECTED":
         return (
           <span className="px-2 py-0.5 bg-red-100 text-red-800 text-[9px] font-bold rounded-full flex items-center gap-1">
-            <AlertCircle size={10} className="text-red-600" />
+            <XCircle size={10} className="text-red-600" />
             Rejected
           </span>
         );
       default:
         return (
-          <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[9px] font-bold rounded-full">
-            {status}
+          <span className="px-2 py-0.5 bg-gray-200 text-gray-700 text-[9px] font-bold rounded-full flex items-center gap-1">
+            <HelpCircle size={10} />
+            {status || "Unknown"}
           </span>
         );
     }
@@ -61,11 +85,7 @@ const TemplateNode = ({ data, selected }) => {
 
   return (
     <div
-      className={`min-w-[260px] max-w-[310px] bg-white rounded-2xl border-2 shadow-lg transition-all ${
-        selected
-          ? "border-[#313166] ring-4 ring-[#313166]/20"
-          : "border-purple-200 hover:border-purple-400"
-      }`}
+      className={`min-w-[260px] max-w-[310px] bg-white rounded-2xl border-2 shadow-lg transition-all ${borderClass}`}
     >
       {/* Target input handle */}
       <Handle
@@ -77,19 +97,21 @@ const TemplateNode = ({ data, selected }) => {
           left: -8,
           width: 12,
           height: 12,
-          background: "#313166",
+          background: isApproved ? "#313166" : "#ef4444",
           border: "2px solid #ffffff",
         }}
       />
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#313166] to-[#4A4A8A] px-4 py-2.5 rounded-t-[14px] text-white flex items-center justify-between">
+      <div className={`${headerClass} px-4 py-2.5 rounded-t-[14px] text-white flex items-center justify-between`}>
         <div className="flex items-center gap-2">
           <div className="p-1 bg-white/20 rounded-lg backdrop-blur-xs">
-            <FileText size={15} />
+            {isApproved ? <FileText size={15} /> : <AlertCircle size={15} />}
           </div>
           <div>
-            <span className="text-[9px] font-bold uppercase tracking-wider text-purple-200 block">WhatsApp Template</span>
+            <span className="text-[9px] font-bold uppercase tracking-wider text-white/70 block">
+              WhatsApp Template
+            </span>
             <h4 className="text-xs font-bold leading-tight truncate max-w-[140px]" title={templateName}>
               {templateName}
             </h4>
@@ -98,9 +120,27 @@ const TemplateNode = ({ data, selected }) => {
         {getStatusBadge()}
       </div>
 
+      {/* ── Not-Approved Alert Banner ──────────────────────────────────────── */}
+      {!isApproved && (
+        <div
+          className={`px-3 py-2 text-[10px] font-semibold flex items-center gap-1.5 ${
+            isRejected
+              ? "bg-red-50 text-red-700 border-b border-red-200"
+              : "bg-amber-50 text-amber-800 border-b border-amber-200"
+          }`}
+        >
+          <AlertCircle size={12} className={isRejected ? "text-red-500 shrink-0" : "text-amber-500 shrink-0"} />
+          {isRejected
+            ? "Template rejected by Meta. Please recreate or fix it."
+            : "Awaiting Meta approval. This automation cannot go live until approved."}
+        </div>
+      )}
+
       {/* Body Preview */}
       <div className="p-3.5 space-y-2">
-        <div className="bg-[#EFEAE2]/60 p-2.5 rounded-xl border border-gray-100 text-[11px] text-gray-700 leading-relaxed font-sans max-h-24 overflow-hidden relative">
+        <div className={`p-2.5 rounded-xl border text-[11px] text-gray-700 leading-relaxed font-sans max-h-24 overflow-hidden relative ${
+          isApproved ? "bg-[#EFEAE2]/60 border-gray-100" : "bg-red-50/40 border-red-100"
+        }`}>
           <div
             dangerouslySetInnerHTML={{
               __html: renderWhatsAppFormattedText(bodyText, {
@@ -112,7 +152,7 @@ const TemplateNode = ({ data, selected }) => {
         </div>
         <div className="flex items-center justify-between text-[10px] text-gray-400 font-medium">
           <span>Lang: {language}</span>
-          <span>{buttons.length} Interactive Buttons</span>
+          <span>{buttons.length} Interactive Button{buttons.length !== 1 ? "s" : ""}</span>
         </div>
       </div>
 

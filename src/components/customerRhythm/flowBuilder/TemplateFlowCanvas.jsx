@@ -38,7 +38,8 @@ import {
   Check,
   Bot,
   UploadCloud,
-  ExternalLink
+  ExternalLink,
+  XCircle
 } from "lucide-react";
 import TriggerNode from "./TriggerNode";
 import TemplateNode from "./TemplateNode";
@@ -1081,24 +1082,45 @@ const TemplateFlowCanvasContent = ({
                     <select
                       value={selectedNode.data?.triggerType || "whatsapp_keyword"}
                       onChange={(e) => updateSelectedNodeData({ triggerType: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl font-medium"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl font-medium text-[#313166] text-xs bg-white focus:outline-none focus:border-[#313166]"
                     >
                       <option value="whatsapp_keyword">Keyword Match</option>
                       <option value="all_inbound">Any Inbound Message</option>
-                      <option value="new_customer">New Customer</option>
-                      <option value="customer_field_date">Date Event</option>
+                      <option value="new_customer" disabled className="text-gray-400 bg-gray-50">
+                        New Customer (Coming Soon)
+                      </option>
+                      <option value="customer_field_date" disabled className="text-gray-400 bg-gray-50">
+                        Date Event (Coming Soon)
+                      </option>
                     </select>
                   </div>
 
-                  {selectedNode.data?.triggerType === "whatsapp_keyword" && (
+                  {(selectedNode.data?.triggerType || "whatsapp_keyword") === "whatsapp_keyword" ? (
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase">Keywords (Comma-separated)</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase">Keywords (Comma-separated)</label>
+                        <span className="text-[10px] text-emerald-600 font-bold">Exact Match</span>
+                      </div>
                       <input
                         type="text"
                         value={selectedNode.data?.keyword || ""}
                         onChange={(e) => updateSelectedNodeData({ keyword: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-xl font-mono text-emerald-700 font-bold"
+                        placeholder="e.g. HI, METRO, TICKET, START"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-xl font-mono text-emerald-700 font-bold text-xs"
                       />
+                      <p className="text-[10px] text-gray-400 leading-tight">
+                        When a customer sends any of these keywords, this automated template journey will start immediately.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 text-xs leading-relaxed space-y-1">
+                      <div className="flex items-center gap-1.5 font-bold text-emerald-800">
+                        <Sparkles size={13} />
+                        Any Inbound Message Trigger
+                      </div>
+                      <p className="text-[11px] text-emerald-700">
+                        This journey triggers automatically whenever a customer sends <strong>any message</strong> to your WhatsApp number (unless a specific button reply branch is being followed).
+                      </p>
                     </div>
                   )}
                 </>
@@ -1265,15 +1287,22 @@ const TemplateFlowCanvasContent = ({
       {/* Select from Existing Approved Templates Modal */}
       {isTemplatePickerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border border-gray-100">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden border border-gray-100">
+            {/* Header */}
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-              <h4 className="font-bold text-[#313166] text-sm">Select Existing WhatsApp Template</h4>
+              <div>
+                <h4 className="font-bold text-[#313166] text-sm">Select WhatsApp Template</h4>
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  Click a template to attach it to the selected node
+                </p>
+              </div>
               <button onClick={() => setIsTemplatePickerOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto space-y-2">
+            {/* Template List */}
+            <div className="flex-1 p-4 overflow-y-auto space-y-3">
               {templates.length === 0 ? (
                 <div className="text-center py-8 text-gray-400">
                   <p className="text-xs">No templates found in your Meta account.</p>
@@ -1288,53 +1317,120 @@ const TemplateFlowCanvasContent = ({
                   </button>
                 </div>
               ) : (
-                templates.map((t) => (
-                  <div
-                    key={t._id}
-                    onClick={() => {
-                      if (selectedNode) {
-                        const bodyComp = t.components?.find((c) => c.type === "BODY");
-                        const btnComp = t.components?.find((c) => c.type === "BUTTONS");
-                        updateSelectedNodeData({
-                          templateName: t.name,
-                          status: t.status,
-                          language: t.language,
-                          bodyText: bodyComp?.text || "",
-                          buttons: (btnComp?.buttons || []).map((b) => ({
-                            text: b.text || b.label || "Option",
-                            type: b.type || "QUICK_REPLY",
-                          })),
-                        });
-                      }
-                      setIsTemplatePickerOpen(false);
-                    }}
-                    className="p-3.5 rounded-xl border border-gray-100 hover:border-[#313166]/40 hover:bg-purple-50/30 cursor-pointer transition-all flex items-center justify-between"
-                  >
-                    <div>
-                      <h5 className="font-bold text-[#313166] text-xs">{t.name}</h5>
-                      <p className="text-[10px] text-gray-400 mt-0.5">
-                        Language: {t.language} | Category: {t.category}
-                      </p>
-                    </div>
+                templates.map((t) => {
+                  const bodyComp = t.components?.find((c) => c.type === "BODY");
+                  const btnComp = t.components?.find((c) => c.type === "BUTTONS");
+                  const bodyText = bodyComp?.text || "";
+                  const btns = btnComp?.buttons || [];
+                  const isApproved = t.status === "APPROVED";
+                  const isRejected = t.status === "REJECTED";
 
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          t.status === "APPROVED"
-                            ? "bg-green-100 text-green-700"
-                            : t.status === "REJECTED"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {t.status}
-                      </span>
-                      <button className="px-3 py-1 bg-[#313166] text-white rounded-lg text-[10px] font-bold">
-                        Attach to Node
-                      </button>
+                  return (
+                    <div
+                      key={t._id}
+                      onClick={() => {
+                        if (selectedNode) {
+                          updateSelectedNodeData({
+                            templateName: t.name,
+                            status: t.status,
+                            language: t.language,
+                            bodyText: bodyText,
+                            buttons: btns.map((b) => ({
+                              text: b.text || b.label || "Option",
+                              type: b.type || "QUICK_REPLY",
+                            })),
+                          });
+                        }
+                        setIsTemplatePickerOpen(false);
+                      }}
+                      className={`rounded-2xl border-2 cursor-pointer transition-all hover:shadow-md overflow-hidden ${
+                        isApproved
+                          ? "border-gray-200 hover:border-[#313166]/50"
+                          : isRejected
+                          ? "border-red-300 hover:border-red-500 bg-red-50/20"
+                          : "border-amber-300 hover:border-amber-500 bg-amber-50/20"
+                      }`}
+                    >
+                      {/* Card Top Row */}
+                      <div className={`px-4 py-2.5 flex items-center justify-between ${
+                        isApproved ? "bg-[#313166]/5" : isRejected ? "bg-red-100/60" : "bg-amber-100/60"
+                      }`}>
+                        <div className="min-w-0">
+                          <h5 className="font-bold text-[#313166] text-xs truncate">{t.name}</h5>
+                          <p className="text-[10px] text-gray-400 mt-0.5">
+                            Lang: <strong>{t.language}</strong> &nbsp;|&nbsp; {t.category}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-3">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 ${
+                              isApproved
+                                ? "bg-emerald-100 text-emerald-800"
+                                : isRejected
+                                ? "bg-red-200 text-red-800"
+                                : "bg-amber-200 text-amber-900"
+                            }`}
+                          >
+                            {isApproved ? (
+                              <CheckCircle2 size={10} />
+                            ) : isRejected ? (
+                              <XCircle size={10} />
+                            ) : (
+                              <Clock size={10} />
+                            )}
+                            {t.status}
+                          </span>
+                          <span className="px-3 py-1 bg-[#313166] text-white rounded-lg text-[10px] font-bold whitespace-nowrap">
+                            Attach ➔
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Body Text Preview */}
+                      {bodyText ? (
+                        <div className="px-4 pt-2.5 pb-2">
+                          <div className="bg-[#EFEAE2]/70 rounded-xl px-3 py-2 text-[11px] text-gray-700 leading-relaxed max-h-[72px] overflow-hidden relative">
+                            {bodyText}
+                            {/* Fade-out if overflowing */}
+                            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#EFEAE2] to-transparent pointer-events-none rounded-b-xl" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="px-4 py-2 text-[10px] text-gray-400 italic">
+                          No body text found for this template.
+                        </div>
+                      )}
+
+                      {/* Button Labels */}
+                      {btns.length > 0 && (
+                        <div className="px-4 pb-3 flex flex-wrap gap-1.5">
+                          {btns.map((b, i) => (
+                            <span
+                              key={i}
+                              className="px-2.5 py-1 bg-white border border-[#313166]/20 text-[#313166] text-[10px] font-bold rounded-full shadow-sm"
+                            >
+                              {b.text || b.label || `Option ${i + 1}`}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Not-approved warning */}
+                      {!isApproved && (
+                        <div className={`px-4 py-1.5 text-[10px] font-semibold flex items-center gap-1 border-t ${
+                          isRejected
+                            ? "bg-red-100 text-red-700 border-red-200"
+                            : "bg-amber-100 text-amber-800 border-amber-200"
+                        }`}>
+                          <AlertCircle size={10} />
+                          {isRejected
+                            ? "Rejected by Meta — cannot be used in live automations"
+                            : "Pending Meta approval — automation will stay as Draft until approved"}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

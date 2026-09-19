@@ -18,49 +18,13 @@ const CustomerRhythm = () => {
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [templateToCopy, setTemplateToCopy] = useState(null);
 
-  const userEmail = (auth?.data?.email || auth?.user?.email || "").toLowerCase().trim();
-  const isAdvancedAutomationUser = userEmail === "anbumanickam1972@gmail.com";
-
-  useEffect(() => {
-    const loadComingSoonAnimation = async () => {
-      try {
-        const response = await fetch("/assets/Comingsoon.json");
-        const contentType = response.headers.get("content-type") || "";
-
-        if (!response.ok) {
-          throw new Error(`Comingsoon.json failed with ${response.status}`);
-        }
-
-        if (!contentType.includes("application/json")) {
-          throw new Error("Comingsoon.json did not return JSON");
-        }
-
-        setSoon(await response.json());
-      } catch {
-        setSoon(null);
-      }
-    };
-
-    loadComingSoonAnimation();
-  }, []);
-
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
     if (section && ["templates", "send_campaign", "retention", "advanced_automation", "engagement"].includes(section)) {
-      if (section === "advanced_automation" && !isAdvancedAutomationUser) {
-        setActiveSection("templates");
-      } else {
-        setActiveSection(section);
-      }
+      setActiveSection(section);
     }
-  }, [location.search, isAdvancedAutomationUser]);
-
-  useEffect(() => {
-    if (activeSection === "advanced_automation" && !isAdvancedAutomationUser) {
-      setActiveSection("templates");
-    }
-  }, [activeSection, isAdvancedAutomationUser]);
+  }, [location.search]);
 
   if (!auth?.data?.isUsingOwnWhatsapp) {
     return <Navigate to="/dashboard" replace />;
@@ -113,19 +77,17 @@ const CustomerRhythm = () => {
                 <Target size={18} />
                 Retention Rhythm
               </button>
-              {isAdvancedAutomationUser && (
-                <button
-                  onClick={() => setActiveSection("advanced_automation")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                    activeSection === "advanced_automation"
-                      ? "bg-white text-[#313166] shadow-md"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  <GitFork size={18} />
-                  Advanced Automation
-                </button>
-              )}
+              <button
+                onClick={() => setActiveSection("advanced_automation")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  activeSection === "advanced_automation"
+                    ? "bg-white text-[#313166] shadow-md"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <GitFork size={18} />
+                Advanced Automation
+              </button>
               <button
                 onClick={() => setActiveSection("engagement")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs  font-medium transition-all whitespace-nowrap ${
@@ -183,7 +145,7 @@ const CustomerRhythm = () => {
           <RetentionRhythmAutomation />
         )}
 
-        {activeSection === "advanced_automation" && isAdvancedAutomationUser && (
+        {activeSection === "advanced_automation" && (
           <AdvancedTemplateAutomation />
         )}
 
