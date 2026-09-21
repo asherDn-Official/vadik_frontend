@@ -46,13 +46,13 @@ import TemplateFlowCanvas from "./flowBuilder/TemplateFlowCanvas";
 // Instant Blueprints
 const PRESET_BLUEPRINTS = [
   {
-    id: "metro",
-    title: "Chennai Metro WhatsApp Bot",
-    badge: "Public Transit & Booking",
-    desc: "Language selection ➔ Multi-language welcome ➔ Ticket booking options ➔ Confirmation QR template.",
-    triggerKeyword: "HI, METRO, TICKET",
+    id: "general",
+    title: "General Customer Assistant Bot",
+    badge: "Customer Support & Sales",
+    desc: "Welcome greetings ➔ Services / Support / Contact info ➔ Live agent handover template.",
+    triggerKeyword: "HI, HELLO, MENU, START",
     stepsCount: 4,
-    sampleJourney: ["Language Picker", "Welcome & Options", "Ticket Booking", "QR Confirmation"],
+    sampleJourney: ["Welcome Concierge", "Services / Support Options", "Agent Handover", "Contact Info"],
   },
   {
     id: "restaurant",
@@ -176,12 +176,12 @@ const AdvancedTemplateAutomation = () => {
   }, []);
 
   // Launch Canvas with a blueprint or existing automation
-  const handleCreateNew = (presetId = "metro") => {
+  const handleCreateNew = (presetId = "general") => {
     setCurrentEditingAutomation({
       presetId,
       name:
-        presetId === "metro"
-          ? "Chennai Metro WhatsApp Bot"
+        presetId === "general" || presetId === "metro"
+          ? "General Customer Assistant Bot"
           : presetId === "restaurant"
           ? "Restaurant Menu & Table Bot"
           : "New Template Automation",
@@ -352,7 +352,7 @@ const AdvancedTemplateAutomation = () => {
           </div>
           <h2 className="text-2xl font-bold tracking-tight">Advanced Template Automation</h2>
           <p className="text-sm text-gray-200 mt-1 leading-relaxed">
-            Visually connect Meta WhatsApp templates and quick-reply button branches on an interactive flow canvas (like the Chennai Metro bot) with real-time phone preview and Meta approval checks.
+            Visually connect Meta WhatsApp templates and quick-reply button branches on an interactive flow canvas with real-time phone preview and Meta approval checks.
           </p>
         </div>
 
@@ -367,7 +367,7 @@ const AdvancedTemplateAutomation = () => {
           </button>
 
           <button
-            onClick={() => handleCreateNew("metro")}
+            onClick={() => handleCreateNew("general")}
             className="flex items-center gap-2 px-5 py-2.5 bg-[#CB376D] hover:bg-[#b02c5c] rounded-xl text-xs font-bold text-white shadow-md transition-all transform active:scale-95"
           >
             <Plus size={16} />
@@ -549,7 +549,7 @@ const AdvancedTemplateAutomation = () => {
               Launch the Visual Flow Builder to create your first multi-template WhatsApp journey.
             </p>
             <button
-              onClick={() => handleCreateNew("metro")}
+              onClick={() => handleCreateNew("general")}
               className="mt-4 px-4 py-2 bg-[#313166] text-white text-xs font-bold rounded-xl hover:bg-[#252550] transition-colors"
             >
               Open Flow Builder

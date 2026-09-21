@@ -67,8 +67,8 @@ const defaultEdgeOptions = {
 
 // Pure WhatsApp Template Starter Blueprints
 const BUILDER_PRESETS = {
-  metro: {
-    name: "Chennai Metro WhatsApp Bot",
+  general: {
+    name: "General Customer Assistant Bot",
     nodes: [
       {
         id: "node_trigger",
@@ -76,130 +76,138 @@ const BUILDER_PRESETS = {
         position: { x: 50, y: 180 },
         data: {
           triggerType: "whatsapp_keyword",
-          keyword: "HI, METRO, TICKET, START",
+          keyword: "HI, HELLO, MENU, START, HELP",
         },
       },
       {
-        id: "node_lang_select",
+        id: "node_welcome",
         type: "template",
         position: { x: 380, y: 150 },
         data: {
-          templateName: "metro_language_picker",
+          templateName: "general_welcome_greeting",
           status: "APPROVED",
           language: "en_US",
-          bodyText: "Welcome to Chennai Metro Rail.\n\nPlease choose your preferred language.\nதயவுசெய்து தொடர விரும்பும் மொழியைத் தேர்வு செய்யவும்.",
+          bodyText: "Hello! Welcome to our automated WhatsApp service 👋\n\nHow can we help you today? Please choose an option below 👇",
           buttons: [
-            { text: "English", type: "QUICK_REPLY" },
-            { text: "Tamil", type: "QUICK_REPLY" },
+            { text: "Our Services", type: "QUICK_REPLY" },
+            { text: "Support & Help", type: "QUICK_REPLY" },
+            { text: "Contact Info", type: "QUICK_REPLY" },
           ],
         },
       },
       {
-        id: "node_en_welcome",
+        id: "node_services",
         type: "template",
-        position: { x: 780, y: 50 },
+        position: { x: 800, y: 30 },
         data: {
-          templateName: "metro_welcome_en",
+          templateName: "general_services_overview",
           status: "APPROVED",
           language: "en_US",
-          bodyText: "Hello! Welcome to Chennai Metro Rail.\n\nMoving People, Sustaining Growth.\nEasy access to our various services.\n\nPlease choose one of the options below.",
+          bodyText: "Here are the key services we offer:\n\n1. Product Inquiries & Orders\n2. Special Offers & Discounts\n3. Account Management\n\nChoose an option below to proceed:",
           buttons: [
-            { text: "Book Tickets", type: "QUICK_REPLY" },
-            { text: "Help and Info", type: "QUICK_REPLY" },
+            { text: "Special Offers", type: "QUICK_REPLY" },
+            { text: "Talk to Agent", type: "QUICK_REPLY" },
           ],
         },
       },
       {
-        id: "node_ta_welcome",
+        id: "node_support",
         type: "template",
-        position: { x: 780, y: 280 },
+        position: { x: 800, y: 250 },
         data: {
-          templateName: "metro_welcome_ta",
-          status: "APPROVED",
-          language: "ta_IN",
-          bodyText: "வணக்கம்! சென்னை மெட்ரோ ரயில் உங்களை வரவேற்கிறது.\n\nஎங்களின் சேவைகளை எளிதாகப் பெற கீழே உள்ள விருப்பங்களில் ஒன்றைத் தேர்வு செய்யவும்.",
-          buttons: [
-            { text: "Book Tickets", type: "QUICK_REPLY" },
-            { text: "Help and Info", type: "QUICK_REPLY" },
-          ],
-        },
-      },
-      {
-        id: "node_ticket_confirm_en",
-        type: "template",
-        position: { x: 1200, y: 50 },
-        data: {
-          templateName: "metro_ticket_confirmed_en",
+          templateName: "general_customer_support",
           status: "APPROVED",
           language: "en_US",
-          bodyText: "Chennai Metro Ticket Booking:\n\nFrom: Ekkattuthangal\nTo: Airport Metro Station\nFare: Rs 40\n\nPlease find your digital QR ticket attached. Scan at the automated AFC gate.",
+          bodyText: "Our support team is always here to assist you.\n\nPlease choose what you need help with:",
           buttons: [
-            { text: "Download Ticket", type: "QUICK_REPLY" },
-            { text: "Support", type: "QUICK_REPLY" },
+            { text: "Order Status", type: "QUICK_REPLY" },
+            { text: "Talk to Agent", type: "QUICK_REPLY" },
           ],
         },
       },
       {
-        id: "node_ticket_confirm_ta",
+        id: "node_contact",
         type: "template",
-        position: { x: 1200, y: 280 },
+        position: { x: 800, y: 470 },
         data: {
-          templateName: "metro_ticket_confirmed_ta",
+          templateName: "general_contact_details",
           status: "APPROVED",
-          language: "ta_IN",
-          bodyText: "சென்னை மெட்ரோ பயணச்சீட்டு:\n\nபுறப்படும் இடம்: ஈக்காட்டுத்தாங்கல்\nசேருமிடம்: விமான நிலையம்\nகட்டணம்: Rs 40\n\nடிஜிட்டல் QR டிக்கெட் இணைக்கப்பட்டுள்ளது. AFC வாயிலில் ஸ்கேன் செய்யவும்.",
+          language: "en_US",
+          bodyText: "You can connect with us directly:\n\n📞 Phone: +91 98765 43210\n📧 Email: support@yourstore.com\n⏰ Support Hours: Mon-Sat 9 AM - 7 PM\n\nFeel free to message anytime!",
           buttons: [
-            { text: "Download Ticket", type: "QUICK_REPLY" },
-            { text: "Support", type: "QUICK_REPLY" },
+            { text: "Main Menu", type: "QUICK_REPLY" },
+          ],
+        },
+      },
+      {
+        id: "node_agent_connect",
+        type: "template",
+        position: { x: 1240, y: 150 },
+        data: {
+          templateName: "general_agent_connected",
+          status: "APPROVED",
+          language: "en_US",
+          bodyText: "Thank you! An executive has been notified and will reply to you shortly.\n\nAverage response time: under 5 minutes.",
+          buttons: [
+            { text: "Main Menu", type: "QUICK_REPLY" },
           ],
         },
       },
     ],
     edges: [
       {
-        id: "e_trig_lang",
+        id: "e_trig_welc",
         source: "node_trigger",
-        target: "node_lang_select",
+        target: "node_welcome",
         sourceHandle: "default",
         targetHandle: "input",
         type: "labeled",
         data: { label: "Inbound 'Hi'" },
       },
       {
-        id: "e_lang_en",
-        source: "node_lang_select",
-        target: "node_en_welcome",
+        id: "e_welc_services",
+        source: "node_welcome",
+        target: "node_services",
         sourceHandle: "btn_0",
         targetHandle: "input",
         type: "labeled",
-        data: { label: "English" },
+        data: { label: "Our Services" },
       },
       {
-        id: "e_lang_ta",
-        source: "node_lang_select",
-        target: "node_ta_welcome",
+        id: "e_welc_support",
+        source: "node_welcome",
+        target: "node_support",
         sourceHandle: "btn_1",
         targetHandle: "input",
         type: "labeled",
-        data: { label: "Tamil" },
+        data: { label: "Support & Help" },
       },
       {
-        id: "e_en_ticket",
-        source: "node_en_welcome",
-        target: "node_ticket_confirm_en",
-        sourceHandle: "btn_0",
+        id: "e_welc_contact",
+        source: "node_welcome",
+        target: "node_contact",
+        sourceHandle: "btn_2",
         targetHandle: "input",
         type: "labeled",
-        data: { label: "Book Tickets" },
+        data: { label: "Contact Info" },
       },
       {
-        id: "e_ta_ticket",
-        source: "node_ta_welcome",
-        target: "node_ticket_confirm_ta",
-        sourceHandle: "btn_0",
+        id: "e_serv_agent",
+        source: "node_services",
+        target: "node_agent_connect",
+        sourceHandle: "btn_1",
         targetHandle: "input",
         type: "labeled",
-        data: { label: "Book Tickets" },
+        data: { label: "Talk to Agent" },
+      },
+      {
+        id: "e_supp_agent",
+        source: "node_support",
+        target: "node_agent_connect",
+        sourceHandle: "btn_1",
+        targetHandle: "input",
+        type: "labeled",
+        data: { label: "Talk to Agent" },
       },
     ],
   },
@@ -346,13 +354,13 @@ const TemplateFlowCanvasContent = ({
       setNodes(initialAutomation.flowGraph.nodes);
       setEdges(initialAutomation.flowGraph.edges || []);
       setAutomationName(initialAutomation.name || "WhatsApp Template Automation");
-    } else if (initialAutomation?.presetId && BUILDER_PRESETS[initialAutomation.presetId]) {
-      const p = BUILDER_PRESETS[initialAutomation.presetId];
+    } else if (initialAutomation?.presetId && (BUILDER_PRESETS[initialAutomation.presetId] || initialAutomation.presetId === "metro")) {
+      const p = BUILDER_PRESETS[initialAutomation.presetId] || BUILDER_PRESETS.general;
       setNodes(p.nodes);
       setEdges(p.edges);
       setAutomationName(p.name);
     } else {
-      const p = BUILDER_PRESETS.metro;
+      const p = BUILDER_PRESETS.general;
       setNodes(p.nodes);
       setEdges(p.edges);
       setAutomationName(initialAutomation?.name || p.name);
@@ -807,10 +815,10 @@ const TemplateFlowCanvasContent = ({
             <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-2xl shadow-2xl p-2 hidden group-hover:block z-50 border border-gray-100 text-gray-800">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 py-1">Templates Scaffold</p>
               <button
-                onClick={() => loadPreset("metro")}
+                onClick={() => loadPreset("general")}
                 className="w-full text-left px-3 py-2 text-xs font-bold hover:bg-purple-50 rounded-xl flex items-center justify-between text-[#313166]"
               >
-                <span>🚆 Chennai Metro Bot</span>
+                <span>🤖 General Assistant Bot</span>
                 <span className="text-[10px] text-gray-400">4 Templates</span>
               </button>
               <button
@@ -989,7 +997,7 @@ const TemplateFlowCanvasContent = ({
                       type="text"
                       value={selectedNode.data?.templateName || ""}
                       onChange={(e) => updateSelectedNodeData({ templateName: e.target.value })}
-                      placeholder="e.g. metro_welcome_en"
+                      placeholder="e.g. welcome_greeting"
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl font-mono text-[#313166] font-bold"
                     />
                   </div>
