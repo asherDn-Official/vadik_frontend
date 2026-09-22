@@ -839,14 +839,15 @@ const TemplateFlowCanvasContent = ({
 
           <button
             onClick={() => setIsPreviewOpen(!isPreviewOpen)}
-            className={`p-2 rounded-xl text-xs font-bold transition-all border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
               isPreviewOpen
-                ? "bg-[#CB376D] border-[#CB376D] text-white"
-                : "bg-white/10 border-white/10 text-gray-300 hover:bg-white/20"
+                ? "bg-[#CB376D] border-[#CB376D] text-white shadow-sm"
+                : "bg-white/10 border-white/10 text-gray-200 hover:bg-white/20 hover:text-white"
             }`}
-            title="Toggle Live WhatsApp Phone Preview"
+            title={isPreviewOpen ? "Hide Live WhatsApp Phone Preview" : "Show Live WhatsApp Phone Preview"}
           >
-            <Smartphone size={16} />
+            <Smartphone size={14} />
+            <span>{isPreviewOpen ? "Hide Preview" : "Show Preview"}</span>
           </button>
 
           <button
@@ -905,6 +906,7 @@ const TemplateFlowCanvasContent = ({
             fitView
             minZoom={0.2}
             maxZoom={1.8}
+            proOptions={{ hideAttribution: true }}
           >
             <Background color="#313166" gap={20} size={1.5} />
             <Controls className="bg-[#1e1e38]! border-gray-700! fill-white! text-white!" />

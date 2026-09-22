@@ -2999,10 +2999,11 @@ const goToStep = (nextStep) => {
               <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-6">
                 <button
                   type="button"
-                  onClick={onBack}
-                  className="rounded-xl border border-[#313166] px-5 py-2.5 text-sm font-medium text-[#313166]"
+                  onClick={() => goToStep(step - 1)}
+                  disabled={step === 1}
+                  className="rounded-xl border border-[#313166] px-5 py-2.5 text-sm font-medium text-[#313166] transition-all hover:bg-[#313166]/5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                 >
-                  Back to dashboard
+                  Previous
                 </button>
 
                 <div className="text-sm text-gray-500">Step {step} of {totalSteps}</div>
