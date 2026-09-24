@@ -1505,6 +1505,7 @@ const DialogueFlowInner = () => {
             edgeTypes={edgeTypes}
             defaultEdgeOptions={defaultEdgeOptions}
             fitView
+            proOptions={{ hideAttribution: true }}
           >
             <Controls />
             <MiniMap nodeColor={(n) => n.type === 'screen' ? '#CB376D' : '#10b981'} maskColor="rgba(0, 0, 0, 0.1)" />

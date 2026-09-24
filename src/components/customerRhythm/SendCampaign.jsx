@@ -1079,7 +1079,7 @@ const SendCampaign = () => {
                         <h4 className="font-bold text-sm mt-3">Scheduled</h4>
                         <p className="text-[10px] text-gray-500 mt-1">Plan your message for a future date and time.</p>
                       </button>
-                      <button 
+                      {/* <button 
                         className={`flex-1 p-4 rounded-2xl border-2 text-left transition-all ${campaignData.type === "flow" ? "border-[#313166] bg-[#313166]/5" : "border-gray-100 hover:border-gray-200"}`}
                         onClick={() => {
                           setCampaignData({ ...campaignData, type: "flow" });
@@ -1089,7 +1089,7 @@ const SendCampaign = () => {
                         <Layers className={campaignData.type === "flow" ? "text-[#313166]" : "text-gray-400"} />
                         <h4 className="font-bold text-sm mt-3">Flow</h4>
                         <p className="text-[10px] text-gray-500 mt-1">Send an interactive flow to your customers.</p>
-                      </button>
+                      </button> */}
                     </div>
 
                     {isScheduling && (

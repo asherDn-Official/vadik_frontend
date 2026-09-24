@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import {
   Activity,
+  AlertCircle,
   ArrowRight,
   Calendar,
   CheckCircle2,
@@ -947,6 +948,31 @@ function AutomationDashboardView({
         </div>
       </div>
 
+      {summary.draft + summary.paused > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-amber-900 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-200/80 text-amber-800">
+              <AlertCircle className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-amber-900">
+                Automations Need Activation to Start Working
+              </div>
+              <div className="text-xs text-amber-700 mt-0.5">
+                You have {summary.draft + summary.paused} inactive/draft automation{summary.draft + summary.paused > 1 ? "s" : ""}. To start running automated journeys and sending WhatsApp messages, click <b>"Activate Now"</b> on the automation card.
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onSelectView("draft")}
+            className="self-start sm:self-center inline-flex items-center rounded-xl border border-amber-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 transition-all flex-shrink-0"
+          >
+            View Inactive ({summary.draft + summary.paused})
+          </button>
+        </div>
+      )}
+
       <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -1018,7 +1044,9 @@ function AutomationDashboardView({
               return (
                 <div
                   key={automation._id}
-                  className="rounded-2xl border border-gray-100 bg-[#FCFCFF] p-5 shadow-[0_10px_30px_rgba(49,49,102,0.06)] transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                  className={`rounded-2xl border bg-[#FCFCFF] p-5 shadow-[0_10px_30px_rgba(49,49,102,0.06)] transition-all hover:-translate-y-0.5 hover:shadow-lg ${
+                    automation.status !== "active" ? "border-amber-200/70" : "border-gray-100"
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <button
@@ -1054,14 +1082,23 @@ function AutomationDashboardView({
                       </div>
                     </button>
 
-                    <span
-                      className="rounded-full px-3 py-1 text-xs font-medium"
-                      style={statusTone}
-                    >
-                      {automation.status.charAt(0).toUpperCase() +
-                        automation.status.slice(1)}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span
+                        className="rounded-full px-3 py-1 text-xs font-semibold"
+                        style={statusTone}
+                      >
+                        {automation.status.charAt(0).toUpperCase() +
+                          automation.status.slice(1)}
+                      </span>
+                    </div>
                   </div>
+
+                  {automation.status !== "active" && (
+                    <div className="mt-3 flex items-center gap-1.5 rounded-xl border border-amber-200/80 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800">
+                      <AlertCircle size={14} className="text-amber-600 flex-shrink-0" />
+                      <span><b>Inactive:</b> Click <b>Activate Now</b> below to begin sending</span>
+                    </div>
+                  )}
 
                   <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
                     <div className="rounded-xl bg-[#F4F5F9] p-3">
@@ -1115,14 +1152,18 @@ function AutomationDashboardView({
                     <button
                       type="button"
                       onClick={() => onToggleStatus(automation)}
-                      className="inline-flex items-center rounded-xl border border-gray-200 px-3 py-2 text-xs font-medium text-[#313166]"
+                      className={`inline-flex items-center rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
+                        automation.status === "active"
+                          ? "border border-gray-200 text-[#313166] hover:bg-gray-50"
+                          : "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
+                      }`}
                     >
                       {automation.status === "active" ? (
                         <Pause className="mr-2 h-4 w-4" />
                       ) : (
                         <Play className="mr-2 h-4 w-4" />
                       )}
-                      {automation.status === "active" ? "Pause" : "Activate"}
+                      {automation.status === "active" ? "Pause" : "Activate Now"}
                     </button>
                     <button
                       type="button"
@@ -1389,9 +1430,33 @@ function RetentionBuilderView({
   onSave,
   saving,
 }) {
-  const [step, setStep] = useState(1);
+  const draftKey = initialAutomation?._id
+    ? `retention_draft_${initialAutomation._id}`
+    : "retention_draft_new";
+
+  const [restoredDraftInfo, setRestoredDraftInfo] = useState(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.form) {
+        const initialNorm = normalizeAutomationForForm(initialAutomation);
+        const isDifferent = JSON.stringify(parsed.form) !== JSON.stringify(initialNorm);
+        if (isDifferent) {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.error("Failed to read draft from localStorage:", err);
+    }
+    return null;
+  });
+
+  const [step, setStep] = useState(() => (restoredDraftInfo?.step ? restoredDraftInfo.step : 1));
   const [form, setForm] = useState(() =>
-    normalizeAutomationForForm(initialAutomation),
+    restoredDraftInfo?.form
+      ? restoredDraftInfo.form
+      : normalizeAutomationForForm(initialAutomation),
   );
   const steps = getStepLabels(form.triggerType);
   const totalSteps = getTotalSteps(form.triggerType);
@@ -1419,9 +1484,54 @@ function RetentionBuilderView({
     Boolean(String(value || "").trim()),
   );
 
+  // Debounced auto-save to localStorage
   useEffect(() => {
-    setForm(normalizeAutomationForForm(initialAutomation));
-  }, [initialAutomation]);
+    const timer = setTimeout(() => {
+      try {
+        const initialNorm = normalizeAutomationForForm(initialAutomation);
+        const isDifferent = JSON.stringify(form) !== JSON.stringify(initialNorm);
+        if (isDifferent) {
+          localStorage.setItem(
+            draftKey,
+            JSON.stringify({
+              form,
+              step,
+              savedAt: new Date().toISOString(),
+            })
+          );
+        }
+      } catch (e) {
+        console.error("Failed to auto-save draft:", e);
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [form, step, draftKey, initialAutomation]);
+
+  // Save draft on window/tab sudden close or reload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      try {
+        const initialNorm = normalizeAutomationForForm(initialAutomation);
+        const isDifferent = JSON.stringify(form) !== JSON.stringify(initialNorm);
+        if (isDifferent) {
+          localStorage.setItem(
+            draftKey,
+            JSON.stringify({
+              form,
+              step,
+              savedAt: new Date().toISOString(),
+            })
+          );
+        }
+      } catch (e) {
+        console.error("Failed to save draft on unload:", e);
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [form, step, draftKey, initialAutomation]);
 
   useEffect(() => {
     setStep((current) => Math.min(current, totalSteps));
@@ -1788,6 +1898,49 @@ function RetentionBuilderView({
     setShowSaveConfirm(true);
   };
 
+  const handleSaveDraft = (e) => {
+    if (e) e.preventDefault();
+    const draftPayload = {
+      ...form,
+      name: form.name?.trim() || "Untitled Automation",
+      status: "draft",
+    };
+    onSave(draftPayload, "draft");
+  };
+
+  const handleBackWithDraft = () => {
+    const initialNorm = normalizeAutomationForForm(initialAutomation);
+    const isDifferent = JSON.stringify(form) !== JSON.stringify(initialNorm);
+    if (isDifferent) {
+      try {
+        localStorage.setItem(
+          draftKey,
+          JSON.stringify({
+            form,
+            step,
+            savedAt: new Date().toISOString(),
+          })
+        );
+        showToast("Draft saved automatically. You can resume anytime.", "info");
+      } catch (e) {
+        console.error("Failed to save draft:", e);
+      }
+    }
+    onBack();
+  };
+
+  const handleDiscardDraft = () => {
+    try {
+      localStorage.removeItem(draftKey);
+    } catch (e) {
+      console.error("Failed to remove draft:", e);
+    }
+    setForm(normalizeAutomationForForm(initialAutomation));
+    setStep(1);
+    setRestoredDraftInfo(null);
+    showToast("Restored original version", "info");
+  };
+
   const audienceRuleValidation = validateRuleDraft(audienceDraftRule, fields);
 
   // Pagination handlers
@@ -1849,20 +2002,65 @@ function RetentionBuilderView({
               </div>
     
               <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
-                <button
-                  type="button"
-                  onClick={onBack}
-                  className="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-white/15"
-                >
-                  <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
-                  Back to dashboard
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleBackWithDraft}
+                    className="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-white/15"
+                  >
+                    <ArrowRight className="mr-2 h-4 w-4 rotate-180" />
+                    Back to dashboard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveDraft}
+                    disabled={saving}
+                    className="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-white/15 disabled:opacity-50"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Save as Draft
+                  </button>
+                </div>
     
                 <div className="text-xs uppercase tracking-[0.22em] text-white/55">
                   Retention rhythm automation builder
                 </div>
               </div>
             </div>
+
+            {restoredDraftInfo && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-amber-200/80 text-amber-800">
+                    <Clock className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-amber-800">
+                      Unsaved draft restored
+                    </p>
+                    <p className="text-xs text-amber-700">
+                      We automatically restored your unsaved progress from {new Date(restoredDraftInfo.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({new Date(restoredDraftInfo.savedAt).toLocaleDateString()}).
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  <button
+                    type="button"
+                    onClick={handleDiscardDraft}
+                    className="rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-100 transition-all"
+                  >
+                    Discard Draft
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRestoredDraftInfo(null)}
+                    className="rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 transition-all"
+                  >
+                    Keep Working
+                  </button>
+                </div>
+              </div>
+            )}
     
             <div
               className={`grid gap-6 ${step === actionStep || step === reviewStep ? "xl:grid-cols-[1.05fr_0.95fr]" : "grid-cols-1"}`}
@@ -3301,42 +3499,67 @@ function RetentionBuilderView({
                       </div>
                     )}
                   </div>
+
+                  {/* Activation Notice Callout */}
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50/80 p-4 text-xs text-blue-900 flex items-start gap-3">
+                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl bg-blue-200/80 text-blue-800">
+                      <AlertCircle className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-blue-900 text-sm">Activation Required to Run</p>
+                      <p className="mt-0.5 text-blue-700">
+                        Automations only send WhatsApp messages to customers when set to <b>Active</b>. When saving below, you can activate it immediately to start working right away, or save as an inactive draft.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-6">
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-6">
                 <button
                   type="button"
-                  onClick={onBack}
-                  className="rounded-xl border border-[#313166] px-5 py-2.5 text-sm font-medium text-[#313166]"
+                  onClick={() => goToStep(step - 1)}
+                  disabled={step === 1}
+                  className="rounded-xl border border-[#313166] px-5 py-2.5 text-sm font-medium text-[#313166] transition-all hover:bg-[#313166]/5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                 >
-                  Back to dashboard
+                  Previous
                 </button>
 
                 <div className="text-sm text-gray-500">Step {step} of {totalSteps}</div>
 
-                {step < totalSteps ? (
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => goToStep(step + 1)}
-                    className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white"
-                  >
-                    Next Step
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSave}
+                    onClick={handleSaveDraft}
                     disabled={saving}
-                    className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+                    className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 disabled:opacity-50"
                   >
-                    {saving
-                      ? "Saving..."
-                      : isEditingAutomation
-                        ? "Update Automation"
-                        : "Save Automation"}
+                    Save as Draft
                   </button>
-                )}
+
+                  {step < totalSteps ? (
+                    <button
+                      type="button"
+                      onClick={() => goToStep(step + 1)}
+                      className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-95"
+                    >
+                      Next Step
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="rounded-xl bg-[#CB376D] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:opacity-95 disabled:opacity-60"
+                    >
+                      {saving
+                        ? "Saving..."
+                        : isEditingAutomation
+                          ? "Update Automation"
+                          : "Save Automation"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -3584,23 +3807,62 @@ function RetentionBuilderView({
         </div>
       </div>
 
-      <ConfirmationDialog
-        isOpen={showSaveConfirm}
-        title={isEditingAutomation ? "Update Automation?" : "Save Automation?"}
-        message={
-          isEditingAutomation
-            ? "Do you want to save these changes to this automation?"
-            : "Do you want to save this automation now?"
-        }
-        confirmLabel={isEditingAutomation ? "Yes, Update" : "Yes, Save"}
-        cancelLabel="No"
-        loading={saving}
-        onCancel={() => setShowSaveConfirm(false)}
-        onConfirm={() => {
-          setShowSaveConfirm(false);
-          onSave(form);
-        }}
-      />
+      {showSaveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl transition-all">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 mb-4">
+              <Zap className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-bold text-[#313166]">
+              {isEditingAutomation ? "Update & Launch Automation" : "Ready to Launch Automation?"}
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Your automation is 100% configured! Would you like to activate it now so it starts running immediately, or save it as an inactive draft?
+            </p>
+
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-800 flex items-start gap-2.5">
+              <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <span><b>Note:</b> Automations only trigger and send messages to customers when set to <b>Active</b>.</span>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-2.5">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => {
+                  setShowSaveConfirm(false);
+                  onSave({ ...form, status: "active" }, "active");
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-all hover:opacity-95 disabled:opacity-60"
+              >
+                <Play className="h-4 w-4" />
+                {saving ? "Saving..." : "Save & Activate Immediately"}
+              </button>
+
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => {
+                  setShowSaveConfirm(false);
+                  onSave({ ...form, status: "draft" }, "draft");
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 disabled:opacity-60"
+              >
+                <FileText className="h-4 w-4" />
+                Save as Inactive (Draft)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowSaveConfirm(false)}
+                className="mt-1 text-center text-xs text-gray-400 hover:text-gray-600 transition-all py-1"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* ... rest of your JSX remains the same ... */}
     </>
   );
@@ -5679,7 +5941,11 @@ export default function RetentionRhythmAutomation() {
         api.get("/api/retention-automations/flows/all"),
       ]);
 
-      setAutomations(automationsRes.data?.data || []);
+      const allAutos = automationsRes.data?.data || [];
+      const standardAutos = allAutos.filter(
+        (a) => a.journeyType !== "advanced_template" && (!a.flowGraph?.nodes || a.flowGraph.nodes.length === 0)
+      );
+      setAutomations(standardAutos);
       setFields(fieldsRes.data?.data || []);
       setTemplates(templatesRes.data?.data || []);
       setFlows(flowsRes.data?.data || []);
@@ -5735,10 +6001,13 @@ export default function RetentionRhythmAutomation() {
     setEditingAutomation(null);
   };
 
-  const handleSave = async (form) => {
+  const handleSave = async (form, customStatus) => {
     try {
       setSaving(true);
       const payload = { ...form };
+      if (customStatus) {
+        payload.status = customStatus;
+      }
       delete payload.analyticsSummary;
       delete payload.audienceSize;
       delete payload.sent;
@@ -5752,10 +6021,28 @@ export default function RetentionRhythmAutomation() {
           `/api/retention-automations/${editingAutomation._id}`,
           payload,
         );
-        showToast("Automation updated successfully", "success");
+        if (payload.status === "active") {
+          showToast("Automation updated and activated! It is now running.", "success");
+        } else {
+          showToast("Automation updated as draft. Remember to click 'Activate Now' on the dashboard to start sending.", "info");
+        }
       } else {
         await api.post("/api/retention-automations", payload);
-        showToast("Automation created successfully", "success");
+        if (payload.status === "active") {
+          showToast("Automation created and activated! It is now running.", "success");
+        } else {
+          showToast("Automation created as draft! Remember to click 'Activate Now' on the dashboard when ready to start.", "info");
+        }
+      }
+
+      // Clear local draft from localStorage
+      const draftKey = editingAutomation?._id
+        ? `retention_draft_${editingAutomation._id}`
+        : "retention_draft_new";
+      try {
+        localStorage.removeItem(draftKey);
+      } catch (e) {
+        console.error("Failed to clear local draft:", e);
       }
 
       await fetchRetentionData();

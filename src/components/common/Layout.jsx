@@ -263,7 +263,7 @@ function Layout() {
                 <CustomerImportNavbarProgress />
 
                 {/* Notification */}
-                <button
+                {/* <button
                   type="button"
                   aria-label="Notifications"
                   className="
@@ -316,7 +316,7 @@ function Layout() {
                       {unreadCount}
                     </div>
                   )}
-                </button>
+                </button> */}
 
                 {/* PROFILE */}
                 <div className="relative" ref={dropdownRef}>
