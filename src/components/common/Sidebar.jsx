@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { CreditCard, LogOut, MessageSquare } from "lucide-react";
+import { CreditCard, LogOut, MessageSquare, Wallet } from "lucide-react";
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import UnsavedChangesModal from "./UnsavedChangesModal";
 import { useUnsavedChanges } from "../../context/UnsavedChangesContext";
@@ -71,6 +71,7 @@ function Sidebar() {
       icon: personalisationIcon,
       label: "Customer Insight",
     },
+    
     {
       path: "/customeropportunities",
       module: "Customer Activity",
@@ -122,6 +123,13 @@ function Sidebar() {
       lucideIcon: CreditCard,
       label: "Subscription",
     },
+    {
+  path: "/ai-balance",
+  module: "AI Balance",
+  icon: null,
+  lucideIcon: Wallet,
+  label: "AI Balance",
+},
 
   ];
 

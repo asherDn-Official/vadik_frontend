@@ -39,6 +39,7 @@ import MyProfile from "./components/settings/MyProfile";
 import SearchPage from "./components/common/SearchPage";
 import CustomerProfilePage from "./components/common/CustomerProfilePage";
 import Loader from "./utils/Loader";
+import AIBalance from "./pages/AIBalance";
 // import api from "./api/apiconfig";
 // import { useChatNotification } from "./context/ChatNotificationContext";
 
@@ -216,6 +217,16 @@ function App() {
       <CustomerRhythm />
     ) : (
       <Navigate to="/dashboard" replace />
+    )
+  }
+/>
+<Route
+  path="ai-balance"
+  element={
+    onboardingDone ? (
+      <AIBalance />
+    ) : (
+      <Navigate to="/register" replace />
     )
   }
 />
