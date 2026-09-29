@@ -12,6 +12,9 @@ import {
   UploadCloud,
   PauseCircle,
   FileQuestion,
+  Image,
+  Video,
+  File,
 } from "lucide-react";
 import { renderWhatsAppFormattedText } from "../../../utils/whatsappTextFormatter";
 
@@ -23,6 +26,11 @@ const TemplateNode = ({ data, selected }) => {
     data.bodyText ||
     template.components?.find((c) => c.type === "BODY")?.text ||
     "";
+
+  const headerComp = template.components?.find((c) => c.type === "HEADER");
+  const headerFormat = (data.headerMediaType || data.headerFormat || headerComp?.format || "").toUpperCase();
+  const isMediaHeader = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerFormat);
+  const mediaUrl = data.mediaUrl || headerComp?.mediaUrl || (Array.isArray(headerComp?.example?.header_handle) ? headerComp.example.header_handle[0] : "") || "";
 
   const buttonsComp = template.components?.find((c) => c.type === "BUTTONS");
   const buttons = (buttonsComp?.buttons || data.buttons || []).map((b) => ({
@@ -240,6 +248,44 @@ const TemplateNode = ({ data, selected }) => {
         <div className="px-3 py-1.5 text-[10px] font-semibold flex items-center gap-1.5 bg-orange-50 text-orange-800 border-b border-orange-200">
           <PauseCircle size={12} className="text-orange-600 shrink-0" />
           <span>Template is paused by Meta.</span>
+        </div>
+      )}
+
+      {/* Media Header Preview or Alert */}
+      {isMediaHeader && (
+        <div className="px-3.5 pt-3">
+          {mediaUrl ? (
+            <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 relative group">
+              {headerFormat === "IMAGE" ? (
+                <img
+                  src={mediaUrl}
+                  alt="Header"
+                  className="w-full h-24 object-cover"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              ) : headerFormat === "VIDEO" ? (
+                <div className="w-full h-16 bg-slate-800 flex items-center justify-center text-white text-[10px] font-bold gap-1.5">
+                  <Video size={16} className="text-pink-400" />
+                  <span>Video Header Attached</span>
+                </div>
+              ) : (
+                <div className="w-full p-2.5 bg-purple-50 flex items-center text-[#313166] text-[10px] font-bold gap-1.5">
+                  <FileText size={16} className="text-[#CB376D]" />
+                  <span className="truncate">Document Header Attached</span>
+                </div>
+              )}
+              <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-xs text-white text-[8px] font-bold rounded-md uppercase">
+                {headerFormat}
+              </div>
+            </div>
+          ) : (
+            <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[10px] font-bold flex items-center gap-1.5">
+              <AlertCircle size={13} className="text-amber-600 shrink-0" />
+              <span>Media Required for {headerFormat} Header</span>
+            </div>
+          )}
         </div>
       )}
 

@@ -42,6 +42,9 @@ import {
   XCircle,
   HelpCircle,
   PauseCircle,
+  Image,
+  Video,
+  File,
 } from "lucide-react";
 import TriggerNode from "./TriggerNode";
 import TemplateNode from "./TemplateNode";
@@ -50,6 +53,7 @@ import LabeledEdge from "./LabeledEdge";
 import TemplateBuilder from "../TemplateBuilder";
 import { renderWhatsAppFormattedText } from "../../../utils/whatsappTextFormatter";
 import { toast } from "react-toastify";
+import api from "../../../api/apiconfig";
 
 const nodeTypes = {
   trigger: TriggerNode,
@@ -334,6 +338,7 @@ const TemplateFlowCanvasContent = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [automationName, setAutomationName] = useState(initialAutomation?.name || "WhatsApp Template Automation");
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   // UI Panels
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
@@ -360,13 +365,13 @@ const TemplateFlowCanvasContent = ({
     [templates]
   );
 
-  // Synchronize node status with Meta templates list
+  // Synchronize node status and header media with Meta templates list
   const syncNodeStatusWithMeta = useCallback(
     (nodeList) => {
       return nodeList.map((n) => {
         if (n.type !== "template") return n;
         const tName = n.data?.templateName;
-        if (!tName || tName.trim() === "" || n.data?.status === "NOT_SELECTED") {
+        if (!tName || tName.trim() === "" || n.data?.status === "NOT_SELECTED" || n.data?.templateSelected === false) {
           return {
             ...n,
             data: {
@@ -378,11 +383,20 @@ const TemplateFlowCanvasContent = ({
         }
         const metaT = findMetaTemplate(tName);
         if (metaT) {
+          const headerComp = metaT.components?.find((c) => c.type === "HEADER");
+          const headerFormat = headerComp?.format?.toUpperCase() || (headerComp?.text ? "TEXT" : null);
+          const isMediaHeader = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerFormat);
+          const templateMediaUrl = headerComp?.mediaUrl || (Array.isArray(headerComp?.example?.header_handle) ? headerComp.example.header_handle[0] : null) || "";
+
           return {
             ...n,
             data: {
               ...n.data,
               status: metaT.status || "APPROVED",
+              headerFormat: n.data?.headerFormat || headerFormat,
+              headerMediaType: n.data?.headerMediaType || (isMediaHeader ? headerFormat : null),
+              mediaUrl: n.data?.mediaUrl !== undefined && n.data?.mediaUrl !== "" ? n.data.mediaUrl : (templateMediaUrl || ""),
+              headerText: n.data?.headerText || headerComp?.text || "",
               templateSelected: true,
             },
           };
@@ -400,6 +414,31 @@ const TemplateFlowCanvasContent = ({
     },
     [findMetaTemplate]
   );
+
+  // Header media file uploader
+  const handleHeaderMediaUpload = async (file) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setUploadingMedia(true);
+      const res = await api.post("/api/integrationManagement/whatsapp/media/upload", formData);
+      if (res.data?.status && res.data?.url) {
+        updateSelectedNodeData({
+          mediaUrl: res.data.url,
+        });
+        toast.success("Header media uploaded successfully!");
+      } else {
+        toast.error(res.data?.message || "Failed to upload header media");
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || err.message || "Media upload failed";
+      toast.error(errorMsg);
+    } finally {
+      setUploadingMedia(false);
+    }
+  };
 
   // Attach interactive callbacks & sync status to node data
   const enrichNodesWithCallbacks = useCallback(
@@ -711,6 +750,8 @@ const TemplateFlowCanvasContent = ({
         sender: "bot",
         nodeId: rootTemplateNode.id,
         templateName: rootTemplateNode.data?.templateName || "Step 1 Template",
+        headerMediaType: rootTemplateNode.data?.headerMediaType || rootTemplateNode.data?.headerFormat || null,
+        mediaUrl: rootTemplateNode.data?.mediaUrl || null,
         bodyText: isUnselected
           ? "⚠️ No template selected for this step yet. Click the template node to attach one."
           : rootTemplateNode.data?.bodyText || "Welcome! Please choose an option:",
@@ -752,6 +793,8 @@ const TemplateFlowCanvasContent = ({
           sender: "bot",
           nodeId: targetNode.id,
           templateName: targetNode.data?.templateName || "Follow-up Template",
+          headerMediaType: targetNode.data?.headerMediaType || targetNode.data?.headerFormat || null,
+          mediaUrl: targetNode.data?.mediaUrl || null,
           bodyText: isUnselected
             ? "⚠️ No template message attached to this step."
             : targetNode.data?.bodyText || "Proceeding...",
@@ -824,6 +867,8 @@ const TemplateFlowCanvasContent = ({
         templateId: matchedRootTemplate?._id || null,
         templateName: rootTemplateName,
         languageCode: rootTemplateNode?.data?.language || "en_US",
+        mediaUrl: rootTemplateNode?.data?.mediaUrl || null,
+        mediaType: rootTemplateNode?.data?.headerMediaType || rootTemplateNode?.data?.headerFormat || null,
       },
       flowGraph: {
         nodes,
@@ -1227,6 +1272,133 @@ const TemplateFlowCanvasContent = ({
                     </button>
                   </div>
 
+                  {/* Header Media Configuration Section */}
+                  {(() => {
+                    const selectedHeaderComp = selectedNodeMeta?.metaT?.components?.find((c) => c.type === "HEADER");
+                    const headerFormat = (
+                      selectedNode.data?.headerMediaType ||
+                      selectedNode.data?.headerFormat ||
+                      selectedHeaderComp?.format ||
+                      (selectedHeaderComp?.text ? "TEXT" : "")
+                    ).toUpperCase();
+                    const isMediaHeader = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerFormat);
+
+                    if (!isMediaHeader && !selectedNode.data?.mediaUrl) return null;
+
+                    return (
+                      <div className="p-3 bg-gradient-to-br from-purple-50 to-pink-50/40 rounded-xl border border-purple-200/80 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            {headerFormat === "IMAGE" ? (
+                              <Image size={14} className="text-[#CB376D]" />
+                            ) : headerFormat === "VIDEO" ? (
+                              <Video size={14} className="text-[#CB376D]" />
+                            ) : (
+                              <FileText size={14} className="text-[#CB376D]" />
+                            )}
+                            <label className="text-[10px] font-bold text-[#313166] uppercase tracking-wider">
+                              Header {headerFormat || "Media"}
+                            </label>
+                          </div>
+                          <span
+                            className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${
+                              selectedNode.data?.mediaUrl
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                : "bg-amber-100 text-amber-900 border border-amber-200 animate-pulse"
+                            }`}
+                          >
+                            {selectedNode.data?.mediaUrl ? "Media Attached" : "Media Required"}
+                          </span>
+                        </div>
+
+                        {/* Media Preview if URL exists */}
+                        {selectedNode.data?.mediaUrl ? (
+                          <div className="relative group rounded-xl overflow-hidden border border-purple-200 bg-white shadow-xs">
+                            {headerFormat === "IMAGE" ? (
+                              <img
+                                src={selectedNode.data.mediaUrl}
+                                alt="Header Preview"
+                                className="w-full h-28 object-cover rounded-xl"
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                }}
+                              />
+                            ) : headerFormat === "VIDEO" ? (
+                              <video
+                                src={selectedNode.data.mediaUrl}
+                                controls
+                                className="w-full h-28 object-cover rounded-xl"
+                              />
+                            ) : (
+                              <div className="p-3 flex items-center gap-2 text-xs text-gray-700 bg-purple-50/50">
+                                <FileText size={20} className="text-purple-600 shrink-0" />
+                                <span className="truncate flex-1 font-mono text-[10px]">{selectedNode.data.mediaUrl}</span>
+                              </div>
+                            )}
+                            <button
+                              onClick={() => updateSelectedNodeData({ mediaUrl: "" })}
+                              className="absolute top-1.5 right-1.5 p-1 bg-black/60 hover:bg-red-600 text-white rounded-lg opacity-80 group-hover:opacity-100 transition-all shadow-xs"
+                              title="Remove Media"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[10px] flex items-start gap-1.5">
+                            <AlertCircle size={13} className="text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                              <strong className="block font-bold">Media Required for Meta API</strong>
+                              This template requires {headerFormat ? `an ${headerFormat.toLowerCase()}` : "media"} in its header. Upload a file or paste a URL below to prevent Meta error #132012.
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Upload & URL Input Controls */}
+                        <div className="space-y-1.5">
+                          <div className="flex gap-1.5">
+                            <label className="flex-1 px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 hover:border-purple-300 rounded-xl text-xs font-bold text-[#313166] cursor-pointer transition-colors flex items-center justify-center gap-1.5 shadow-2xs">
+                              {uploadingMedia ? (
+                                <RefreshCw size={13} className="animate-spin text-[#CB376D]" />
+                              ) : (
+                                <UploadCloud size={13} className="text-[#CB376D]" />
+                              )}
+                              <span>{uploadingMedia ? "Uploading..." : `Upload ${headerFormat || "Media"}`}</span>
+                              <input
+                                type="file"
+                                accept={
+                                  headerFormat === "IMAGE"
+                                    ? "image/*"
+                                    : headerFormat === "VIDEO"
+                                    ? "video/*"
+                                    : headerFormat === "DOCUMENT"
+                                    ? ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                                    : "*/*"
+                                }
+                                onChange={(e) => {
+                                  if (e.target.files?.[0]) {
+                                    handleHeaderMediaUpload(e.target.files[0]);
+                                  }
+                                }}
+                                disabled={uploadingMedia}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
+
+                          <div className="relative">
+                            <input
+                              type="url"
+                              value={selectedNode.data?.mediaUrl || ""}
+                              onChange={(e) => updateSelectedNodeData({ mediaUrl: e.target.value })}
+                              placeholder={`Or paste public ${headerFormat ? headerFormat.toLowerCase() : "media"} URL...`}
+                              className="w-full px-2.5 py-1.5 text-[11px] bg-white border border-gray-200 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#CB376D]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-gray-400 uppercase">Message Body Text</label>
                     <textarea
@@ -1396,6 +1568,20 @@ const TemplateFlowCanvasContent = ({
                     ) : (
                       /* Bot Template Message */
                       <div className="bg-white text-gray-800 text-xs rounded-2xl rounded-tl-xs shadow-xs max-w-[90%] overflow-hidden border border-gray-100">
+                        {msg.mediaUrl && (
+                          <div className="border-b border-gray-100 bg-gray-50 overflow-hidden">
+                            {msg.headerMediaType === "VIDEO" ? (
+                              <video src={msg.mediaUrl} controls className="w-full max-h-36 object-cover" />
+                            ) : msg.headerMediaType === "DOCUMENT" ? (
+                              <div className="p-2.5 flex items-center gap-2 bg-purple-50 text-[#313166] text-[10px] font-bold">
+                                <FileText size={16} className="text-[#CB376D]" />
+                                <span className="truncate">Document Attached</span>
+                              </div>
+                            ) : (
+                              <img src={msg.mediaUrl} alt="Header" className="w-full max-h-36 object-cover" />
+                            )}
+                          </div>
+                        )}
                         <div className="p-3 space-y-1.5">
                           <p className="font-bold text-[#313166] text-[10px] border-b border-gray-100 pb-1">
                             {msg.templateName}
@@ -1492,11 +1678,20 @@ const TemplateFlowCanvasContent = ({
                   setIsTemplateBuilderOpen(false);
                   toast.success("Template submitted to Meta successfully! Syncing status...");
                   if (createdTemplate && selectedNode) {
+                    const headerComp = createdTemplate.components?.find((c) => c.type === "HEADER");
+                    const headerFormat = headerComp?.format?.toUpperCase() || (headerComp?.text ? "TEXT" : null);
+                    const isMediaHeader = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerFormat);
+                    const templateMediaUrl = headerComp?.mediaUrl || (Array.isArray(headerComp?.example?.header_handle) ? headerComp.example.header_handle[0] : null) || "";
+
                     updateSelectedNodeData({
                       templateId: createdTemplate._id,
                       templateName: createdTemplate.name,
                       status: createdTemplate.status || "PENDING",
                       language: createdTemplate.language || "en_US",
+                      headerFormat: headerFormat,
+                      headerMediaType: isMediaHeader ? headerFormat : null,
+                      mediaUrl: templateMediaUrl || "",
+                      headerText: headerComp?.text || "",
                       bodyText: createdTemplate.components?.find((c) => c.type === "BODY")?.text || "",
                       buttons: (createdTemplate.components?.find((c) => c.type === "BUTTONS")?.buttons || []).map((b) => ({
                         text: b.text || b.label || "Option",
@@ -1547,6 +1742,11 @@ const TemplateFlowCanvasContent = ({
                 </div>
               ) : (
                 templates.map((t) => {
+                  const headerComp = t.components?.find((c) => c.type === "HEADER");
+                  const headerFormat = headerComp?.format?.toUpperCase() || (headerComp?.text ? "TEXT" : null);
+                  const isMediaHeader = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerFormat);
+                  const templateMediaUrl = headerComp?.mediaUrl || (Array.isArray(headerComp?.example?.header_handle) ? headerComp.example.header_handle[0] : null) || "";
+
                   const bodyComp = t.components?.find((c) => c.type === "BODY");
                   const btnComp = t.components?.find((c) => c.type === "BUTTONS");
                   const bodyText = bodyComp?.text || "";
@@ -1565,6 +1765,10 @@ const TemplateFlowCanvasContent = ({
                             templateName: t.name,
                             status: t.status,
                             language: t.language || "en_US",
+                            headerFormat: headerFormat,
+                            headerMediaType: isMediaHeader ? headerFormat : null,
+                            mediaUrl: selectedNode.data?.mediaUrl || templateMediaUrl || "",
+                            headerText: headerComp?.text || "",
                             bodyText: bodyText,
                             buttons: btns.map((b) => ({
                               text: b.text || b.label || "Option",
@@ -1589,7 +1793,21 @@ const TemplateFlowCanvasContent = ({
                         isApproved ? "bg-[#313166]/5" : isRejected ? "bg-red-100/60" : "bg-amber-100/60"
                       }`}>
                         <div className="min-w-0">
-                          <h5 className="font-bold text-[#313166] text-xs truncate">{t.name}</h5>
+                          <div className="flex items-center gap-2">
+                            <h5 className="font-bold text-[#313166] text-xs truncate">{t.name}</h5>
+                            {isMediaHeader && (
+                              <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-[9px] font-bold rounded-full flex items-center gap-1">
+                                {headerFormat === "IMAGE" ? (
+                                  <Image size={10} className="text-purple-600" />
+                                ) : headerFormat === "VIDEO" ? (
+                                  <Video size={10} className="text-purple-600" />
+                                ) : (
+                                  <FileText size={10} className="text-purple-600" />
+                                )}
+                                {headerFormat}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[10px] text-gray-400 mt-0.5">
                             Lang: <strong>{t.language}</strong> &nbsp;|&nbsp; {t.category}
                           </p>
