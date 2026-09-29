@@ -39,7 +39,9 @@ import {
   Bot,
   UploadCloud,
   ExternalLink,
-  XCircle
+  XCircle,
+  HelpCircle,
+  PauseCircle,
 } from "lucide-react";
 import TriggerNode from "./TriggerNode";
 import TemplateNode from "./TemplateNode";
@@ -85,7 +87,7 @@ const BUILDER_PRESETS = {
         position: { x: 380, y: 150 },
         data: {
           templateName: "general_welcome_greeting",
-          status: "APPROVED",
+          status: "NOT_IN_ACCOUNT",
           language: "en_US",
           bodyText: "Hello! Welcome to our automated WhatsApp service 👋\n\nHow can we help you today? Please choose an option below 👇",
           buttons: [
@@ -101,7 +103,7 @@ const BUILDER_PRESETS = {
         position: { x: 800, y: 30 },
         data: {
           templateName: "general_services_overview",
-          status: "APPROVED",
+          status: "NOT_IN_ACCOUNT",
           language: "en_US",
           bodyText: "Here are the key services we offer:\n\n1. Product Inquiries & Orders\n2. Special Offers & Discounts\n3. Account Management\n\nChoose an option below to proceed:",
           buttons: [
@@ -116,7 +118,7 @@ const BUILDER_PRESETS = {
         position: { x: 800, y: 250 },
         data: {
           templateName: "general_customer_support",
-          status: "APPROVED",
+          status: "NOT_IN_ACCOUNT",
           language: "en_US",
           bodyText: "Our support team is always here to assist you.\n\nPlease choose what you need help with:",
           buttons: [
@@ -131,7 +133,7 @@ const BUILDER_PRESETS = {
         position: { x: 800, y: 470 },
         data: {
           templateName: "general_contact_details",
-          status: "APPROVED",
+          status: "NOT_IN_ACCOUNT",
           language: "en_US",
           bodyText: "You can connect with us directly:\n\n📞 Phone: +91 98765 43210\n📧 Email: support@yourstore.com\n⏰ Support Hours: Mon-Sat 9 AM - 7 PM\n\nFeel free to message anytime!",
           buttons: [
@@ -145,7 +147,7 @@ const BUILDER_PRESETS = {
         position: { x: 1240, y: 150 },
         data: {
           templateName: "general_agent_connected",
-          status: "APPROVED",
+          status: "NOT_IN_ACCOUNT",
           language: "en_US",
           bodyText: "Thank you! An executive has been notified and will reply to you shortly.\n\nAverage response time: under 5 minutes.",
           buttons: [
@@ -226,7 +228,7 @@ const BUILDER_PRESETS = {
         position: { x: 380, y: 120 },
         data: {
           templateName: "restaurant_welcome_menu",
-          status: "APPROVED",
+          status: "NOT_IN_ACCOUNT",
           language: "en_US",
           bodyText: "Welcome to The Gourmet Bistro.\n\nHow can we help you today? Please choose an option below.",
           buttons: [
@@ -241,7 +243,7 @@ const BUILDER_PRESETS = {
         position: { x: 800, y: 40 },
         data: {
           templateName: "restaurant_table_options",
-          status: "APPROVED",
+          status: "NOT_IN_ACCOUNT",
           language: "en_US",
           bodyText: "Table Reservation:\n\nPlease select your preferred dining time slot.",
           buttons: [
@@ -256,7 +258,7 @@ const BUILDER_PRESETS = {
         position: { x: 800, y: 240 },
         data: {
           templateName: "restaurant_menu_details",
-          status: "APPROVED",
+          status: "NOT_IN_ACCOUNT",
           language: "en_US",
           bodyText: "Our Chef's Specials Menu:\n\n1. Woodfired Truffle Pizza\n2. Smoked Salmon Risotto\n3. Tiramisu Classico\n\nWould you like to reserve a table now?",
           buttons: [
@@ -270,7 +272,7 @@ const BUILDER_PRESETS = {
         position: { x: 1220, y: 100 },
         data: {
           templateName: "restaurant_booking_confirmed",
-          status: "APPROVED",
+          status: "NOT_IN_ACCOUNT",
           language: "en_US",
           bodyText: "Table Reservation Confirmed:\n\nReservation ID: BISTRO-8921\nGuests: 2 Guests\nStatus: Confirmed\n\nWe look forward to welcoming you!",
           buttons: [{ text: "Get Directions", type: "QUICK_REPLY" }],
@@ -299,11 +301,12 @@ const BUILDER_PRESETS = {
         type: "template",
         position: { x: 450, y: 120 },
         data: {
-          templateName: "welcome_greeting",
-          status: "APPROVED",
+          templateName: "",
+          status: "NOT_SELECTED",
           language: "en_US",
-          bodyText: "Hello! Welcome to our automated WhatsApp service. Please select an option below 👇",
-          buttons: [{ text: "Option 1", type: "QUICK_REPLY" }, { text: "Option 2", type: "QUICK_REPLY" }],
+          bodyText: "",
+          buttons: [],
+          templateSelected: false,
         },
       },
     ],
@@ -343,44 +346,99 @@ const TemplateFlowCanvasContent = ({
   const [simUserInboundText, setSimUserInboundText] = useState("");
 
   // Helper: check if a template exists in user's Meta account
-  const findMetaTemplate = useCallback((templateName) => {
-    if (!templateName) return null;
-    return templates.find((t) => t.name === templateName || t._id === templateName);
-  }, [templates]);
+  const findMetaTemplate = useCallback(
+    (templateName) => {
+      if (!templateName || typeof templateName !== "string") return null;
+      const trimmed = templateName.trim().toLowerCase();
+      return templates.find(
+        (t) =>
+          t.name?.toLowerCase() === trimmed ||
+          t._id === templateName ||
+          t.templateName?.toLowerCase() === trimmed
+      );
+    },
+    [templates]
+  );
+
+  // Synchronize node status with Meta templates list
+  const syncNodeStatusWithMeta = useCallback(
+    (nodeList) => {
+      return nodeList.map((n) => {
+        if (n.type !== "template") return n;
+        const tName = n.data?.templateName;
+        if (!tName || tName.trim() === "" || n.data?.status === "NOT_SELECTED") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              status: "NOT_SELECTED",
+              templateSelected: false,
+            },
+          };
+        }
+        const metaT = findMetaTemplate(tName);
+        if (metaT) {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              status: metaT.status || "APPROVED",
+              templateSelected: true,
+            },
+          };
+        }
+        // Named template but not found in Meta account
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            status: n.data?.status === "APPROVED" ? "NOT_IN_ACCOUNT" : (n.data?.status || "NOT_IN_ACCOUNT"),
+            templateSelected: true,
+          },
+        };
+      });
+    },
+    [findMetaTemplate]
+  );
+
+  // Attach interactive callbacks & sync status to node data
+  const enrichNodesWithCallbacks = useCallback(
+    (rawNodes) => {
+      const synced = syncNodeStatusWithMeta(rawNodes);
+      return synced.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          onAddNext: (handleId, label) => handleSproutNode(n.id, handleId, label),
+        },
+      }));
+    },
+    [syncNodeStatusWithMeta]
+  );
 
   // Initialize nodes & edges from automation or preset
   useEffect(() => {
     if (initialAutomation?.flowGraph?.nodes?.length) {
-      setNodes(initialAutomation.flowGraph.nodes);
+      setNodes(enrichNodesWithCallbacks(initialAutomation.flowGraph.nodes));
       setEdges(initialAutomation.flowGraph.edges || []);
       setAutomationName(initialAutomation.name || "WhatsApp Template Automation");
     } else if (initialAutomation?.presetId && (BUILDER_PRESETS[initialAutomation.presetId] || initialAutomation.presetId === "metro")) {
       const p = BUILDER_PRESETS[initialAutomation.presetId] || BUILDER_PRESETS.general;
-      setNodes(p.nodes);
+      setNodes(enrichNodesWithCallbacks(p.nodes));
       setEdges(p.edges);
       setAutomationName(p.name);
     } else {
       const p = BUILDER_PRESETS.general;
-      setNodes(p.nodes);
+      setNodes(enrichNodesWithCallbacks(p.nodes));
       setEdges(p.edges);
       setAutomationName(initialAutomation?.name || p.name);
     }
-  }, [initialAutomation]);
+  }, [initialAutomation, enrichNodesWithCallbacks]);
 
-  // Attach interactive callbacks to node data
-  const enrichNodesWithCallbacks = useCallback((rawNodes) => {
-    return rawNodes.map((n) => ({
-      ...n,
-      data: {
-        ...n.data,
-        onAddNext: (handleId, label) => handleSproutNode(n.id, handleId, label),
-      },
-    }));
-  }, []);
-
+  // When templates from Meta API update, re-sync node statuses
   useEffect(() => {
-    setNodes((nds) => enrichNodesWithCallbacks(nds));
-  }, [enrichNodesWithCallbacks]);
+    setNodes((currentNodes) => enrichNodesWithCallbacks(currentNodes));
+  }, [templates, enrichNodesWithCallbacks]);
 
   // Connect edges
   const onConnect = useCallback(
@@ -436,11 +494,12 @@ const TemplateFlowCanvasContent = ({
       type: "template",
       position: { x: nextX, y: nextY },
       data: {
-        templateName: `follow_up_${Date.now().toString().slice(-4)}`,
-        status: "APPROVED",
+        templateName: "",
+        status: "NOT_SELECTED",
         language: "en_US",
-        bodyText: `Thank you for choosing ${label}. Here are your options:`,
-        buttons: [{ text: "Confirm", type: "QUICK_REPLY" }, { text: "Main Menu", type: "QUICK_REPLY" }],
+        bodyText: "",
+        buttons: [],
+        templateSelected: false,
         onAddNext: (h, l) => handleSproutNode(newId, h, l),
       },
     };
@@ -459,7 +518,8 @@ const TemplateFlowCanvasContent = ({
     setNodes((nds) => [...nds, newNode]);
     setEdges((eds) => [...eds, newEdge]);
     setSelectedNode(newNode);
-    toast.info(`Connected new Template message step for "${label}"!`);
+    setIsTemplatePickerOpen(true);
+    toast.info(`Connected new step for "${label}". Select a template from your Meta account.`);
   };
 
   // Add Template Node
@@ -472,18 +532,20 @@ const TemplateFlowCanvasContent = ({
       type: "template",
       position: centerPos,
       data: {
-        templateName: `whatsapp_template_${Date.now().toString().slice(-4)}`,
-        status: "APPROVED",
+        templateName: "",
+        status: "NOT_SELECTED",
         language: "en_US",
-        bodyText: "Hello! Please choose one of the options below 👇",
-        buttons: [{ text: "Option A", type: "QUICK_REPLY" }, { text: "Option B", type: "QUICK_REPLY" }],
+        bodyText: "",
+        buttons: [],
+        templateSelected: false,
         onAddNext: (h, l) => handleSproutNode(newId, h, l),
       },
     };
 
     setNodes((nds) => [...nds, newNode]);
     setSelectedNode(newNode);
-    toast.success("Added new WhatsApp Template Node");
+    setIsTemplatePickerOpen(true);
+    toast.info("Added new Template step. Select or create a WhatsApp template.");
   };
 
   const handleAddActionNode = () => {
@@ -575,26 +637,52 @@ const TemplateFlowCanvasContent = ({
   const templateAudit = useMemo(() => {
     const templateNodes = nodes.filter((n) => n.type === "template");
     const list = templateNodes.map((n) => {
-      const metaT = findMetaTemplate(n.data?.templateName);
+      const templateName = n.data?.templateName;
+      const isSelected = Boolean(templateName && n.data?.status !== "NOT_SELECTED" && n.data?.templateSelected !== false);
+      const metaT = findMetaTemplate(templateName);
       const existsInAccount = !!metaT;
-      const status = metaT ? metaT.status : "NOT_IN_ACCOUNT";
+
+      let status = "NOT_SELECTED";
+      if (isSelected) {
+        status = metaT ? metaT.status : (n.data?.status || "NOT_IN_ACCOUNT");
+      }
+
+      const rawStatusUpper = (status || "").toUpperCase();
+      const approved = isSelected && rawStatusUpper === "APPROVED";
+      const inProgress = isSelected && ["PENDING", "IN_PROGRESS", "INPROGRESS", "SUBMITTED", "IN_APPEAL"].includes(rawStatusUpper);
+      const rejected = isSelected && rawStatusUpper === "REJECTED";
+      const notInAccount = isSelected && rawStatusUpper === "NOT_IN_ACCOUNT";
+      const notSelected = !isSelected || status === "NOT_SELECTED";
 
       return {
         nodeId: n.id,
-        name: n.data?.templateName || "Untitled",
+        name: templateName || "Unselected Step",
         existsInAccount,
         status,
-        approved: status === "APPROVED",
+        isSelected,
+        approved,
+        inProgress,
+        rejected,
+        notInAccount,
+        notSelected,
       };
     });
 
     const approvedCount = list.filter((t) => t.approved).length;
+    const inProgressCount = list.filter((t) => t.inProgress).length;
+    const rejectedCount = list.filter((t) => t.rejected).length;
+    const notInAccountCount = list.filter((t) => t.notInAccount).length;
+    const notSelectedCount = list.filter((t) => t.notSelected).length;
     const allApproved = list.length > 0 && approvedCount === list.length;
     const pendingOrMissing = list.filter((t) => !t.approved);
 
     return {
       total: list.length,
       approvedCount,
+      inProgressCount,
+      rejectedCount,
+      notInAccountCount,
+      notSelectedCount,
       allApproved,
       pendingOrMissing,
       list,
@@ -617,12 +705,15 @@ const TemplateFlowCanvasContent = ({
     let initialMessages = [userMsg];
 
     if (rootTemplateNode) {
+      const isUnselected = !rootTemplateNode.data?.templateName || rootTemplateNode.data?.status === "NOT_SELECTED";
       const botMsg = {
         id: "sim_b_1",
         sender: "bot",
         nodeId: rootTemplateNode.id,
-        templateName: rootTemplateNode.data?.templateName || "Welcome Template",
-        bodyText: rootTemplateNode.data?.bodyText || "Welcome! Please choose an option:",
+        templateName: rootTemplateNode.data?.templateName || "Step 1 Template",
+        bodyText: isUnselected
+          ? "⚠️ No template selected for this step yet. Click the template node to attach one."
+          : rootTemplateNode.data?.bodyText || "Welcome! Please choose an option:",
         buttons: rootTemplateNode.data?.buttons || [],
         time: "Just now",
       };
@@ -655,12 +746,15 @@ const TemplateFlowCanvasContent = ({
       const targetNode = nodes.find((n) => n.id === targetEdge.target);
 
       if (targetNode?.type === "template") {
+        const isUnselected = !targetNode.data?.templateName || targetNode.data?.status === "NOT_SELECTED";
         const botReplyMsg = {
           id: `sim_b_${Date.now()}`,
           sender: "bot",
           nodeId: targetNode.id,
           templateName: targetNode.data?.templateName || "Follow-up Template",
-          bodyText: targetNode.data?.bodyText || "Proceeding...",
+          bodyText: isUnselected
+            ? "⚠️ No template message attached to this step."
+            : targetNode.data?.bodyText || "Proceeding...",
           buttons: targetNode.data?.buttons || [],
           time: "Just now",
         };
@@ -694,13 +788,18 @@ const TemplateFlowCanvasContent = ({
 
     let willBeActive = asActive;
     if (asActive) {
-      if (!templateAudit.allApproved) {
+      if (templateAudit.notSelectedCount > 0) {
+        toast.warning(
+          "Cannot publish as Active: One or more steps have no template selected. Saved as Draft."
+        );
+        willBeActive = false;
+      } else if (!templateAudit.allApproved) {
         const unapprovedNames = templateAudit.pendingOrMissing
           .map((t) => t.name)
           .filter(Boolean)
           .join(", ") || "templates";
         toast.warning(
-          `Cannot activate: Template(s) "${unapprovedNames}" are not yet approved by Meta. Saved as Draft. You can continue editing or activate once Meta approves all templates.`
+          `Cannot publish as Active: Template(s) "${unapprovedNames}" are not yet approved by Meta. Saved as Draft. You can continue editing or activate once Meta approves all templates.`
         );
         willBeActive = false;
       }
@@ -738,11 +837,24 @@ const TemplateFlowCanvasContent = ({
   // Selected node meta check
   const selectedNodeMeta = useMemo(() => {
     if (!selectedNode || selectedNode.type !== "template") return null;
-    const metaT = findMetaTemplate(selectedNode.data?.templateName);
+    const templateName = selectedNode.data?.templateName;
+    const isSelected = Boolean(templateName && selectedNode.data?.status !== "NOT_SELECTED" && selectedNode.data?.templateSelected !== false);
+    
+    if (!isSelected) {
+      return {
+        metaT: null,
+        exists: false,
+        status: "NOT_SELECTED",
+        isSelected: false,
+      };
+    }
+
+    const metaT = findMetaTemplate(templateName);
     return {
       metaT,
       exists: !!metaT,
-      status: metaT ? metaT.status : "NOT_IN_ACCOUNT",
+      status: metaT ? metaT.status : (selectedNode.data?.status || "NOT_IN_ACCOUNT"),
+      isSelected: true,
     };
   }, [selectedNode, findMetaTemplate]);
 
@@ -772,7 +884,7 @@ const TemplateFlowCanvasContent = ({
                 WhatsApp Template Flow Builder
               </span>
               <span className="text-[10px] text-gray-400">
-                {nodes.length} Template Nodes • {edges.length} Button Wires
+                {nodes.length} Flow Nodes • {edges.length} Button Wires
               </span>
             </div>
           </div>
@@ -782,14 +894,36 @@ const TemplateFlowCanvasContent = ({
         <div className="flex items-center gap-2">
           <div
             className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
-              templateAudit.allApproved
+              templateAudit.total === 0
+                ? "bg-gray-800 border-gray-700 text-gray-300"
+                : templateAudit.allApproved
                 ? "bg-emerald-950/60 border-emerald-500/40 text-emerald-400"
-                : "bg-amber-950/60 border-amber-500/40 text-amber-400"
+                : templateAudit.notSelectedCount > 0
+                ? "bg-slate-800/80 border-slate-600 text-slate-300"
+                : templateAudit.inProgressCount > 0
+                ? "bg-amber-950/60 border-amber-500/40 text-amber-400"
+                : "bg-red-950/60 border-red-500/40 text-red-400"
             }`}
           >
-            {templateAudit.allApproved ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
+            {templateAudit.allApproved ? (
+              <CheckCircle2 size={13} className="text-emerald-400" />
+            ) : templateAudit.inProgressCount > 0 ? (
+              <Clock size={13} className="text-amber-400 animate-pulse" />
+            ) : templateAudit.notSelectedCount > 0 ? (
+              <HelpCircle size={13} className="text-slate-400" />
+            ) : (
+              <AlertCircle size={13} />
+            )}
             <span>
-              Meta Status: {templateAudit.approvedCount}/{templateAudit.total} Approved
+              {templateAudit.total === 0
+                ? "0 Template Steps"
+                : templateAudit.allApproved
+                ? `Meta Status: All ${templateAudit.approvedCount} Approved`
+                : templateAudit.notSelectedCount > 0
+                ? `${templateAudit.notSelectedCount} Not Selected • ${templateAudit.approvedCount}/${templateAudit.total} Approved`
+                : templateAudit.inProgressCount > 0
+                ? `${templateAudit.inProgressCount} In Progress • ${templateAudit.approvedCount}/${templateAudit.total} Approved`
+                : `${templateAudit.approvedCount}/${templateAudit.total} Approved`}
             </span>
           </div>
 
@@ -819,14 +953,14 @@ const TemplateFlowCanvasContent = ({
                 className="w-full text-left px-3 py-2 text-xs font-bold hover:bg-purple-50 rounded-xl flex items-center justify-between text-[#313166]"
               >
                 <span>🤖 General Assistant Bot</span>
-                <span className="text-[10px] text-gray-400">4 Templates</span>
+                <span className="text-[10px] text-gray-400">4 Steps</span>
               </button>
               <button
                 onClick={() => loadPreset("restaurant")}
                 className="w-full text-left px-3 py-2 text-xs font-bold hover:bg-purple-50 rounded-xl flex items-center justify-between text-[#313166]"
               >
                 <span>🍽️ Restaurant Table Bot</span>
-                <span className="text-[10px] text-gray-400">4 Templates</span>
+                <span className="text-[10px] text-gray-400">4 Steps</span>
               </button>
               <button
                 onClick={() => loadPreset("blank")}
@@ -956,29 +1090,91 @@ const TemplateFlowCanvasContent = ({
                   {selectedNodeMeta && (
                     <div
                       className={`p-3 rounded-xl border flex flex-col gap-2 ${
-                        selectedNodeMeta.exists && selectedNodeMeta.status === "APPROVED"
+                        selectedNodeMeta.status === "NOT_SELECTED"
+                          ? "bg-slate-50 border-slate-200 text-slate-900"
+                          : selectedNodeMeta.status === "APPROVED"
                           ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-                          : selectedNodeMeta.exists && selectedNodeMeta.status === "PENDING"
-                          ? "bg-yellow-50 border-yellow-200 text-yellow-900"
-                          : "bg-amber-50 border-amber-200 text-amber-900"
+                          : ["PENDING", "IN_PROGRESS", "INPROGRESS", "SUBMITTED"].includes(selectedNodeMeta.status?.toUpperCase())
+                          ? "bg-amber-50 border-amber-200 text-amber-900"
+                          : selectedNodeMeta.status === "REJECTED"
+                          ? "bg-red-50 border-red-200 text-red-900"
+                          : "bg-indigo-50 border-indigo-200 text-indigo-900"
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-[11px] flex items-center gap-1.5">
-                          {selectedNodeMeta.exists && selectedNodeMeta.status === "APPROVED" ? (
+                          {selectedNodeMeta.status === "APPROVED" ? (
                             <CheckCircle2 size={14} className="text-emerald-600" />
+                          ) : selectedNodeMeta.status === "NOT_SELECTED" ? (
+                            <HelpCircle size={14} className="text-slate-500" />
+                          ) : ["PENDING", "IN_PROGRESS", "INPROGRESS", "SUBMITTED"].includes(selectedNodeMeta.status?.toUpperCase()) ? (
+                            <Clock size={14} className="text-amber-600 animate-pulse" />
+                          ) : selectedNodeMeta.status === "REJECTED" ? (
+                            <XCircle size={14} className="text-red-600" />
                           ) : (
-                            <AlertCircle size={14} className="text-amber-600" />
+                            <UploadCloud size={14} className="text-indigo-600" />
                           )}
-                          {selectedNodeMeta.exists
+
+                          {selectedNodeMeta.status === "NOT_SELECTED"
+                            ? "Template Status: Not Selected"
+                            : selectedNodeMeta.status === "APPROVED"
+                            ? "Meta Status: Approved"
+                            : ["PENDING", "IN_PROGRESS", "INPROGRESS", "SUBMITTED"].includes(selectedNodeMeta.status?.toUpperCase())
+                            ? "Meta Status: In Progress (Pending Review)"
+                            : selectedNodeMeta.status === "REJECTED"
+                            ? "Meta Status: Rejected"
+                            : selectedNodeMeta.exists
                             ? `Meta Status: ${selectedNodeMeta.status}`
-                            : "Not in your Meta Account"}
+                            : "Draft / Not in Meta Account"}
                         </span>
                       </div>
 
-                      {!selectedNodeMeta.exists && (
+                      {selectedNodeMeta.status === "NOT_SELECTED" && (
                         <div>
-                          <p className="text-[10px] text-amber-700 leading-tight mb-2">
+                          <p className="text-[10px] text-slate-600 leading-tight mb-2">
+                            Please select an approved WhatsApp template or create a new template to attach to this node.
+                          </p>
+                          <div className="grid grid-cols-2 gap-2 mt-1">
+                            <button
+                              onClick={() => setIsTemplatePickerOpen(true)}
+                              className="px-3 py-2 bg-[#313166] hover:bg-[#252550] text-white rounded-xl font-bold text-[11px] transition-colors flex items-center justify-center gap-1 shadow-xs"
+                            >
+                              Select Template
+                            </button>
+                            <button
+                              onClick={() => {
+                                setTemplateBuilderPrefill(null);
+                                setIsTemplateBuilderOpen(true);
+                              }}
+                              className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold text-[11px] transition-colors flex items-center justify-center gap-1"
+                            >
+                              + Create New
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedNodeMeta.status === "APPROVED" && (
+                        <p className="text-[10px] text-emerald-700 leading-tight">
+                          This template is approved by Meta and ready to send in active automations.
+                        </p>
+                      )}
+
+                      {["PENDING", "IN_PROGRESS", "INPROGRESS", "SUBMITTED"].includes(selectedNodeMeta.status?.toUpperCase()) && (
+                        <p className="text-[10px] text-amber-700 leading-tight">
+                          This template is currently under review by Meta. Automations will stay as Draft until approved.
+                        </p>
+                      )}
+
+                      {selectedNodeMeta.status === "REJECTED" && (
+                        <p className="text-[10px] text-red-700 leading-tight">
+                          This template was rejected by Meta. Please edit or recreate it with compliant content.
+                        </p>
+                      )}
+
+                      {selectedNodeMeta.status === "NOT_IN_ACCOUNT" && (
+                        <div>
+                          <p className="text-[10px] text-indigo-800 leading-tight mb-2">
                             This template name is a draft / preset. Click below to submit and register it directly into your Meta WhatsApp account.
                           </p>
                           <button
@@ -998,7 +1194,15 @@ const TemplateFlowCanvasContent = ({
                     <input
                       type="text"
                       value={selectedNode.data?.templateName || ""}
-                      onChange={(e) => updateSelectedNodeData({ templateName: e.target.value })}
+                      onChange={(e) => {
+                        const newName = e.target.value;
+                        const metaT = findMetaTemplate(newName);
+                        updateSelectedNodeData({
+                          templateName: newName,
+                          status: metaT ? metaT.status : (newName.trim() ? "NOT_IN_ACCOUNT" : "NOT_SELECTED"),
+                          templateSelected: Boolean(newName.trim()),
+                        });
+                      }}
                       placeholder="e.g. welcome_greeting"
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl font-mono text-[#313166] font-bold"
                     />
@@ -1008,7 +1212,7 @@ const TemplateFlowCanvasContent = ({
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setIsTemplatePickerOpen(true)}
-                      className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold text-[11px] transition-colors"
+                      className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold text-[11px] transition-colors flex items-center justify-center gap-1"
                     >
                       Select Existing
                     </button>
@@ -1017,7 +1221,7 @@ const TemplateFlowCanvasContent = ({
                         setTemplateBuilderPrefill(null);
                         setIsTemplateBuilderOpen(true);
                       }}
-                      className="px-3 py-2 bg-[#313166] hover:bg-[#252550] text-white rounded-xl font-bold text-[11px] transition-colors"
+                      className="px-3 py-2 bg-[#313166] hover:bg-[#252550] text-white rounded-xl font-bold text-[11px] transition-colors flex items-center justify-center gap-1"
                     >
                       + Create New
                     </button>
@@ -1029,6 +1233,7 @@ const TemplateFlowCanvasContent = ({
                       rows={4}
                       value={selectedNode.data?.bodyText || ""}
                       onChange={(e) => updateSelectedNodeData({ bodyText: e.target.value })}
+                      placeholder="Enter template message text..."
                       className="w-full p-2.5 border border-gray-200 rounded-xl font-sans text-gray-700 leading-relaxed"
                     />
                   </div>
@@ -1283,9 +1488,23 @@ const TemplateFlowCanvasContent = ({
               <TemplateBuilder
                 initialTemplate={templateBuilderPrefill}
                 onCancel={() => setIsTemplateBuilderOpen(false)}
-                onSuccess={() => {
+                onSuccess={(createdTemplate) => {
                   setIsTemplateBuilderOpen(false);
                   toast.success("Template submitted to Meta successfully! Syncing status...");
+                  if (createdTemplate && selectedNode) {
+                    updateSelectedNodeData({
+                      templateId: createdTemplate._id,
+                      templateName: createdTemplate.name,
+                      status: createdTemplate.status || "PENDING",
+                      language: createdTemplate.language || "en_US",
+                      bodyText: createdTemplate.components?.find((c) => c.type === "BODY")?.text || "",
+                      buttons: (createdTemplate.components?.find((c) => c.type === "BUTTONS")?.buttons || []).map((b) => ({
+                        text: b.text || b.label || "Option",
+                        type: b.type || "QUICK_REPLY",
+                      })),
+                      templateSelected: true,
+                    });
+                  }
                   onSyncTemplates();
                 }}
               />
@@ -1334,6 +1553,7 @@ const TemplateFlowCanvasContent = ({
                   const btns = btnComp?.buttons || [];
                   const isApproved = t.status === "APPROVED";
                   const isRejected = t.status === "REJECTED";
+                  const isPending = ["PENDING", "IN_PROGRESS", "INPROGRESS", "SUBMITTED"].includes(t.status?.toUpperCase());
 
                   return (
                     <div
@@ -1341,17 +1561,20 @@ const TemplateFlowCanvasContent = ({
                       onClick={() => {
                         if (selectedNode) {
                           updateSelectedNodeData({
+                            templateId: t._id,
                             templateName: t.name,
                             status: t.status,
-                            language: t.language,
+                            language: t.language || "en_US",
                             bodyText: bodyText,
                             buttons: btns.map((b) => ({
                               text: b.text || b.label || "Option",
                               type: b.type || "QUICK_REPLY",
                             })),
+                            templateSelected: true,
                           });
                         }
                         setIsTemplatePickerOpen(false);
+                        toast.success(`Attached template "${t.name}" (${t.status})`);
                       }}
                       className={`rounded-2xl border-2 cursor-pointer transition-all hover:shadow-md overflow-hidden ${
                         isApproved
@@ -1388,7 +1611,7 @@ const TemplateFlowCanvasContent = ({
                             ) : (
                               <Clock size={10} />
                             )}
-                            {t.status}
+                            {isPending ? "In Progress" : t.status}
                           </span>
                           <span className="px-3 py-1 bg-[#313166] text-white rounded-lg text-[10px] font-bold whitespace-nowrap">
                             Attach ➔
@@ -1417,7 +1640,7 @@ const TemplateFlowCanvasContent = ({
                           {btns.map((b, i) => (
                             <span
                               key={i}
-                              className="px-2.5 py-1 bg-white border border-[#313166]/20 text-[#313166] text-[10px] font-bold rounded-full shadow-sm"
+                              className="px-2.5 py-1 bg-white border border-[#313166]/20 text-[#313166] text-[10px] font-bold rounded-full shadow-2xs"
                             >
                               {b.text || b.label || `Option ${i + 1}`}
                             </span>
@@ -1435,7 +1658,7 @@ const TemplateFlowCanvasContent = ({
                           <AlertCircle size={10} />
                           {isRejected
                             ? "Rejected by Meta — cannot be used in live automations"
-                            : "Pending Meta approval — automation will stay as Draft until approved"}
+                            : "Pending Meta approval (In Progress) — automation will stay as Draft until approved"}
                         </div>
                       )}
                     </div>
