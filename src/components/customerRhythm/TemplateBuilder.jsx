@@ -316,7 +316,7 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
       const res = await api.post("/api/integrationManagement/whatsapp/custom-templates", payload);
       if (res.data.status) {
         toast.success("Template submitted to Meta successfully!");
-        onSuccess();
+        onSuccess(res.data.data);
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Error creating template";
