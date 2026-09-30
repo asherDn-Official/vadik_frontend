@@ -320,6 +320,22 @@ const TemplateNode = ({ data, selected }) => {
           </div>
         )}
 
+        {/* Variable count pill if variables exist */}
+        {(() => {
+          const combined = `${data.headerText || ""} ${bodyText}`;
+          const matches = [...combined.matchAll(/\{\{(\d+)\}\}/g)];
+          const varCount = new Set(matches.map((m) => m[1])).size;
+          if (varCount === 0) return null;
+
+          const mappedCount = (data.variableMappings || []).length;
+          return (
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-200/70 rounded-lg text-[10px] text-blue-800 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <span>{varCount} Variable{varCount > 1 ? "s" : ""} ({mappedCount > 0 ? `${mappedCount} Mapped` : "Click to Map"})</span>
+            </div>
+          );
+        })()}
+
         <div className="flex items-center justify-between text-[10px] text-gray-400 font-medium">
           <span>Lang: {language}</span>
           <span>{buttons.length} Interactive Button{buttons.length !== 1 ? "s" : ""}</span>
