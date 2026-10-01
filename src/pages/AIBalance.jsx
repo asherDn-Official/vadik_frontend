@@ -226,54 +226,70 @@ export default function AIBalance() {
   };
 
 
-  const fetchTransactions = async (
-    page = 1,
-    type = "",
-  ) => {
-    try {
-      setTransactionsLoading(true);
+ const fetchTransactions = async (
+  page = 1,
+  type = "",
+) => {
+  try {
+    setTransactionsLoading(true);
 
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: "20",
-      });
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: "20",
+    });
 
-      if (type) {
-        params.set("transactionType", type);
-      }
-
-      const response = await api.get(
-        `/api/ai-balance/transactions?${params.toString()}`,
-      );
-
-      if (!response.data?.success) {
-        throw new Error(
-          response.data?.message ||
-            "Unable to fetch AI balance transactions",
-        );
-      }
-
-      setTransactions(
-        response.data.data?.entries || [],
-      );
-
-      setTransactionPagination(
-        response.data.data?.pagination || null,
-      );
-
-      setTransactionPage(page);
-    } catch (error) {
-      console.error(
-        "AI wallet transactions fetch failed:",
-        error,
-      );
-
-      setTransactions([]);
-      setTransactionPagination(null);
-    } finally {
-      setTransactionsLoading(false);
+    if (type) {
+      params.set("transactionType", type);
     }
-  };
+
+    const response = await api.get(
+      `/api/ai-balance/transactions?${params.toString()}`,
+    );
+
+    if (!response.data?.success) {
+      throw new Error(
+        response.data?.message ||
+          "Unable to fetch AI balance transactions",
+      );
+    }
+
+    const payload = response.data?.data;
+
+    
+    const entries = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.entries)
+        ? payload.entries
+        : Array.isArray(payload?.transactions)
+          ? payload.transactions
+          : [];
+
+    const pagination =
+      payload?.pagination ||
+      response.data?.pagination ||
+      null;
+
+    console.log("[AI Balance] Transaction API response:", {
+      payload,
+      entriesCount: entries.length,
+      pagination,
+    });
+
+    setTransactions(() => entries);
+    setTransactionPagination(() => pagination);
+    setTransactionPage(() => page);
+  } catch (error) {
+    console.error(
+      "AI wallet transactions fetch failed:",
+      error,
+    );
+
+    setTransactions(() => []);
+    setTransactionPagination(() => null);
+  } finally {
+    setTransactionsLoading(false);
+  }
+};
 
 
   const fetchUsageHistory = async (page = 1) => {
@@ -296,7 +312,13 @@ export default function AIBalance() {
         );
       }
 
-      setUsageRecords(response.data.data || []);
+     const usageData = response.data?.data;
+
+setUsageRecords(
+  Array.isArray(usageData)
+    ? usageData
+    : []
+);
 
       setUsagePagination(
         response.data.pagination || null,
@@ -332,9 +354,17 @@ export default function AIBalance() {
         );
       }
 
-      setUsageSummary(
-        response.data.data || emptyUsageSummary,
-      );
+      const summaryData =
+  response.data?.data;
+
+setUsageSummary(
+  summaryData &&
+  typeof summaryData === "object" &&
+  !Array.isArray(summaryData)
+    ? summaryData
+    : emptyUsageSummary
+);
+
     } catch (error) {
       console.error(
         "AI usage summary fetch failed:",

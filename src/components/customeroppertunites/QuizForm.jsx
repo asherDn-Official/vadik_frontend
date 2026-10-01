@@ -238,9 +238,7 @@ const [isGenerating, setIsGenerating] = useState(false);
 
 
 const handleGenerateWithAI = async () => {
-
-
-   if (!aiPurpose.trim()) {
+  if (!aiPurpose.trim()) {
     showToast("Please enter the quiz purpose", "error");
     return;
   }
@@ -254,19 +252,32 @@ const handleGenerateWithAI = async () => {
     showToast("Please enter the quiz goal", "error");
     return;
   }
+
+  // One idempotency key represents this AI generation request.
+  // If the request is retried, the same key should be reused.
+  const idempotencyKey = crypto.randomUUID();
+
   try {
     setIsGenerating(true);
 
-  const response = await api.post("/api/quiz/ai/draft", {
-  purpose: aiPurpose.trim(),
-  audience: aiAudience.trim(),
-  goal: aiGoal.trim(),
-  questionCount: Number(aiQuestionCount),
-  language: aiLanguage,
-  instructions: aiInstructions.trim(),
-});
+    const response = await api.post(
+      "/api/quiz/ai/draft",
+      {
+        purpose: aiPurpose.trim(),
+        audience: aiAudience.trim(),
+        goal: aiGoal.trim(),
+        questionCount: Number(aiQuestionCount),
+        language: aiLanguage,
+        instructions: aiInstructions.trim(),
+      },
+      {
+        headers: {
+          "Idempotency-Key": idempotencyKey,
+        },
+      }
+    );
 
-const draft = response.data?.draft;
+    const draft = response.data?.draft;
 
     if (!draft) {
       throw new Error("AI did not return a quiz draft");
@@ -274,46 +285,42 @@ const draft = response.data?.draft;
 
     setValue("title", draft.title || "");
 
-
     setValue("description", draft.description || "");
 
+    const generatedQuestions = (draft.questions || []).map(
+      (question, index) => ({
+        id: Date.now() + index,
 
-   const generatedQuestions = (draft.questions || []).map(
-  (question, index) => ({
-    id: Date.now() + index,
+        key: question.key || "",
 
-    key: question.key || "",
+        question: question.question || "",
 
-    question: question.question || "",
+        type: question.type || "options",
 
-    type: question.type || "options",
+        section: question.section || "additionalData",
 
-    section: question.section || "additionalData",
+        options: Array.isArray(question.options)
+          ? question.options
+          : [],
 
-    options: Array.isArray(question.options)
-      ? question.options
-      : [],
+        iconUrl: question.iconUrl || "",
 
-    iconUrl: question.iconUrl || "",
-
-    iconName: question.iconName || "",
-  })
-);
+        iconName: question.iconName || "",
+      })
+    );
 
     setValue("questions", generatedQuestions, {
       shouldValidate: true,
       shouldDirty: true,
     });
 
-    // Reset dropdown state for generated questions
     setIsPreferenceDropdownOpen(
       new Array(generatedQuestions.length).fill(false)
     );
 
     showToast("Quiz generated successfully!", "success");
   } catch (error) {
-
-showToast(
+    showToast(
       error.response?.data?.message ||
         error.message ||
         "Failed to generate quiz",
