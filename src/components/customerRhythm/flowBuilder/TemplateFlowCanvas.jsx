@@ -635,25 +635,48 @@ const TemplateFlowCanvasContent = ({
 
   // Deploy / Create this specific node's template to Meta
   const handleDeployNodeTemplateToMeta = (node) => {
-    const nodeData = node.data || {};
+    const nodeData = node?.data || {};
+    const headerFormat = (nodeData.headerMediaType || nodeData.headerFormat || "").toUpperCase();
+    const isMedia = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerFormat);
+
+    const components = [];
+    if (headerFormat) {
+      if (isMedia) {
+        components.push({
+          type: "HEADER",
+          format: headerFormat,
+          mediaUrl: nodeData.mediaUrl || "",
+          example: nodeData.mediaUrl ? { header_handle: [nodeData.mediaUrl] } : undefined,
+        });
+      } else if (headerFormat === "TEXT" || nodeData.headerText) {
+        components.push({
+          type: "HEADER",
+          format: "TEXT",
+          text: nodeData.headerText || "",
+        });
+      }
+    }
+
+    components.push({
+      type: "BODY",
+      text: nodeData.bodyText || "Hello! Please select an option.",
+    });
+
+    if (nodeData.buttons?.length) {
+      components.push({
+        type: "BUTTONS",
+        buttons: nodeData.buttons.map((b) => ({
+          type: b.type || "QUICK_REPLY",
+          text: b.text || b.label || "Option",
+        })),
+      });
+    }
+
     const prefill = {
-      name: (nodeData.templateName || "new_template").toLowerCase().replace(/[^a-z0-9_]/g, "_"),
+      name: (nodeData.templateName || "custom_flow_template").toLowerCase().replace(/[^a-z0-9_]/g, "_"),
       category: "MARKETING",
       language: nodeData.language || "en_US",
-      components: [
-        { type: "BODY", text: nodeData.bodyText || "Hello! Please select an option." },
-        ...(nodeData.buttons?.length
-          ? [
-              {
-                type: "BUTTONS",
-                buttons: nodeData.buttons.map((b) => ({
-                  type: b.type || "QUICK_REPLY",
-                  text: b.text || b.label || "Option",
-                })),
-              },
-            ]
-          : []),
-      ],
+      components,
     };
 
     setTemplateBuilderPrefill(prefill);
@@ -869,6 +892,7 @@ const TemplateFlowCanvasContent = ({
         languageCode: rootTemplateNode?.data?.language || "en_US",
         mediaUrl: rootTemplateNode?.data?.mediaUrl || null,
         mediaType: rootTemplateNode?.data?.headerMediaType || rootTemplateNode?.data?.headerFormat || null,
+        variableMappings: rootTemplateNode?.data?.variableMappings || [],
       },
       flowGraph: {
         nodes,
@@ -1268,7 +1292,15 @@ const TemplateFlowCanvasContent = ({
                       }}
                       className="px-3 py-2 bg-[#313166] hover:bg-[#252550] text-white rounded-xl font-bold text-[11px] transition-colors flex items-center justify-center gap-1"
                     >
-                      + Create New
+                      + Create Blank
+                    </button>
+                    <button
+                      onClick={() => handleDeployNodeTemplateToMeta(selectedNode)}
+                      className="col-span-2 px-3 py-2 bg-gradient-to-r from-[#CB376D] to-purple-600 hover:opacity-95 text-white rounded-xl font-bold text-[11px] transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-98"
+                      title="Register latest edited text, media, and buttons as a Meta WhatsApp template for approval"
+                    >
+                      <Sparkles size={13} className="text-yellow-300" />
+                      <span>Create / Submit Changes as Meta Template</span>
                     </button>
                   </div>
 
@@ -1409,6 +1441,135 @@ const TemplateFlowCanvasContent = ({
                       className="w-full p-2.5 border border-gray-200 rounded-xl font-sans text-gray-700 leading-relaxed"
                     />
                   </div>
+
+                  {/* Dynamic Variables Configuration */}
+                  {(() => {
+                    const combinedText = `${selectedNode.data?.headerText || ""} ${selectedNode.data?.bodyText || ""}`;
+                    const matches = [...combinedText.matchAll(/\{\{(\d+)\}\}/g)];
+                    const varNumbers = [...new Set(matches.map((m) => parseInt(m[1], 10)))].sort((a, b) => a - b);
+
+                    if (varNumbers.length === 0) return null;
+
+                    const currentMappings = selectedNode.data?.variableMappings || [];
+
+                    const handleUpdateMapping = (varToken, sourceType, value) => {
+                      const existingIdx = currentMappings.findIndex((m) => m.variable === varToken);
+                      let nextMappings = [...currentMappings];
+                      const newEntry = {
+                        variable: varToken,
+                        sourceType,
+                        value,
+                        componentType: "BODY",
+                      };
+                      if (existingIdx >= 0) {
+                        nextMappings[existingIdx] = newEntry;
+                      } else {
+                        nextMappings.push(newEntry);
+                      }
+                      updateSelectedNodeData({ variableMappings: nextMappings });
+                    };
+
+                    const handleAutoMapDefaults = () => {
+                      const autoMapped = varNumbers.map((num, idx) => {
+                        if (idx === 0) {
+                          return { variable: `{{${num}}}`, sourceType: "derived", value: "first_name", componentType: "BODY" };
+                        }
+                        if (idx === 1) {
+                          return { variable: `{{${num}}}`, sourceType: "derived", value: "store_name", componentType: "BODY" };
+                        }
+                        if (idx === 2) {
+                          return { variable: `{{${num}}}`, sourceType: "derived", value: "mobile_number", componentType: "BODY" };
+                        }
+                        return { variable: `{{${num}}}`, sourceType: "static", value: "Special Offer", componentType: "BODY" };
+                      });
+                      updateSelectedNodeData({ variableMappings: autoMapped });
+                      toast.success("Applied standard variable mappings (First Name, Store Name, etc.)");
+                    };
+
+                    return (
+                      <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-200/80 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <Tag size={13} className="text-blue-600" />
+                            <label className="text-[10px] font-bold text-blue-900 uppercase tracking-wider">
+                              Template Variables ({varNumbers.length})
+                            </label>
+                          </div>
+                          <button
+                            onClick={handleAutoMapDefaults}
+                            className="text-[9px] font-bold text-blue-700 hover:underline flex items-center gap-1"
+                          >
+                            <Sparkles size={10} />
+                            Auto-Map
+                          </button>
+                        </div>
+
+                        <p className="text-[10px] text-blue-800/80 leading-tight">
+                          Map variables like <code className="font-bold">{"{{1}}"}</code> to customer or store fields to prevent Meta Error #132000:
+                        </p>
+
+                        <div className="space-y-2 pt-1">
+                          {varNumbers.map((num) => {
+                            const varToken = `{{${num}}}`;
+                            const mapping = currentMappings.find((m) => m.variable === varToken) || {
+                              variable: varToken,
+                              sourceType: num === 1 ? "derived" : num === 2 ? "derived" : "static",
+                              value: num === 1 ? "first_name" : num === 2 ? "store_name" : "",
+                            };
+
+                            const isStatic = mapping.sourceType === "static";
+
+                            return (
+                              <div key={varToken} className="p-2 bg-white rounded-lg border border-blue-100 space-y-1.5 shadow-2xs">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 font-mono font-bold text-[10px] rounded-md shrink-0">
+                                    {varToken}
+                                  </span>
+                                  <select
+                                    value={isStatic ? "static" : mapping.value}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (val === "static") {
+                                        handleUpdateMapping(varToken, "static", mapping.value || "Offer");
+                                      } else {
+                                        handleUpdateMapping(varToken, "derived", val);
+                                      }
+                                    }}
+                                    className="flex-1 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-[11px] font-semibold text-[#313166] focus:outline-none focus:border-blue-500"
+                                  >
+                                    <optgroup label="Customer Details">
+                                      <option value="first_name">Customer First Name</option>
+                                      <option value="last_name">Customer Last Name</option>
+                                      <option value="full_name">Customer Full Name</option>
+                                      <option value="mobile_number">Customer Phone Number</option>
+                                      <option value="loyalty_points">Loyalty Points</option>
+                                    </optgroup>
+                                    <optgroup label="Store / Business">
+                                      <option value="store_name">Store / Brand Name</option>
+                                      <option value="current_date">Today's Date</option>
+                                    </optgroup>
+                                    <optgroup label="Custom Static Text">
+                                      <option value="static">Custom Static Text...</option>
+                                    </optgroup>
+                                  </select>
+                                </div>
+
+                                {isStatic && (
+                                  <input
+                                    type="text"
+                                    value={mapping.value || ""}
+                                    onChange={(e) => handleUpdateMapping(varToken, "static", e.target.value)}
+                                    placeholder={`Value for ${varToken} (e.g. 20% OFF)`}
+                                    className="w-full px-2.5 py-1 text-xs bg-gray-50 border border-gray-200 rounded-md text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Button Branches Management */}
                   <div className="space-y-2 pt-2 border-t border-gray-100">
