@@ -324,27 +324,32 @@ const AdvancedTemplateAutomation = () => {
   }, [automations, searchTerm, statusFilter]);
 
   // If in Visual Canvas Mode, display the full ReactFlow Visual Flow Builder!
+  // Rendered as a fixed full-screen overlay so it doesn't overlap the sticky
+  // Customer Rhythm header or any other page elements when scrolling.
   if (isCanvasOpen) {
     return (
-      <TemplateFlowCanvas
-        initialAutomation={currentEditingAutomation}
-        templates={templates}
-        onSave={handleSaveFlowCanvas}
-        onBack={() => {
-          setIsCanvasOpen(false);
-          setCurrentEditingAutomation(null);
-        }}
-        onSyncTemplates={syncTemplatesFromMeta}
-        syncingTemplates={syncingTemplates}
-      />
+      <div className="fixed inset-0 z-[200] bg-slate-900">
+        <TemplateFlowCanvas
+          initialAutomation={currentEditingAutomation}
+          templates={templates}
+          existingAutomations={automations}
+          onSave={handleSaveFlowCanvas}
+          onBack={() => {
+            setIsCanvasOpen(false);
+            setCurrentEditingAutomation(null);
+          }}
+          onSyncTemplates={syncTemplatesFromMeta}
+          syncingTemplates={syncingTemplates}
+        />
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
       {/* Top Banner & Action Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#313166] to-[#4A4A8A] p-6 rounded-3xl text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10 max-w-2xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#313166] to-[#4A4A8A] p-6 rounded-3xl text-white shadow-lg overflow-hidden">
+        <div className="max-w-2xl">
           <div className="flex items-center gap-2 mb-2">
             <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold text-pink-200 flex items-center gap-1.5">
               <Sparkles size={13} className="text-pink-300" /> WhatsApp Template Automation Flow Builder
@@ -356,7 +361,7 @@ const AdvancedTemplateAutomation = () => {
           </p>
         </div>
 
-        <div className="relative z-10 flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={syncTemplatesFromMeta}
             disabled={syncingTemplates}

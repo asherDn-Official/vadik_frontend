@@ -326,6 +326,7 @@ const getNextNodeId = (prefix = "node") => `${prefix}_${Date.now()}_${nodeCounte
 const TemplateFlowCanvasContent = ({
   initialAutomation,
   templates = [],
+  existingAutomations = [],
   onSave,
   onBack,
   onSyncTemplates,
@@ -350,6 +351,12 @@ const TemplateFlowCanvasContent = ({
   const [simMessages, setSimMessages] = useState([]);
   const [simUserInboundText, setSimUserInboundText] = useState("");
 
+  // Live reference to nodes for stable callbacks
+  const nodesRef = useRef(nodes);
+  useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
+
   // Helper: check if a template exists in user's Meta account
   const findMetaTemplate = useCallback(
     (templateName) => {
@@ -364,6 +371,46 @@ const TemplateFlowCanvasContent = ({
     },
     [templates]
   );
+
+  // Real-time overlapping keyword conflict computation across active automations
+  const computeConflictsForKeyword = useCallback(
+    (kwString) => {
+      if (!kwString || typeof kwString !== "string" || !kwString.trim()) return [];
+      const currentId = initialAutomation?._id;
+      const typedKeywords = kwString
+        .split(",")
+        .map((k) => k.trim().toLowerCase())
+        .filter(Boolean);
+
+      const conflicts = [];
+      const activeAutomations = (existingAutomations || []).filter(
+        (a) => a.status === "active" && String(a._id) !== String(currentId) && a.triggerConfig?.keyword
+      );
+
+      for (const other of activeAutomations) {
+        const otherKws = (other.triggerConfig.keyword || "")
+          .split(",")
+          .map((k) => k.trim().toLowerCase())
+          .filter(Boolean);
+        const overlapping = typedKeywords.filter((k) => otherKws.includes(k));
+        if (overlapping.length > 0) {
+          conflicts.push({
+            automationName: other.name,
+            overlappingKeywords: overlapping.map((k) => k.toUpperCase()),
+          });
+        }
+      }
+      return conflicts;
+    },
+    [existingAutomations, initialAutomation?._id]
+  );
+
+  const triggerNode = nodes.find((n) => n.type === "trigger");
+  const currentTriggerKeyword = (selectedNode?.type === "trigger" ? selectedNode.data?.keyword : triggerNode?.data?.keyword) || "";
+
+  const conflictingKeywordDetails = useMemo(() => {
+    return computeConflictsForKeyword(currentTriggerKeyword);
+  }, [computeConflictsForKeyword, currentTriggerKeyword]);
 
   // Synchronize node status and header media with Meta templates list
   const syncNodeStatusWithMeta = useCallback(
@@ -440,88 +487,14 @@ const TemplateFlowCanvasContent = ({
     }
   };
 
-  // Attach interactive callbacks & sync status to node data
-  const enrichNodesWithCallbacks = useCallback(
-    (rawNodes) => {
-      const synced = syncNodeStatusWithMeta(rawNodes);
-      return synced.map((n) => ({
-        ...n,
-        data: {
-          ...n.data,
-          onAddNext: (handleId, label) => handleSproutNode(n.id, handleId, label),
-        },
-      }));
-    },
-    [syncNodeStatusWithMeta]
-  );
-
-  // Initialize nodes & edges from automation or preset
-  useEffect(() => {
-    if (initialAutomation?.flowGraph?.nodes?.length) {
-      setNodes(enrichNodesWithCallbacks(initialAutomation.flowGraph.nodes));
-      setEdges(initialAutomation.flowGraph.edges || []);
-      setAutomationName(initialAutomation.name || "WhatsApp Template Automation");
-    } else if (initialAutomation?.presetId && (BUILDER_PRESETS[initialAutomation.presetId] || initialAutomation.presetId === "metro")) {
-      const p = BUILDER_PRESETS[initialAutomation.presetId] || BUILDER_PRESETS.general;
-      setNodes(enrichNodesWithCallbacks(p.nodes));
-      setEdges(p.edges);
-      setAutomationName(p.name);
-    } else {
-      const p = BUILDER_PRESETS.general;
-      setNodes(enrichNodesWithCallbacks(p.nodes));
-      setEdges(p.edges);
-      setAutomationName(initialAutomation?.name || p.name);
-    }
-  }, [initialAutomation, enrichNodesWithCallbacks]);
-
-  // When templates from Meta API update, re-sync node statuses
-  useEffect(() => {
-    setNodes((currentNodes) => enrichNodesWithCallbacks(currentNodes));
-  }, [templates, enrichNodesWithCallbacks]);
-
-  // Connect edges
-  const onConnect = useCallback(
-    (params) => {
-      const sourceNode = nodes.find((n) => n.id === params.source);
-      let label = "";
-      if (sourceNode?.type === "template" && params.sourceHandle?.startsWith("btn_")) {
-        const btnIdx = parseInt(params.sourceHandle.replace("btn_", ""), 10);
-        label = sourceNode.data?.buttons?.[btnIdx]?.text || "Option";
-      } else if (params.sourceHandle === "default") {
-        label = "Next Template";
-      }
-
-      setEdges((eds) =>
-        addEdge(
-          {
-            ...params,
-            type: "labeled",
-            animated: true,
-            data: { label, onDelete: handleDeleteEdge },
-          },
-          eds
-        )
-      );
-    },
-    [nodes]
-  );
-
   const handleDeleteEdge = (edgeId) => {
     setEdges((eds) => eds.filter((e) => e.id !== edgeId));
   };
 
-  // Node selection handler
-  const onNodeClick = useCallback((_, node) => {
-    setSelectedNode(node);
-  }, []);
-
-  const onPaneClick = useCallback(() => {
-    setSelectedNode(null);
-  }, []);
-
   // Sprout / Quick Connect next node
-  const handleSproutNode = (sourceId, sourceHandle, label = "Next Step") => {
-    const sourceNode = nodes.find((n) => n.id === sourceId);
+  const handleSproutNode = useCallback((sourceId, sourceHandle, label = "Next Step") => {
+    const currentNodes = nodesRef.current;
+    const sourceNode = currentNodes.find((n) => n.id === sourceId);
     if (!sourceNode) return;
 
     const newId = getNextNodeId("template");
@@ -559,7 +532,123 @@ const TemplateFlowCanvasContent = ({
     setSelectedNode(newNode);
     setIsTemplatePickerOpen(true);
     toast.info(`Connected new step for "${label}". Select a template from your Meta account.`);
-  };
+  }, []);
+
+  // Attach interactive callbacks & sync status to node data
+  const enrichNodesWithCallbacks = useCallback(
+    (rawNodes) => {
+      const synced = syncNodeStatusWithMeta(rawNodes);
+      return synced.map((n) => {
+        if (n.type === "trigger") {
+          const kw = n.data?.keyword || "HI, HELLO, MENU, START, HELP";
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              keyword: kw,
+              conflicts: computeConflictsForKeyword(kw),
+              onAddNext: (handleId, label) => handleSproutNode(n.id, handleId, label),
+            },
+          };
+        }
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onAddNext: (handleId, label) => handleSproutNode(n.id, handleId, label),
+          },
+        };
+      });
+    },
+    [syncNodeStatusWithMeta, computeConflictsForKeyword, handleSproutNode]
+  );
+
+  // Guard initialization so it only runs once per automation instance
+  const initializedAutomationIdRef = useRef(null);
+
+  useEffect(() => {
+    const currentId = initialAutomation?._id || `new_${initialAutomation?.presetId || "general"}`;
+    if (initializedAutomationIdRef.current === currentId) {
+      return;
+    }
+    initializedAutomationIdRef.current = currentId;
+
+    if (initialAutomation?.flowGraph?.nodes?.length) {
+      setNodes(enrichNodesWithCallbacks(initialAutomation.flowGraph.nodes));
+      setEdges(initialAutomation.flowGraph.edges || []);
+      setAutomationName(initialAutomation.name || "WhatsApp Template Automation");
+    } else if (initialAutomation?.presetId && (BUILDER_PRESETS[initialAutomation.presetId] || initialAutomation.presetId === "metro")) {
+      const p = BUILDER_PRESETS[initialAutomation.presetId] || BUILDER_PRESETS.general;
+      setNodes(enrichNodesWithCallbacks(p.nodes));
+      setEdges(p.edges);
+      setAutomationName(p.name);
+    } else {
+      const p = BUILDER_PRESETS.general;
+      setNodes(enrichNodesWithCallbacks(p.nodes));
+      setEdges(p.edges);
+      setAutomationName(initialAutomation?.name || p.name);
+    }
+  }, [initialAutomation, enrichNodesWithCallbacks]);
+
+  // When active automations list updates, refresh conflict data on trigger nodes without resetting canvas
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((n) => {
+        if (n.type === "trigger") {
+          const kw = n.data?.keyword || "";
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              conflicts: computeConflictsForKeyword(kw),
+            },
+          };
+        }
+        return n;
+      })
+    );
+  }, [existingAutomations, computeConflictsForKeyword]);
+
+  // When templates from Meta API update, re-sync node statuses
+  useEffect(() => {
+    setNodes((currentNodes) => syncNodeStatusWithMeta(currentNodes));
+  }, [templates, syncNodeStatusWithMeta]);
+
+  // Connect edges
+  const onConnect = useCallback(
+    (params) => {
+      const sourceNode = nodes.find((n) => n.id === params.source);
+      let label = "";
+      if (sourceNode?.type === "template" && params.sourceHandle?.startsWith("btn_")) {
+        const btnIdx = parseInt(params.sourceHandle.replace("btn_", ""), 10);
+        label = sourceNode.data?.buttons?.[btnIdx]?.text || "Option";
+      } else if (params.sourceHandle === "default") {
+        label = "Next Template";
+      }
+
+      setEdges((eds) =>
+        addEdge(
+          {
+            ...params,
+            type: "labeled",
+            animated: true,
+            data: { label, onDelete: handleDeleteEdge },
+          },
+          eds
+        )
+      );
+    },
+    [nodes]
+  );
+
+  // Node selection handler
+  const onNodeClick = useCallback((_, node) => {
+    setSelectedNode(node);
+  }, []);
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNode(null);
+  }, []);
 
   // Add Template Node
   const handleAddTemplateNode = () => {
@@ -625,6 +714,9 @@ const TemplateFlowCanvasContent = ({
       nds.map((n) => {
         if (n.id === selectedNode.id) {
           const updatedData = { ...n.data, ...updates };
+          if (n.type === "trigger" && updates.keyword !== undefined) {
+            updatedData.conflicts = computeConflictsForKeyword(updates.keyword);
+          }
           setSelectedNode({ ...n, data: updatedData });
           return { ...n, data: updatedData };
         }
@@ -868,6 +960,14 @@ const TemplateFlowCanvasContent = ({
           `Cannot publish as Active: Template(s) "${unapprovedNames}" are not yet approved by Meta. Saved as Draft. You can continue editing or activate once Meta approves all templates.`
         );
         willBeActive = false;
+      } else if (conflictingKeywordDetails.length > 0) {
+        const confSummary = conflictingKeywordDetails
+          .map((c) => `"${c.overlappingKeywords.join(", ")}" (used in "${c.automationName}")`)
+          .join("; ");
+        toast.warning(
+          `Cannot publish as Active: Overlapping trigger keyword ${confSummary}. Saved as Draft to prevent sending duplicate bot replies.`
+        );
+        willBeActive = false;
       }
     }
 
@@ -928,7 +1028,7 @@ const TemplateFlowCanvasContent = ({
   }, [selectedNode, findMetaTemplate]);
 
   return (
-    <div className="flex flex-col h-[84vh] bg-slate-900 rounded-3xl overflow-hidden border border-gray-800 shadow-2xl relative">
+    <div className="flex flex-col h-full bg-slate-900 rounded-3xl overflow-hidden border border-gray-800 shadow-2xl relative">
       {/* Top Action Bar */}
       <div className="px-5 py-3 bg-[#1e1e38] border-b border-gray-800 flex flex-wrap items-center justify-between gap-3 z-20">
         <div className="flex items-center gap-3">
@@ -1605,6 +1705,7 @@ const TemplateFlowCanvasContent = ({
                             next[bIdx] = { ...next[bIdx], text: e.target.value };
                             updateSelectedNodeData({ buttons: next });
                           }}
+                          placeholder="Button text (e.g. Yes, Proceed)"
                           className="flex-1 px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs font-bold text-[#313166]"
                         />
                         <button
@@ -1618,6 +1719,12 @@ const TemplateFlowCanvasContent = ({
                         </button>
                       </div>
                     ))}
+
+                    {(selectedNode.data?.buttons || []).length > 0 && (
+                      <p className="text-[9px] text-gray-400 leading-tight pt-1">
+                        💡 Each button creates a visual transition handle on the canvas so you can wire it to the next template step.
+                      </p>
+                    )}
                   </div>
                 </>
               )}
@@ -1644,21 +1751,54 @@ const TemplateFlowCanvasContent = ({
                   </div>
 
                   {(selectedNode.data?.triggerType || "whatsapp_keyword") === "whatsapp_keyword" ? (
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <label className="text-[10px] font-bold text-gray-400 uppercase">Keywords (Comma-separated)</label>
-                        <span className="text-[10px] text-emerald-600 font-bold">Exact Match</span>
+                        <span className={`text-[10px] font-bold ${conflictingKeywordDetails.length > 0 ? "text-amber-600 font-bold" : "text-emerald-600"}`}>
+                          {conflictingKeywordDetails.length > 0 ? "⚠️ Conflict Detected" : "Exact Match"}
+                        </span>
                       </div>
                       <input
                         type="text"
                         value={selectedNode.data?.keyword || ""}
                         onChange={(e) => updateSelectedNodeData({ keyword: e.target.value })}
                         placeholder="e.g. HI, METRO, TICKET, START"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-xl font-mono text-emerald-700 font-bold text-xs"
+                        className={`w-full px-3 py-2 border rounded-xl font-mono font-bold text-xs transition-colors ${
+                          conflictingKeywordDetails.length > 0
+                            ? "border-amber-400 bg-amber-50/40 text-amber-900 focus:border-amber-500"
+                            : "border-gray-200 text-emerald-700 focus:border-[#313166]"
+                        }`}
                       />
-                      <p className="text-[10px] text-gray-400 leading-tight">
-                        When a customer sends any of these keywords, this automated template journey will start immediately.
-                      </p>
+
+                      {/* Real-time Inline Overlapping Keyword Conflict Alert */}
+                      {conflictingKeywordDetails.length > 0 ? (
+                        <div className="p-3 bg-amber-50 rounded-xl border border-amber-300 text-amber-900 text-xs space-y-1.5 shadow-2xs">
+                          <div className="flex items-center gap-1.5 font-bold text-amber-800">
+                            <AlertCircle size={14} className="text-amber-600 shrink-0" />
+                            <span>⚠️ Overlapping Trigger Keywords Detected</span>
+                          </div>
+                          <p className="text-[11px] text-amber-800 leading-snug">
+                            The following keyword{conflictingKeywordDetails.some(c => c.overlappingKeywords.length > 1) ? "s are" : " is"} already active in another automation. If triggered, both automations would reply simultaneously:
+                          </p>
+                          <div className="space-y-1">
+                            {conflictingKeywordDetails.map((c, idx) => (
+                              <div key={idx} className="bg-white p-2 rounded-lg border border-amber-200 text-[11px] flex items-center justify-between gap-2">
+                                <span className="font-bold text-[#313166] truncate">"{c.automationName}"</span>
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 font-mono font-bold rounded-md text-[10px] shrink-0">
+                                  {c.overlappingKeywords.join(", ")}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-amber-700 italic pt-0.5">
+                            👉 Tip: Remove or change the shared keyword above so both automations operate without collision.
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-gray-400 leading-tight">
+                          When a customer sends any of these keywords, this automated template journey will start immediately.
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 text-xs leading-relaxed space-y-1">

@@ -1,6 +1,6 @@
 import React, { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
-import { Tag, MessageCircle, UserPlus, Calendar, CheckCircle2, Webhook, Zap, Plus } from "lucide-react";
+import { Tag, MessageCircle, UserPlus, Calendar, CheckCircle2, Webhook, Zap, Plus, AlertCircle } from "lucide-react";
 
 const getTriggerIcon = (type) => {
   switch (type) {
@@ -59,17 +59,41 @@ const TriggerNode = ({ data, selected }) => {
       <div className="p-3.5 space-y-2">
         {triggerType === "whatsapp_keyword" ? (
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Triggers on Keywords:</p>
-            <div className="flex flex-wrap gap-1">
-              {keywords.map((kw, i) => (
-                <span
-                  key={i}
-                  className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-md border border-emerald-200"
-                >
-                  {kw}
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Triggers on Keywords:</p>
+              {data.conflicts?.length > 0 && (
+                <span className="px-1.5 py-0.2 bg-amber-100 text-amber-800 text-[9px] font-bold rounded-md flex items-center gap-0.5">
+                  <AlertCircle size={9} className="text-amber-600" />
+                  Conflict
                 </span>
-              ))}
+              )}
             </div>
+            <div className="flex flex-wrap gap-1">
+              {keywords.map((kw, i) => {
+                const isConflicting = data.conflicts?.some((c) =>
+                  c.overlappingKeywords?.map((k) => k.toLowerCase()).includes(kw.toLowerCase())
+                );
+                return (
+                  <span
+                    key={i}
+                    className={`px-2 py-0.5 text-[10px] font-bold rounded-md border transition-colors ${
+                      isConflicting
+                        ? "bg-amber-100 text-amber-900 border-amber-300 font-mono ring-1 ring-amber-400/40"
+                        : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    }`}
+                  >
+                    {kw}
+                  </span>
+                );
+              })}
+            </div>
+
+            {data.conflicts?.length > 0 && (
+              <div className="mt-2 p-1.5 bg-amber-50 rounded-lg border border-amber-200 text-[9px] text-amber-800 leading-tight flex items-start gap-1">
+                <AlertCircle size={11} className="text-amber-600 shrink-0 mt-0.5" />
+                <span>Overlaps with <strong>"{data.conflicts[0].automationName}"</strong></span>
+              </div>
+            )}
           </div>
         ) : (
           <p className="text-xs text-emerald-800 font-medium bg-emerald-50/50 p-2 rounded-lg border border-emerald-100">
