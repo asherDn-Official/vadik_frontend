@@ -34,9 +34,8 @@ export default function SubscriptionCard({
       return 'bg-gray-400 text-white cursor-not-allowed opacity-60';
     }
     if (hasActiveSubscription && !isAddon && !isCurrentPlan) {
-      return variant === 'primary'
-        ? 'bg-white text-pink-700 hover:bg-gray-100'
-        : 'bg-pink-700 text-white hover:bg-pink-800';
+      // Disabled greyed-out — user must cancel current plan first
+      return 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-70';
     }
     if (isAddon && isCurrentPlanFreeTrial) {
       return 'bg-gray-400 text-white cursor-not-allowed opacity-60';
@@ -57,7 +56,7 @@ export default function SubscriptionCard({
       return 'Subscribed';
     }
     if (hasActiveSubscription && !isAddon && !isCurrentPlan) {
-      return 'Switch Plan';
+      return 'Cancel to Switch';
     }
     if (isAddon && hasActiveSubscription) {
       if (isCurrentPlanFreeTrial) {
@@ -160,7 +159,10 @@ export default function SubscriptionCard({
                 checked={isSelected}
                 onChange={handleCardClick}
                 onClick={(e) => e.stopPropagation()}
-                className="w-5 h-5 text-pink-700 bg-white border-gray-300 focus:ring-pink-700 focus:ring-2 cursor-pointer"
+                disabled={hasActiveSubscription && !isCurrentPlan}
+                className={`w-5 h-5 text-pink-700 bg-white border-gray-300 focus:ring-pink-700 focus:ring-2 ${
+                  hasActiveSubscription && !isCurrentPlan ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+                }`}
               />
             )}
           </div>
@@ -290,7 +292,10 @@ export default function SubscriptionCard({
             checked={isSelected}
             onChange={handleCardClick}
             onClick={(e) => e.stopPropagation()}
-            className="w-5 h-5 text-pink-700 bg-white border-gray-300 focus:ring-pink-700 focus:ring-2 cursor-pointer"
+            disabled={hasActiveSubscription && !isCurrentPlan}
+            className={`w-5 h-5 text-pink-700 bg-white border-gray-300 focus:ring-pink-700 focus:ring-2 ${
+              hasActiveSubscription && !isCurrentPlan ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+            }`}
           />
         )}
       </div>

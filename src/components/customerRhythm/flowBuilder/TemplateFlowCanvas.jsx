@@ -487,9 +487,27 @@ const TemplateFlowCanvasContent = ({
     }
   };
 
-  const handleDeleteEdge = (edgeId) => {
+  const handleDeleteEdge = useCallback((edgeId) => {
     setEdges((eds) => eds.filter((e) => e.id !== edgeId));
-  };
+    toast.info("Route line removed");
+  }, [setEdges]);
+
+  // Attach interactive callbacks & default options to edges
+  const enrichEdgesWithCallbacks = useCallback(
+    (rawEdges) => {
+      return (rawEdges || []).map((e) => ({
+        ...e,
+        type: "labeled",
+        animated: true,
+        data: {
+          ...(e.data || {}),
+          label: e.data?.label || "",
+          onDelete: handleDeleteEdge,
+        },
+      }));
+    },
+    [handleDeleteEdge]
+  );
 
   // Sprout / Quick Connect next node
   const handleSproutNode = useCallback((sourceId, sourceHandle, label = "Next Step") => {
@@ -532,7 +550,7 @@ const TemplateFlowCanvasContent = ({
     setSelectedNode(newNode);
     setIsTemplatePickerOpen(true);
     toast.info(`Connected new step for "${label}". Select a template from your Meta account.`);
-  }, []);
+  }, [handleDeleteEdge]);
 
   // Attach interactive callbacks & sync status to node data
   const enrichNodesWithCallbacks = useCallback(
@@ -575,20 +593,20 @@ const TemplateFlowCanvasContent = ({
 
     if (initialAutomation?.flowGraph?.nodes?.length) {
       setNodes(enrichNodesWithCallbacks(initialAutomation.flowGraph.nodes));
-      setEdges(initialAutomation.flowGraph.edges || []);
+      setEdges(enrichEdgesWithCallbacks(initialAutomation.flowGraph.edges || []));
       setAutomationName(initialAutomation.name || "WhatsApp Template Automation");
     } else if (initialAutomation?.presetId && (BUILDER_PRESETS[initialAutomation.presetId] || initialAutomation.presetId === "metro")) {
       const p = BUILDER_PRESETS[initialAutomation.presetId] || BUILDER_PRESETS.general;
       setNodes(enrichNodesWithCallbacks(p.nodes));
-      setEdges(p.edges);
+      setEdges(enrichEdgesWithCallbacks(p.edges));
       setAutomationName(p.name);
     } else {
       const p = BUILDER_PRESETS.general;
       setNodes(enrichNodesWithCallbacks(p.nodes));
-      setEdges(p.edges);
+      setEdges(enrichEdgesWithCallbacks(p.edges));
       setAutomationName(initialAutomation?.name || p.name);
     }
-  }, [initialAutomation, enrichNodesWithCallbacks]);
+  }, [initialAutomation, enrichNodesWithCallbacks, enrichEdgesWithCallbacks]);
 
   // When active automations list updates, refresh conflict data on trigger nodes without resetting canvas
   useEffect(() => {
@@ -638,7 +656,7 @@ const TemplateFlowCanvasContent = ({
         )
       );
     },
-    [nodes]
+    [nodes, handleDeleteEdge]
   );
 
   // Node selection handler
@@ -780,7 +798,7 @@ const TemplateFlowCanvasContent = ({
     const p = BUILDER_PRESETS[presetKey];
     if (!p) return;
     setNodes(enrichNodesWithCallbacks(p.nodes));
-    setEdges(p.edges);
+    setEdges(enrichEdgesWithCallbacks(p.edges));
     setAutomationName(p.name);
     setSelectedNode(null);
     initSimulator(p.nodes, p.edges);
@@ -996,7 +1014,18 @@ const TemplateFlowCanvasContent = ({
       },
       flowGraph: {
         nodes,
-        edges,
+        edges: edges.map((e) => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          sourceHandle: e.sourceHandle,
+          targetHandle: e.targetHandle,
+          type: e.type || "labeled",
+          animated: e.animated !== undefined ? e.animated : true,
+          data: {
+            label: e.data?.label || "",
+          },
+        })),
       },
     };
 
@@ -1206,6 +1235,7 @@ const TemplateFlowCanvasContent = ({
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             defaultEdgeOptions={defaultEdgeOptions}
+            deleteKeyCode={["Backspace", "Delete"]}
             fitView
             minZoom={0.2}
             maxZoom={1.8}
