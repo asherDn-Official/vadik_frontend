@@ -58,7 +58,7 @@ const CustomerRhythm = () => {
       <div className="app-page-shell min-h-0">
       {/* Top Header with Section Options */}
       {!isCreatingTemplate && (
-        <div className="sticky top-0 z-10 flex flex-col gap-4 rounded-[24px] border border-gray-100 bg-white px-4 py-4 shadow-sm sm:px-5 lg:flex-row lg:items-center lg:justify-between lg:px-6">
+        <div className="sticky top-0 z-30 flex flex-col gap-4 rounded-[24px] border border-gray-100 bg-white px-4 py-4 shadow-sm sm:px-5 lg:flex-row lg:items-center lg:justify-between lg:px-6">
           
           <div className="flex items-center gap-2 ">
             <Zap className="text-[#313166] w-6 h-6" />
