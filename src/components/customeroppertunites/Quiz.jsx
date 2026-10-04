@@ -1,20 +1,14 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import QuizList from "./QuizList";
 import QuizForm from "./QuizForm";
 import { ArrowLeft } from "lucide-react";
 import api from "../../api/apiconfig";
+import { canBuildActivityWithAI } from "./activityAICapabilities";
 import showToast from "../../utils/ToastNotification";
 import deleteConfirmTostNotification from "../../utils/deleteConfirmTostNotification";
 
 const Quiz = ({ backButton = true, onClose }) => {
-  const AI_ENABLED_RETAILER_ID =
-  "68a8219ecfbeaf1f70936f07";
-
-const retailerId =
-  localStorage.getItem("retailerId");
-
-const canBuildWithAI =
-  retailerId === AI_ENABLED_RETAILER_ID;
+  const [canBuildWithAI, setCanBuildWithAI] = useState(false);
   const [quizzes, setQuizzes] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState(null);
@@ -36,6 +30,11 @@ const canBuildWithAI =
 
   useEffect(() => {
     getQuizeList();
+    let active = true;
+    canBuildActivityWithAI(api).then((eligible) => {
+      if (active) setCanBuildWithAI(eligible);
+    });
+    return () => { active = false; };
   }, []);
 
   const handlePageChange = (page, limit) => {

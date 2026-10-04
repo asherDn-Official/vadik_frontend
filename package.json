@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:phase0": "node --test tests/phase0/*.test.js",
+    "test:ai-capabilities": "node --test tests/Ai/activity-ai-capabilities.test.js",
     "lint:critical": "npx eslint src/pages/DialogueFlow.jsx src/pages/ForgotPassword.jsx",
     "verify": "npm run test:phase0 && npm run lint:critical && npm run build"
   },
