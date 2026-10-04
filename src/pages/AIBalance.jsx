@@ -929,7 +929,7 @@ const handleTransactionFilter = async (
               <>
                 <div className="divide-y divide-gray-100">
                   {transactions.map(
-                    (transaction) => {
+                    (transaction, index) => {
                       const isCredit =
                         isCreditTransaction(
                           transaction.transactionType,
@@ -937,10 +937,7 @@ const handleTransactionFilter = async (
 
                       return (
                         <div
-                          key={
-                            transaction._id ||
-                            transaction.operationId
-                          }
+                          key={`${transaction.createdAt}-${transaction.transactionType}-${index}`}
                           className="flex items-center gap-4 px-5 py-4 transition hover:bg-gray-50"
                         >
                           <div
@@ -978,9 +975,9 @@ const handleTransactionFilter = async (
                               </span>
                             </div>
 
-                            {transaction.reason && (
+                            {transaction.description && (
                               <p className="mt-1 truncate text-xs text-gray-400">
-                                {transaction.reason}
+                                {transaction.description}
                               </p>
                             )}
                           </div>
@@ -1202,12 +1199,9 @@ const handleTransactionFilter = async (
             ) : (
               <>
                 <div className="divide-y divide-gray-100">
-                  {usageRecords.map((record) => (
+                  {usageRecords.map((record, index) => (
                     <div
-                      key={
-                        record._id ||
-                        record.aiRequestId
-                      }
+                      key={`${record.createdAt}-${record.feature}-${index}`}
                       className="px-5 py-5 transition hover:bg-gray-50"
                     >
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
@@ -1265,12 +1259,6 @@ const handleTransactionFilter = async (
                             </span>
                           </div>
 
-                          <div className="mt-2 text-xs text-gray-400">
-                            Request ID:{" "}
-                            <span className="font-mono">
-                              {record.aiRequestId}
-                            </span>
-                          </div>
                         </div>
 
                         {/* TOKENS */}

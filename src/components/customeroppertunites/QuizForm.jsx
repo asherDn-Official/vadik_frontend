@@ -64,7 +64,7 @@ const QuizForm = ({ quiz, onSave, onCancel, buildWithAI = false }) => {
         })) || []),
       ];
 
-      setAllPreferences(combinedPreferences.filter((item) => ["options", "string", "date"].includes(item.type)));
+      setAllPreferences(combinedPreferences);
       setIsPreferenceDropdownOpen(
         new Array(combinedPreferences.length).fill(false)
       );
@@ -532,6 +532,7 @@ const handleGenerateWithAI = async () => {
                   <div className="relative">
                     <button
                       type="button"
+                      disabled={!["options", "string", "date"].includes(question.type)}
                       onClick={() => togglePreferenceDropdown(qIndex)}
                       className={`flex items-center justify-between w-48 px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none ${
                         errors.questions?.[qIndex]?.key
@@ -547,7 +548,7 @@ const handleGenerateWithAI = async () => {
 
                     {isPreferenceDropdownOpen[qIndex] && (
                       <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
-                        {allPreferences.map((pref) => (
+                        {allPreferences.filter((pref) => ["options", "string", "date"].includes(pref.type)).map((pref) => (
                           <button
                             key={`${pref.key}-${qIndex}`}
                             type="button"
@@ -591,6 +592,7 @@ const handleGenerateWithAI = async () => {
                 render={({ field }) => (
                   <input
                     {...field}
+                    readOnly={!["options", "string", "date"].includes(question.type)}
                     type="text"
                     placeholder="Enter your Question"
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none bg-white ${
@@ -650,7 +652,11 @@ const handleGenerateWithAI = async () => {
               </div>
             )}
 
-            {question.type !== "options" && (
+            {!["options", "string", "date"].includes(question.type) ? (
+              <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                This legacy question type ({question.type}) is preserved as read-only and is not available for Activity AI generation.
+              </div>
+            ) : question.type !== "options" && (
               <div>
                 <input
                   type={
