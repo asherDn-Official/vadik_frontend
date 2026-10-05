@@ -6,6 +6,7 @@ import {
   ACTIVITY_AI_LANGUAGES,
   buildPlanPayload,
   generationErrorMessage,
+  generationFailureReference,
   moveItem,
   resolveGenerationAttempt,
   toggleAudience,
@@ -104,6 +105,17 @@ test("generation errors are customer-friendly and do not expose provider/finance
   assert.doesNotMatch(generationErrorMessage({ response: { status: 500, data: { message: "wallet reservation provider journal stack" } } }), /wallet|provider|journal/i);
 });
 
+test("generation failure retains only safe status, code, and AI request reference", () => {
+  const details = generationFailureReference({ response: { status: 500, data: {
+    code: "AI_INVALID_RESPONSE", aiRequestId: `AI-REQ-${"a".repeat(32)}`,
+    message: "private generated question", providerRequestId: "provider-secret",
+  } } });
+  assert.deepEqual(details, { status: 500, code: "AI_INVALID_RESPONSE", aiRequestId: `AI-REQ-${"a".repeat(32)}` });
+  assert.deepEqual(generationFailureReference({ response: { status: 500, data: {
+    code: "unsafe code", aiRequestId: "provider-secret",
+  } } }), { status: 500, code: null, aiRequestId: null });
+});
+
 test("AI wizard is separate from manual create/edit and does not call paid draft", async () => {
   const quiz = await readFile(new URL("../../src/components/customeroppertunites/Quiz.jsx", import.meta.url), "utf8");
   const form = await readFile(new URL("../../src/components/customeroppertunites/QuizForm.jsx", import.meta.url), "utf8");
@@ -120,6 +132,8 @@ test("AI wizard is separate from manual create/edit and does not call paid draft
   assert.doesNotMatch(wizard, /\/api\/quiz\/ai\/draft/);
   assert.match(wizard, /onClick=\{\(\) => requestGeneration\(\{ newAttempt: true \}\)\}/);
   assert.match(wizard, /reviewedPlan:/);
+  assert.match(wizard, /generationFailureReference\(error\)/);
+  assert.match(wizard, /Reference: \{generationErrorDetails\.aiRequestId\}/);
   assert.match(result, />Regenerate</);
   assert.match(result, />Back to plan</);
   assert.match(result, />Use Activity</);

@@ -10,6 +10,7 @@ import {
   PURPOSE_CATEGORIES,
   buildPlanPayload,
   generationErrorMessage,
+  generationFailureReference,
   moveItem,
   planErrorMessage,
   resolveGenerationAttempt,
@@ -65,6 +66,7 @@ export default function ActivityAiWizard({ onCancel, onUseActivity }) {
   const [audienceSearch, setAudienceSearch] = useState("");
   const [languageSearch, setLanguageSearch] = useState("");
   const [formError, setFormError] = useState("");
+  const [generationErrorDetails, setGenerationErrorDetails] = useState(null);
   const [generatedDraft, setGeneratedDraft] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const generationLock = useRef(false);
@@ -122,6 +124,7 @@ export default function ActivityAiWizard({ onCancel, onUseActivity }) {
     generationLock.current = true;
     setIsGenerating(true);
     setFormError("");
+    setGenerationErrorDetails(null);
     setGeneratedDraft(null);
     const context = buildPlanPayload(values);
     const payload = {
@@ -144,9 +147,11 @@ export default function ActivityAiWizard({ onCancel, onUseActivity }) {
       }
       setGeneratedDraft(draft);
       setFormError("");
+      setGenerationErrorDetails(null);
     } catch (error) {
       const stale = error?.response?.status === 409 && error?.response?.data?.code === "AI_ACTIVITY_PLAN_STALE";
       setFormError(generationErrorMessage(error));
+      setGenerationErrorDetails(generationFailureReference(error));
       if (stale) {
         setPlan(null);
         setSelected([]);
@@ -268,7 +273,7 @@ export default function ActivityAiWizard({ onCancel, onUseActivity }) {
               {plan.questionCountLimitNotice && <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{plan.questionCountLimitNotice}</p>}
               <div className="mt-7 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4"><h3 className="font-semibold text-slate-900">Your plan is ready</h3><p className="mt-1 text-sm text-slate-600">Generate the Activity when youâ€™re ready. Generation uses your AI allowance.</p><button type="button" onClick={() => requestGeneration({ newAttempt: true })} disabled={selected.length === 0} className="mt-4 w-full rounded-lg bg-[#313166] px-5 py-3 font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">Generate Activity</button></div>
             </> : <><h2 className="text-2xl font-semibold text-slate-900">Plan your Activity</h2><p className="mt-2 text-slate-600">{formError || "Your plan has not been loaded."}</p><button type="button" onClick={requestPlan} className="mt-4 rounded-lg bg-[#313166] px-5 py-3 text-sm font-semibold text-white">{formError ? "Review updated plan" : "Create plan"}</button></>}
-            {formError && plan && <div role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{formError}<div className="mt-2 flex flex-wrap gap-3"><button type="button" onClick={() => requestGeneration()} className="font-semibold underline">Retry this request</button><button type="button" onClick={() => requestGeneration({ newAttempt: true })} className="font-semibold underline">Start a new generation</button></div></div>}
+            {formError && plan && <div role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{formError}{generationErrorDetails?.aiRequestId && <p className="mt-2 text-xs text-red-700">Reference: {generationErrorDetails.aiRequestId}</p>}<div className="mt-2 flex flex-wrap gap-3"><button type="button" onClick={() => requestGeneration()} className="font-semibold underline">Retry this request</button><button type="button" onClick={() => requestGeneration({ newAttempt: true })} className="font-semibold underline">Start a new generation</button></div></div>}
           </div>}
         </div>
 

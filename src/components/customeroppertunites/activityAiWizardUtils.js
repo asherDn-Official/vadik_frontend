@@ -95,3 +95,15 @@ export function generationErrorMessage(error) {
   if (status >= 500) return "Vadik could not create this Activity right now. Please try again.";
   return error?.response?.data?.message || "We couldn't create this Activity. Please try again.";
 }
+
+export function generationFailureReference(error) {
+  const data = error?.response?.data || {};
+  const aiRequestId = typeof data.aiRequestId === "string" && /^AI-REQ-[a-f0-9]{32}$/i.test(data.aiRequestId)
+    ? data.aiRequestId
+    : null;
+  const code = typeof data.code === "string" && /^[A-Z][A-Z0-9_]{1,63}$/.test(data.code)
+    ? data.code
+    : null;
+  const status = Number.isInteger(error?.response?.status) ? error.response.status : null;
+  return { status, code, aiRequestId };
+}
