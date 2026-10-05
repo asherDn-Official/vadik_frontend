@@ -5,7 +5,7 @@ import AddOption from "../common/AddOption";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 
-const QuizForm = ({ quiz, onSave, onCancel }) => {
+const QuizForm = ({ quiz, onSave, onCancel, initialDraft = null, focusQuestions = false }) => {
   const {
     register,
     handleSubmit,
@@ -97,8 +97,22 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
           iconName: q.iconName,
         }))
       );
+    } else if (initialDraft) {
+      setValue("title", initialDraft.title || "");
+      setValue("loyaltyPoints", initialDraft.loyaltyPoints || "");
+      setValue("questions", (initialDraft.questions || []).map((question, idx) => ({
+        id: typeof question.id !== "undefined" ? question.id : Date.now() + idx,
+        key: question.key || "",
+        question: question.question || "",
+        type: question.type || "string",
+        section: question.section || "additionalData",
+        options: Array.isArray(question.options) ? question.options : [],
+        iconUrl: question.iconUrl || "",
+        iconName: question.iconName || "",
+      })));
+      if (focusQuestions) document.getElementById("manual-question-0")?.focus();
     }
-  }, [quiz, setValue]);
+  }, [quiz, initialDraft, focusQuestions, setValue]);
 
   const handlePreferenceKeyChange = (questionIndex, key) => {
     const selectedPref = allPreferences.find((item) => item.key === key);
@@ -229,6 +243,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
 
   return (
     <div className="mx-auto">
+      {initialDraft && <p role="status" className="mb-5 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-950">Review this AI draft, make any changes you need, then save it when you’re ready.</p>}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-slate-800">
           {quiz ? "Edit Quiz" : "Create Quiz"}
@@ -363,6 +378,7 @@ const QuizForm = ({ quiz, onSave, onCancel }) => {
                 rules={{ required: "Question text is required" }}
                 render={({ field }) => (
                   <input
+                    id={qIndex === 0 ? "manual-question-0" : undefined}
                     {...field}
                     readOnly={!["options", "string", "date"].includes(question.type)}
                     type="text"

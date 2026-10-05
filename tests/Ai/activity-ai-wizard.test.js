@@ -1,11 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { planActivity } from "../../src/components/customeroppertunites/activityAiApi.js";
+import { generateActivityDraft, planActivity } from "../../src/components/customeroppertunites/activityAiApi.js";
 import {
   ACTIVITY_AI_LANGUAGES,
   buildPlanPayload,
+  generationErrorMessage,
   moveItem,
+  resolveGenerationAttempt,
   toggleAudience,
   validateWizardStep,
 } from "../../src/components/customeroppertunites/activityAiWizardUtils.js";
@@ -40,7 +42,7 @@ test("custom purpose category remains usable without text and category is option
 test("purpose, goal, count, and language validation follows planner contract", () => {
   assert.deepEqual(validateWizardStep(1, { ...validValues, purposeText: "", purposeCategory: "" }), { purpose: "Choose a purpose or describe it in your own words." });
   assert.deepEqual(validateWizardStep(2, { ...validValues, goal: " " }), { goal: "Tell Vadik what you want this Activity to achieve." });
-  assert.deepEqual(validateWizardStep(3, { ...validValues, questionCount: 21 }), { questionCount: "Choose between 1 and 20 questions." });
+  assert.deepEqual(validateWizardStep(3, { ...validValues, questionCount: 11 }), { questionCount: "AI-planned Activities support 1 to 10 questions." });
   assert.deepEqual(validateWizardStep(3, { ...validValues, language: "Telugu" }), { language: "Choose English, Tamil, or Hindi." });
   assert.deepEqual(validateWizardStep(3, validValues), {});
 });
@@ -69,18 +71,62 @@ test("planner API helper posts only to the deterministic plan endpoint", async (
   assert.deepEqual(calls[0][1], payload);
 });
 
+test("generation helper sends reviewed selections and reuses the supplied idempotency key", async () => {
+  const calls = [];
+  const api = { post: async (...args) => { calls.push(args); return { data: { draft: {} } }; } };
+  const payload = { purpose: "Diwali", audience: ["Existing Customers"], goal: "Birthday", questionCount: 1, language: "Tamil", instructions: "Friendly", reviewedPlan: { planVersion: "activity-plan-v1", catalogueFingerprint: "a".repeat(64), requestedQuestionCount: 5, selections: [{ key: "Birthday", section: "advancedDetails" }] } };
+  await generateActivityDraft(api, payload, "same-generation-attempt");
+  await generateActivityDraft(api, payload, "same-generation-attempt");
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0][0], "/api/quiz/ai/draft");
+  assert.deepEqual(calls[0][1], payload);
+  assert.equal(calls[0][2].headers["Idempotency-Key"], "same-generation-attempt");
+  assert.equal(calls[1][2].headers["Idempotency-Key"], calls[0][2].headers["Idempotency-Key"]);
+});
+
+test("generation retry keeps its request identity while regeneration creates a fresh one", () => {
+  const keys = ["attempt-a", "attempt-b"];
+  const createKey = () => keys.shift();
+  const firstPayload = { questionCount: 3 };
+  const attemptA = resolveGenerationAttempt(firstPayload, null, { createKey });
+  const retryPayload = { questionCount: 2 };
+  const retry = resolveGenerationAttempt(retryPayload, attemptA, { createKey });
+  assert.equal(retry.key, "attempt-a");
+  assert.deepEqual(retry.payload, firstPayload);
+  const regenerated = resolveGenerationAttempt(retryPayload, retry, { newAttempt: true, createKey });
+  assert.equal(regenerated.key, "attempt-b");
+  assert.deepEqual(regenerated.payload, retryPayload);
+});
+
+test("generation errors are customer-friendly and do not expose provider/finance messages", () => {
+  assert.match(generationErrorMessage({ response: { status: 409, data: { code: "AI_ACTIVITY_PLAN_STALE" } } }), /preferences changed/);
+  assert.match(generationErrorMessage({ response: { status: 500, data: { message: "wallet reservation provider journal stack" } } }), /could not create/);
+  assert.doesNotMatch(generationErrorMessage({ response: { status: 500, data: { message: "wallet reservation provider journal stack" } } }), /wallet|provider|journal/i);
+});
+
 test("AI wizard is separate from manual create/edit and does not call paid draft", async () => {
   const quiz = await readFile(new URL("../../src/components/customeroppertunites/Quiz.jsx", import.meta.url), "utf8");
   const form = await readFile(new URL("../../src/components/customeroppertunites/QuizForm.jsx", import.meta.url), "utf8");
   const wizard = await readFile(new URL("../../src/components/customeroppertunites/ActivityAiWizard.jsx", import.meta.url), "utf8");
   const apiHelper = await readFile(new URL("../../src/components/customeroppertunites/activityAiApi.js", import.meta.url), "utf8");
+  const result = await readFile(new URL("../../src/components/customeroppertunites/ActivityAiResult.jsx", import.meta.url), "utf8");
+  const quizForm = await readFile(new URL("../../src/components/customeroppertunites/QuizForm.jsx", import.meta.url), "utf8");
   assert.match(quiz, /buildWithAI \? \(/);
   assert.match(quiz, /<ActivityAiWizard/);
   assert.match(quiz, /<QuizForm/);
   assert.doesNotMatch(form, /\/api\/quiz\/ai\/draft/);
   assert.match(apiHelper, /\/api\/quiz\/ai\/plan/);
+  assert.match(apiHelper, /\/api\/quiz\/ai\/draft/);
   assert.doesNotMatch(wizard, /\/api\/quiz\/ai\/draft/);
-  assert.match(wizard, /disabled className=.*Generate Activity/);
+  assert.match(wizard, /onClick=\{\(\) => requestGeneration\(\{ newAttempt: true \}\)\}/);
+  assert.match(wizard, /reviewedPlan:/);
+  assert.match(result, />Regenerate</);
+  assert.match(result, />Back to plan</);
+  assert.match(result, />Use Activity</);
+  assert.match(result, />Edit Questions</);
+  assert.match(quizForm, /initialDraft\.questions/);
+  assert.match(quizForm, /onSubmit/);
+  assert.match(wizard, /generationLock\.current/);
 });
 
 test("only the approved English, Tamil, and Hindi languages are exposed", () => {

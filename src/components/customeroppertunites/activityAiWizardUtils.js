@@ -28,8 +28,8 @@ export function validateWizardStep(step, values) {
   }
   if (step === 3) {
     const count = Number(values.questionCount);
-    if (!Number.isInteger(count) || count < 1 || count > 20) {
-      return { questionCount: "Choose between 1 and 20 questions." };
+    if (!Number.isInteger(count) || count < 1 || count > 10) {
+      return { questionCount: "AI-planned Activities support 1 to 10 questions." };
     }
     if (!ACTIVITY_AI_LANGUAGES.some(({ value }) => value === values.language)) {
       return { language: "Choose English, Tamil, or Hindi." };
@@ -69,6 +69,11 @@ export function moveItem(items, index, direction) {
   return next;
 }
 
+export function resolveGenerationAttempt(payload, currentAttempt, { newAttempt = false, createKey = () => globalThis.crypto.randomUUID() } = {}) {
+  if (newAttempt || !currentAttempt) return { key: createKey(), payload };
+  return currentAttempt;
+}
+
 export function planErrorMessage(error) {
   const status = error?.response?.status;
   if (status === 401) return "Your session has expired. Sign in and try again.";
@@ -76,4 +81,17 @@ export function planErrorMessage(error) {
   if (status === 429) return "Too many planning requests. Please wait a moment and try again.";
   if (status >= 500) return "Vadik could not plan this Activity right now. Please try again.";
   return error?.response?.data?.message || "We couldn't plan this Activity. Check your details and try again.";
+}
+
+export function generationErrorMessage(error) {
+  const status = error?.response?.status;
+  if (status === 401) return "Your session has expired. Sign in and try again.";
+  if (status === 403) return "Activity AI generation is not available for this account.";
+  if (status === 402) return "This Activity could not be generated with the current AI allowance. Check your account and try again.";
+  if (status === 409 && error?.response?.data?.code === "AI_ACTIVITY_PLAN_STALE") return "Your available customer preferences changed. Please review the updated plan.";
+  if (status === 409) return "This generation request could not be safely repeated. Start a new generation to continue.";
+  if (status === 422) return "The reviewed plan could not be generated. Review your selections and try again.";
+  if (status === 429) return "A generation is already in progress or the service is busy. Please wait and try again.";
+  if (status >= 500) return "Vadik could not create this Activity right now. Please try again.";
+  return error?.response?.data?.message || "We couldn't create this Activity. Please try again.";
 }

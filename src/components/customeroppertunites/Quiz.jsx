@@ -17,6 +17,8 @@ const Quiz = ({ backButton = true, onClose }) => {
 
 
   const [buildWithAI, setBuildWithAI] = useState(false);
+  const [aiDraftForEditor, setAiDraftForEditor] = useState(null);
+  const [focusAiQuestions, setFocusAiQuestions] = useState(false);
 
   async function getQuizeList(page = 1, limit = 10) {
     try {
@@ -45,18 +47,23 @@ const Quiz = ({ backButton = true, onClose }) => {
 
   const handleCreate = () => {
     setEditingQuiz(null);
+    setAiDraftForEditor(null);
+    setFocusAiQuestions(false);
     setBuildWithAI(false);
     setShowForm(true);
   };
 
   const handleBuildWithAI = () => {
     setEditingQuiz(null);
+    setAiDraftForEditor(null);
     setBuildWithAI(true);
     setShowForm(true);
   };
 
   const handleEdit = (quiz) => {
     setEditingQuiz(quiz);
+    setAiDraftForEditor(null);
+    setFocusAiQuestions(false);
     setBuildWithAI(false);
     setShowForm(true);
   };
@@ -66,6 +73,15 @@ const Quiz = ({ backButton = true, onClose }) => {
 
     setShowForm(false);
     setEditingQuiz(null);
+    setBuildWithAI(false);
+    setAiDraftForEditor(null);
+    setFocusAiQuestions(false);
+  };
+
+  const handleUseAiDraft = (draft, focusQuestions) => {
+    setEditingQuiz(null);
+    setAiDraftForEditor(draft);
+    setFocusAiQuestions(focusQuestions);
     setBuildWithAI(false);
   };
 
@@ -94,6 +110,7 @@ const Quiz = ({ backButton = true, onClose }) => {
               onClick={() => {
                 setShowForm(false);
                 setBuildWithAI(false);
+                setAiDraftForEditor(null);
 
                 if (onClose) {
                   onClose();
@@ -110,12 +127,19 @@ const Quiz = ({ backButton = true, onClose }) => {
             <ActivityAiWizard onCancel={() => {
               setShowForm(false);
               setBuildWithAI(false);
-            }} />
+              setAiDraftForEditor(null);
+            }} onUseActivity={handleUseAiDraft} />
           ) : (
             <QuizForm
               quiz={editingQuiz}
               onSave={handleSave}
-              onCancel={() => setShowForm(false)}
+              initialDraft={aiDraftForEditor}
+              focusQuestions={focusAiQuestions}
+              onCancel={() => {
+                setShowForm(false);
+                setAiDraftForEditor(null);
+                setFocusAiQuestions(false);
+              }}
             />
           )}
         </div>
