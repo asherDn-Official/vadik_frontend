@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import QuizList from "./QuizList";
 import QuizForm from "./QuizForm";
+import ActivityAiWizard from "./ActivityAiWizard";
 import { ArrowLeft } from "lucide-react";
 import api from "../../api/apiconfig";
 import { canBuildActivityWithAI } from "./activityAICapabilities";
@@ -105,15 +106,18 @@ const Quiz = ({ backButton = true, onClose }) => {
             </button>
           )}
 
-          <QuizForm
-            quiz={editingQuiz}
-            onSave={handleSave}
-            onCancel={() => {
+          {buildWithAI ? (
+            <ActivityAiWizard onCancel={() => {
               setShowForm(false);
               setBuildWithAI(false);
-            }}
-            buildWithAI={buildWithAI}
-          />
+            }} />
+          ) : (
+            <QuizForm
+              quiz={editingQuiz}
+              onSave={handleSave}
+              onCancel={() => setShowForm(false)}
+            />
+          )}
         </div>
       </div>
     );
