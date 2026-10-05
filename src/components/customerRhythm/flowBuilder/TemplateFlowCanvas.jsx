@@ -1212,14 +1212,14 @@ const TemplateFlowCanvasContent = ({
             <span>+ Template Node</span>
           </button>
 
-          <button
+          {/* <button
             onClick={handleAddActionNode}
             className="flex items-center gap-2 px-3 py-2 bg-amber-800 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-md transition-all group"
             title="Add a CRM Tag Action"
           >
             <Tag size={15} className="text-amber-300 group-hover:scale-110 transition-transform" />
             <span>+ Tag Action</span>
-          </button>
+          </button> */}
         </div>
 
         {/* Center: ReactFlow Canvas */}
