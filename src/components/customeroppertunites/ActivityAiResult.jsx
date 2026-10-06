@@ -10,7 +10,7 @@ export default function ActivityAiResult({ draft, preferences = [], onUse, onEdi
         <header className="border-b border-slate-100 px-5 py-6 sm:px-8">
           <p className="flex items-center gap-2 text-sm font-semibold text-emerald-700"><CheckCircle2 size={18} /> Your Activity is ready</p>
           <h1 className="mt-3 text-2xl font-semibold text-slate-900">{draft.title}</h1>
-          <p className="mt-1 text-sm text-slate-600">{draft.questions.length} questions · review before saving</p>
+          <p className="mt-1 text-sm text-slate-600">{draft.questions.length} questions - review before saving</p>
         </header>
         <ol className="space-y-3 px-5 py-6 sm:px-8">
           {draft.questions.map((question, index) => {

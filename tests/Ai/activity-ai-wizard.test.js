@@ -5,6 +5,7 @@ import { generateActivityDraft, planActivity } from "../../src/components/custom
 import {
   ACTIVITY_AI_LANGUAGES,
   buildPlanPayload,
+  canRetryGeneration,
   generationErrorMessage,
   generationFailureReference,
   moveItem,
@@ -103,6 +104,35 @@ test("generation errors are customer-friendly and do not expose provider/finance
   assert.match(generationErrorMessage({ response: { status: 409, data: { code: "AI_ACTIVITY_PLAN_STALE" } } }), /preferences changed/);
   assert.match(generationErrorMessage({ response: { status: 500, data: { message: "wallet reservation provider journal stack" } } }), /could not create/);
   assert.doesNotMatch(generationErrorMessage({ response: { status: 500, data: { message: "wallet reservation provider journal stack" } } }), /wallet|provider|journal/i);
+});
+
+test("invalid model output does not offer same-key retry and new generation requires explicit confirmation", async () => {
+  const error = { response: { status: 500, data: { code: "AI_INVALID_RESPONSE", aiRequestId: `AI-REQ-${"b".repeat(32)}` } } };
+  assert.equal(canRetryGeneration(error), false);
+  assert.match(generationErrorMessage(error), /No AI allowance was used/);
+  const wizard = await readFile(new URL("../../src/components/customeroppertunites/ActivityAiWizard.jsx", import.meta.url), "utf8");
+  assert.match(wizard, /canRetryAttempt && <button[\s\S]*?Retry this request/);
+  assert.match(wizard, /setConfirmNewGeneration\(true\)[\s\S]{0,200}Start a new generation/);
+  assert.match(wizard, /Start a new AI generation\?/);
+  assert.match(wizard, /onClick=\{\(\) => requestGeneration\(\{ newAttempt: true \}\)\}/);
+});
+
+test("transient network failures retain a safe same-attempt retry", () => {
+  assert.equal(canRetryGeneration(new Error("network disconnected")), true);
+  assert.equal(canRetryGeneration({ response: { status: 408 } }), true);
+  assert.equal(canRetryGeneration({ response: { status: 500 } }), false);
+});
+
+test("Activity AI user-facing source contains no known mojibake sequences", async () => {
+  const files = [
+    "ActivityAiWizard.jsx", "ActivityAiResult.jsx", "activityAiWizardUtils.js",
+    "activityAiApi.js", "Quiz.jsx", "QuizForm.jsx",
+  ];
+  const suspicious = /â€™|â€œ|â€|â€¦|Ã—|Â·|[ÃÂâ]|�/;
+  for (const file of files) {
+    const source = await readFile(new URL(`../../src/components/customeroppertunites/${file}`, import.meta.url), "utf8");
+    assert.doesNotMatch(source, suspicious, `${file} contains a mojibake sequence`);
+  }
 });
 
 test("generation failure retains only safe status, code, and AI request reference", () => {
