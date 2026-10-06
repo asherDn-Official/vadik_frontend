@@ -65,14 +65,41 @@ const Login = () => {
     setSuccessMessage("");
   };
 
+  // const getErrorMessage = (err, fallback) => {
+  //   return (
+  //     err.response?.data?.message ||
+  //     err.response?.data?.error ||
+  //     err.message ||
+  //     fallback
+  //   );
+  // };
+
+
   const getErrorMessage = (err, fallback) => {
+  // Catch Rate Limiter (HTTP 429)
+  if (err.response?.status === 429) {
     return (
       err.response?.data?.message ||
-      err.response?.data?.error ||
-      err.message ||
-      fallback
+      err.response?.data ||
+      "Too many requests. Please wait a few minutes before trying again."
     );
-  };
+  }
+
+  // Catch Account Lockout (HTTP 423)
+  if (err.response?.status === 423) {
+    return (
+      err.response?.data?.message ||
+      "Account temporary locked due to security reasons. Please try again later."
+    );
+  }
+
+  return (
+    err.response?.data?.message ||
+    err.response?.data?.error ||
+    err.message ||
+    fallback
+  );
+};
 
   const handleLoginChange = (e) => {
     const { name, value } = e.target;
@@ -97,39 +124,108 @@ const Login = () => {
     }));
   };
 
-  const validateRegistration = () => {
-    const trimmedName = registrationData.fullName.trim();
-    const trimmedStoreName = registrationData.storeName.trim();
-    const trimmedEmail = registrationData.email.trim();
+  // const validateRegistration = () => {
+  //   const trimmedName = registrationData.fullName.trim();
+  //   const trimmedStoreName = registrationData.storeName.trim();
+  //   const trimmedEmail = registrationData.email.trim();
 
-    if (!trimmedName) return "Business owner name is required";
+  //   if (!trimmedName) return "Business owner name is required";
 
-    if (trimmedName.length < 3) {
-      return "Business owner name must be at least 3 characters";
+  //   if (trimmedName.length < 3) {
+  //     return "Business owner name must be at least 3 characters";
+  //   }
+
+  //   if (!trimmedStoreName) return "Business name is required";
+
+  //   if (!/^\d{4,14}$/.test(registrationData.phone)) {
+  //     return "Enter a valid mobile number";
+  //   }
+
+  //   if (!trimmedEmail) return "Email address is required";
+
+  //   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+  //     return "Enter a valid email address";
+  //   }
+
+  //   if (registrationData.password.length < 8) {
+  //     return "Password must be at least 8 characters";
+  //   }
+
+  //   if (registrationData.password !== registrationData.confirmPassword) {
+  //     return "Password and confirm password must match";
+  //   }
+
+  //   return "";
+  // };
+
+
+ const validateRegistration = () => {
+  const trimmedName = registrationData.fullName.trim();
+  const trimmedEmail = registrationData.email.trim();
+  const rawPhone = registrationData.phone.replace(/\D/g, ""); // Strip hyphens/spaces
+  const password = registrationData.password || "";
+  const confirmPassword = registrationData.confirmPassword || "";
+
+  // 1. Full Name (Supports international accented names like Renée Müller)
+  if (!trimmedName) return "Business owner name is required";
+  if (trimmedName.length < 2 || trimmedName.length > 80) {
+    return "Business owner name must be between 2 and 80 characters";
+  }
+  if (!/^[\p{L}\s'-]+$/u.test(trimmedName)) {
+    return "Business owner name can only contain letters, spaces, hyphens, and apostrophes";
+  }
+
+  // 2. Business Name
+  if (!registrationData.storeName.trim()) {
+    return "Business name is required";
+  }
+
+  // 3. Phone Number Validation (Strict 10 digits for India +91, or 7-15 digits generally)
+  if (registrationData.phoneCode === "+91") {
+    if (!/^[6-9]\d{9}$/.test(rawPhone)) {
+      return "Please enter a valid 10-digit mobile number";
     }
+  } else if (rawPhone.length < 7 || rawPhone.length > 15) {
+    return "Please enter a valid mobile number (7–15 digits)";
+  }
 
-    if (!trimmedStoreName) return "Business name is required";
+  // 4. Email Validation
+  if (!trimmedEmail) return "Email address is required";
+  if (trimmedEmail.length > 254) return "Email address cannot exceed 254 characters";
+  
+  // Standard email format check
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(trimmedEmail)) {
+    return "Please enter a valid email address";
+  }
+  
+  // Optional check to warn/block common typo gmail.co
+  if (trimmedEmail.toLowerCase().endsWith("@gmail.co")) {
+    return "Did you mean @gmail.com? Please check your email extension.";
+  }
 
-    if (!/^\d{4,14}$/.test(registrationData.phone)) {
-      return "Enter a valid mobile number";
-    }
+  // 5. Password Complexity Validation (Includes # and all symbols)
+  if (password.length < 8 || password.length > 128) {
+    return "Password must be between 8 and 128 characters";
+  }
 
-    if (!trimmedEmail) return "Email address is required";
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  // Added # and full special character support
+  const hasSpecial = /[@$!%*?&#^()+=~_\-\[\]{}|\\:;"'<>,./?]/.test(password);
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      return "Enter a valid email address";
-    }
+  if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+    return "Password must include at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character";
+  }
 
-    if (registrationData.password.length < 8) {
-      return "Password must be at least 8 characters";
-    }
+  if (password !== confirmPassword) {
+    return "Password and confirm password must match";
+  }
 
-    if (registrationData.password !== registrationData.confirmPassword) {
-      return "Password and confirm password must match";
-    }
+  return ""; // All valid!
+};
 
-    return "";
-  };
 
   const handleRegistrationSubmit = async (e) => {
     e.preventDefault();
@@ -204,70 +300,125 @@ const Login = () => {
     }
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   resetMessages();
+
+  //   setLoading(true);
+
+  //   try {
+  //     const endpoint =
+  //       activePortal === "retailer"
+  //         ? "api/auth/retailerLogin"
+  //         : "api/auth/staffLogin";
+
+  //     const response = await api.post(endpoint, {
+  //       email: credentials.email,
+  //       password: credentials.password,
+  //     });
+
+  //     const data = response.data;
+  //     const retailerOnboardingCompleted =
+  //       data.retailer?.onboardingCompleted === true ||
+  //       data.retailer?.onboarding === true;
+
+  //     if (data.token) {
+  //         if (!hasShownLoginNotification.current) {
+  //   hasShownLoginNotification.current = true;
+
+  //   if (Notification.permission === "granted") {
+  //     // new Notification("Login Successful", {
+  //     //   body: "You have successfully logged in",
+  //     // });
+  //   }
+  // }
+  //       if (activePortal === "retailer") {
+  //         localStorage.setItem("email", credentials.email);
+  //       }
+  //       localStorage.setItem("token", data.token);
+
+  //       const authResponse = await checkAuth();
+
+  //       if (activePortal === "retailer" && data.retailer?._id) {
+  //         localStorage.setItem("retailerId", data.retailer._id);
+
+  //         if (retailerOnboardingCompleted) {
+  //           navigate("/dashboard");
+  //         } else {
+  //           navigate(`/register/basic/${data.retailer._id}`);
+  //         }
+  //       }
+
+  //       if (activePortal === "staff" && data.staff?._id) {
+  //         const navigatePath = getModulePath(
+  //           authResponse.user.permissions[0].module,
+  //         );
+
+  //         navigate(navigatePath);
+  //       }
+  //     }
+  //   } catch (err) {
+  //     setError(getErrorMessage(err, "Login failed"));
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  resetMessages();
+  setLoading(true);
 
-    resetMessages();
+  try {
+    const endpoint =
+      activePortal === "retailer"
+        ? "api/auth/retailerLogin"
+        : "api/auth/staffLogin";
 
-    setLoading(true);
+    const response = await api.post(endpoint, {
+      email: credentials.email,
+      password: credentials.password,
+    });
 
-    try {
-      const endpoint =
-        activePortal === "retailer"
-          ? "api/auth/retailerLogin"
-          : "api/auth/staffLogin";
+    const data = response.data;
+    const retailerOnboardingCompleted =
+      data.retailer?.onboardingCompleted === true ||
+      data.retailer?.onboarding === true;
 
-      const response = await api.post(endpoint, {
-        email: credentials.email,
-        password: credentials.password,
-      });
+    if (data.token) {
+      if (activePortal === "retailer") {
+        localStorage.setItem("email", credentials.email);
+      }
+      localStorage.setItem("token", data.token);
 
-      const data = response.data;
-      const retailerOnboardingCompleted =
-        data.retailer?.onboardingCompleted === true ||
-        data.retailer?.onboarding === true;
+      const authResponse = await checkAuth();
 
-      if (data.token) {
-          if (!hasShownLoginNotification.current) {
-    hasShownLoginNotification.current = true;
+      if (activePortal === "retailer" && data.retailer?._id) {
+        localStorage.setItem("retailerId", data.retailer._id);
 
-    if (Notification.permission === "granted") {
-      // new Notification("Login Successful", {
-      //   body: "You have successfully logged in",
-      // });
-    }
-  }
-        if (activePortal === "retailer") {
-          localStorage.setItem("email", credentials.email);
-        }
-        localStorage.setItem("token", data.token);
-
-        const authResponse = await checkAuth();
-
-        if (activePortal === "retailer" && data.retailer?._id) {
-          localStorage.setItem("retailerId", data.retailer._id);
-
-          if (retailerOnboardingCompleted) {
-            navigate("/dashboard");
-          } else {
-            navigate(`/register/basic/${data.retailer._id}`);
-          }
-        }
-
-        if (activePortal === "staff" && data.staff?._id) {
-          const navigatePath = getModulePath(
-            authResponse.user.permissions[0].module,
-          );
-
-          navigate(navigatePath);
+        if (retailerOnboardingCompleted) {
+          navigate("/dashboard");
+        } else {
+          navigate(`/register/basic/${data.retailer._id}`);
         }
       }
-    } catch (err) {
-      setError(getErrorMessage(err, "Login failed"));
-    } finally {
-      setLoading(false);
+
+      if (activePortal === "staff" && data.staff?._id) {
+        const navigatePath = getModulePath(
+          authResponse.user.permissions[0].module,
+        );
+        navigate(navigatePath);
+      }
     }
-  };
+  } catch (err) {
+    // Correctly captures 429 rate limits, 423 lockouts, and standard login errors
+    setError(getErrorMessage(err, "Login failed. Please check your credentials."));
+  } finally {
+    setLoading(false);
+  }
+};
 
   const animationVariants = {
     initial: {
@@ -520,12 +671,13 @@ const Login = () => {
                 Create Business Account
               </h1>
 
-              <form onSubmit={handleRegistrationSubmit} className="space-y-4">
+              <form onSubmit={handleRegistrationSubmit} className="space-y-4" noValidate>
                 <input
                   type="text"
                   name="fullName"
                   value={registrationData.fullName}
                   onChange={handleRegistrationChange}
+                  maxLength={80}
                   placeholder="Business owner full name"
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 placeholder-white/60 focus:outline-none"
                   required
@@ -592,6 +744,7 @@ const Login = () => {
                   name="email"
                   value={registrationData.email}
                   onChange={handleRegistrationChange}
+                  maxLength={254}
                   placeholder="Business email"
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 placeholder-white/60 focus:outline-none"
                   required
@@ -603,6 +756,7 @@ const Login = () => {
                     name="password"
                     value={registrationData.password}
                     onChange={handleRegistrationChange}
+                    maxLength={128}
                     placeholder="Create password"
                     className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 placeholder-white/60 focus:outline-none pr-12"
                     required
@@ -622,6 +776,27 @@ const Login = () => {
                     )}
                   </button>
                 </div>
+
+               {/* Live Password Criteria Visualizer */}
+{registrationData.password && (
+  <div className="text-xs grid grid-cols-2 gap-1 mt-2 px-1 text-white/80">
+    <div className={registrationData.password.length >= 8 && registrationData.password.length <= 128 ? "text-green-400" : "text-white/50"}>
+      ✓ 8–128 characters
+    </div>
+    <div className={/[A-Z]/.test(registrationData.password) ? "text-green-400" : "text-white/50"}>
+      ✓ 1 Uppercase letter
+    </div>
+    <div className={/[a-z]/.test(registrationData.password) ? "text-green-400" : "text-white/50"}>
+      ✓ 1 Lowercase letter
+    </div>
+    <div className={/\d/.test(registrationData.password) ? "text-green-400" : "text-white/50"}>
+      ✓ 1 Number
+    </div>
+    <div className={/[@$!%*?&_\-#^()+=~`]/.test(registrationData.password) ? "text-green-400" : "text-white/50"}>
+      ✓ 1 Special character
+    </div>
+  </div>
+)}
 
                 <div className="relative">
                   <input
