@@ -918,7 +918,8 @@ const TemplateFlowCanvasContent = ({
   const initSimulator = useCallback((currentNodes = nodes, currentEdges = edges) => {
     const triggerNode = currentNodes.find((n) => n.type === "trigger");
     const firstEdge = currentEdges.find((e) => e.source === triggerNode?.id);
-    const rootTemplateNode = currentNodes.find((n) => n.id === firstEdge?.target);
+    const rootNode = currentNodes.find((n) => n.id === firstEdge?.target) ||
+                     currentNodes.find((n) => n.type === "template" || n.type === "static_message");
 
     const userMsg = {
       id: "sim_u_1",
@@ -929,22 +930,51 @@ const TemplateFlowCanvasContent = ({
 
     let initialMessages = [userMsg];
 
-    if (rootTemplateNode) {
-      const isUnselected = !rootTemplateNode.data?.templateName || rootTemplateNode.data?.status === "NOT_SELECTED";
-      const botMsg = {
-        id: "sim_b_1",
-        sender: "bot",
-        nodeId: rootTemplateNode.id,
-        templateName: rootTemplateNode.data?.templateName || "Step 1 Template",
-        headerMediaType: rootTemplateNode.data?.headerMediaType || rootTemplateNode.data?.headerFormat || null,
-        mediaUrl: rootTemplateNode.data?.mediaUrl || null,
-        bodyText: isUnselected
-          ? "⚠️ No template selected for this step yet. Click the template node to attach one."
-          : rootTemplateNode.data?.bodyText || "Welcome! Please choose an option:",
-        buttons: rootTemplateNode.data?.buttons || [],
-        time: "Just now",
-      };
-      initialMessages.push(botMsg);
+    if (rootNode) {
+      if (rootNode.type === "static_message") {
+        const botMsg = {
+          id: "sim_b_1",
+          sender: "bot",
+          nodeId: rootNode.id,
+          nodeType: "static_message",
+          templateName: rootNode.data?.title || "Static Interactive Step",
+          headerText: rootNode.data?.headerText || null,
+          headerMediaType: rootNode.data?.headerMediaType || rootNode.data?.headerFormat || null,
+          mediaUrl: rootNode.data?.mediaUrl || null,
+          bodyText: rootNode.data?.bodyText || "Hello 👋 How can we help you today?",
+          footerText: rootNode.data?.footerText || null,
+          buttons: rootNode.data?.buttons || [],
+          time: "Just now",
+        };
+        initialMessages.push(botMsg);
+      } else if (rootNode.type === "template") {
+        const isUnselected = !rootNode.data?.templateName || rootNode.data?.status === "NOT_SELECTED";
+        const botMsg = {
+          id: "sim_b_1",
+          sender: "bot",
+          nodeId: rootNode.id,
+          nodeType: "template",
+          templateName: rootNode.data?.templateName || "Step 1 Template",
+          headerText: rootNode.data?.headerText || null,
+          headerMediaType: rootNode.data?.headerMediaType || rootNode.data?.headerFormat || null,
+          mediaUrl: rootNode.data?.mediaUrl || null,
+          bodyText: isUnselected
+            ? "⚠️ No template selected for this step yet. Click the template node to attach one."
+            : rootNode.data?.bodyText || "Welcome! Please choose an option:",
+          footerText: rootNode.data?.footerText || null,
+          buttons: rootNode.data?.buttons || [],
+          time: "Just now",
+        };
+        initialMessages.push(botMsg);
+      } else if (rootNode.type === "action") {
+        const actionMsg = {
+          id: "sim_a_1",
+          sender: "system",
+          text: `⚡ Action Executed: ${rootNode.data?.label || "Tag Customer"}`,
+          time: "Just now",
+        };
+        initialMessages.push(actionMsg);
+      }
     }
 
     setSimMessages(initialMessages);
@@ -964,35 +994,69 @@ const TemplateFlowCanvasContent = ({
       time: "Just now",
     };
 
-    // Find matching edge from that button handle
+    // Find matching edge from that button handle or id
     const targetEdge = edges.find(
-      (e) => e.source === sourceNodeId && (e.sourceHandle === `btn_${btnIndex}` || e.sourceHandle === "default")
+      (e) =>
+        e.source === sourceNodeId &&
+        (e.sourceHandle === `btn_${btnIndex}` ||
+          e.sourceHandle === `button_${btnIndex}` ||
+          e.sourceHandle === String(btnIndex) ||
+          e.sourceHandle === "default" ||
+          e.id?.includes(`btn_${btnIndex}`) ||
+          e.id?.includes(`button_${btnIndex}`))
     );
 
     if (targetEdge) {
       const targetNode = nodes.find((n) => n.id === targetEdge.target);
 
-      if (targetNode?.type === "template") {
+      if (targetNode?.type === "static_message") {
+        const botReplyMsg = {
+          id: `sim_b_${Date.now()}`,
+          sender: "bot",
+          nodeId: targetNode.id,
+          nodeType: "static_message",
+          templateName: targetNode.data?.title || "Static Interactive Step",
+          headerText: targetNode.data?.headerText || null,
+          headerMediaType: targetNode.data?.headerMediaType || targetNode.data?.headerFormat || null,
+          mediaUrl: targetNode.data?.mediaUrl || null,
+          bodyText: targetNode.data?.bodyText || "Hello 👋 How can we help you today?",
+          footerText: targetNode.data?.footerText || null,
+          buttons: targetNode.data?.buttons || [],
+          time: "Just now",
+        };
+        setSimMessages((prev) => [...prev, userClickMsg, botReplyMsg]);
+      } else if (targetNode?.type === "template") {
         const isUnselected = !targetNode.data?.templateName || targetNode.data?.status === "NOT_SELECTED";
         const botReplyMsg = {
           id: `sim_b_${Date.now()}`,
           sender: "bot",
           nodeId: targetNode.id,
+          nodeType: "template",
           templateName: targetNode.data?.templateName || "Follow-up Template",
+          headerText: targetNode.data?.headerText || null,
           headerMediaType: targetNode.data?.headerMediaType || targetNode.data?.headerFormat || null,
           mediaUrl: targetNode.data?.mediaUrl || null,
           bodyText: isUnselected
             ? "⚠️ No template message attached to this step."
             : targetNode.data?.bodyText || "Proceeding...",
+          footerText: targetNode.data?.footerText || null,
           buttons: targetNode.data?.buttons || [],
           time: "Just now",
         };
         setSimMessages((prev) => [...prev, userClickMsg, botReplyMsg]);
-      } else {
+      } else if (targetNode?.type === "action") {
         const actionMsg = {
           id: `sim_a_${Date.now()}`,
           sender: "system",
           text: `⚡ Action Executed: ${targetNode?.data?.label || "Tag Customer"}`,
+          time: "Just now",
+        };
+        setSimMessages((prev) => [...prev, userClickMsg, actionMsg]);
+      } else {
+        const actionMsg = {
+          id: `sim_a_${Date.now()}`,
+          sender: "system",
+          text: `⚡ Step: ${targetNode?.data?.label || targetNode?.id || "Step Executed"}`,
           time: "Just now",
         };
         setSimMessages((prev) => [...prev, userClickMsg, actionMsg]);
@@ -1001,11 +1065,63 @@ const TemplateFlowCanvasContent = ({
       const fallbackMsg = {
         id: `sim_f_${Date.now()}`,
         sender: "bot",
-        text: `✅ Selected: *${btnText}*\n(No follow-up template connected to this button on canvas)`,
+        text: `✅ Selected: *${btnText}*\n(No follow-up step connected to this button on canvas)`,
         time: "Just now",
       };
       setSimMessages((prev) => [...prev, userClickMsg, fallbackMsg]);
     }
+  };
+
+  const handleSimInboundSubmit = (inputText) => {
+    if (!inputText || !inputText.trim()) return;
+    const cleanInput = inputText.trim().toLowerCase();
+
+    // 1. Check if input matches any button on the last bot message
+    const lastBotMsg = [...simMessages].reverse().find((m) => m.sender === "bot" && m.buttons?.length > 0);
+    if (lastBotMsg && lastBotMsg.buttons) {
+      const matchedBtnIndex = lastBotMsg.buttons.findIndex((b, idx) => {
+        const bText = (b.text || b.label || "").trim().toLowerCase();
+        return (
+          bText === cleanInput ||
+          cleanInput === `btn_${idx}` ||
+          cleanInput === `button_${idx}` ||
+          cleanInput === String(idx + 1)
+        );
+      });
+
+      if (matchedBtnIndex !== -1) {
+        const btn = lastBotMsg.buttons[matchedBtnIndex];
+        handleSimButtonClick(matchedBtnIndex, btn.text || btn.label, lastBotMsg.nodeId);
+        setSimUserInboundText("");
+        return;
+      }
+    }
+
+    // 2. Check if input matches trigger keyword -> reset/start flow
+    const triggerNode = nodes.find((n) => n.type === "trigger");
+    const rawKeywords = String(triggerNode?.data?.keyword || "HI, MENU, START")
+      .split(",")
+      .map((k) => k.trim().toLowerCase())
+      .filter(Boolean);
+
+    if (rawKeywords.includes(cleanInput) || triggerNode?.data?.triggerType === "all_inbound") {
+      initSimulator();
+      setSimUserInboundText("");
+      return;
+    }
+
+    // 3. Fallback generic response
+    setSimMessages((prev) => [
+      ...prev,
+      { id: `sim_u_${Date.now()}`, sender: "user", text: inputText.trim(), time: "Just now" },
+      {
+        id: `sim_f_${Date.now()}`,
+        sender: "bot",
+        text: `🤖 Received: "${inputText.trim()}". To trigger this bot flow, send one of the trigger keywords: *${triggerNode?.data?.keyword || "HI"}* or click a button above.`,
+        time: "Just now",
+      },
+    ]);
+    setSimUserInboundText("");
   };
 
   // Save Automation Handler (Seamless Draft anytime, guarded Active publish)
@@ -2302,15 +2418,37 @@ const TemplateFlowCanvasContent = ({
                           </div>
                         )}
                         <div className="p-3 space-y-1.5">
-                          <p className="font-bold text-[#313166] text-[10px] border-b border-gray-100 pb-1">
-                            {msg.templateName}
-                          </p>
+                          {msg.nodeType === "static_message" ? (
+                            <div className="flex items-center justify-between border-b border-gray-100 pb-1">
+                              <span className="font-bold text-cyan-900 text-[10px] flex items-center gap-1">
+                                <Zap size={11} className="text-cyan-600 fill-cyan-600" />
+                                {msg.templateName || "Static Message"}
+                              </span>
+                              <span className="px-1.5 py-0.5 bg-cyan-100 text-cyan-800 text-[8px] font-bold rounded">
+                                Live Interactive
+                              </span>
+                            </div>
+                          ) : (
+                            <p className="font-bold text-[#313166] text-[10px] border-b border-gray-100 pb-1">
+                              {msg.templateName}
+                            </p>
+                          )}
+                          {msg.headerText && (
+                            <p className="font-bold text-xs text-gray-900 pt-0.5">
+                              {msg.headerText}
+                            </p>
+                          )}
                           <div
                             className="text-gray-700 leading-relaxed text-[11px]"
                             dangerouslySetInnerHTML={{
                               __html: renderWhatsAppFormattedText(msg.bodyText || msg.text || ""),
                             }}
                           />
+                          {msg.footerText && (
+                            <p className="text-[9px] text-gray-400 italic pt-0.5">
+                              {msg.footerText}
+                            </p>
+                          )}
                           <span className="text-[8px] text-gray-400 block text-right">{msg.time}</span>
                         </div>
 
@@ -2321,7 +2459,7 @@ const TemplateFlowCanvasContent = ({
                               <button
                                 key={bIdx}
                                 onClick={() => handleSimButtonClick(bIdx, b.text || b.label, msg.nodeId)}
-                                className="w-full py-2 px-3 text-center text-[#00A884] hover:bg-[#E7FFDB]/60 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-98"
+                                className="w-full py-2 px-3 text-center text-[#00A884] hover:bg-[#E7FFDB]/60 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 active:scale-98 cursor-pointer"
                               >
                                 <CornerDownRight size={11} />
                                 {b.text || b.label}
@@ -2343,26 +2481,18 @@ const TemplateFlowCanvasContent = ({
                   onChange={(e) => setSimUserInboundText(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && simUserInboundText.trim()) {
-                      setSimMessages((prev) => [
-                        ...prev,
-                        { id: `sim_u_${Date.now()}`, sender: "user", text: simUserInboundText, time: "Just now" },
-                      ]);
-                      setSimUserInboundText("");
+                      handleSimInboundSubmit(simUserInboundText);
                     }
                   }}
-                  placeholder="Type simulated message..."
+                  placeholder="Type message or click button above..."
                   className="flex-1 px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none"
                 />
                 <button
                   onClick={() => {
                     if (!simUserInboundText.trim()) return;
-                    setSimMessages((prev) => [
-                      ...prev,
-                      { id: `sim_u_${Date.now()}`, sender: "user", text: simUserInboundText, time: "Just now" },
-                    ]);
-                    setSimUserInboundText("");
+                    handleSimInboundSubmit(simUserInboundText);
                   }}
-                  className="p-1.5 bg-[#075E54] text-white rounded-xl hover:bg-[#064d45]"
+                  className="p-1.5 bg-[#075E54] text-white rounded-xl hover:bg-[#064d45] cursor-pointer"
                 >
                   <Send size={13} />
                 </button>
