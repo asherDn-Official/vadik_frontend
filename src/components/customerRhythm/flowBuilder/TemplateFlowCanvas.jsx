@@ -45,9 +45,13 @@ import {
   Image,
   Video,
   File,
+  MessageSquare,
+  DollarSign,
+  Info,
 } from "lucide-react";
 import TriggerNode from "./TriggerNode";
 import TemplateNode from "./TemplateNode";
+import StaticMessageNode from "./StaticMessageNode";
 import ActionNode from "./ActionNode";
 import LabeledEdge from "./LabeledEdge";
 import TemplateBuilder from "../TemplateBuilder";
@@ -58,6 +62,7 @@ import api from "../../../api/apiconfig";
 const nodeTypes = {
   trigger: TriggerNode,
   template: TemplateNode,
+  static_message: StaticMessageNode,
   action: ActionNode,
 };
 
@@ -346,6 +351,7 @@ const TemplateFlowCanvasContent = ({
   const [isTemplateBuilderOpen, setIsTemplateBuilderOpen] = useState(false);
   const [templateBuilderPrefill, setTemplateBuilderPrefill] = useState(null);
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
+  const [isNodeGuideOpen, setIsNodeGuideOpen] = useState(false);
 
   // Live WhatsApp Simulator State
   const [simMessages, setSimMessages] = useState([]);
@@ -515,23 +521,36 @@ const TemplateFlowCanvasContent = ({
     const sourceNode = currentNodes.find((n) => n.id === sourceId);
     if (!sourceNode) return;
 
-    const newId = getNextNodeId("template");
+    const isSourceStatic = sourceNode.type === "static_message";
+    const newNodeType = isSourceStatic ? "static_message" : "template";
+    const newId = getNextNodeId(isSourceStatic ? "static" : "template");
     const nextX = sourceNode.position.x + 380;
     const nextY = sourceNode.position.y + (sourceHandle?.startsWith("btn_") ? (parseInt(sourceHandle.replace("btn_", "")) * 140) - 40 : 0);
 
     const newNode = {
       id: newId,
-      type: "template",
+      type: newNodeType,
       position: { x: nextX, y: nextY },
-      data: {
-        templateName: "",
-        status: "NOT_SELECTED",
-        language: "en_US",
-        bodyText: "",
-        buttons: [],
-        templateSelected: false,
-        onAddNext: (h, l) => handleSproutNode(newId, h, l),
-      },
+      data: isSourceStatic
+        ? {
+            title: `Reply: ${label}`,
+            headerText: "",
+            headerMediaType: "IMAGE",
+            mediaUrl: "",
+            bodyText: `Thank you for selecting "${label}"! Here are your options:`,
+            footerText: "Select an option below",
+            buttons: [{ id: "btn_0", text: "Main Menu" }],
+            onAddNext: (h, l) => handleSproutNode(newId, h, l),
+          }
+        : {
+            templateName: "",
+            status: "NOT_SELECTED",
+            language: "en_US",
+            bodyText: "",
+            buttons: [],
+            templateSelected: false,
+            onAddNext: (h, l) => handleSproutNode(newId, h, l),
+          },
     };
 
     const newEdge = {
@@ -548,8 +567,13 @@ const TemplateFlowCanvasContent = ({
     setNodes((nds) => [...nds, newNode]);
     setEdges((eds) => [...eds, newEdge]);
     setSelectedNode(newNode);
-    setIsTemplatePickerOpen(true);
-    toast.info(`Connected new step for "${label}". Select a template from your Meta account.`);
+
+    if (!isSourceStatic) {
+      setIsTemplatePickerOpen(true);
+      toast.info(`Connected new template step for "${label}". Select a template from your Meta account.`);
+    } else {
+      toast.success(`Connected new static message for "${label}". Edit message & buttons in Inspector!`);
+    }
   }, [handleDeleteEdge]);
 
   // Attach interactive callbacks & sync status to node data
@@ -692,6 +716,35 @@ const TemplateFlowCanvasContent = ({
     setSelectedNode(newNode);
     setIsTemplatePickerOpen(true);
     toast.info("Added new Template step. Select or create a WhatsApp template.");
+  };
+
+  // Add Static Message Node (Interactive Quick Reply Buttons)
+  const handleAddStaticMessageNode = () => {
+    const newId = getNextNodeId("static");
+    const centerPos = { x: 550 + Math.random() * 80, y: 220 + Math.random() * 80 };
+
+    const newNode = {
+      id: newId,
+      type: "static_message",
+      position: centerPos,
+      data: {
+        title: "Interactive Session Step",
+        headerText: "",
+        headerMediaType: "IMAGE",
+        mediaUrl: "",
+        bodyText: "Hello {{firstname}}! 👋 How can we help you today?",
+        footerText: "Choose an option below",
+        buttons: [
+          { id: "btn_0", text: "Our Services" },
+          { id: "btn_1", text: "Talk to Support" },
+        ],
+        onAddNext: (h, l) => handleSproutNode(newId, h, l),
+      },
+    };
+
+    setNodes((nds) => [...nds, newNode]);
+    setSelectedNode(newNode);
+    toast.success("Added Static Interactive Message Node. Edit text & buttons in the Inspector!");
   };
 
   const handleAddActionNode = () => {
@@ -1202,24 +1255,46 @@ const TemplateFlowCanvasContent = ({
       {/* Main Builder Grid */}
       <div className="flex-1 flex relative overflow-hidden">
         {/* Left Palette Toolbar */}
-        <div className="absolute left-4 top-4 z-10 flex flex-col gap-2 bg-[#1e1e38]/90 backdrop-blur-md p-2 rounded-2xl border border-gray-700 shadow-2xl">
+        <div className="absolute left-4 top-4 z-10 flex flex-col gap-2 bg-[#1e1e38]/95 backdrop-blur-md p-2 rounded-2xl border border-gray-700 shadow-2xl max-w-[210px]">
+          <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 flex items-center justify-between">
+            <span>Add Node</span>
+            <Sparkles size={11} className="text-yellow-400" />
+          </div>
+
           <button
             onClick={handleAddTemplateNode}
-            className="flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-[#313166] to-[#4A4A8A] hover:brightness-110 text-white rounded-xl text-xs font-bold shadow-md transition-all group"
-            title="Add a WhatsApp Template Message Node"
+            className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#313166] to-[#4A4A8A] hover:brightness-110 text-white rounded-xl text-xs font-bold shadow-md transition-all group text-left cursor-pointer"
+            title="Pre-approved Meta WhatsApp template (Cold & 24h+)"
           >
-            <FileText size={16} className="text-purple-300 group-hover:scale-110 transition-transform" />
-            <span>+ Template Node</span>
+            <FileText size={15} className="text-purple-300 group-hover:scale-110 transition-transform shrink-0" />
+            <div className="min-w-0">
+              <span className="block leading-tight font-bold text-xs">+ Template Node</span>
+              <span className="block text-[9px] text-purple-200 font-normal opacity-80">Meta Approved</span>
+            </div>
           </button>
 
-          {/* <button
-            onClick={handleAddActionNode}
-            className="flex items-center gap-2 px-3 py-2 bg-amber-800 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-md transition-all group"
-            title="Add a CRM Tag Action"
+          <button
+            onClick={handleAddStaticMessageNode}
+            className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-cyan-900 to-teal-800 hover:brightness-110 text-white rounded-xl text-xs font-bold shadow-md transition-all group text-left border border-cyan-700/50 cursor-pointer"
+            title="Instant custom interactive message with up to 3 buttons (No Meta review needed)"
           >
-            <Tag size={15} className="text-amber-300 group-hover:scale-110 transition-transform" />
-            <span>+ Tag Action</span>
-          </button> */}
+            <MessageSquare size={15} className="text-cyan-300 group-hover:scale-110 transition-transform shrink-0" />
+            <div className="min-w-0">
+              <span className="block leading-tight font-bold text-xs">+ Static Message</span>
+              <span className="block text-[9px] text-cyan-200 font-normal opacity-80">3 Buttons • Instant Live</span>
+            </div>
+          </button>
+
+          <div className="h-px bg-gray-700/60 my-0.5" />
+
+          <button
+            onClick={() => setIsNodeGuideOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg text-[11px] font-medium transition-colors border border-white/5 cursor-pointer"
+            title="Learn how Template Node vs Static Message works & pricing"
+          >
+            <Info size={13} className="text-cyan-400 shrink-0" />
+            <span>Node & Pricing Guide</span>
+          </button>
         </div>
 
         {/* Center: ReactFlow Canvas */}
@@ -1759,6 +1834,231 @@ const TemplateFlowCanvasContent = ({
                 </>
               )}
 
+              {/* Static Message Node Inspector (Interactive Quick Reply Buttons) */}
+              {selectedNode.type === "static_message" && (
+                <>
+                  {/* Status Banner */}
+                  <div className="p-3 bg-gradient-to-br from-cyan-50 to-teal-50 rounded-xl border border-cyan-200 text-cyan-950 space-y-1.5 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[11px] flex items-center gap-1.5 text-cyan-900">
+                        <Zap size={14} className="text-cyan-600 fill-cyan-600" />
+                        Static Interactive Message
+                      </span>
+                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded-full">
+                        Instant Live
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-cyan-800 leading-tight">
+                      Custom interactive button message. <strong>No Meta review delay</strong> — changes go live instantly. Free within the active 24-hr customer service window.
+                    </p>
+                  </div>
+
+                  {/* Step Title */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Step / Message Title</label>
+                    <input
+                      type="text"
+                      value={selectedNode.data?.title || ""}
+                      onChange={(e) => updateSelectedNodeData({ title: e.target.value })}
+                      placeholder="e.g. Welcome Menu Options"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl font-bold text-[#313166] text-xs focus:outline-none focus:border-cyan-600"
+                    />
+                  </div>
+
+                  {/* Header Media / Text Option */}
+                  <div className="space-y-2 pt-2 border-t border-gray-100">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Header (Optional)</label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {["NONE", "TEXT", "IMAGE"].map((hType) => (
+                        <button
+                          key={hType}
+                          type="button"
+                          onClick={() => {
+                            updateSelectedNodeData({
+                              headerFormat: hType === "NONE" ? null : hType,
+                              headerMediaType: hType === "IMAGE" ? "IMAGE" : null,
+                            });
+                          }}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
+                            (selectedNode.data?.headerMediaType === hType ||
+                              selectedNode.data?.headerFormat === hType ||
+                              (!selectedNode.data?.headerFormat && !selectedNode.data?.headerMediaType && hType === "NONE"))
+                              ? "bg-cyan-700 text-white shadow-xs"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          }`}
+                        >
+                          {hType === "NONE" ? "None" : hType === "TEXT" ? "Text" : "Image"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {(selectedNode.data?.headerFormat === "TEXT") && (
+                      <input
+                        type="text"
+                        value={selectedNode.data?.headerText || ""}
+                        onChange={(e) => updateSelectedNodeData({ headerText: e.target.value })}
+                        placeholder="Header Text (e.g. Special Announcement)"
+                        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-800"
+                      />
+                    )}
+
+                    {(selectedNode.data?.headerMediaType === "IMAGE" || selectedNode.data?.headerFormat === "IMAGE") && (
+                      <div className="space-y-1.5">
+                        <input
+                          type="text"
+                          value={selectedNode.data?.mediaUrl || ""}
+                          onChange={(e) => updateSelectedNodeData({ mediaUrl: e.target.value })}
+                          placeholder="Image URL (https://...)"
+                          className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-800"
+                        />
+                        <div className="flex items-center gap-2">
+                          <label className="flex-1 py-1.5 px-2 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 rounded-lg text-[10px] font-bold text-center cursor-pointer transition-colors flex items-center justify-center gap-1">
+                            <UploadCloud size={12} />
+                            <span>{uploadingMedia ? "Uploading..." : "Upload Image"}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              disabled={uploadingMedia}
+                              onChange={(e) => {
+                                if (e.target.files?.[0]) {
+                                  handleHeaderMediaUpload(e.target.files[0]);
+                                }
+                              }}
+                            />
+                          </label>
+                          {selectedNode.data?.mediaUrl && (
+                            <button
+                              type="button"
+                              onClick={() => updateSelectedNodeData({ mediaUrl: "" })}
+                              className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg"
+                              title="Remove Image"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Message Body */}
+                  <div className="space-y-1.5 pt-2 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase">Message Body Text</label>
+                      <span className="text-[9px] text-gray-400 font-mono">
+                        {(selectedNode.data?.bodyText || "").length} / 1024
+                      </span>
+                    </div>
+
+                    <textarea
+                      value={selectedNode.data?.bodyText || ""}
+                      onChange={(e) => updateSelectedNodeData({ bodyText: e.target.value })}
+                      placeholder="Type your WhatsApp message here... Use *bold*, _italics_, or {{firstname}} for customer variables."
+                      rows={4}
+                      className="w-full p-2.5 border border-gray-200 rounded-xl text-xs text-slate-800 font-sans focus:outline-none focus:border-cyan-600 leading-relaxed"
+                    />
+
+                    {/* Variable Quick-Insert Chips */}
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-bold text-gray-400 block uppercase">Insert Variable:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {[
+                          { label: "Customer Name", token: "{{firstname}}" },
+                          { label: "Store Name", token: "{{storeName}}" },
+                          { label: "Phone", token: "{{mobileNumber}}" },
+                        ].map((chip) => (
+                          <button
+                            key={chip.token}
+                            type="button"
+                            onClick={() => {
+                              const current = selectedNode.data?.bodyText || "";
+                              updateSelectedNodeData({ bodyText: current ? `${current} ${chip.token}` : chip.token });
+                            }}
+                            className="px-2 py-0.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 text-[10px] font-semibold rounded-md transition-colors cursor-pointer"
+                          >
+                            + {chip.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Text */}
+                  <div className="space-y-1 pt-2 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase">Footer Note (Optional)</label>
+                      <span className="text-[9px] text-gray-400 font-mono">
+                        {(selectedNode.data?.footerText || "").length} / 60
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      maxLength={60}
+                      value={selectedNode.data?.footerText || ""}
+                      onChange={(e) => updateSelectedNodeData({ footerText: e.target.value })}
+                      placeholder="e.g. Choose an option below"
+                      className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-800"
+                    />
+                  </div>
+
+                  {/* Quick Reply Buttons (Max 3) */}
+                  <div className="space-y-2 pt-2 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase">Quick Reply Buttons (Max 3)</label>
+                      {(selectedNode.data?.buttons || []).length < 3 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const curr = selectedNode.data?.buttons || [];
+                            updateSelectedNodeData({
+                              buttons: [...curr, { id: `btn_${curr.length}`, text: `Option ${curr.length + 1}` }],
+                            });
+                          }}
+                          className="text-[10px] font-bold text-cyan-700 hover:underline cursor-pointer"
+                        >
+                          + Add Button
+                        </button>
+                      )}
+                    </div>
+
+                    {(selectedNode.data?.buttons || []).map((btn, bIdx) => (
+                      <div key={bIdx} className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-cyan-100 text-cyan-800 text-[10px] font-bold flex items-center justify-center shrink-0">
+                          {bIdx + 1}
+                        </span>
+                        <input
+                          type="text"
+                          maxLength={20}
+                          value={btn.text}
+                          onChange={(e) => {
+                            const next = [...selectedNode.data.buttons];
+                            next[bIdx] = { ...next[bIdx], text: e.target.value };
+                            updateSelectedNodeData({ buttons: next });
+                          }}
+                          placeholder="Button title (max 20 chars)"
+                          className="flex-1 px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-cyan-600"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = selectedNode.data.buttons.filter((_, i) => i !== bIdx);
+                            updateSelectedNodeData({ buttons: next });
+                          }}
+                          className="text-gray-400 hover:text-red-500 p-1 cursor-pointer"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+
+                    <p className="text-[9px] text-gray-400 leading-tight pt-1">
+                      💡 Click the <strong>+</strong> handle next to each button on the canvas to wire it to the next step.
+                    </p>
+                  </div>
+                </>
+              )}
+
               {/* Trigger Node Inspector */}
               {selectedNode.type === "trigger" && (
                 <>
@@ -2214,6 +2514,148 @@ const TemplateFlowCanvasContent = ({
                   );
                 })
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Node & Pricing Guide Modal */}
+      {isNodeGuideOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-gray-100">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-[#1e1e38] to-[#313166] text-white">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <Info className="w-5 h-5 text-cyan-300" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base leading-tight">Flow Nodes & WhatsApp Pricing Guide</h3>
+                  <p className="text-[11px] text-gray-300 mt-0.5">
+                    Understand when to use Template Nodes vs. Static Interactive Message Nodes
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsNodeGuideOpen(false)}
+                className="p-1.5 hover:bg-white/20 rounded-full text-white transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 p-6 overflow-y-auto space-y-6 text-xs text-slate-700 leading-relaxed">
+              {/* Side-by-Side Comparison Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Card 1: Template Node */}
+                <div className="rounded-2xl border-2 border-purple-200 bg-purple-50/30 p-5 space-y-3.5 flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-purple-100 text-purple-700 rounded-xl">
+                        <FileText size={18} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm text-[#313166]">Template Node</h4>
+                        <span className="text-[10px] font-bold text-purple-700">Official Meta WhatsApp Template</span>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-800 border border-purple-300 text-[9px] font-bold rounded-full">
+                      Meta Approved
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-slate-600 leading-normal">
+                    Pre-registered message templates submitted to and reviewed by Meta. Required for all outbound, cold notifications initiated by the business.
+                  </p>
+
+                  <div className="space-y-2 pt-2 border-t border-purple-100 text-[11px]">
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-[#313166] min-w-[90px]">When to use:</span>
+                      <span className="text-slate-700">Outbound broadcasts, inactivity retention alerts, re-engagement after 24h of customer inactivity.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-[#313166] min-w-[90px]">Meta Approval:</span>
+                      <span className="text-amber-800 font-semibold">Required (15 mins – 24 hrs review)</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-[#313166] min-w-[90px]">Pricing & Cost:</span>
+                      <span className="text-slate-700">Meta Template Category Fee (Marketing ~₹0.86 / Utility ~₹0.11 per message).</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-[#313166] min-w-[90px]">Buttons:</span>
+                      <span className="text-slate-700">Up to 3 Quick Reply buttons + CTA URL/Call buttons.</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Static Message Node */}
+                <div className="rounded-2xl border-2 border-cyan-200 bg-cyan-50/30 p-5 space-y-3.5 flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-cyan-100 text-cyan-700 rounded-xl">
+                        <MessageSquare size={18} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm text-cyan-950">Static Message Node</h4>
+                        <span className="text-[10px] font-bold text-cyan-700">Interactive Session Buttons</span>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9px] font-bold rounded-full flex items-center gap-1">
+                      <Zap size={10} className="fill-emerald-600 text-emerald-600" />
+                      Instant Live
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-slate-600 leading-normal">
+                    Free-form WhatsApp messages with up to 3 interactive quick reply buttons. Built directly in Vadik AI with <strong>zero Meta review delay</strong>.
+                  </p>
+
+                  <div className="space-y-2 pt-2 border-t border-cyan-100 text-[11px]">
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-cyan-950 min-w-[90px]">When to use:</span>
+                      <span className="text-slate-700">Inbound bot conversations (after "Hi", "Menu", "Help"), support FAQs, and multi-step interactive menu trees.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-cyan-950 min-w-[90px]">Meta Approval:</span>
+                      <span className="text-emerald-700 font-bold">⚡ None needed (Instant live edits)</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-cyan-950 min-w-[90px]">Pricing & Cost:</span>
+                      <span className="text-emerald-800 font-bold">FREE in 24-hr customer service window</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-cyan-950 min-w-[90px]">Buttons:</span>
+                      <span className="text-slate-700">Up to 3 Quick Reply action buttons per message step.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Best Practice Recommended Architecture */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border border-emerald-200 space-y-2">
+                <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+                  <Sparkles size={16} className="text-emerald-600" />
+                  <span>Recommended Flow Strategy (Hybrid Architecture)</span>
+                </div>
+                <p className="text-[11px] text-emerald-950 leading-relaxed">
+                  For optimal speed and cost efficiency:
+                  <br />
+                  1. <strong>Inbound Keyword Journeys:</strong> Trigger on "HI" or "MENU" ➔ Send a <strong>Static Message Node</strong> with your 3 main menu buttons ➔ Connect each button to further <strong>Static Message Nodes</strong>. You pay ₹0 Meta marketing fee!
+                  <br />
+                  2. <strong>Outbound Scheduled Broadcasts:</strong> Start with an approved <strong>Template Node</strong> ➔ When the customer taps a button on WhatsApp, continue the conversation with <strong>Static Message Nodes</strong>!
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3.5 bg-gray-50 border-t border-gray-100 flex items-center justify-end">
+              <button
+                onClick={() => setIsNodeGuideOpen(false)}
+                className="px-5 py-2 bg-[#313166] hover:bg-[#252550] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                Got it, let's build!
+              </button>
             </div>
           </div>
         </div>
