@@ -256,7 +256,17 @@ const TemplateNode = ({ data, selected }) => {
         <div className="px-3.5 pt-3">
           {mediaUrl ? (
             <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 relative group">
-              {headerFormat === "IMAGE" ? (
+              {headerFormat === "VIDEO" ? (
+                <div className="w-full h-16 bg-slate-800 flex items-center justify-center text-white text-[10px] font-bold gap-1.5">
+                  <Video size={16} className="text-pink-400" />
+                  <span>Video Header Attached</span>
+                </div>
+              ) : headerFormat === "DOCUMENT" && !mediaUrl.match(/\.(jpg|jpeg|png|webp|gif)/i) ? (
+                <div className="w-full p-2.5 bg-purple-50 flex items-center text-[#313166] text-[10px] font-bold gap-1.5">
+                  <FileText size={16} className="text-[#CB376D]" />
+                  <span className="truncate">Document Header Attached</span>
+                </div>
+              ) : (
                 <img
                   src={mediaUrl}
                   alt="Header"
@@ -265,19 +275,9 @@ const TemplateNode = ({ data, selected }) => {
                     e.target.style.display = "none";
                   }}
                 />
-              ) : headerFormat === "VIDEO" ? (
-                <div className="w-full h-16 bg-slate-800 flex items-center justify-center text-white text-[10px] font-bold gap-1.5">
-                  <Video size={16} className="text-pink-400" />
-                  <span>Video Header Attached</span>
-                </div>
-              ) : (
-                <div className="w-full p-2.5 bg-purple-50 flex items-center text-[#313166] text-[10px] font-bold gap-1.5">
-                  <FileText size={16} className="text-[#CB376D]" />
-                  <span className="truncate">Document Header Attached</span>
-                </div>
               )}
               <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-xs text-white text-[8px] font-bold rounded-md uppercase">
-                {headerFormat}
+                {headerFormat || "IMAGE"}
               </div>
             </div>
           ) : (

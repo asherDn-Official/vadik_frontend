@@ -2407,13 +2407,20 @@ const TemplateFlowCanvasContent = ({
                           <div className="border-b border-gray-100 bg-gray-50 overflow-hidden">
                             {msg.headerMediaType === "VIDEO" ? (
                               <video src={msg.mediaUrl} controls className="w-full max-h-36 object-cover" />
-                            ) : msg.headerMediaType === "DOCUMENT" ? (
+                            ) : msg.headerMediaType === "DOCUMENT" && !msg.mediaUrl?.match(/\.(jpg|jpeg|png|webp|gif)/i) ? (
                               <div className="p-2.5 flex items-center gap-2 bg-purple-50 text-[#313166] text-[10px] font-bold">
                                 <FileText size={16} className="text-[#CB376D]" />
                                 <span className="truncate">Document Attached</span>
                               </div>
                             ) : (
-                              <img src={msg.mediaUrl} alt="Header" className="w-full max-h-36 object-cover" />
+                              <img
+                                src={msg.mediaUrl}
+                                alt="Header"
+                                className="w-full max-h-36 object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                }}
+                              />
                             )}
                           </div>
                         )}
