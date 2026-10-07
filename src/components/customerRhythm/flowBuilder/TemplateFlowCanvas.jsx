@@ -1868,41 +1868,77 @@ const TemplateFlowCanvasContent = ({
                   {/* Header Media / Text Option */}
                   <div className="space-y-2 pt-2 border-t border-gray-100">
                     <label className="text-[10px] font-bold text-gray-400 uppercase">Header (Optional)</label>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {["NONE", "TEXT", "IMAGE"].map((hType) => (
-                        <button
-                          key={hType}
-                          type="button"
-                          onClick={() => {
-                            updateSelectedNodeData({
-                              headerFormat: hType === "NONE" ? null : hType,
-                              headerMediaType: hType === "IMAGE" ? "IMAGE" : null,
-                            });
-                          }}
-                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
-                            (selectedNode.data?.headerMediaType === hType ||
-                              selectedNode.data?.headerFormat === hType ||
-                              (!selectedNode.data?.headerFormat && !selectedNode.data?.headerMediaType && hType === "NONE"))
-                              ? "bg-cyan-700 text-white shadow-xs"
-                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                          }`}
-                        >
-                          {hType === "NONE" ? "None" : hType === "TEXT" ? "Text" : "Image"}
-                        </button>
-                      ))}
-                    </div>
+                    {/* IMAGE header is only available when this node has NO buttons.
+                        WhatsApp's interactive button API does not accept media via URL — error 131053.
+                        Without buttons the message is sent as a media+caption text message. */}
+                    {(selectedNode.data?.buttons || []).length > 0 ? (
+                      <>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {["NONE", "TEXT"].map((hType) => (
+                            <button
+                              key={hType}
+                              type="button"
+                              onClick={() => {
+                                updateSelectedNodeData({
+                                  headerFormat: hType === "NONE" ? null : hType,
+                                  headerMediaType: null,
+                                  mediaUrl: "",
+                                });
+                              }}
+                              className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
+                                (selectedNode.data?.headerFormat === hType ||
+                                  (!selectedNode.data?.headerFormat && !selectedNode.data?.headerMediaType && hType === "NONE"))
+                                  ? "bg-cyan-700 text-white shadow-xs"
+                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                              }`}
+                            >
+                              {hType === "NONE" ? "None" : "Text"}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-[9px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 leading-tight">
+                          ⚠️ <strong>Image header</strong> is only available when this node has <strong>no buttons</strong>. Remove all buttons to use an image header.
+                        </p>
+                      </>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {["NONE", "TEXT", "IMAGE"].map((hType) => (
+                          <button
+                            key={hType}
+                            type="button"
+                            onClick={() => {
+                              updateSelectedNodeData({
+                                headerFormat: hType === "NONE" ? null : hType,
+                                headerMediaType: hType === "IMAGE" ? "IMAGE" : null,
+                              });
+                            }}
+                            className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
+                              (selectedNode.data?.headerMediaType === hType ||
+                                selectedNode.data?.headerFormat === hType ||
+                                (!selectedNode.data?.headerFormat && !selectedNode.data?.headerMediaType && hType === "NONE"))
+                                ? "bg-cyan-700 text-white shadow-xs"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}
+                          >
+                            {hType === "NONE" ? "None" : hType === "TEXT" ? "Text" : "Image"}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                     {(selectedNode.data?.headerFormat === "TEXT") && (
                       <input
                         type="text"
+                        maxLength={60}
                         value={selectedNode.data?.headerText || ""}
                         onChange={(e) => updateSelectedNodeData({ headerText: e.target.value })}
-                        placeholder="Header Text (e.g. Special Announcement)"
+                        placeholder="Header Text (max 60 chars)"
                         className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-800"
                       />
                     )}
 
-                    {(selectedNode.data?.headerMediaType === "IMAGE" || selectedNode.data?.headerFormat === "IMAGE") && (
+                    {(selectedNode.data?.headerMediaType === "IMAGE" || selectedNode.data?.headerFormat === "IMAGE") &&
+                     (selectedNode.data?.buttons || []).length === 0 && (
                       <div className="space-y-1.5">
                         <input
                           type="text"
@@ -2022,40 +2058,92 @@ const TemplateFlowCanvasContent = ({
                       )}
                     </div>
 
-                    {(selectedNode.data?.buttons || []).map((btn, bIdx) => (
-                      <div key={bIdx} className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-cyan-100 text-cyan-800 text-[10px] font-bold flex items-center justify-center shrink-0">
-                          {bIdx + 1}
-                        </span>
-                        <input
-                          type="text"
-                          maxLength={20}
-                          value={btn.text}
-                          onChange={(e) => {
-                            const next = [...selectedNode.data.buttons];
-                            next[bIdx] = { ...next[bIdx], text: e.target.value };
-                            updateSelectedNodeData({ buttons: next });
-                          }}
-                          placeholder="Button title (max 20 chars)"
-                          className="flex-1 px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-cyan-600"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const next = selectedNode.data.buttons.filter((_, i) => i !== bIdx);
-                            updateSelectedNodeData({ buttons: next });
-                          }}
-                          className="text-gray-400 hover:text-red-500 p-1 cursor-pointer"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
+                    {(() => {
+                      // Collect ALL button texts across the entire flow (other nodes) to detect cross-node duplicates
+                      const allFlowButtonTexts = nodes
+                        .filter((n) => n.id !== selectedNode.id && (n.type === "template" || n.type === "static_message"))
+                        .flatMap((n) => (n.data?.buttons || []).map((b) => (b.text || b.label || "").trim().toLowerCase()))
+                        .filter(Boolean);
 
-                    <p className="text-[9px] text-gray-400 leading-tight pt-1">
-                      💡 Click the <strong>+</strong> handle next to each button on the canvas to wire it to the next step.
-                    </p>
+                      const thisNodeTexts = (selectedNode.data?.buttons || []).map((b) =>
+                        (b.text || "").trim().toLowerCase()
+                      );
+                      const withinNodeDupes = new Set(
+                        thisNodeTexts.filter((t, i) => t && thisNodeTexts.indexOf(t) !== i)
+                      );
+                      const crossFlowDupes = new Set(
+                        thisNodeTexts.filter((t) => t && allFlowButtonTexts.includes(t))
+                      );
+                      const hasDuplicates = withinNodeDupes.size > 0 || crossFlowDupes.size > 0;
+
+                      return (
+                        <>
+                          {(selectedNode.data?.buttons || []).map((btn, bIdx) => {
+                            const thisText = (btn.text || "").trim().toLowerCase();
+                            const isWithinDupe = withinNodeDupes.has(thisText);
+                            const isCrossFlowDupe = crossFlowDupes.has(thisText);
+                            const isDupe = isWithinDupe || isCrossFlowDupe;
+
+                            return (
+                              <div key={bIdx} className="space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                  <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 ${isDupe ? "bg-red-100 text-red-700" : "bg-cyan-100 text-cyan-800"}`}>
+                                    {bIdx + 1}
+                                  </span>
+                                  <input
+                                    type="text"
+                                    maxLength={20}
+                                    value={btn.text}
+                                    onChange={(e) => {
+                                      const next = [...selectedNode.data.buttons];
+                                      next[bIdx] = { ...next[bIdx], text: e.target.value };
+                                      updateSelectedNodeData({ buttons: next });
+                                    }}
+                                    placeholder="Button title (max 20 chars)"
+                                    className={`flex-1 px-2.5 py-1.5 border rounded-lg text-xs font-bold text-slate-800 focus:outline-none transition-colors ${
+                                      isDupe
+                                        ? "border-red-400 bg-red-50 text-red-900 focus:border-red-500"
+                                        : "border-gray-200 focus:border-cyan-600"
+                                    }`}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const next = selectedNode.data.buttons.filter((_, i) => i !== bIdx);
+                                      updateSelectedNodeData({ buttons: next });
+                                    }}
+                                    className="text-gray-400 hover:text-red-500 p-1 cursor-pointer"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                                {isDupe && (
+                                  <p className="text-[9px] text-red-600 pl-7 font-semibold">
+                                    {isWithinDupe
+                                      ? "⚠️ Duplicate within this node — each button must have unique text"
+                                      : `⚠️ "${btn.text}" already used in another node — causes routing confusion`}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {hasDuplicates && (
+                            <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                              <p className="text-[9px] text-red-700 font-bold leading-tight">
+                                ❌ Duplicate button text detected. Every button across your entire flow must have a unique label so the bot can route replies correctly.
+                              </p>
+                            </div>
+                          )}
+
+                          <p className="text-[9px] text-gray-400 leading-tight pt-1">
+                            💡 Click the <strong>+</strong> handle next to each button on the canvas to wire it to the next step.
+                          </p>
+                        </>
+                      );
+                    })()}
                   </div>
+
                 </>
               )}
 
