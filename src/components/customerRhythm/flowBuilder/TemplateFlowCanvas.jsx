@@ -898,7 +898,9 @@ const TemplateFlowCanvasContent = ({
     const rejectedCount = list.filter((t) => t.rejected).length;
     const notInAccountCount = list.filter((t) => t.notInAccount).length;
     const notSelectedCount = list.filter((t) => t.notSelected).length;
-    const allApproved = list.length > 0 && approvedCount === list.length;
+    // If there are no template nodes at all (e.g. pure static_message flow),
+    // there is nothing to approve — treat as fully approved so publish is not blocked.
+    const allApproved = list.length === 0 || approvedCount === list.length;
     const pendingOrMissing = list.filter((t) => !t.approved);
 
     return {
@@ -1138,7 +1140,7 @@ const TemplateFlowCanvasContent = ({
           "Cannot publish as Active: One or more steps have no template selected. Saved as Draft."
         );
         willBeActive = false;
-      } else if (!templateAudit.allApproved) {
+      } else if (templateAudit.total > 0 && !templateAudit.allApproved) {
         const unapprovedNames = templateAudit.pendingOrMissing
           .map((t) => t.name)
           .filter(Boolean)
