@@ -40,6 +40,7 @@ import SearchPage from "./components/common/SearchPage";
 import CustomerProfilePage from "./components/common/CustomerProfilePage";
 import Loader from "./utils/Loader";
 import AIBalance from "./pages/AIBalance";
+import MediaLibrary from "./pages/MediaLibrary";
 // import api from "./api/apiconfig";
 // import { useChatNotification } from "./context/ChatNotificationContext";
 
@@ -225,6 +226,16 @@ function App() {
   element={
     onboardingDone ? (
       <AIBalance />
+    ) : (
+      <Navigate to="/register" replace />
+    )
+  }
+/>
+<Route
+  path="media-library"
+  element={
+    onboardingDone ? (
+      <MediaLibrary />
     ) : (
       <Navigate to="/register" replace />
     )

@@ -12,6 +12,8 @@ import customerOpportunitiesIcon from "/assets/user-check-icon.png";
 import integrationIcon from "/assets/integration-icon.png";
 import rhytmIcon from "/assets/ix_customer.png";
 import { QrCode } from "lucide-react";
+import { FiImage } from "react-icons/fi";
+
 
 function Sidebar() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -130,6 +132,13 @@ function Sidebar() {
   lucideIcon: Wallet,
   label: "AI Balance",
 },
+{
+    path: "/media-library",
+    module: "Media Library",
+    icon: null,
+    lucideIcon: FiImage,
+    label: "Media Library",
+  },
 
   ];
 
@@ -197,7 +206,7 @@ function Sidebar() {
           </div>
         </div>
         {/* <div className="my-3">{userRole === "retailer" && <ToggleBadge />}</div> */}
-        <nav className="flex h-full items-center gap-1 overflow-x-auto px-2 py-2 md:h-auto md:flex-1 md:flex-col md:items-stretch md:gap-1.5 md:overflow-y-auto md:overflow-x-hidden md:px-3 md:pb-4 md:pt-1 lg:px-4">
+        <nav className="no-scrollbar flex h-full items-center gap-1 overflow-x-auto px-2 py-1 md:h-auto md:flex-1 md:flex-col md:items-stretch md:gap-1 md:overflow-y-auto md:overflow-x-hidden md:px-3 md:py-2 lg:px-4">
           {sidebarItems.map((item) => {
             if (!canAccess(item.module)) return null;
             const active = isActive(item.path);
@@ -207,7 +216,7 @@ function Sidebar() {
                 key={item.path}
                 to={item.path}
                 onClick={(e) => handleNavigation(e, item.path)}
-                className={`group relative flex h-full min-w-[78px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 text-white/75 no-underline transition-all hover:bg-white/10 hover:text-white md:h-auto md:min-w-0 md:flex-row md:justify-start md:gap-3 md:px-4 md:py-3.5 ${
+                className={`group relative flex h-full min-w-[78px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 text-white/75 no-underline transition-all hover:bg-white/10 hover:text-white md:h-auto md:min-w-0 md:flex-row md:justify-start md:gap-3 md:px-4 md:py-2.5 ${
                   active
                     ? "bg-white/12 text-white backdrop-blur-md ring-1 ring-white/10"
                     : "text-white/75 hover:bg-white/10 hover:text-white"
@@ -240,14 +249,24 @@ function Sidebar() {
             );
           })}
 
-          <button
+          {/* <button
             onClick={(e) => handleLogout(e)}
             className="group flex h-full min-w-[78px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 text-white/75 transition-all hover:bg-white/10 hover:text-white md:mt-auto md:h-auto md:min-w-0 md:flex-row md:justify-start md:gap-3 md:px-4 md:py-3.5"
           >
             <LogOut size={16} className="h-5 w-5 shrink-0 md:h-6 md:w-6" />
             <span className="text-[11px] font-medium md:text-sm">Logout</span>
-          </button>
+          </button> */}
         </nav>
+        {/* Pinned Bottom Logout Container */}
+        <div className="hidden md:flex flex-shrink-0 px-3 py-3 border-t border-white/10 mt-auto lg:px-4">
+          <button
+            onClick={(e) => handleLogout(e)}
+            className="group flex w-full items-center justify-start gap-3 rounded-2xl px-3.5 py-2.5 text-white/75 transition-all hover:bg-white/10 hover:text-white"
+          >
+            <LogOut className="h-5 w-5 shrink-0 text-white/75 group-hover:text-white" />
+            <span className="text-xs font-medium md:text-sm">Logout</span>
+          </button>
+        </div>
       </aside>
     </>
   );
