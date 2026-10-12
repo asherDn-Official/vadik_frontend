@@ -527,13 +527,27 @@ const TemplateFlowCanvasContent = ({
     const nextX = sourceNode.position.x + 380;
     const nextY = sourceNode.position.y + (sourceHandle?.startsWith("btn_") ? (parseInt(sourceHandle.replace("btn_", "")) * 140) - 40 : 0);
 
+    let candidateTitle = `Reply: ${label}`;
+    if (isSourceStatic) {
+      const existingTitles = new Set(
+        currentNodes
+          .filter((n) => n.type === "static_message")
+          .map((n) => (n.data?.title || "").trim().toLowerCase())
+      );
+      let sproutCounter = 2;
+      while (existingTitles.has(candidateTitle.toLowerCase())) {
+        candidateTitle = `Reply: ${label} (${sproutCounter})`;
+        sproutCounter += 1;
+      }
+    }
+
     const newNode = {
       id: newId,
       type: newNodeType,
       position: { x: nextX, y: nextY },
       data: isSourceStatic
         ? {
-            title: `Reply: ${label}`,
+            title: candidateTitle,
             headerText: "",
             headerMediaType: "IMAGE",
             mediaUrl: "",
@@ -720,15 +734,29 @@ const TemplateFlowCanvasContent = ({
 
   // Add Static Message Node (Interactive Quick Reply Buttons)
   const handleAddStaticMessageNode = () => {
+    const currentNodes = nodesRef.current;
     const newId = getNextNodeId("static");
     const centerPos = { x: 550 + Math.random() * 80, y: 220 + Math.random() * 80 };
+
+    // Generate unique default title
+    const existingTitles = new Set(
+      currentNodes
+        .filter((n) => n.type === "static_message")
+        .map((n) => (n.data?.title || "").trim().toLowerCase())
+    );
+    let stepNum = currentNodes.filter((n) => n.type === "static_message").length + 1;
+    let candidateTitle = `Interactive Step ${stepNum}`;
+    while (existingTitles.has(candidateTitle.toLowerCase())) {
+      stepNum += 1;
+      candidateTitle = `Interactive Step ${stepNum}`;
+    }
 
     const newNode = {
       id: newId,
       type: "static_message",
       position: centerPos,
       data: {
-        title: "Interactive Session Step",
+        title: candidateTitle,
         headerText: "",
         headerMediaType: "IMAGE",
         mediaUrl: "",
@@ -1135,7 +1163,35 @@ const TemplateFlowCanvasContent = ({
 
     let willBeActive = asActive;
     if (asActive) {
-      if (templateAudit.notSelectedCount > 0) {
+      // Validate static_message titles (must not be empty and must be unique)
+      const staticNodes = nodes.filter((n) => n.type === "static_message");
+      const emptyTitleNodes = staticNodes.filter((n) => !(n.data?.title || "").trim());
+
+      const titleCounts = {};
+      staticNodes.forEach((n) => {
+        const t = (n.data?.title || "").trim().toLowerCase();
+        if (t) {
+          titleCounts[t] = (titleCounts[t] || 0) + 1;
+        }
+      });
+      const duplicateTitles = Object.keys(titleCounts)
+        .filter((t) => titleCounts[t] > 1)
+        .map((t) => {
+          const found = staticNodes.find((n) => (n.data?.title || "").trim().toLowerCase() === t);
+          return (found?.data?.title || t).trim();
+        });
+
+      if (emptyTitleNodes.length > 0) {
+        toast.warning(
+          "Cannot publish as Active: One or more interactive message steps have an empty title. Saved as Draft."
+        );
+        willBeActive = false;
+      } else if (duplicateTitles.length > 0) {
+        toast.warning(
+          `Cannot publish as Active: Interactive message step titles must be unique to avoid routing confusion. Duplicate title(s): "${duplicateTitles.join('", "')}". Saved as Draft.`
+        );
+        willBeActive = false;
+      } else if (templateAudit.notSelectedCount > 0) {
         toast.warning(
           "Cannot publish as Active: One or more steps have no template selected. Saved as Draft."
         );
@@ -1972,16 +2028,61 @@ const TemplateFlowCanvasContent = ({
                   </div>
 
                   {/* Step Title */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Step / Message Title</label>
-                    <input
-                      type="text"
-                      value={selectedNode.data?.title || ""}
-                      onChange={(e) => updateSelectedNodeData({ title: e.target.value })}
-                      placeholder="e.g. Welcome Menu Options"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl font-bold text-[#313166] text-xs focus:outline-none focus:border-cyan-600"
-                    />
-                  </div>
+                  {(() => {
+                    const currentStaticTitle = (selectedNode.data?.title || "").trim();
+                    const isStaticTitleEmpty = !currentStaticTitle;
+                    const isStaticTitleDuplicate =
+                      Boolean(currentStaticTitle) &&
+                      nodes.some(
+                        (n) =>
+                          n.id !== selectedNode.id &&
+                          n.type === "static_message" &&
+                          (n.data?.title || "").trim().toLowerCase() === currentStaticTitle.toLowerCase()
+                      );
+
+                    return (
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-bold text-gray-400 uppercase">Step / Message Title</label>
+                          {isStaticTitleDuplicate && (
+                            <span className="text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md">
+                              Duplicate Title
+                            </span>
+                          )}
+                          {isStaticTitleEmpty && (
+                            <span className="text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">
+                              Required
+                            </span>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={selectedNode.data?.title || ""}
+                          onChange={(e) => updateSelectedNodeData({ title: e.target.value })}
+                          placeholder="e.g. Welcome Menu Options"
+                          className={`w-full px-3 py-2 border rounded-xl font-bold text-[#313166] text-xs focus:outline-none transition-all ${
+                            isStaticTitleDuplicate
+                              ? "border-rose-400 bg-rose-50/20 focus:border-rose-500 focus:ring-1 focus:ring-rose-400"
+                              : isStaticTitleEmpty
+                              ? "border-amber-400 bg-amber-50/20 focus:border-amber-500 focus:ring-1 focus:ring-amber-400"
+                              : "border-gray-200 focus:border-cyan-600"
+                          }`}
+                        />
+                        {isStaticTitleDuplicate && (
+                          <p className="text-[10px] font-medium text-rose-600 flex items-center gap-1 mt-1 leading-tight">
+                            <AlertCircle size={12} className="shrink-0 text-rose-500" />
+                            Another step already uses this title. Each step must have a unique title.
+                          </p>
+                        )}
+                        {isStaticTitleEmpty && (
+                          <p className="text-[10px] font-medium text-amber-600 flex items-center gap-1 mt-1 leading-tight">
+                            <AlertCircle size={12} className="shrink-0 text-amber-500" />
+                            Step title cannot be empty.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Header Media / Text Option */}
                   <div className="space-y-2 pt-2 border-t border-gray-100">
