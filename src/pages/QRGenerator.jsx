@@ -457,7 +457,7 @@ const QRGenerator = () => {
   }, [auth, selectedDynamicQR]);
 
   const landingPageBaseUrl = "https://vadik.ai"; // Adjust as needed
-const MAX_QR_LIMIT = 10;
+const MAX_QR_LIMIT = 5;
 
 const canCreateMoreQR = () => {
   // If editing/updating an existing QR, limit check does not apply
