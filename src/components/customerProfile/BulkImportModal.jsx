@@ -78,10 +78,38 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
   const [successMessage, setSuccessMessage] = useState("");
   const pollIntervalRef = useRef(null);
 
+
+  const [importHistory, setImportHistory] = useState([]);
+const [historyLoading, setHistoryLoading] = useState(false);
+const [showImportHistory, setShowImportHistory] = useState(false);
+
+const fetchImportHistory = async () => {
+  if (!retailerId) return;
+
+  setHistoryLoading(true);
+
+  try {
+    const response = await api.get(
+      `/api/customers/import-history/${retailerId}`
+    );
+
+    setImportHistory(
+      Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || []
+    );
+  } catch (err) {
+    console.error("Failed to fetch import history:", err);
+    setImportHistory([]);
+  } finally {
+    setHistoryLoading(false);
+  }
+};
   // Reset when modal is opened/closed
   useEffect(() => {
     if (!isOpen) {
       setStep(1);
+        setShowImportHistory(false);
       setFile(null);
       setSheetHeaders([]);
       setSampleRows([]);
@@ -94,7 +122,9 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
       setIsParsing(false);
       stopPolling();
     } else {
+    setShowImportHistory(false);
       fetchPreferencesAndSources();
+       fetchImportHistory();
     }
   }, [isOpen]);
 
@@ -341,6 +371,7 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
           stopPolling();
           if (data.status === "completed") {
             setSuccessMessage(`Import completed! ${data.successCount} customers added.`);
+              await fetchImportHistory();
             setTimeout(() => {
               if (onSuccess) onSuccess(`Import completed! ${data.successCount} customers added.`);
               onClose();
@@ -450,7 +481,9 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fadeIn_.2s_ease]">
-      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden rounded-[28px] border border-[#EEF1FF] bg-white shadow-[0_20px_80px_rgba(15,23,42,0.18)]">
+      
+<div className="relative flex h-[85vh] min-h-0 w-full max-w-4xl flex-col overflow-hidden rounded-[28px] border border-[#EEF1FF] bg-white shadow-[0_20px_80px_rgba(15,23,42,0.18)]">
+
         
         {/* Header Bar */}
         <div className="flex items-center justify-between border-b border-[#EEF1FF] px-6 py-4 bg-[#FAFBFD]">
@@ -512,58 +545,193 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
         <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-[#D7DBF5]">
           
           {/* STEP 1: UPLOAD COMPONENT */}
-          {step === 1 && (
-            <div className="flex flex-col items-center justify-center py-6 space-y-6">
-              <label
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (e.dataTransfer.files?.[0]) handleFileSelection(e.dataTransfer.files[0]);
-                }}
-                className="group relative flex flex-col items-center justify-center w-full max-w-xl p-8 rounded-[24px] border-2 border-dashed border-[#D2D8F2] bg-[#FAFBFD] hover:bg-[#F4F6FF] hover:border-[#313166] cursor-pointer transition-all duration-200"
-              >
-                <input
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) handleFileSelection(e.target.files[0]);
-                  }}
-                />
-
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-[0_8px_20px_rgba(49,49,102,0.08)] group-hover:scale-105 transition-transform">
-                  <Upload className="h-8 w-8 text-[#313166]" />
+           {step === 1 && (
+            <div className="flex flex-col gap-5">
+              {!showImportHistory && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowImportHistory(true);
+                      fetchImportHistory();
+                    }}
+                    className="flex items-center gap-2 rounded-xl bg-[#313166] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#272757]"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Bulk Upload History
+                  </button>
                 </div>
+              )}
 
-                <h3 className="mt-4 text-base font-bold text-[#1F1C5C]">
-                  {isParsing ? "Reading spreadsheet..." : "Click or drag & drop Excel / CSV here"}
-                </h3>
-                <p className="mt-1 text-xs text-[#8B90B2] text-center max-w-sm">
-                  Supports .xlsx, .xls, and .csv files. Any column names are accepted — you will map them in the next step.
-                </p>
+              {/* Upload area and instructions are hidden while history is open */}
+              {!showImportHistory && (
+                <div className="flex flex-col items-center justify-center py-2 space-y-6">
+                  <label
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (e.dataTransfer.files?.[0]) {
+                        handleFileSelection(e.dataTransfer.files[0]);
+                      }
+                    }}
+                    className="group relative flex w-full max-w-xl cursor-pointer flex-col items-center justify-center rounded-[24px] border-2 border-dashed border-[#D2D8F2] bg-[#FAFBFD] p-8 transition-all duration-200 hover:border-[#313166] hover:bg-[#F4F6FF]"
+                  >
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          handleFileSelection(e.target.files[0]);
+                        }
+                        e.target.value = "";
+                      }}
+                    />
 
-                {isParsing && (
-                  <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-[#313166]">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#313166] border-t-transparent" />
-                    Parsing sheet headers & sample rows...
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-[0_8px_20px_rgba(49,49,102,0.08)] transition-transform group-hover:scale-105">
+                      <Upload className="h-8 w-8 text-[#313166]" />
+                    </div>
+
+                    <h3 className="mt-4 text-base font-bold text-[#1F1C5C]">
+                      {isParsing
+                        ? "Reading spreadsheet..."
+                        : "Click or drag & drop Excel / CSV here"}
+                    </h3>
+                    <p className="mt-1 max-w-sm text-center text-xs text-[#8B90B2]">
+                      Supports .xlsx, .xls, and .csv files. Any column names are accepted — you will map them in the next step.
+                    </p>
+
+                    {isParsing && (
+                      <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-[#313166]">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#313166] border-t-transparent" />
+                        Parsing sheet headers &amp; sample rows...
+                      </div>
+                    )}
+                  </label>
+
+                  <div className="w-full max-w-xl space-y-2 rounded-2xl border border-[#EEF1FF] bg-[#F8F9FF] p-4 text-xs text-[#313166]">
+                    <div className="flex items-center gap-2 font-bold text-[#1F1C5C]">
+                      <HelpCircle className="h-4 w-4 text-[#313166]" />
+                      <span>How it works:</span>
+                    </div>
+                    <ul className="ml-1 list-inside list-disc space-y-1 text-[#666B8E]">
+                      <li>Upload any spreadsheet from your existing CRM, POS, or Google Sheets.</li>
+                      <li>Our smart auto-mapping tool will detect headers like First Name, Phone, Tags, etc.</li>
+                      <li>You can map any column to custom preference data (e.g. Birthday, Anniversary).</li>
+                      <li>100,000+ records are processed reliably in background queue.</li>
+                    </ul>
                   </div>
-                )}
-              </label>
-
-              <div className="w-full max-w-xl bg-[#F8F9FF] p-4 rounded-2xl border border-[#EEF1FF] text-xs text-[#313166] space-y-2">
-                <div className="flex items-center gap-2 font-bold text-[#1F1C5C]">
-                  <HelpCircle className="h-4 w-4 text-[#313166]" />
-                  <span>How it works:</span>
                 </div>
-                <ul className="list-disc list-inside space-y-1 text-[#666B8E] ml-1">
-                  <li>Upload any spreadsheet from your existing CRM, POS, or Google Sheets.</li>
-                  <li>Our smart auto-mapping tool will detect headers like First Name, Phone, Tags, etc.</li>
-                  <li>You can map any column to custom preference data (e.g. Birthday, Anniversary).</li>
-                  <li>100,000+ records are processed reliably in background queue.</li>
-                </ul>
-              </div>
+              )}
+
+              {/* History replaces the upload area in the same modal body */}
+              {showImportHistory && (
+                <div className="w-full rounded-2xl border border-[#EEF1FF] bg-white">
+                  <div className="flex flex-col gap-3 border-b border-[#EEF1FF] p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-[#1F1C5C]">
+                        Bulk Upload History
+                      </h3>
+                      <p className="mt-1 text-xs text-[#8B90B2]">
+                        View previous customer imports and their status.
+                      </p>
+                    </div>
+
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowImportHistory(false)}
+                        className="flex items-center gap-2 rounded-xl border border-[#EEF1FF] px-4 py-2 text-sm font-semibold text-[#313166] transition hover:bg-[#F8F9FF]"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Upload
+                      </button>
+                      <button
+                        type="button"
+                        onClick={fetchImportHistory}
+                        disabled={historyLoading}
+                        className="rounded-xl bg-[#313166] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#272757] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {historyLoading ? "Loading..." : "Refresh"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[650px] text-left">
+                      <thead className="bg-[#FAFBFD]">
+                        <tr className="border-b border-[#EEF1FF]">
+                          <th className="px-4 py-3 text-xs font-semibold text-gray-400">Date</th>
+                          <th className="px-4 py-3 text-xs font-semibold text-gray-400">File Name</th>
+                          <th className="px-4 py-3 text-xs font-semibold text-gray-400">Status</th>
+                          <th className="px-4 py-3 text-xs font-semibold text-gray-400">Total Rows</th>
+                          <th className="px-4 py-3 text-xs font-semibold text-gray-400">Success</th>
+                          <th className="px-4 py-3 text-xs font-semibold text-gray-400">Errors</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {historyLoading ? (
+                          <tr>
+                            <td colSpan={6} className="py-10 text-center text-sm text-gray-400">
+                              Loading import history...
+                            </td>
+                          </tr>
+                        ) : importHistory.length > 0 ? (
+                          importHistory.map((item, index) => (
+                            <tr
+                              key={item._id || index}
+                              className="border-b border-gray-50 last:border-0"
+                            >
+                              <td className="whitespace-nowrap px-4 py-3 text-xs text-[#313166]">
+                                {item.createdAt
+                                  ? new Date(item.createdAt).toLocaleDateString()
+                                  : "-"}
+                              </td>
+                              <td
+                                className="max-w-[180px] truncate px-4 py-3 text-xs text-[#313166]"
+                                title={item.fileName || ""}
+                              >
+                                {item.fileName || "-"}
+                              </td>
+                              <td className="px-4 py-3 text-xs">
+                                <span
+                                  className={`inline-flex rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
+                                    item.status === "completed"
+                                      ? "bg-green-50 text-green-600"
+                                      : item.status === "failed"
+                                        ? "bg-red-50 text-red-600"
+                                        : "bg-blue-50 text-blue-600"
+                                  }`}
+                                >
+                                  {item.status || "Processing"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-xs text-[#313166]">
+                                {item.totalRows ?? 0}
+                              </td>
+                              <td className="px-4 py-3 text-xs font-semibold text-green-600">
+                                {item.successCount ?? 0}
+                              </td>
+                              <td className="px-4 py-3 text-xs font-semibold text-red-500">
+                                {item.errorCount ?? 0}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={6} className="py-10 text-center text-sm text-gray-400">
+                              No import history found
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
 
           {/* STEP 2: COLUMN MAPPING */}
           {step === 2 && (
