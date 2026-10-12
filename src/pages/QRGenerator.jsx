@@ -460,15 +460,19 @@ const QRGenerator = () => {
 const MAX_QR_LIMIT = 5;
 
 const canCreateMoreQR = () => {
+  // If editing/updating an existing QR, limit check does not apply
+  if (selectedDynamicQR) {
+    return true;
+  }
   if (savedQRs.length >= MAX_QR_LIMIT) {
-    showToast("You can only create up to 5 QR codes.");
+    showToast("You can only create up to 5 QR codes.", "error");
     return false;
   }
   return true;
 };
   useEffect(() => {
     fetchActivities();
-    fetchSavedQRs();
+    fetchSavedQRs(true);
     fetchAvailablePreferences();
   }, []);
 
@@ -524,18 +528,66 @@ const canCreateMoreQR = () => {
     }
   };
 
-  const fetchSavedQRs = async () => {
+  const handleSelectDynamicQR = (qr) => {
+    setSelectedDynamicQR(qr);
+    setQrName(qr.name);
+    setQrType(qr.type);
+    if (qr.type === "activity") {
+      setActivityType(qr.activityType);
+      setSelectedActivityId(qr.activityId);
+    }
+    setIncludePreferences(qr.includePreferences);
+    setSelectedPreferences(
+      Array.isArray(qr.selectedPreferences)
+        ? qr.selectedPreferences.map(normalizePreferenceItem)
+        : [],
+    );
+    setQrStatement(qr.qrStatement || "");
+    setFgColor(qr.fgColor || "#000000");
+    setBgColor(qr.bgColor || "#ffffff");
+    setBrandingName(qr.brandingName || "");
+    setTitleColor(qr.titleColor || "#1F2937");
+    setSubtitleColor(qr.subtitleColor || "#9CA3AF");
+    setStatementColor(qr.statementColor || "#374151");
+
+    setTempTitleColor(qr.titleColor || "#1F2937");
+    setTempSubtitleColor(qr.subtitleColor || "#9CA3AF");
+    setTempStatementColor(qr.statementColor || "#374151");
+    setLogo(qr.logo || null);
+    setLogoSize(Math.min(qr.logoSize || 40, 80));
+    setLogoOpacity(qr.logoOpacity || 1);
+    setLogoPlacement(qr.logoPlacement || "top");
+    setQrSubtitle(qr.qrSubtitle || "");
+    setCardBgColor(qr.cardBgColor || "#ffffff");
+    const normalizedStyle = normalizeQrStyle(qr.qrStyle);
+    setQrStyle(normalizedStyle.bodyShape);
+    setEyeFrame(normalizedStyle.eyeFrame);
+    setEyeBall(normalizedStyle.eyeBall);
+    setIsDynamic(true);
+    setIsPreferenceDropdownOpen(
+      new Array(qr.selectedPreferences?.length || 0).fill(false),
+    );
+  };
+
+  const fetchSavedQRs = async (autoSelectFirstIfFull = false) => {
     try {
       const response = await api.get("/api/dynamic-qr/my-qrs");
       if (response.data.status) {
-        setSavedQRs(
-          (response.data.data || []).map((qr) => ({
-            ...qr,
-            selectedPreferences: Array.isArray(qr.selectedPreferences)
-              ? qr.selectedPreferences.map(normalizePreferenceItem)
-              : [],
-          })),
-        );
+        const loadedQRs = (response.data.data || []).map((qr) => ({
+          ...qr,
+          selectedPreferences: Array.isArray(qr.selectedPreferences)
+            ? qr.selectedPreferences.map(normalizePreferenceItem)
+            : [],
+        }));
+        setSavedQRs(loadedQRs);
+        if (
+          autoSelectFirstIfFull &&
+          loadedQRs.length >= MAX_QR_LIMIT &&
+          loadedQRs.length > 0 &&
+          !selectedDynamicQR
+        ) {
+          handleSelectDynamicQR(loadedQRs[0]);
+        }
       }
     } catch (error) {
       console.error("Error fetching saved QRs:", error);
@@ -581,7 +633,7 @@ const canCreateMoreQR = () => {
   };
 
   const handleSaveQR = async () => {
-      if (!canCreateMoreQR()) return;
+    if (!selectedDynamicQR && !canCreateMoreQR()) return;
     if (!qrName || qrName.trim().length < 3) {
       showToast("Please enter a valid QR name (min 3 characters)", "error");
       return;
@@ -681,47 +733,6 @@ const canCreateMoreQR = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSelectDynamicQR = (qr) => {
-    setSelectedDynamicQR(qr);
-    setQrName(qr.name);
-    setQrType(qr.type);
-    if (qr.type === "activity") {
-      setActivityType(qr.activityType);
-      setSelectedActivityId(qr.activityId);
-    }
-    setIncludePreferences(qr.includePreferences);
-    setSelectedPreferences(
-      Array.isArray(qr.selectedPreferences)
-        ? qr.selectedPreferences.map(normalizePreferenceItem)
-        : [],
-    );
-    setQrStatement(qr.qrStatement || "");
-    setFgColor(qr.fgColor || "#000000");
-    setBgColor(qr.bgColor || "#ffffff");
-    setBrandingName(qr.brandingName || "");
-    setTitleColor(qr.titleColor || "#1F2937");
-setSubtitleColor(qr.subtitleColor || "#9CA3AF");
-setStatementColor(qr.statementColor || "#374151");
-
-setTempTitleColor(qr.titleColor || "#1F2937");
-setTempSubtitleColor(qr.subtitleColor || "#9CA3AF");
-setTempStatementColor(qr.statementColor || "#374151");
-    setLogo(qr.logo || null);
-    setLogoSize(Math.min(qr.logoSize || 40, 80));
-    setLogoOpacity(qr.logoOpacity || 1);
-    setLogoPlacement(qr.logoPlacement || "top");
-    setQrSubtitle(qr.qrSubtitle || "");
-    setCardBgColor(qr.cardBgColor || "#ffffff");
-    const normalizedStyle = normalizeQrStyle(qr.qrStyle);
-    setQrStyle(normalizedStyle.bodyShape);
-    setEyeFrame(normalizedStyle.eyeFrame);
-    setEyeBall(normalizedStyle.eyeBall);
-    setIsDynamic(true);
-    setIsPreferenceDropdownOpen(
-      new Array(qr.selectedPreferences?.length || 0).fill(false),
-    );
   };
 
   const fetchActivities = async () => {
@@ -1968,7 +1979,16 @@ setTempStatementColor(qr.statementColor || "#374151");
                         </div>
                         <button
                           type="button"
-                          onClick={handleResetNewQR}
+                          onClick={() => {
+                            if (savedQRs.length >= MAX_QR_LIMIT) {
+                              showToast(
+                                "You can only create up to 5 QR codes. Please select an existing QR to edit.",
+                                "warning",
+                              );
+                              return;
+                            }
+                            handleResetNewQR();
+                          }}
                           className="flex items-center gap-1.5 text-xs font-medium text-indigo-200 hover:text-white bg-indigo-800/80 hover:bg-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-600/50 shadow-sm transition-all"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
@@ -2077,11 +2097,20 @@ setTempStatementColor(qr.statementColor || "#374151");
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[360px] overflow-y-auto pr-1 custom-scrollbar pt-1">
                       {/* Create New Card */}
                       <div
-                        onClick={handleResetNewQR}
+                        onClick={() => {
+                          if (savedQRs.length >= MAX_QR_LIMIT) {
+                            showToast(
+                              "You can only create up to 5 QR codes. Please select an existing QR to edit.",
+                              "warning",
+                            );
+                            return;
+                          }
+                          handleResetNewQR();
+                        }}
                         className={`group p-3.5 rounded-xl border-2 border-dashed transition-all cursor-pointer flex items-center justify-center gap-2 min-h-[90px] ${!selectedDynamicQR
                             ? "border-indigo-400/80 bg-indigo-900/40"
                             : "border-indigo-800/50 bg-indigo-950/40 hover:border-indigo-600 hover:bg-indigo-900/30"
-                          }`}
+                          } ${savedQRs.length >= MAX_QR_LIMIT ? "opacity-75" : ""}`}
                       >
                         <div
                           className={`p-2 rounded-lg ${!selectedDynamicQR
@@ -2094,7 +2123,7 @@ setTempStatementColor(qr.statementColor || "#374151");
                         <span
                           className={`text-xs font-bold ${!selectedDynamicQR ? "text-indigo-200" : "text-indigo-400 group-hover:text-indigo-200"}`}
                         >
-                          Create New QR
+                          {savedQRs.length >= MAX_QR_LIMIT ? "Limit Reached (5/5)" : "Create New QR"}
                         </span>
                       </div>
 
