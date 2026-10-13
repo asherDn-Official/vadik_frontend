@@ -584,16 +584,16 @@ function BrandKit() {
 
         {/* Saved brand kits */}
         <section className="overflow-hidden rounded-2xl border border-[#E9EBF5] bg-white shadow-sm">
-          <div className="flex flex-col justify-between gap-4 border-b border-[#ECEEF7] p-5 sm:flex-row sm:items-center sm:px-6">
+          {/* <div className="flex flex-col justify-between gap-4 border-b border-[#ECEEF7] p-5 sm:flex-row sm:items-center sm:px-6">
             <div>
               <h2 className="text-lg font-bold text-[#313166]">
                 Your Brand Kit
-              </h2>
-              <p className="mt-1 text-sm text-[#8991B1]">
+              </h2> */}
+              {/* <p className="mt-1 text-sm text-[#8991B1]">
                 {brandKits.length}{" "}
                 {brandKits.length === 1 ? "brand kit" : "brand kits"} saved
-              </p>
-            </div>
+              </p> */}
+            {/* </div> */}
 
             {/* <div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative">
@@ -621,12 +621,12 @@ function BrandKit() {
                 Refresh
               </button>
             </div> */}
-          </div>
+          {/* </div> */}
 
           {loading ? (
             <div className="flex min-h-52 flex-col items-center justify-center gap-3 text-[#858DAD]">
               <LoaderCircle size={28} className="animate-spin text-[#7777C8]" />
-              <p className="text-sm">Loading your brand kits...</p>
+              <p className="text-sm">Loading your brand kit...</p>
             </div>
           ) : filteredKits.length === 0 ? (
             <div className="flex min-h-64 flex-col items-center justify-center px-5 py-12 text-center">
