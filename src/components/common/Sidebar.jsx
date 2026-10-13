@@ -90,13 +90,13 @@ function Sidebar() {
       icon: integrationIcon,
       label: "Integrations",
     },
-    {
-  path: "/brand-kit",
-  module: "Business Brand Kit",
-  icon: null,
-  lucideIcon: Palette,
-  label: "Business Brand Kit",
-},
+//     {
+//   path: "/brand-kit",
+//   module: "Business Brand Kit",
+//   icon: null,
+//   lucideIcon: Palette,
+//   label: "Business Brand Kit",
+// },
     // {
     //   path: "/quicksearch",
     //   module: "Quick Search",

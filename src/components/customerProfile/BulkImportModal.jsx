@@ -547,21 +547,7 @@ const fetchImportHistory = async () => {
           {/* STEP 1: UPLOAD COMPONENT */}
            {step === 1 && (
             <div className="flex flex-col gap-5">
-              {!showImportHistory && (
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowImportHistory(true);
-                      fetchImportHistory();
-                    }}
-                    className="flex items-center gap-2 rounded-xl bg-[#313166] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#272757]"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Bulk Upload History
-                  </button>
-                </div>
-              )}
+             
 
               {/* Upload area and instructions are hidden while history is open */}
               {!showImportHistory && (
@@ -1007,17 +993,35 @@ const fetchImportHistory = async () => {
 
         {/* Modal Footer Controls */}
         <div className="flex items-center justify-between border-t border-[#EEF1FF] bg-[#FAFBFD] px-6 py-4">
-          {step === 1 && (
-            <div className="flex justify-end w-full">
-              <button
-                type="button"
-                onClick={onClose}
-                className="h-11 rounded-xl border border-[#EEF1FF] bg-white px-5 text-xs font-semibold text-[#313166] hover:bg-[#F8F9FF] transition-all"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+          
+{step === 1 && (
+  <div className="flex w-full items-center justify-between gap-3">
+    {!showImportHistory ? (
+      <button
+        type="button"
+        onClick={() => {
+          setShowImportHistory(true);
+          fetchImportHistory();
+        }}
+        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#313166] px-5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#272757]"
+      >
+        <FileText className="h-4 w-4" />
+        Bulk Upload History
+      </button>
+    ) : (
+      <div />
+    )}
+
+    <button
+      type="button"
+      onClick={onClose}
+      className="h-11 rounded-xl border border-[#EEF1FF] bg-white px-5 text-xs font-semibold text-[#313166] transition-all hover:bg-[#F8F9FF]"
+    >
+      Cancel
+    </button>
+  </div>
+)}
+
 
           {step === 2 && (
             <>

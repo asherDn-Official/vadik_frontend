@@ -155,12 +155,18 @@ function BrandKit() {
 
     try {
       if (editingId) {
-        await api.put(`/api/brand-kits/${editingId}`, payload);
-        setNotice("Brand kit updated successfully.");
-      } else {
-        await api.post("/api/brand-kits", payload);
-        setNotice("Brand kit created successfully.");
-      }
+  await api.put(`/api/brand-kits/${editingId}`, payload);
+  setNotice("Brand kit updated successfully.");
+} else {
+  if (brandKits.length > 0) {
+    setError("Only one Brand Kit is allowed per business.");
+    setSaving(false);
+    return;
+  }
+
+  await api.post("/api/brand-kits", payload);
+  setNotice("Brand kit created successfully.");
+}
 
       setShowForm(false);
       setEditingId(null);
@@ -228,14 +234,14 @@ function BrandKit() {
             </p>
           </div>
 
-          <button
+          {/* <button
             type="button"
             onClick={openCreateForm}
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#313166] px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#313166]/10 transition hover:bg-[#252550]"
           >
             <Plus size={18} />
             Add Brand Kit
-          </button>
+          </button> */}
         </div>
 
         {/* Alerts */}
@@ -333,21 +339,23 @@ function BrandKit() {
                       placeholder="https://example.com/logo.png"
                       className={inputClass}
                     />
-                    {form.logoUrl && (
-                      <div className="mt-3 flex h-24 items-center justify-center rounded-xl border border-dashed border-[#DDE1F0] bg-[#F8F9FE] p-3">
-                        <img
-                          src={form.logoUrl}
-                          alt="Brand logo preview"
-                          className="max-h-full max-w-full object-contain"
-                          onError={(e) => {
-                            e.currentTarget.style.visibility = "hidden";
-                          }}
-                          onLoad={(e) => {
-                            e.currentTarget.style.visibility = "visible";
-                          }}
-                        />
-                      </div>
-                    )}
+                    
+{form.logoUrl && (
+  <div className="mt-3 flex min-h-24 items-center justify-center rounded-xl border border-dashed border-[#DDE1F0] bg-[#F8F9FE] p-3">
+    <img
+      src={form.logoUrl}
+      alt="Brand logo preview"
+      className="max-h-24 max-w-full object-contain"
+      onError={(e) => {
+        e.currentTarget.style.display = "none";
+      }}
+      onLoad={(e) => {
+        e.currentTarget.style.display = "block";
+      }}
+    />
+  </div>
+)}
+
                     <p className="mt-2 text-xs text-[#9097B4]">
                       Enter a publicly accessible image URL. File uploads are
                       not enabled in this version.
@@ -579,7 +587,7 @@ function BrandKit() {
           <div className="flex flex-col justify-between gap-4 border-b border-[#ECEEF7] p-5 sm:flex-row sm:items-center sm:px-6">
             <div>
               <h2 className="text-lg font-bold text-[#313166]">
-                Saved Brand Kits
+                Your Brand Kit
               </h2>
               <p className="mt-1 text-sm text-[#8991B1]">
                 {brandKits.length}{" "}
@@ -587,7 +595,7 @@ function BrandKit() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-2 sm:flex-row">
+            {/* <div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative">
                 <Search
                   size={17}
@@ -612,7 +620,7 @@ function BrandKit() {
                 />
                 Refresh
               </button>
-            </div>
+            </div> */}
           </div>
 
           {loading ? (
@@ -626,7 +634,7 @@ function BrandKit() {
                 <Palette size={28} />
               </div>
               <h3 className="text-lg font-semibold text-[#313166]">
-                {search ? "No matching brand kits" : "No brand kits yet"}
+                {search ? "No matching brand kits" : "No brand kit yet"}
               </h3>
               <p className="mt-2 max-w-md text-sm text-[#8991B1]">
                 {search

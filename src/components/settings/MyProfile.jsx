@@ -8,6 +8,9 @@ import showToast from "../../utils/ToastNotification";
 import { useAuth } from "../../context/AuthContext";
 import { useUnsavedChanges } from "../../context/UnsavedChangesContext";
 import Loader from "../../utils/Loader";
+import { useNavigate } from "react-router-dom";
+import { Palette } from "lucide-react";
+import BrandKit from "../../pages/BrandKit"
 
 const MyProfile = () => {
   const { setHasUnsavedChanges } = useUnsavedChanges();
@@ -46,6 +49,8 @@ const MyProfile = () => {
     mode: "onChange",
   });
 
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState("profile");
   const [uploadError, setUploadError] = useState("");
   const [loading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState("");
@@ -267,11 +272,38 @@ const MyProfile = () => {
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-0">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-[#313166] text-lg font-semibold">
-          Admin Profile
-        </h2>
-      </div>
+      
+
+<div className="mb-8">
+  <div className="flex flex-wrap items-center gap-3 border-b border-[#E8EAF5] pb-4">
+    <button
+      type="button"
+      onClick={() => setActiveSection("profile")}
+      className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition ${
+        activeSection === "profile"
+          ? "bg-[#313166] text-white shadow-sm"
+          : "border border-[#E5E7F2] bg-white text-[#313166] hover:bg-[#F5F5FC]"
+      }`}
+    >
+      Admin Profile
+    </button>
+
+    <button
+      type="button"
+      onClick={() => setActiveSection("brandKit")}
+      className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition ${
+        activeSection === "brandKit"
+          ? "bg-[#313166] text-white shadow-sm"
+          : "border border-[#E5E7F2] bg-white text-[#313166] hover:bg-[#F5F5FC]"
+      }`}
+    >
+      <Palette className="h-4 w-4" />
+      Business Brand Kit
+    </button>
+  </div>
+</div>
+
+
 
       {successMessage && (
         <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl border border-green-100 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -279,7 +311,8 @@ const MyProfile = () => {
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+      {activeSection === "profile" && (
+  <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
         <div className="flex-1 order-2 lg:order-1">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -745,6 +778,8 @@ const MyProfile = () => {
           </div>
         </div>
       </div>
+      )}
+      {activeSection === "brandKit" && <BrandKit />}
 
 
     </div>
