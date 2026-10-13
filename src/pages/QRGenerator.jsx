@@ -36,6 +36,8 @@ import { useRef } from "react";
 import { toPng } from "html-to-image";
 import QRStyleOption from "../components/QRStyleOption";
 
+import MediaPickerModal from "../components/common/MediaPickerModal";
+
 
 
 const loadImage = (src) =>
@@ -343,6 +345,8 @@ const QRGenerator = () => {
   const [tempTitleColor, setTempTitleColor] = useState(titleColor);
   const [tempSubtitleColor, setTempSubtitleColor] = useState(subtitleColor);
   const [tempStatementColor, setTempStatementColor] = useState(statementColor);
+
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
 
   // Accordion Sections Open State
   const [openSections, setOpenSections] = useState({
@@ -1801,7 +1805,7 @@ setTempStatementColor(qr.statementColor || "#374151");
                     </div>
 
                     <div className="space-y-4">
-                      <div>
+                      {/* <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Upload Logo
                         </label>
@@ -1838,7 +1842,41 @@ setTempStatementColor(qr.statementColor || "#374151");
                             </button>
                           )}
                         </div>
-                      </div>
+                      </div> */}
+
+                      {/* WITH THIS UPDATED MEDIA LIBRARY PICKER: */}
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    QR Logo Image
+  </label>
+  <p className="text-[11px] text-gray-500 mb-2">
+    Select a logo from your Media Library to place inside or above your QR code.
+  </p>
+  <div className="flex items-center gap-3">
+    <button
+      type="button"
+      onClick={() => setShowMediaPicker(true)}
+      className="flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-all gap-2 shadow-xs"
+    >
+      <Plus className="w-4 h-4" />
+      {logo ? "Change from Media Library" : "Choose from Media Library"}
+    </button>
+
+    {logo && (
+      <button
+        type="button"
+        onClick={() => {
+          setLogo(null);
+          setResolvedLogo(null);
+        }}
+        className="p-2.5 bg-gray-100 text-gray-500 rounded-lg hover:bg-red-100 hover:text-red-500 transition-colors"
+        title="Remove Logo"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    )}
+  </div>
+</div>
 
                       {logo && (
                         <div className="space-y-4 border-t border-gray-100 pt-4">
@@ -2369,6 +2407,17 @@ setTempStatementColor(qr.statementColor || "#374151");
           background: #94a3b8;
         }
       `}</style>
+      {/* Media Library Selection Modal */}
+      {showMediaPicker && (
+        <MediaPickerModal
+          onClose={() => setShowMediaPicker(false)}
+          onSelect={(s3Url) => {
+            setLogo(s3Url);
+            setResolvedLogo(s3Url);
+            setShowMediaPicker(false);
+          }}
+        />
+      )}
     </div>
   );
 };

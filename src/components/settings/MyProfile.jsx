@@ -8,6 +8,7 @@ import showToast from "../../utils/ToastNotification";
 import { useAuth } from "../../context/AuthContext";
 import { useUnsavedChanges } from "../../context/UnsavedChangesContext";
 import Loader from "../../utils/Loader";
+import MediaPickerModal from "../../components/common/MediaPickerModal";
 
 const MyProfile = () => {
   const { setHasUnsavedChanges } = useUnsavedChanges();
@@ -52,6 +53,7 @@ const MyProfile = () => {
   const [retailerId, setRetailerId] = useState(null);
   const [importHistory, setImportHistory] = useState([]);
   const fileInputRef = useRef(null);
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
 
   const { auth } = useAuth();
 
@@ -189,10 +191,16 @@ const MyProfile = () => {
       formData.append("storePincode", data.storePincode);
       formData.append("storeType", data.storeType);
 
-      if (data.profilePicture && !data.profilePicture.startsWith("http")) {
-        const blob = await fetch(data.profilePicture).then((r) => r.blob());
-        formData.append("storeImage", blob, "profile.jpg");
-      }
+      if (data.profilePicture) {
+  if (data.profilePicture.startsWith("http")) {
+    // S3 URL from Media Library or existing stored image
+    formData.append("storeImage", data.profilePicture);
+  } else {
+    // Local base64 image file
+    const blob = await fetch(data.profilePicture).then((r) => r.blob());
+    formData.append("storeImage", blob, "profile.jpg");
+  }
+}
 
       const response = await api.patch(`api/retailer/${retailerId}`, formData, {
         headers: {
@@ -688,7 +696,7 @@ const MyProfile = () => {
           </form>
         </div>
 
-        <div className="w-full lg:w-72 order-1 lg:order-2">
+        {/* <div className="w-full lg:w-72 order-1 lg:order-2">
           <div className="sticky top-6 bg-gray-50 p-6 md:p-8 rounded-[24px] border border-gray-100 flex flex-col items-center">
             <div className="text-center mb-6">
               <h3 className="font-semibold text-[#313166] text-base">
@@ -743,7 +751,54 @@ const MyProfile = () => {
               </p>
             )}
           </div>
-        </div>
+        </div> */}
+
+        {/* WITH THIS UPDATED MEDIA LIBRARY PICKER BLOCK: */}
+<div className="w-full lg:w-72 order-1 lg:order-2">
+  <div className="sticky top-6 bg-gray-50 p-6 md:p-8 rounded-[24px] border border-gray-100 flex flex-col items-center">
+    <div className="text-center mb-6">
+      <h3 className="font-semibold text-[#313166] text-base">
+        Business Logo
+      </h3>
+    </div>
+    
+    <div 
+      className="relative group cursor-pointer" 
+      onClick={() => setShowMediaPicker(true)}
+    >
+      <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden mb-6 border-4 border-white shadow-md transition-transform group-hover:scale-105">
+        <img
+          src={watch("profilePicture")}
+          alt="Profile"
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </div>
+    </div>
+
+    <div className="text-center mb-6">
+      <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">
+        Choose from Media Library
+      </p>
+      <p className="text-[#EC396F] text-[10px] font-medium">
+        Select your stored S3 logo
+      </p>
+    </div>
+
+    <button
+      type="button"
+      onClick={() => setShowMediaPicker(true)}
+      className="w-full py-2.5 px-4 border border-gray-200 rounded-xl text-[#313166] font-medium hover:bg-white hover:shadow-sm transition-all text-sm"
+    >
+      Choose from Media Library
+    </button>
+  </div>
+</div>
       </div>
 
       {/* Bulk Upload History */}
@@ -794,6 +849,16 @@ const MyProfile = () => {
           </table>
         </div>
       </div>
+      {/* Media Library Selection Modal */}
+      {showMediaPicker && (
+        <MediaPickerModal
+          onClose={() => setShowMediaPicker(false)}
+          onSelect={(s3Url) => {
+            setValue("profilePicture", s3Url, { shouldDirty: true });
+            setShowMediaPicker(false);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -23,6 +23,7 @@ import api from "../../api/apiconfig";
 import Loader from "../../utils/Loader";
 import { toast } from "react-toastify";
 import { renderWhatsAppFormattedText } from "../../utils/whatsappTextFormatter";
+import MediaPickerModal from "../common/MediaPickerModal";
 
 const buildCopyName = (name) => {
   if (!name) return "";
@@ -132,6 +133,7 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
   const [emojiSearch, setEmojiSearch] = useState("");
   const [activeEmojiCategory, setActiveEmojiCategory] = useState("Smileys");
   const bodyInputRefs = useRef({});
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
 
   // Character limits
   const LIMITS = {
@@ -600,7 +602,7 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
                           </div>
                         </div>
                       )}
-                      {(comp.format === "IMAGE" || comp.format === "VIDEO" || comp.format === "DOCUMENT") && (
+                      {/* {(comp.format === "IMAGE" || comp.format === "VIDEO" || comp.format === "DOCUMENT") && (
                         <div className="space-y-4">
                           <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Header {comp.format}</label>
                           
@@ -692,7 +694,65 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
                             </div>
                           </div>
                         </div>
-                      )}
+                      )} */}
+
+
+                      {/* WITH THIS UPDATED MEDIA LIBRARY PICKER: */}
+{(comp.format === "IMAGE" || comp.format === "VIDEO" || comp.format === "DOCUMENT") && (
+  <div className="space-y-4">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Header {comp.format}</label>
+    
+    <div className="flex gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-blue-900">
+      <Info size={18} className="mt-0.5 shrink-0 text-blue-600" />
+      <div className="space-y-1">
+        <p className="font-semibold">Reusable media guidance</p>
+        <p className="text-xs leading-5 text-blue-800">
+          Choose an image, video, or document header directly from your Media Library.
+        </p>
+      </div>
+    </div>
+
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setShowMediaPicker(true)}
+          className="px-5 py-2.5 bg-[#313166] text-white rounded-xl text-sm font-bold hover:bg-[#3d3b83] transition-all flex items-center gap-2 shadow-sm"
+        >
+          <Plus size={16} />
+          {comp.mediaUrl ? "Change from Media Library" : "Choose from Media Library"}
+        </button>
+
+        {comp.mediaUrl && (
+          <button
+            type="button"
+            onClick={() => updateComponent(idx, { mediaUrl: "" })}
+            className="px-4 py-2.5 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50 font-semibold transition-colors"
+          >
+            Remove
+          </button>
+        )}
+      </div>
+
+      {comp.mediaUrl && (
+        <div className="bg-white p-3 rounded-xl border border-gray-200 text-xs text-gray-600 truncate">
+          <span className="font-bold text-gray-800">Attached Media URL:</span> {comp.mediaUrl}
+        </div>
+      )}
+
+      <div className="bg-blue-50 p-3 rounded-xl flex items-start gap-2 border border-blue-100">
+         <Info size={14} className="text-blue-500 mt-0.5" />
+         <div className="text-[10px] text-blue-700">
+            <p className="font-bold">File Limits:</p>
+            {comp.format === "IMAGE" && <p>• Types: JPG, PNG, WEBP. Max 5MB.</p>}
+            {comp.format === "VIDEO" && <p>• Types: MP4, 3GP. Max 16MB.</p>}
+            {comp.format === "DOCUMENT" && <p>• Types: PDF. Max 100MB.</p>}
+            <p className="mt-1">Meta requires a sample file to approve your template.</p>
+         </div>
+      </div>
+    </div>
+  </div>
+)}
                     </div>
                   )}
 
@@ -931,6 +991,23 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
           </div>
         </div>
       </div>
+      {showMediaPicker && (
+        <MediaPickerModal
+          onClose={() => setShowMediaPicker(false)}
+          mediaType={
+            template.components.find((c) => c.type === "HEADER")?.format === "DOCUMENT"
+              ? "file"
+              : (template.components.find((c) => c.type === "HEADER")?.format || "IMAGE").toLowerCase()
+          }
+          onSelect={(s3Url) => {
+            const headerIdx = template.components.findIndex((c) => c.type === "HEADER");
+            if (headerIdx !== -1) {
+              updateComponent(headerIdx, { mediaUrl: s3Url });
+            }
+            setShowMediaPicker(false);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -149,7 +149,11 @@ function App() {
       <CustomerImportProvider>
         <Routes>
           {/* Public */}
-          <Route index element={<Login />} />
+          {/* <Route index element={<Login />} /> */}
+          <Route 
+  index 
+  element={auth ? <Navigate to="/dashboard" replace /> : <Login />} 
+/>
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route
             path="/register/*"

@@ -18,6 +18,7 @@ import {
   MAX_CUSTOMER_LABELS,
   normalizeCustomerLabels,
 } from "../../utils/customerLabelUtils";
+import MediaPickerModal from "../common/MediaPickerModal";
 
 const MAX_PROFILE_PICTURE_SIZE_BYTES = 2 * 1024 * 1024;
 const PROFILE_PICTURE_SIZE_ERROR =
@@ -30,6 +31,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
   const [loading, setLoading] = React.useState(false);
   const [profilePreview, setProfilePreview] = useState(null);
   const [profileFile, setProfileFile] = useState(null);
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
 
   const fileInputRef = React.useRef(null);
 
@@ -244,30 +246,30 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
     return true;
   };
 
-  const onFormSubmit = (data) => {
-    const phoneNumber = parsePhoneNumber(data.mobileNumber);
-    const countryCode = phoneNumber.countryCallingCode;
-    const mobileNumber = phoneNumber.nationalNumber;
+    const onFormSubmit = (data) => {
+      const phoneNumber = parsePhoneNumber(data.mobileNumber);
+      const countryCode = phoneNumber.countryCallingCode;
+      const mobileNumber = phoneNumber.nationalNumber;
 
-    // Ensure firstVisit is sent as YYYY-MM-DD string
-    const firstVisitDate = data.firstVisit ? new Date(data.firstVisit) : null;
-    const formattedFirstVisit = firstVisitDate
-      ? `${firstVisitDate.getFullYear()}-${String(
-          firstVisitDate.getMonth() + 1,
-        ).padStart(2, "0")}-${String(firstVisitDate.getDate()).padStart(
-          2,
-          "0",
-        )}`
-      : null;
+      // Ensure firstVisit is sent as YYYY-MM-DD string
+      const firstVisitDate = data.firstVisit ? new Date(data.firstVisit) : null;
+      const formattedFirstVisit = firstVisitDate
+        ? `${firstVisitDate.getFullYear()}-${String(
+            firstVisitDate.getMonth() + 1,
+          ).padStart(2, "0")}-${String(firstVisitDate.getDate()).padStart(
+            2,
+            "0",
+          )}`
+        : null;
 
-    onSubmit({
-      ...data,
-      countryCode,
-      mobileNumber,
-      firstVisit: formattedFirstVisit,
-      profilePicture: profileFile,
-    });
-  };
+      onSubmit({
+        ...data,
+        countryCode,
+        mobileNumber,
+        firstVisit: formattedFirstVisit,
+        profilePicture: profileFile || profilePreview,
+      });
+    };
 
   const inputStyles = `
   h-14 w-full
@@ -313,7 +315,7 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
         className="flex flex-col gap-8"
       >
         {/* Profile Picture Upload */}
-        <div className="flex flex-col items-center justify-center gap-4 py-4">
+        {/* <div className="flex flex-col items-center justify-center gap-4 py-4">
           <div className="relative group">
             <div
               className={`
@@ -378,7 +380,56 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
             </p>
             <p className="text-xs text-[#8B90B2] mt-1">PNG, JPG up to 1MB</p>
           </div>
-        </div>
+        </div> */}
+
+
+
+        {/* WITH THIS UPDATED MEDIA LIBRARY PICKER: */}
+<div className="flex flex-col items-center justify-center gap-3 py-4">
+  <div className="relative group">
+    <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-dashed border-[#E8ECF8] bg-[#F8F9FF] flex items-center justify-center transition-all duration-200 group-hover:border-[#313166]/40">
+      {profilePreview ? (
+        <img
+          src={profilePreview}
+          alt="Profile Preview"
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <User size={48} className="text-[#8B90B2]" />
+      )}
+    </div>
+
+    <button
+      type="button"
+      onClick={() => setShowMediaPicker(true)}
+      className="absolute bottom-0 right-0 p-2 rounded-full bg-white border border-[#EEF1FF] text-[#313166] shadow-lg hover:bg-[#F8F9FF] transition-all"
+      title="Choose from Media Library"
+    >
+      <Camera size={18} />
+    </button>
+
+    {profilePreview && (
+      <button
+        type="button"
+        onClick={removeProfilePicture}
+        className="absolute top-0 right-0 p-1.5 rounded-full bg-red-50 border border-red-100 text-red-500 shadow-sm hover:bg-red-100 transition-all"
+      >
+        <X size={14} />
+      </button>
+    )}
+  </div>
+
+  <div className="text-center">
+    <button
+      type="button"
+      onClick={() => setShowMediaPicker(true)}
+      className="text-xs font-semibold text-[#313166] hover:underline"
+    >
+      Choose from Media Library
+    </button>
+    <p className="text-xs text-[#8B90B2] mt-1">Select customer profile photo</p>
+  </div>
+</div>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <div className="space-y-2">
@@ -695,6 +746,17 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
           </button>
         </div>
       </form>
+      {/* Media Library Selection Modal */}
+      {showMediaPicker && (
+        <MediaPickerModal
+          onClose={() => setShowMediaPicker(false)}
+          onSelect={(s3Url) => {
+            setProfileFile(null); // Clear local File object since we use S3 URL directly
+            setProfilePreview(s3Url);
+            setShowMediaPicker(false);
+          }}
+        />
+      )}
     </>
   );
 };

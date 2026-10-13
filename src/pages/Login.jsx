@@ -12,7 +12,7 @@ import Loader from "../utils/Loader";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { checkAuth } = useAuth();
+  const { checkAuth, auth } = useAuth();
   const hasShownLoginNotification = useRef(false);
   const [activePortal, setActivePortal] = useState("retailer");
   const [retailerView, setRetailerView] = useState("login");
@@ -42,23 +42,48 @@ const Login = () => {
     confirmPassword: "",
   });
 
+  // useEffect(() => {
+  //   if (!localStorage.getItem("token")) {
+  //     window.history.pushState(null, "", window.location.href);
+  //   }
+
+  //   const enforceLogin = () => {
+  //     if (!localStorage.getItem("token")) {
+  //       navigate("/", { replace: true });
+  //     }
+  //   };
+
+  //   window.addEventListener("popstate", enforceLogin);
+
+  //   return () => {
+  //     window.removeEventListener("popstate", enforceLogin);
+  //   };
+  // }, [navigate]);
+
+
   useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  // If token or auth session already exists, auto-redirect to dashboard
+  if (token || auth) {
+    navigate("/dashboard", { replace: true });
+    return;
+  }
+
+  window.history.pushState(null, "", window.location.href);
+
+  const enforceLogin = () => {
     if (!localStorage.getItem("token")) {
-      window.history.pushState(null, "", window.location.href);
+      navigate("/", { replace: true });
     }
+  };
 
-    const enforceLogin = () => {
-      if (!localStorage.getItem("token")) {
-        navigate("/", { replace: true });
-      }
-    };
+  window.addEventListener("popstate", enforceLogin);
 
-    window.addEventListener("popstate", enforceLogin);
-
-    return () => {
-      window.removeEventListener("popstate", enforceLogin);
-    };
-  }, [navigate]);
+  return () => {
+    window.removeEventListener("popstate", enforceLogin);
+  };
+}, [auth, navigate]);
 
   const resetMessages = () => {
     setError(null);

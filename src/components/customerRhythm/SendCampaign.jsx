@@ -34,6 +34,7 @@ import * as XLSX from "xlsx";
 
 import Loader from "../../utils/Loader";
 import { renderWhatsAppFormattedText } from "../../utils/whatsappTextFormatter";
+import MediaPickerModal from "../common/MediaPickerModal";
 
 const hasMeaningfulFilterValue = (value) => {
   if (value === undefined || value === null || value === "") {
@@ -128,6 +129,8 @@ const SendCampaign = () => {
     total: 0,
     totalPages: 1,
   });
+
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
 
   const openCampaignAnalytics = (campaign) => {
     if (!campaign?._id) return;
@@ -1345,7 +1348,7 @@ const SendCampaign = () => {
                     <p className="text-sm text-gray-500">Map your template variables to customer data or static values.</p>
                   </div>
 
-                  {campaignData.media.type && (
+                  {/* {campaignData.media.type && (
                     <div className="p-6 bg-[#313166]/5 rounded-2xl border border-[#313166]/10 space-y-4">
                       <div className="flex items-center gap-2 text-[#313166]">
                          <Upload size={18} />
@@ -1382,7 +1385,57 @@ const SendCampaign = () => {
                         </div>
                       </div>
                     </div>
-                  )}
+                  )} */}
+
+
+
+
+                  {/* WITH THIS UPDATED MEDIA LIBRARY PICKER: */}
+{campaignData.media.type && (
+  <div className="p-6 bg-[#313166]/5 rounded-2xl border border-[#313166]/10 space-y-4">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 text-[#313166]">
+         <Upload size={18} />
+         <h4 className="font-bold text-sm">Select {campaignData.media.type} Header</h4>
+      </div>
+      {campaignData.media.url && (
+        <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+          Media Attached
+        </span>
+      )}
+    </div>
+
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      <button
+        type="button"
+        onClick={() => setShowMediaPicker(true)}
+        className="px-6 py-3 bg-[#313166] text-white rounded-xl text-sm font-bold hover:bg-[#3d3b83] transition-all flex items-center justify-center gap-2 shadow-sm"
+      >
+        <Plus size={16} />
+        {campaignData.media.url ? "Change from Media Library" : "Choose from Media Library"}
+      </button>
+
+      {campaignData.media.url && (
+        <button
+          type="button"
+          onClick={() => setCampaignData({
+            ...campaignData,
+            media: { ...campaignData.media, url: "" }
+          })}
+          className="px-4 py-3 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50 font-semibold transition-colors"
+        >
+          Remove Media
+        </button>
+      )}
+    </div>
+
+    {campaignData.media.url && (
+      <div className="pt-2 text-xs text-gray-500 truncate bg-white p-2.5 rounded-xl border border-gray-100">
+        <span className="font-bold text-gray-700">Selected URL:</span> {campaignData.media.url}
+      </div>
+    )}
+  </div>
+)}
 
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -1830,6 +1883,23 @@ const SendCampaign = () => {
             </p>
           </div>
         </div>
+      )}
+      {showMediaPicker && (
+        <MediaPickerModal
+          onClose={() => setShowMediaPicker(false)}
+          mediaType={
+            campaignData.media.type === "DOCUMENT"
+              ? "file"
+              : (campaignData.media.type || "IMAGE").toLowerCase()
+          }
+          onSelect={(s3Url) => {
+            setCampaignData((prev) => ({
+              ...prev,
+              media: { ...prev.media, url: s3Url }
+            }));
+            setShowMediaPicker(false);
+          }}
+        />
       )}
     </div>
   );

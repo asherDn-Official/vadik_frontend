@@ -13,6 +13,7 @@ import menDefaultUrl from "/assets/men.png";
 import womenDefaultUrl from "/assets/women.png";
 import allowNotificationIconUrl from "/assets/allowNotification.png";
 import loyalityIconUrl from "/assets/loyality.png";
+import MediaPickerModal from "../common/MediaPickerModal";
 
 import * as yup from "yup";
 import {
@@ -183,7 +184,7 @@ const FieldItem = React.memo(
   }
 `}
           >
-            <PhoneInput
+            {/* <PhoneInput
               international
               defaultCountry="IN"
               value={actualValue || ""}
@@ -208,7 +209,17 @@ const FieldItem = React.memo(
               numberInputProps={{
                 className: "focus:ring-0 focus:outline-none",
               }}
-            />
+            /> */}
+            <PhoneInput
+  international
+  defaultCountry="IN"
+  value={actualValue || ""}
+  onChange={handlePhoneChange}
+  className="w-full px-2 py-1"
+  numberInputProps={{
+    className: "!h-10 !w-full !border-none !bg-transparent !px-3 !text-sm !font-medium !text-[#1F1C5C] focus:!ring-0 focus:!outline-none",
+  }}
+/>
           </div>
           {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
         </div>
@@ -398,6 +409,7 @@ const CustomerDetails = ({
   const [profileFile, setProfileFile] = useState(null);
   const [removeProfilePicture, setRemoveProfilePicture] = useState(false);
   const fileInputRef = useRef(null);
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -868,11 +880,18 @@ const CustomerDetails = ({
       console.log("Formatted data for API:", formattedData);
 
       // Call the parent save handler with formatted data
-      onSave({
-        ...formattedData,
-        profilePicture: profileFile,
-        removeProfilePicture,
-      });
+      // onSave({
+      //   ...formattedData,
+      //   profilePicture: profileFile,
+      //   removeProfilePicture,
+      // });
+
+      // Update inside onSubmit handler:
+onSave({
+  ...formattedData,
+  profilePicture: profileFile || (typeof profilePreview === "string" && profilePreview.startsWith("http") ? profilePreview : null),
+  removeProfilePicture,
+});
     } catch (err) {
       console.error("Validation error in onSubmit:", err);
       if (err instanceof yup.ValidationError) {
@@ -974,7 +993,7 @@ const CustomerDetails = ({
   xl:w-[176px]
 "
                       />
-                      {isEditing && (
+                      {/* {isEditing && (
                         <>
                           <button
                             type="button"
@@ -1011,7 +1030,47 @@ const CustomerDetails = ({
                             </button>
                           )}
                         </>
-                      )}
+                      )} */}
+
+
+                      {isEditing && (
+  <>
+    {/* Top-Left Floating Remove Button (Prevents overlap with ACTIVE badge) */}
+    {(profilePreview || transformedCustomer?.profilePictureUrl) && !removeProfilePicture && (
+      <button
+        type="button"
+        onClick={handleRemoveProfilePicture}
+        className="absolute top-2 left-2 z-20 p-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-md transition-all cursor-pointer"
+        title="Remove Profile Picture"
+      >
+        <X size={14} />
+      </button>
+    )}
+
+    {/* Bottom-Right Action Pill (Media Library & Local File) */}
+    <div className="absolute bottom-2 right-2 z-20 flex items-center gap-1.5 bg-white/95 p-1 rounded-2xl shadow-lg border border-[#EEF1FF] backdrop-blur-md">
+      {/* Media Library Button */}
+      <button
+        type="button"
+        onClick={() => setShowMediaPicker(true)}
+        className="p-2 rounded-xl bg-[#313166] text-white hover:bg-[#27275a] transition-all cursor-pointer"
+        title="Choose from Media Library"
+      >
+        <Camera size={16} />
+      </button>
+
+      {/* Local File Upload Button */}
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        className="p-2 rounded-xl bg-[#F8F9FF] text-[#313166] hover:bg-[#EEF1FF] border border-[#EEF1FF] transition-all cursor-pointer"
+        title="Upload Local File"
+      >
+        <User size={16} />
+      </button>
+    </div>
+  </>
+)}
                       <input
                         type="file"
                         ref={fileInputRef}
@@ -1707,6 +1766,18 @@ const CustomerDetails = ({
           </div>
         </form>
       </div>
+      {/* Render MediaPickerModal */}
+      {showMediaPicker && (
+        <MediaPickerModal
+          onClose={() => setShowMediaPicker(false)}
+          onSelect={(s3Url) => {
+            setProfileFile(null); // Clear raw file
+            setProfilePreview(s3Url); // Set S3 URL preview
+            setRemoveProfilePicture(false);
+            setShowMediaPicker(false);
+          }}
+        />
+      )}
     </div>
   );
 };

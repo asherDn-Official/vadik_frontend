@@ -18,6 +18,9 @@ import {
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
 
+import { FiImage } from "react-icons/fi"; // Make sure FiImage is included in react-icons/fi import
+import MediaPickerModal from "../common/MediaPickerModal";
+
 const CouponPopup = ({ onClose, onSelect }) => {
     const [coupons, setCoupons] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +47,8 @@ const CouponPopup = ({ onClose, onSelect }) => {
         discount: "",
         conditionType: ""
     });
+
+    const [showMediaPicker, setShowMediaPicker] = useState(false);
 
     const initialCouponData = {
         name: "",
@@ -493,7 +498,7 @@ const CouponPopup = ({ onClose, onSelect }) => {
                                 </div>
 
                                 {/* Product Names (only for product coupons) */}
-                                {couponData.couponType === "product" && (
+                                {/* {couponData.couponType === "product" && (
                                     <>
                                         <div className="col-span-1 md:col-span-2">
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -558,7 +563,71 @@ const CouponPopup = ({ onClose, onSelect }) => {
                                             </div>
                                         </div>
                                     </>
-                                )}
+                                )} */}
+
+
+
+
+                                {/* Product Image Selection via Media Library Wizard */}
+{couponData.couponType === "product" && (
+    <>
+        <div className="col-span-1 md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product Name *
+            </label>
+            <input
+                type="text"
+                name="productNames"
+                value={couponData.productNames}
+                onChange={handleInputChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Enter product name"
+            />
+        </div>
+
+        <div className="col-span-1 md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product Image
+            </label>
+            <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setShowMediaPicker(true)}
+                        className="px-4 py-2.5 bg-[#313166] text-white text-sm font-medium rounded-lg hover:bg-[#252451] transition-all flex items-center gap-2 shadow-sm"
+                    >
+                        <FiImage size={16} /> Choose from Media Library
+                    </button>
+
+                    {couponData.productImage && (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setCouponData((prev) => ({
+                                    ...prev,
+                                    productImage: "",
+                                }))
+                            }
+                            className="px-4 py-2.5 text-sm text-red-600 border border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors"
+                        >
+                            Remove Image
+                        </button>
+                    )}
+                </div>
+
+                {couponData.productImage && (
+                    <div className="flex items-center gap-3 pt-1">
+                        <img
+                            src={couponData.productImage}
+                            alt="Selected Product"
+                            className="h-20 w-20 rounded-lg object-cover border border-gray-200 shadow-sm"
+                        />
+                    </div>
+                )}
+            </div>
+        </div>
+    </>
+)}
 
                                 {/* Active Status */}
                                 <div className="flex items-center gap-2 mt-6">
@@ -1063,6 +1132,21 @@ const CouponPopup = ({ onClose, onSelect }) => {
                     )}
                 </div>
             </div>
+
+            {/* ADD THE MEDIA PICKER MODAL HERE */}
+            {showMediaPicker && (
+                <MediaPickerModal
+                    onClose={() => setShowMediaPicker(false)}
+                    onSelect={(s3Url) => {
+                        setCouponData((prev) => ({
+                            ...prev,
+                            productImage: s3Url,
+                        }));
+                        setShowMediaPicker(false);
+                    }}
+                />
+            )}
+            
         </div>
     );
 };
