@@ -2087,63 +2087,29 @@ const TemplateFlowCanvasContent = ({
                   {/* Header Media / Text Option */}
                   <div className="space-y-2 pt-2 border-t border-gray-100">
                     <label className="text-[10px] font-bold text-gray-400 uppercase">Header (Optional)</label>
-                    {/* IMAGE header is only available when this node has NO buttons.
-                        WhatsApp's interactive button API does not accept media via URL — error 131053.
-                        Without buttons the message is sent as a media+caption text message. */}
-                    {(selectedNode.data?.buttons || []).length > 0 ? (
-                      <>
-                        <div className="grid grid-cols-2 gap-1.5">
-                          {["NONE", "TEXT"].map((hType) => (
-                            <button
-                              key={hType}
-                              type="button"
-                              onClick={() => {
-                                updateSelectedNodeData({
-                                  headerFormat: hType === "NONE" ? null : hType,
-                                  headerMediaType: null,
-                                  mediaUrl: "",
-                                });
-                              }}
-                              className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
-                                (selectedNode.data?.headerFormat === hType ||
-                                  (!selectedNode.data?.headerFormat && !selectedNode.data?.headerMediaType && hType === "NONE"))
-                                  ? "bg-cyan-700 text-white shadow-xs"
-                                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                              }`}
-                            >
-                              {hType === "NONE" ? "None" : "Text"}
-                            </button>
-                          ))}
-                        </div>
-                        <p className="text-[9px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 leading-tight">
-                          ⚠️ <strong>Image header</strong> is only available when this node has <strong>no buttons</strong>. Remove all buttons to use an image header.
-                        </p>
-                      </>
-                    ) : (
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {["NONE", "TEXT", "IMAGE"].map((hType) => (
-                          <button
-                            key={hType}
-                            type="button"
-                            onClick={() => {
-                              updateSelectedNodeData({
-                                headerFormat: hType === "NONE" ? null : hType,
-                                headerMediaType: hType === "IMAGE" ? "IMAGE" : null,
-                              });
-                            }}
-                            className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
-                              (selectedNode.data?.headerMediaType === hType ||
-                                selectedNode.data?.headerFormat === hType ||
-                                (!selectedNode.data?.headerFormat && !selectedNode.data?.headerMediaType && hType === "NONE"))
-                                ? "bg-cyan-700 text-white shadow-xs"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }`}
-                          >
-                            {hType === "NONE" ? "None" : hType === "TEXT" ? "Text" : "Image"}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {["NONE", "TEXT", "IMAGE"].map((hType) => (
+                        <button
+                          key={hType}
+                          type="button"
+                          onClick={() => {
+                            updateSelectedNodeData({
+                              headerFormat: hType === "NONE" ? null : hType,
+                              headerMediaType: hType === "IMAGE" ? "IMAGE" : null,
+                            });
+                          }}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all ${
+                            (selectedNode.data?.headerMediaType === hType ||
+                              selectedNode.data?.headerFormat === hType ||
+                              (!selectedNode.data?.headerFormat && !selectedNode.data?.headerMediaType && hType === "NONE"))
+                              ? "bg-cyan-700 text-white shadow-xs"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          }`}
+                        >
+                          {hType === "NONE" ? "None" : hType === "TEXT" ? "Text" : "Image"}
+                        </button>
+                      ))}
+                    </div>
 
                     {(selectedNode.data?.headerFormat === "TEXT") && (
                       <input
@@ -2156,8 +2122,7 @@ const TemplateFlowCanvasContent = ({
                       />
                     )}
 
-                    {(selectedNode.data?.headerMediaType === "IMAGE" || selectedNode.data?.headerFormat === "IMAGE") &&
-                     (selectedNode.data?.buttons || []).length === 0 && (
+                    {(selectedNode.data?.headerMediaType === "IMAGE" || selectedNode.data?.headerFormat === "IMAGE") && (
                       <div className="space-y-1.5">
                         <input
                           type="text"
