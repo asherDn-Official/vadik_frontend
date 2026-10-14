@@ -569,7 +569,9 @@ function BrandKit() {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#313166] px-6 py-3 text-sm font-semibold text-white hover:bg-[#252550] disabled:cursor-not-allowed disabled:opacity-60"
+                
+className="inline-flex items-center justify-center gap-2 rounded-md bg-[#C52D68] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#AD245A] disabled:cursor-not-allowed disabled:opacity-60"
+
               >
                 {saving && <LoaderCircle size={17} className="animate-spin" />}
                 {saving
@@ -628,7 +630,7 @@ function BrandKit() {
               <LoaderCircle size={28} className="animate-spin text-[#7777C8]" />
               <p className="text-sm">Loading your brand kit...</p>
             </div>
-          ) : filteredKits.length === 0 ? (
+         ) : !showForm && filteredKits.length === 0 ? (
             <div className="flex min-h-64 flex-col items-center justify-center px-5 py-12 text-center">
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F0F0FC] text-[#5555A0]">
                 <Palette size={28} />
@@ -639,7 +641,7 @@ function BrandKit() {
               <p className="mt-2 max-w-md text-sm text-[#8991B1]">
                 {search
                   ? "Try another business name or category."
-                  : "Create your first brand kit to keep your business identity and visual preferences together."}
+                  : "Create your  brand kit to keep your business identity and visual preferences together."}
               </p>
               {!search && (
                 <button
@@ -648,7 +650,7 @@ function BrandKit() {
                   className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#313166] px-5 py-3 text-sm font-semibold text-white hover:bg-[#252550]"
                 >
                   <Plus size={17} />
-                  Create Your First Brand Kit
+                  Create Your  Brand Kit
                 </button>
               )}
             </div>
