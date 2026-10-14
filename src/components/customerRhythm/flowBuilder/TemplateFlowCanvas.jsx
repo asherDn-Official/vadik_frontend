@@ -1191,6 +1191,29 @@ const TemplateFlowCanvasContent = ({
           `Cannot publish as Active: Interactive message step titles must be unique to avoid routing confusion. Duplicate title(s): "${duplicateTitles.join('", "')}". Saved as Draft.`
         );
         willBeActive = false;
+      } else if (() => {
+        const buttonCounts = {};
+        nodes
+          .filter((n) => n.type === "template" || n.type === "static_message")
+          .forEach((n) => {
+            (n.data?.buttons || []).forEach((b) => {
+              const btnText = (b.text || b.label || "").trim().toLowerCase();
+              if (btnText) {
+                buttonCounts[btnText] = (buttonCounts[btnText] || 0) + 1;
+              }
+            });
+          });
+        const duplicateButtons = Object.keys(buttonCounts).filter((b) => buttonCounts[b] > 1);
+        if (duplicateButtons.length > 0) {
+          toast.warning(
+            `Cannot publish as Active: All button texts in this flow must be unique. Duplicate button(s): "${duplicateButtons.join('", "')}". Saved as Draft.`
+          );
+          willBeActive = false;
+          return true;
+        }
+        return false;
+      })()) {
+        // Handled in condition above
       } else if (templateAudit.notSelectedCount > 0) {
         toast.warning(
           "Cannot publish as Active: One or more steps have no template selected. Saved as Draft."
