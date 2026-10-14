@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { CreditCard, LogOut, MessageSquare, Wallet } from "lucide-react";
+import { CreditCard, LogOut, MessageSquare, Wallet,  Palette, } from "lucide-react";
 import LogoutConfirmModal from "./LogoutConfirmModal";
 import UnsavedChangesModal from "./UnsavedChangesModal";
 import { useUnsavedChanges } from "../../context/UnsavedChangesContext";
@@ -92,6 +92,13 @@ function Sidebar() {
       icon: integrationIcon,
       label: "Integrations",
     },
+//     {
+//   path: "/brand-kit",
+//   module: "Business Brand Kit",
+//   icon: null,
+//   lucideIcon: Palette,
+//   label: "Business Brand Kit",
+// },
     // {
     //   path: "/quicksearch",
     //   module: "Quick Search",

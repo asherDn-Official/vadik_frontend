@@ -8,6 +8,9 @@ import showToast from "../../utils/ToastNotification";
 import { useAuth } from "../../context/AuthContext";
 import { useUnsavedChanges } from "../../context/UnsavedChangesContext";
 import Loader from "../../utils/Loader";
+import { useNavigate } from "react-router-dom";
+import { Palette } from "lucide-react";
+import BrandKit from "../../pages/BrandKit"
 
 const MyProfile = () => {
   const { setHasUnsavedChanges } = useUnsavedChanges();
@@ -46,11 +49,13 @@ const MyProfile = () => {
     mode: "onChange",
   });
 
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState("profile");
   const [uploadError, setUploadError] = useState("");
   const [loading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState("");
   const [retailerId, setRetailerId] = useState(null);
-  const [importHistory, setImportHistory] = useState([]);
+  // const [importHistory, setImportHistory] = useState([]);
   const fileInputRef = useRef(null);
 
   const { auth } = useAuth();
@@ -77,14 +82,14 @@ const MyProfile = () => {
   // Watch the automatedCustomersGreeting value for the toggle
   const automatedGreeting = watch("automatedCustomersGreeting");
 
-  const fetchImportHistory = async (id) => {
-    try {
-      const response = await api.get(`/api/customers/import-history/${id || retailerId}`);
-      setImportHistory(response.data);
-    } catch (err) {
-      console.error("Failed to fetch import history:", err);
-    }
-  };
+  // const fetchImportHistory = async (id) => {
+  //   try {
+  //     const response = await api.get(`/api/customers/import-history/${id || retailerId}`);
+  //     setImportHistory(response.data);
+  //   } catch (err) {
+  //     console.error("Failed to fetch import history:", err);
+  //   }
+  // };
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -267,11 +272,38 @@ const MyProfile = () => {
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-0">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-[#313166] text-lg font-semibold">
-          Admin Profile
-        </h2>
-      </div>
+      
+
+<div className="mb-8">
+  <div className="flex flex-wrap items-center gap-3 border-b border-[#E8EAF5] pb-4">
+    <button
+      type="button"
+      onClick={() => setActiveSection("profile")}
+      className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition ${
+        activeSection === "profile"
+          ? "bg-[#313166] text-white shadow-sm"
+          : "border border-[#E5E7F2] bg-white text-[#313166] hover:bg-[#F5F5FC]"
+      }`}
+    >
+      Admin Profile
+    </button>
+
+    <button
+      type="button"
+      onClick={() => setActiveSection("brandKit")}
+      className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition ${
+        activeSection === "brandKit"
+          ? "bg-[#313166] text-white shadow-sm"
+          : "border border-[#E5E7F2] bg-white text-[#313166] hover:bg-[#F5F5FC]"
+      }`}
+    >
+      <Palette className="h-4 w-4" />
+      Business Brand Kit
+    </button>
+  </div>
+</div>
+
+
 
       {successMessage && (
         <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl border border-green-100 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -279,7 +311,8 @@ const MyProfile = () => {
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+      {activeSection === "profile" && (
+  <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
         <div className="flex-1 order-2 lg:order-1">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -745,55 +778,10 @@ const MyProfile = () => {
           </div>
         </div>
       </div>
+      )}
+      {activeSection === "brandKit" && <BrandKit />}
 
-      {/* Bulk Upload History */}
-      <div className="mt-12 bg-white p-6 md:p-8 rounded-[24px] border border-gray-100 shadow-sm">
-        <h3 className="text-[#313166] text-lg font-semibold mb-6">Bulk Upload History</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="pb-4 text-sm font-medium text-gray-400">Date</th>
-                <th className="pb-4 text-sm font-medium text-gray-400">File Name</th>
-                <th className="pb-4 text-sm font-medium text-gray-400">Status</th>
-                <th className="pb-4 text-sm font-medium text-gray-400">Total Rows</th>
-                <th className="pb-4 text-sm font-medium text-gray-400">Success</th>
-                <th className="pb-4 text-sm font-medium text-gray-400">Errors</th>
-              </tr>
-            </thead>
-            <tbody>
-              {importHistory.length > 0 ? (
-                importHistory.map((item) => (
-                  <tr key={item._id} className="border-b border-gray-50 last:border-0">
-                    <td className="py-4 text-sm text-[#313166]">
-                      {new Date(item.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-4 text-sm text-[#313166]">{item.fileName}</td>
-                    <td className="py-4">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        item.status === 'completed' ? 'bg-green-50 text-green-600' : 
-                        item.status === 'failed' ? 'bg-red-50 text-red-600' : 
-                        'bg-blue-50 text-blue-600'
-                      }`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="py-4 text-sm text-[#313166]">{item.totalRows}</td>
-                    <td className="py-4 text-sm text-green-600 font-bold">{item.successCount}</td>
-                    <td className="py-4 text-sm text-red-500 font-bold">{item.errorCount}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="py-8 text-center text-gray-400 text-sm">
-                    No import history found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+
     </div>
   );
 };

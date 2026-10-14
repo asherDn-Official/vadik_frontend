@@ -40,6 +40,7 @@ const CustomerFieldPreferences = () => {
   const [isCreatingPreference, setIsCreatingPreference] = useState(false);
   const [addError, setAddError] = useState(null);
   const [icons, setIcons] = useState([]);
+  const [showFieldForm, setShowFieldForm] = useState(false);
   const [showIconSelector, setShowIconSelector] = useState(false);
 
   // Map UI tab names to API field names
@@ -138,41 +139,46 @@ const CustomerFieldPreferences = () => {
     updatePreferences(updatedFields);
   };
 
-  const startAddingField = () => {
-    setIsEditingField(false);
-    setEditingFieldKey("");
-    setNewFieldName("");
-    setNewFieldType("string");
-    setNewFieldIcon("");
-    setNewFieldIconName("");
-    setNewFieldOptions([]);
-    setCurrentOption("");
-    setAddError(null);
-  };
+ const startAddingField = () => {
+  setIsEditingField(false);
+  setEditingFieldKey("");
+  setNewFieldName("");
+  setNewFieldType("string");
+  setNewFieldIcon("");
+  setNewFieldIconName("");
+  setNewFieldOptions([]);
+  setCurrentOption("");
+  setAddError(null);
+  setShowIconSelector(false);
+  setShowFieldForm(true);
+};
 
-  const startEditingField = (field) => {
-    setIsEditingField(true);
-    setEditingFieldKey(field.key);
-    setNewFieldName(field.key);
-    setNewFieldType(field.type);
-    setNewFieldIcon(field.iconUrl || "");
-    setNewFieldIconName(field.iconName || "");
-    setNewFieldOptions(field.options || []);
-    setCurrentOption("");
-    setAddError(null);
-  };
+const startEditingField = (field) => {
+  setIsEditingField(true);
+  setEditingFieldKey(field.key);
+  setNewFieldName(field.key);
+  setNewFieldType(field.type);
+  setNewFieldIcon(field.iconUrl || "");
+  setNewFieldIconName(field.iconName || "");
+  setNewFieldOptions(field.options || []);
+  setCurrentOption("");
+  setAddError(null);
+  setShowFieldForm(true);
+};
 
-  const cancelEditing = () => {
-    setIsEditingField(false);
-    setEditingFieldKey("");
-    setNewFieldName("");
-    setNewFieldIcon("");
-    setNewFieldIconName("");
-    setNewFieldOptions([]);
-    setCurrentOption("");
-    setAddError(null);
-    setShowIconSelector(false);
-  };
+const cancelEditing = () => {
+  setIsEditingField(false);
+  setEditingFieldKey("");
+  setNewFieldName("");
+  setNewFieldType("string");
+  setNewFieldIcon("");
+  setNewFieldIconName("");
+  setNewFieldOptions([]);
+  setCurrentOption("");
+  setAddError(null);
+  setShowIconSelector(false);
+  setShowFieldForm(false);
+};
 
   const updatePreferences = async (
     updatedFields,
@@ -452,49 +458,37 @@ const CustomerFieldPreferences = () => {
                   Manage custom fields for {activeTab.toLowerCase()} section
                 </p>
               </div>
-              {isEditingField && (
-                <button
-                  onClick={startAddingField}
-                  className="
-  inline-flex items-center gap-2
-
-  h-12
-
-  rounded-2xl
-
-  bg-[#313166]
-
-  px-5
-
-  text-sm font-medium text-white
-
-  shadow-[0_10px_25px_rgba(49,49,102,0.18)]
-
-  transition-all duration-200
-
-  hover:scale-[1.02]
-  hover:bg-[#272757]
-"
-                >
-                  <FiPlus className="mr-2" /> Add New Field
-                </button>
-              )}
+             {!showFieldForm && (
+  <button
+    onClick={startAddingField}
+    className="
+      inline-flex items-center gap-2
+      h-12 rounded-2xl
+      bg-[#313166] px-5
+      text-sm font-medium text-white
+      shadow-[0_10px_25px_rgba(49,49,102,0.18)]
+      transition-all duration-200
+      hover:scale-[1.02]
+      hover:bg-[#272757]
+    "
+  >
+    <FiPlus />
+    Add New Field
+  </button>
+)}
             </div>
 
             {/* Always visible form section */}
-            <div
-              className="
-    rounded-[28px]
-
-    border border-[#EEF1FF]
-
-    bg-[#FCFCFF]
-
-    p-5 lg:p-6
-
-    shadow-[0_4px_24px_rgba(49,49,102,0.04)]
-  "
-            >
+           {showFieldForm && (
+  <div
+    className="
+      rounded-[28px]
+      border border-[#EEF1FF]
+      bg-[#FCFCFF]
+      p-5 lg:p-6
+      shadow-[0_4px_24px_rgba(49,49,102,0.04)]
+    "
+  >
               <div className="flex flex-col gap-4">
                 <h3 className="text-lg font-semibold">
                   {isEditingField ? "Edit Field" : "Add New Field"}
@@ -764,6 +758,7 @@ const CustomerFieldPreferences = () => {
                 </div>
               )}
             </div>
+            )}
 
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId={activeTab}>

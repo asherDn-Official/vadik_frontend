@@ -447,7 +447,7 @@ const CustomerList = () => {
 
               {/* Right Side */}
               <div className="flex flex-wrap items-center gap-3">
-                <VideoPopupWithShare
+                {/* <VideoPopupWithShare
                   video_url="https://www.youtube.com/embed/dQw4w9WgXcQ"
                   animationData={soon}
                   buttonCss="
@@ -459,7 +459,7 @@ const CustomerList = () => {
                     transition-all duration-200
                     hover:bg-[#F8F9FF]
                   "
-                />
+                /> */}
 
                 <button
                   onClick={() => navigate("/customer-preferences")}

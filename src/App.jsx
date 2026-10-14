@@ -41,6 +41,7 @@ import CustomerProfilePage from "./components/common/CustomerProfilePage";
 import Loader from "./utils/Loader";
 import AIBalance from "./pages/AIBalance";
 import MediaLibrary from "./pages/MediaLibrary";
+import BrandKit from "./pages/BrandKit";
 // import api from "./api/apiconfig";
 // import { useChatNotification } from "./context/ChatNotificationContext";
 
@@ -231,11 +232,22 @@ function App() {
     )
   }
 />
+
 <Route
   path="media-library"
   element={
     onboardingDone ? (
       <MediaLibrary />
+    ) : (
+      <Navigate to="/register" replace />
+    )
+  }
+/>
+<Route
+  path="brand-kit"
+  element={
+    onboardingDone ? (
+      <BrandKit />
     ) : (
       <Navigate to="/register" replace />
     )
