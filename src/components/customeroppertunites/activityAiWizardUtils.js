@@ -1,7 +1,7 @@
 export const ACTIVITY_AI_LANGUAGES = [
   { value: "English", label: "English" },
-  { value: "Tamil", label: "தமிழ் — Tamil" },
-  { value: "Hindi", label: "हिन्दी — Hindi" },
+  { value: "Tamil", label: "Tamil" },
+  { value: "Hindi", label: "Hindi" },
 ];
 
 export const PURPOSE_CATEGORIES = [
@@ -85,6 +85,9 @@ export function planErrorMessage(error) {
 
 export function generationErrorMessage(error) {
   const status = error?.response?.status;
+  if (error?.response?.data?.code === "AI_INVALID_RESPONSE") {
+    return "Vadik couldn't validate this draft. No AI allowance was used. You can start a new generation.";
+  }
   if (status === 401) return "Your session has expired. Sign in and try again.";
   if (status === 403) return "Activity AI generation is not available for this account.";
   if (status === 402) return "This Activity could not be generated with the current AI allowance. Check your account and try again.";
@@ -106,4 +109,10 @@ export function generationFailureReference(error) {
     : null;
   const status = Number.isInteger(error?.response?.status) ? error.response.status : null;
   return { status, code, aiRequestId };
+}
+
+export function canRetryGeneration(error) {
+  if (error?.response?.data?.code === "AI_INVALID_RESPONSE") return false;
+  if (!error?.response) return true;
+  return error.response.status === 408 || error.response.status === 429;
 }

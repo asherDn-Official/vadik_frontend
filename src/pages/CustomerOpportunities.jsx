@@ -242,7 +242,7 @@ const TopTab = ({ active, onClick, icon, title, description, video }) => {
         {icon}
         {title}
       </button>
-
+{/* 
       <button
         type="button"
         aria-label={`${title} details`}
@@ -257,9 +257,9 @@ const TopTab = ({ active, onClick, icon, title, description, video }) => {
         className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-gray-400 transition-all hover:bg-gray-100 hover:text-[#EC396F]"
       >
         <Info size={14} />
-      </button>
+      </button> */}
 
-      <div
+      {/* <div
         style={{
           left: `${tooltipPosition.left}px`,
           top: `${tooltipPosition.top}px`,
@@ -318,7 +318,7 @@ const TopTab = ({ active, onClick, icon, title, description, video }) => {
             </div>
           )}
         </div>
-      </div>
+      </div> */}
 
       {video && (
         <div ref={hiddenVideoButtonRef} className="absolute left-0 top-0">

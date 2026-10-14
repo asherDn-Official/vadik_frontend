@@ -269,10 +269,10 @@ const CustomerPersonalisation = () => {
               </div>
 
               <div className="relative flex flex-wrap items-center gap-3">
-                <VideoPopupWithShare
+                {/* <VideoPopupWithShare
                   video_url="https://www.youtube.com/embed/MzEFeIRJ0eQ"
                   buttonCss="inline-flex h-11 items-center gap-2 rounded-xl border border-[#E4E8F6] bg-white px-4 text-sm font-medium text-[#313166] shadow-sm transition hover:bg-[#F8F9FF]"
-                />
+                /> */}
 
                 <div className="flex h-11 items-center gap-2 rounded-xl border border-[#E4E8F6] bg-white px-3 shadow-sm">
                   <label className="text-sm font-medium text-[#5C628B]">Per page</label>

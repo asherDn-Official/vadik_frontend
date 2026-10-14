@@ -123,10 +123,10 @@ const CustomerRhythm = () => {
                 Report
               </button>
             </div>
-            <VideoPopupWithShare
+            {/* <VideoPopupWithShare
               animationData={soon}
               buttonCss="flex items-center text-sm gap-2 px-4 py-2  text-gray-700 bg-white rounded  hover:text-gray-500"
-            />
+            /> */}
           </div>
         </div>
       )}
