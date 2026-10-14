@@ -406,7 +406,7 @@ const passwordSchema = yup.object({
     .min(8, "Password must be at least 8 characters")
     .max(128, "Password must not exceed 128 characters")
     .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()+=~_\-\[\]{}|\\:;"'<>,./?])/,
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()+=~_\-[\]{}|\\:;"'<>,./?])/,
       "Password must contain uppercase, lowercase, number, and special character"
     )
     .required("Password is required"),
