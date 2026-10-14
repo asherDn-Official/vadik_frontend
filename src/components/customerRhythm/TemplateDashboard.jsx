@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, RefreshCw, Search, Trash2, AlertCircle, CheckCircle2, Clock, PauseCircle, Copy, Eye } from "lucide-react";
+import { Plus, RefreshCw, Search, Trash2, AlertCircle, CheckCircle2, Clock, PauseCircle, Copy, Eye, ChevronLeft, ChevronRight} from "lucide-react";
 import api from "../../api/apiconfig";
 import Loader from "../../utils/Loader";
 import { toast } from "react-toastify";
@@ -79,12 +79,33 @@ const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
     }
   };
 
+  // const filteredTemplates = templates.filter(t => {
+  //   const matchesSearch = t.name.toLowerCase().includes(searchTerm.toLowerCase());
+  //   const matchesCategory = filterCategory === "ALL" || t.category === filterCategory;
+  //   const matchesStatus = filterStatus === "ALL" || t.status === filterStatus;
+  //   return matchesSearch && matchesCategory && matchesStatus;
+  // });
+
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCategory, filterStatus]);
+
   const filteredTemplates = templates.filter(t => {
     const matchesSearch = t.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === "ALL" || t.category === filterCategory;
     const matchesStatus = filterStatus === "ALL" || t.status === filterStatus;
     return matchesSearch && matchesCategory && matchesStatus;
   });
+
+  const totalItems = filteredTemplates.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const paginatedTemplates = filteredTemplates.slice(startIndex, endIndex);
 
   return (
     <div className="space-y-6">
@@ -110,7 +131,7 @@ const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
             <option value="UTILITY">Utility</option>
             <option value="AUTHENTICATION">Authentication</option>
           </select>
-          <select
+          {/* <select
             className="px-4 py-2 border border-gray-200 rounded-xl text-[#313166] focus:outline-none bg-white"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
@@ -121,6 +142,36 @@ const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
             <option value="REJECTED">Rejected</option>
             <option value="PAUSED">Paused</option>
           </select>
+        </div> */}
+
+        <select
+            className="px-4 py-2 border border-gray-200 rounded-xl text-[#313166] focus:outline-none bg-white"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="APPROVED">Approved</option>
+            <option value="PENDING">Pending</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="PAUSED">Paused</option>
+          </select>
+
+          <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-4 py-2 bg-white text-sm">
+            <span className="text-sm font-medium text-gray-600 whitespace-nowrap">Per page</span>
+            <select
+              className="text-sm font-bold text-[#313166] focus:outline-none bg-transparent cursor-pointer"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
         </div>
         
         <div className="flex items-center gap-3">
@@ -168,8 +219,11 @@ const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
                     No templates found. Create your first one!
                   </td>
                 </tr>
+              // ) : (
+              //   filteredTemplates.map((template) => (
+              //     <tr key={template._id} className="hover:bg-gray-50/50 transition-colors">
               ) : (
-                filteredTemplates.map((template) => (
+                paginatedTemplates.map((template) => (
                   <tr key={template._id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <button 
@@ -232,6 +286,50 @@ const TemplateDashboard = ({ onCreateNew, onCopyTemplate }) => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Footer */}
+        {!loading && filteredTemplates.length > 0 && (
+          <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white">
+            <div className="text-sm font-medium text-gray-500">
+              Showing {totalItems === 0 ? 0 : startIndex + 1} to {endIndex} of {totalItems} templates
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                    currentPage === page
+                      ? "bg-[#6B46C1] text-white shadow-sm"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       <TemplatePreviewModal 
         template={selectedTemplate}

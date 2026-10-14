@@ -84,6 +84,27 @@ const CouponManagement = () => {
     setValue("expiryDate", date, { shouldValidate: true });
   };
 
+
+  const handleMediaSelect = (selectedItem: any) => {
+    const s3Url = typeof selectedItem === "object" ? selectedItem.s3Url : selectedItem;
+    if (!s3Url) return;
+
+    // Detect non-image file extensions (Videos & Documents)
+    const cleanUrl = s3Url.split("?")[0].toLowerCase();
+    const isInvalidFormat = cleanUrl.match(/\.(mp4|3gp|webm|mov|avi|pdf|doc|docx|txt|xls|xlsx)$/i);
+
+    if (isInvalidFormat) {
+      showToast("Unsupported file format. Product image must be an image (JPG, PNG, or WebP).", "error");
+      return;
+    }
+
+    setValue("productImage", s3Url, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setShowMediaPicker(false);
+  };
+
   const handleProductImageChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1384,14 +1405,9 @@ const CouponManagement = () => {
 {/* Media Library Picker Modal */}
       {showMediaPicker && (
         <MediaPickerModal
+          mediaType="image"
           onClose={() => setShowMediaPicker(false)}
-          onSelect={(s3Url) => {
-            setValue("productImage", s3Url, {
-              shouldDirty: true,
-              shouldValidate: true,
-            });
-            setShowMediaPicker(false);
-          }}
+          onSelect={handleMediaSelect}
         />
       )}
     </div>

@@ -115,20 +115,90 @@ const SendCampaign = () => {
     [campaignData.audience]
   );
 
-  // Pagination & Filter
+  // Pagination & Filter (Audience)
   const [filters, setFilters] = useState({});
   const [selectedPeriod, setSelectedPeriod] = useState("Yearly");
   const [appliedFiltersCount, setAppliedFiltersCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCustomers, setTotalCustomers] = useState(0);
-  const [pageSize, setPageSize] = useState(15);
+  const [pageSize, setPageSize] = useState(10);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 15,
+    limit: 10,
     total: 0,
     totalPages: 1,
   });
+
+  // Recent Campaigns Dashboard Search & Pagination State
+  // const [campaignSearchTerm, setCampaignSearchTerm] = useState("");
+  // const [campaignCurrentPage, setCampaignCurrentPage] = useState(1);
+  // const [campaignItemsPerPage, setCampaignItemsPerPage] = useState(10);
+
+  // useEffect(() => {
+  //   setCampaignCurrentPage(1);
+  // }, [campaignSearchTerm]);
+
+  // Recent Campaigns Dashboard Search & Pagination State
+  const [campaignSearchTerm, setCampaignSearchTerm] = useState("");
+  const [campaignCurrentPage, setCampaignCurrentPage] = useState(1);
+  const [campaignItemsPerPage, setCampaignItemsPerPage] = useState(10);
+
+  useEffect(() => {
+    setCampaignCurrentPage(1);
+  }, [campaignSearchTerm]);
+
+  // Step 2 Template/Flow Filter & Pagination State
+  const [templateSearchTerm, setTemplateSearchTerm] = useState("");
+  const [templateCurrentPage, setTemplateCurrentPage] = useState(1);
+  const templateItemsPerPage = 6; // 6 cards per page (2-column layout)
+
+  useEffect(() => {
+    setTemplateCurrentPage(1);
+  }, [templateSearchTerm, campaignData.type]);
+
+  const filteredWizardItems = useMemo(() => {
+    const term = templateSearchTerm.toLowerCase().trim();
+    if (campaignData.type === "flow") {
+      if (!term) return flows;
+      return flows.filter(
+        (f) =>
+          f.name?.toLowerCase().includes(term) ||
+          f.remoteFlowId?.toLowerCase().includes(term)
+      );
+    } else {
+      if (!term) return templates;
+      return templates.filter((t) => {
+        const nameMatch = t.name?.toLowerCase().includes(term);
+        const categoryMatch = t.category?.toLowerCase().includes(term);
+        const bodyText = t.components?.find((c) => c.type === "BODY")?.text || "";
+        const bodyMatch = bodyText.toLowerCase().includes(term);
+        return nameMatch || categoryMatch || bodyMatch;
+      });
+    }
+  }, [campaignData.type, flows, templates, templateSearchTerm]);
+
+  const totalWizardItems = filteredWizardItems.length;
+  const totalWizardPages = Math.ceil(totalWizardItems / templateItemsPerPage) || 1;
+  const wizardStartIndex = (templateCurrentPage - 1) * templateItemsPerPage;
+  const wizardEndIndex = Math.min(wizardStartIndex + templateItemsPerPage, totalWizardItems);
+  const paginatedWizardItems = filteredWizardItems.slice(wizardStartIndex, wizardEndIndex);
+
+  const filteredCampaigns = useMemo(() => {
+    if (!campaignSearchTerm.trim()) return campaigns;
+    const term = campaignSearchTerm.toLowerCase();
+    return campaigns.filter((camp) => {
+      const nameMatch = camp.name?.toLowerCase().includes(term);
+      const templateMatch = (camp.templateId?.name || camp.flowId?.name || "").toLowerCase().includes(term);
+      return nameMatch || templateMatch;
+    });
+  }, [campaigns, campaignSearchTerm]);
+
+  const totalCampaignItems = filteredCampaigns.length;
+  const totalCampaignPages = Math.ceil(totalCampaignItems / campaignItemsPerPage) || 1;
+  const campaignStartIndex = (campaignCurrentPage - 1) * campaignItemsPerPage;
+  const campaignEndIndex = Math.min(campaignStartIndex + campaignItemsPerPage, totalCampaignItems);
+  const paginatedCampaigns = filteredCampaigns.slice(campaignStartIndex, campaignEndIndex);
 
   const [showMediaPicker, setShowMediaPicker] = useState(false);
 
@@ -439,6 +509,31 @@ const SendCampaign = () => {
     setCurrentStep(3);
   };
 
+  // const handleTemplateSelect = (template) => {
+  //   // Extract variables
+  //   const allText = template.components.map(c => c.text || "").join(" ");
+  //   const vars = allText.match(/\{\{(\d+)\}\}/g) || [];
+  //   const uniqueVars = [...new Set(vars)];
+    
+  //   const initialVariables = {};
+  //   uniqueVars.forEach(v => initialVariables[v] = "");
+
+  //   const header = template.components?.find(c => c.type === "HEADER");
+  //   const mediaType = header && ["IMAGE", "VIDEO", "DOCUMENT"].includes(header.format) ? header.format : "";
+  //   // Note: header?.example?.header_handle is a Meta CDN URL (scontent.whatsapp.net) — do NOT use
+  //   // it as media.url since Meta rejects its own CDN URLs as 'link' parameters in template sends.
+  //   // The user must upload a fresh copy via the media upload step.
+
+  //   setCampaignData({
+  //     ...campaignData,
+  //     template,
+  //     variables: initialVariables,
+  //     media: { url: "", type: mediaType }
+  //   });
+  //   setCurrentStep(3); // Auto-advance to audience after template selection
+  // };
+
+
   const handleTemplateSelect = (template) => {
     // Extract variables
     const allText = template.components.map(c => c.text || "").join(" ");
@@ -450,15 +545,15 @@ const SendCampaign = () => {
 
     const header = template.components?.find(c => c.type === "HEADER");
     const mediaType = header && ["IMAGE", "VIDEO", "DOCUMENT"].includes(header.format) ? header.format : "";
-    // Note: header?.example?.header_handle is a Meta CDN URL (scontent.whatsapp.net) — do NOT use
-    // it as media.url since Meta rejects its own CDN URLs as 'link' parameters in template sends.
-    // The user must upload a fresh copy via the media upload step.
+    
+    // Automatically auto-load template saved media URL or sample header handle
+    const templateMediaUrl = header?.mediaUrl || header?.example?.header_handle?.[0] || "";
 
     setCampaignData({
       ...campaignData,
       template,
       variables: initialVariables,
-      media: { url: "", type: mediaType }
+      media: { url: templateMediaUrl, type: mediaType }
     });
     setCurrentStep(3); // Auto-advance to audience after template selection
   };
@@ -720,9 +815,9 @@ const SendCampaign = () => {
     }
 
     // Guard: reject Meta CDN URLs — they expire and cannot be used as direct links
-    if (campaignData.media.url && campaignData.media.url.includes("scontent.whatsapp.net")) {
-      return toast.error("Please upload a fresh image/file — the template preview image cannot be used directly. Use the Upload File button.");
-    }
+    // if (campaignData.media.url && campaignData.media.url.includes("scontent.whatsapp.net")) {
+    //   return toast.error("Please upload a fresh image/file — the template preview image cannot be used directly. Use the Upload File button.");
+    // }
 
     setLoading(true);
     try {
@@ -849,7 +944,7 @@ const SendCampaign = () => {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+        {/* <div className="p-6 border-b border-gray-50 flex items-center justify-between">
           <h3 className="font-bold text-gray-900">Recent Campaigns</h3>
           <div className="flex items-center gap-2">
             <div className="relative">
@@ -859,6 +954,39 @@ const SendCampaign = () => {
                 placeholder="Search campaigns..."
                 className="pl-9 pr-4 py-1.5 bg-gray-50 border-none rounded-lg text-xs focus:ring-1 focus:ring-[#313166]/20 w-48"
               />
+            </div>
+          </div>
+        </div> */}
+
+        <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h3 className="font-bold text-gray-900">Recent Campaigns</h3>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+              <input 
+                type="text"
+                placeholder="Search campaigns..."
+                value={campaignSearchTerm}
+                onChange={(e) => setCampaignSearchTerm(e.target.value)}
+                className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-1 focus:ring-[#313166]/20 w-72 md:w-96"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-4 py-2 bg-white text-sm">
+              <span className="text-sm font-medium text-gray-600 whitespace-nowrap">Per page</span>
+              <select
+                className="text-sm font-bold text-[#313166] focus:outline-none bg-transparent cursor-pointer"
+                value={campaignItemsPerPage}
+                onChange={(e) => {
+                  setCampaignItemsPerPage(Number(e.target.value));
+                  setCampaignCurrentPage(1);
+                }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
             </div>
           </div>
         </div>
@@ -876,8 +1004,21 @@ const SendCampaign = () => {
                 <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            {/* <tbody className="divide-y divide-gray-50">
               {campaigns.length > 0 ? campaigns.map((camp) => (
+                <tr
+                  key={camp._id}
+                  className="cursor-pointer hover:bg-gray-50/50 transition-colors"
+                  onClick={() => {
+                    if (camp.status === "DRAFT") {
+                      handleResumeDraft(camp);
+                    } else {
+                      openCampaignAnalytics(camp);
+                    }
+                  }}
+                > */}
+                <tbody className="divide-y divide-gray-50">
+              {paginatedCampaigns.length > 0 ? paginatedCampaigns.map((camp) => (
                 <tr
                   key={camp._id}
                   className="cursor-pointer hover:bg-gray-50/50 transition-colors"
@@ -960,14 +1101,58 @@ const SendCampaign = () => {
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-gray-400 italic text-sm">
-                    No campaigns found. Launch your first campaign!
+                  <td colSpan="8" className="px-6 py-12 text-center text-gray-400 italic text-sm">
+                    {campaignSearchTerm ? "No matching campaigns found." : "No campaigns found. Launch your first campaign!"}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Recent Campaigns Pagination Footer */}
+        {filteredCampaigns.length > 0 && (
+          <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white">
+            <div className="text-sm font-medium text-gray-500">
+              Showing {totalCampaignItems === 0 ? 0 : campaignStartIndex + 1} to {campaignEndIndex} of {totalCampaignItems} campaigns
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCampaignCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={campaignCurrentPage === 1}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              {Array.from({ length: totalCampaignPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setCampaignCurrentPage(page)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                    campaignCurrentPage === page
+                      ? "bg-[#6B46C1] text-white shadow-sm"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => setCampaignCurrentPage((prev) => Math.min(prev + 1, totalCampaignPages))}
+                disabled={campaignCurrentPage === totalCampaignPages}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1128,7 +1313,7 @@ const SendCampaign = () => {
                 </div>
               )}
 
-              {currentStep === 2 && (
+              {/* {currentStep === 2 && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
@@ -1199,6 +1384,138 @@ const SendCampaign = () => {
                     )}
                   </div>
                 </div>
+              )} */}
+
+
+              {currentStep === 2 && (
+                <div className="space-y-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {campaignData.type === "flow" ? "Choose a WhatsApp Flow" : "Choose a Message Template"}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {campaignData.type === "flow" 
+                          ? "Select a published flow to send to your audience." 
+                          : "Only approved templates can be used for campaigns."}
+                      </p>
+                    </div>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                      <input 
+                        type="text"
+                        placeholder={campaignData.type === "flow" ? "Search flows by name or ID..." : "Search templates by name, body..."}
+                        value={templateSearchTerm}
+                        onChange={(e) => setTemplateSearchTerm(e.target.value)}
+                        className="pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-1 focus:ring-[#313166]/20 w-72 md:w-80 shadow-sm"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[320px]">
+                    {paginatedWizardItems.length > 0 ? (
+                      campaignData.type === "flow" ? (
+                        paginatedWizardItems.map(f => (
+                          <div 
+                            key={f._id}
+                            onClick={() => handleFlowSelect(f)}
+                            className={`p-4 rounded-2xl border transition-all cursor-pointer group flex flex-col justify-between ${campaignData.flow?._id === f._id ? "border-[#313166] bg-[#313166]/5 shadow-sm" : "border-gray-100 hover:border-gray-300 bg-white"}`}
+                          >
+                            <div>
+                              <div className="flex items-start justify-between mb-3">
+                                <div className={`p-2 rounded-lg ${campaignData.flow?._id === f._id ? "bg-[#313166] text-white" : "bg-gray-100 text-gray-400"}`}>
+                                  <Layers size={16} />
+                                </div>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">FLOW</span>
+                              </div>
+                              <h4 className="font-bold text-sm text-gray-900 mb-1">{f.name}</h4>
+                              <p className="text-[10px] text-gray-500 line-clamp-2">
+                                ID: {f.remoteFlowId}
+                              </p>
+                            </div>
+                            <div className="mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all text-[#313166] text-[10px] font-bold">
+                              Select Flow <ArrowRight size={12} />
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        paginatedWizardItems.map(t => (
+                          <div 
+                            key={t._id}
+                            onClick={() => handleTemplateSelect(t)}
+                            className={`p-4 rounded-2xl border transition-all cursor-pointer group flex flex-col justify-between ${campaignData.template?._id === t._id ? "border-[#313166] bg-[#313166]/5 shadow-sm" : "border-gray-100 hover:border-gray-300 bg-white"}`}
+                          >
+                            <div>
+                              <div className="flex items-start justify-between mb-3">
+                                <div className={`p-2 rounded-lg ${campaignData.template?._id === t._id ? "bg-[#313166] text-white" : "bg-gray-100 text-gray-400"}`}>
+                                  <LayoutTemplate size={16} />
+                                </div>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t.category}</span>
+                              </div>
+                              <h4 className="font-bold text-sm text-gray-900 mb-1">{t.name}</h4>
+                              <p className="text-[10px] text-gray-500 line-clamp-2">
+                                {t.components.find(c => c.type === "BODY")?.text || "No preview available"}
+                              </p>
+                            </div>
+                            <div className="mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all text-[#313166] text-[10px] font-bold">
+                              Select Template <ArrowRight size={12} />
+                            </div>
+                          </div>
+                        ))
+                      )
+                    ) : (
+                      <div className="col-span-2 py-16 text-center text-gray-400 text-sm italic border border-dashed border-gray-200 rounded-2xl">
+                        {templateSearchTerm
+                          ? `No ${campaignData.type === "flow" ? "flows" : "templates"} matching "${templateSearchTerm}".`
+                          : `No ${campaignData.type === "flow" ? "flows" : "templates"} available.`}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step 2 Pagination Controls */}
+                  {totalWizardItems > 0 && (
+                    <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="text-xs font-medium text-gray-500">
+                        Showing {totalWizardItems === 0 ? 0 : wizardStartIndex + 1} to {wizardEndIndex} of {totalWizardItems} {campaignData.type === "flow" ? "flows" : "templates"}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setTemplateCurrentPage((prev) => Math.max(prev - 1, 1))}
+                          disabled={templateCurrentPage === 1}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        >
+                          <ChevronLeft size={16} />
+                        </button>
+
+                        {Array.from({ length: totalWizardPages }, (_, i) => i + 1).map((page) => (
+                          <button
+                            key={page}
+                            type="button"
+                            onClick={() => setTemplateCurrentPage(page)}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                              templateCurrentPage === page
+                                ? "bg-[#6B46C1] text-white shadow-sm"
+                                : "text-gray-600 hover:bg-gray-100"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+
+                        <button
+                          type="button"
+                          onClick={() => setTemplateCurrentPage((prev) => Math.min(prev + 1, totalWizardPages))}
+                          disabled={templateCurrentPage === totalWizardPages}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        >
+                          <ChevronRight size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
 
               {currentStep === 3 && (
@@ -1219,6 +1536,8 @@ const SendCampaign = () => {
                           }}
                           className="px-2 py-1 bg-gray-50 border-none rounded-lg text-xs font-bold text-[#313166] focus:ring-1 focus:ring-[#313166]/20"
                         >
+                          <option value={5}>5</option>
+                          <option value={10}>10</option>
                           <option value={15}>15</option>
                           <option value={20}>20</option>
                           <option value={25}>25</option>
@@ -1391,7 +1710,7 @@ const SendCampaign = () => {
 
 
                   {/* WITH THIS UPDATED MEDIA LIBRARY PICKER: */}
-{campaignData.media.type && (
+{/* {campaignData.media.type && (
   <div className="p-6 bg-[#313166]/5 rounded-2xl border border-[#313166]/10 space-y-4">
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2 text-[#313166]">
@@ -1434,6 +1753,76 @@ const SendCampaign = () => {
         <span className="font-bold text-gray-700">Selected URL:</span> {campaignData.media.url}
       </div>
     )}
+  </div>
+)} */}
+
+
+{campaignData.media.type && (
+  <div className="p-6 bg-[#313166]/5 rounded-2xl border border-[#313166]/10 space-y-4">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 text-[#313166]">
+         <Upload size={18} />
+         <h4 className="font-bold text-sm">Header {campaignData.media.type} Media</h4>
+      </div>
+      {campaignData.media.url && (
+        <span className="text-xs font-semibold text-emerald-700 bg-emerald-100/80 px-3 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
+          ✓ Auto-loaded from Template
+        </span>
+      )}
+    </div>
+
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        {/* <input
+          type="text"
+          placeholder={`Media URL...`}
+          value={campaignData.media.url || ""}
+          onChange={(e) => setCampaignData({
+            ...campaignData,
+            media: { ...campaignData.media, url: e.target.value }
+          })}
+          className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-1 focus:ring-[#313166]/20"
+        /> */}
+
+        <input
+          type="text"
+          placeholder="No media URL attached..."
+          value={campaignData.media.url || ""}
+          readOnly
+          className="flex-1 px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 cursor-not-allowed select-all focus:outline-none"
+        />
+
+        <button
+          type="button"
+          onClick={() => setShowMediaPicker(true)}
+          className="px-5 py-2.5 bg-[#313166] text-white rounded-xl text-sm font-bold hover:bg-[#3d3b83] transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+        >
+          <Plus size={16} />
+          Change Media
+        </button>
+
+        {campaignData.media.url && (
+          <button
+            type="button"
+            onClick={() => setCampaignData({
+              ...campaignData,
+              media: { ...campaignData.media, url: "" }
+            })}
+            className="px-4 py-2.5 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50 font-semibold transition-colors whitespace-nowrap"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {campaignData.media.url && (
+        <div className="text-xs text-emerald-800 bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-100 flex items-center justify-between">
+          <span className="truncate font-medium">
+            <span className="font-bold">Active Preview URL:</span> {campaignData.media.url}
+          </span>
+        </div>
+      )}
+    </div>
   </div>
 )}
 

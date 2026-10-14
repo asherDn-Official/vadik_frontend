@@ -246,6 +246,24 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
     return true;
   };
 
+  const handleMediaSelect = (selectedItem) => {
+    const s3Url = typeof selectedItem === "object" ? selectedItem.s3Url : selectedItem;
+    if (!s3Url) return;
+
+    // Detect non-image file extensions (Videos & Documents)
+    const cleanUrl = s3Url.split("?")[0].toLowerCase();
+    const isInvalidFormat = cleanUrl.match(/\.(mp4|3gp|webm|mov|avi|pdf|doc|docx|txt|xls|xlsx)$/i);
+
+    if (isInvalidFormat) {
+      showToast("Unsupported file format. Customer picture must be an image (JPG, PNG, or WebP).", "error");
+      return;
+    }
+
+    setProfileFile(null); // Clear local File object since S3 URL is used directly
+    setProfilePreview(s3Url);
+    setShowMediaPicker(false);
+  };
+
     const onFormSubmit = (data) => {
       const phoneNumber = parsePhoneNumber(data.mobileNumber);
       const countryCode = phoneNumber.countryCallingCode;
@@ -749,12 +767,9 @@ const CustomerForm = ({ onSubmit, resetForm, isSubmitting = false }) => {
       {/* Media Library Selection Modal */}
       {showMediaPicker && (
         <MediaPickerModal
+          mediaType="image"
           onClose={() => setShowMediaPicker(false)}
-          onSelect={(s3Url) => {
-            setProfileFile(null); // Clear local File object since we use S3 URL directly
-            setProfilePreview(s3Url);
-            setShowMediaPicker(false);
-          }}
+          onSelect={handleMediaSelect}
         />
       )}
     </>

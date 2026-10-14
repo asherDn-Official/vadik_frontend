@@ -546,6 +546,24 @@ const canCreateMoreQR = () => {
     }
   };
 
+  const handleMediaSelect = (selectedItem) => {
+    const s3Url = typeof selectedItem === "object" ? selectedItem.s3Url : selectedItem;
+    if (!s3Url) return;
+
+    // Detect non-image file extensions (Videos & Documents)
+    const cleanUrl = s3Url.split("?")[0].toLowerCase();
+    const isInvalidFormat = cleanUrl.match(/\.(mp4|3gp|webm|mov|avi|pdf|doc|docx|txt|xls|xlsx)$/i);
+
+    if (isInvalidFormat) {
+      showToast("Unsupported file format. QR logo must be an image (JPG, PNG, or WebP).", "error");
+      return;
+    }
+
+    setLogo(s3Url);
+    setResolvedLogo(s3Url);
+    setShowMediaPicker(false);
+  };
+
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -2407,15 +2425,12 @@ setTempStatementColor(qr.statementColor || "#374151");
           background: #94a3b8;
         }
       `}</style>
-      {/* Media Library Selection Modal */}
+     {/* Media Library Selection Modal */}
       {showMediaPicker && (
         <MediaPickerModal
+          mediaType="image"
           onClose={() => setShowMediaPicker(false)}
-          onSelect={(s3Url) => {
-            setLogo(s3Url);
-            setResolvedLogo(s3Url);
-            setShowMediaPicker(false);
-          }}
+          onSelect={handleMediaSelect}
         />
       )}
     </div>

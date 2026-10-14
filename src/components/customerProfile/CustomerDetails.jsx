@@ -865,6 +865,25 @@ const CustomerDetails = ({
     ? "bg-green-50 text-green-700"
     : "bg-red-50 text-red-700";
 
+    const handleMediaSelect = (selectedItem) => {
+    const s3Url = typeof selectedItem === "object" ? selectedItem.s3Url : selectedItem;
+    if (!s3Url) return;
+
+    // Detect non-image file extensions (Videos & Documents)
+    const cleanUrl = s3Url.split("?")[0].toLowerCase();
+    const isInvalidFormat = cleanUrl.match(/\.(mp4|3gp|webm|mov|avi|pdf|doc|docx|txt|xls|xlsx)$/i);
+
+    if (isInvalidFormat) {
+      showToast("Unsupported file format. Profile picture must be an image (JPG, PNG, or WebP).", "error");
+      return;
+    }
+
+    setProfileFile(null); // Clear local raw file
+    setProfilePreview(s3Url); // Set S3 image URL preview
+    setRemoveProfilePicture(false);
+    setShowMediaPicker(false);
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
     console.log("CustomerDetails onSubmit called");
@@ -946,16 +965,6 @@ onSave({
   "
                 >
                   <div className="relative mx-auto shrink-0 lg:mx-0 lg:self-center">
-                    <div
-                      className={`absolute right-3 top-3 z-10 flex items-center gap-2 rounded-full border border-white/80 px-3 py-1 shadow-sm backdrop-blur-sm ${statusBadgeClasses}`}
-                    >
-                      <span
-                        className={`h-2.5 w-2.5 rounded-full ${statusIndicatorColor}`}
-                      ></span>
-                      <span className="text-xs font-semibold uppercase tracking-wide">
-                        {statusLabel}
-                      </span>
-                    </div>
                     <div
                       className="
   relative
@@ -1091,10 +1100,29 @@ onSave({
     sm:justify-between
   "
                     >
-                      <div className="min-w-0">
+                      {/* <div className="min-w-0">
                         <h1 className="truncate text-[24px] font-bold text-[#1F1C5C] sm:text-[28px] xl:text-[30px]">
                           {customerName || "Customer Profile"}
                         </h1>
+                        <p className="mt-1 text-sm text-[#8B90B2]">
+                          Basic details, preferences and customer activity
+                        </p>
+                      </div> */}
+
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <h1 className="truncate text-[24px] font-bold text-[#1F1C5C] sm:text-[28px] xl:text-[30px]">
+                            {customerName || "Customer Profile"}
+                          </h1>
+                          <div
+                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${statusBadgeClasses}`}
+                          >
+                            <span
+                              className={`h-2 w-2 rounded-full ${statusIndicatorColor}`}
+                            ></span>
+                            {statusLabel}
+                          </div>
+                        </div>
                         <p className="mt-1 text-sm text-[#8B90B2]">
                           Basic details, preferences and customer activity
                         </p>
@@ -1769,13 +1797,9 @@ onSave({
       {/* Render MediaPickerModal */}
       {showMediaPicker && (
         <MediaPickerModal
+          mediaType="image"
           onClose={() => setShowMediaPicker(false)}
-          onSelect={(s3Url) => {
-            setProfileFile(null); // Clear raw file
-            setProfilePreview(s3Url); // Set S3 URL preview
-            setRemoveProfilePicture(false);
-            setShowMediaPicker(false);
-          }}
+          onSelect={handleMediaSelect}
         />
       )}
     </div>

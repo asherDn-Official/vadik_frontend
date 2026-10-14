@@ -163,6 +163,28 @@ const MyProfile = () => {
     }
   };
 
+
+  const handleMediaSelect = (selectedItem) => {
+    const s3Url = typeof selectedItem === "object" ? selectedItem.s3Url : selectedItem;
+    if (!s3Url) return;
+
+    // Detect non-image extensions (Videos & Documents)
+    const cleanUrl = s3Url.split("?")[0].toLowerCase();
+    const isInvalidFormat = cleanUrl.match(/\.(mp4|3gp|webm|mov|avi|pdf|doc|docx|txt|xls|xlsx)$/i);
+
+    if (isInvalidFormat) {
+      const errorMsg = "Unsupported file format. Business Logo must be an image (JPG, PNG, or WebP).";
+      setUploadError(errorMsg);
+      showToast(errorMsg, "error");
+      return;
+    }
+
+    // Valid image asset selected
+    setUploadError("");
+    setValue("profilePicture", s3Url, { shouldDirty: true });
+    setShowMediaPicker(false);
+  };
+
   const onSubmit = async (data) => {
     setError(null);
     setSuccessMessage("");
@@ -790,13 +812,19 @@ const MyProfile = () => {
       </p>
     </div>
 
-    <button
+   <button
       type="button"
       onClick={() => setShowMediaPicker(true)}
       className="w-full py-2.5 px-4 border border-gray-200 rounded-xl text-[#313166] font-medium hover:bg-white hover:shadow-sm transition-all text-sm"
     >
       Choose from Media Library
     </button>
+
+    {uploadError && (
+      <p className="text-red-500 text-xs mt-4 text-center bg-red-50 py-2 px-3 rounded-lg w-full font-medium border border-red-100 animate-in fade-in">
+        {uploadError}
+      </p>
+    )}
   </div>
 </div>
       </div>
@@ -852,11 +880,9 @@ const MyProfile = () => {
       {/* Media Library Selection Modal */}
       {showMediaPicker && (
         <MediaPickerModal
+          mediaType="image"
           onClose={() => setShowMediaPicker(false)}
-          onSelect={(s3Url) => {
-            setValue("profilePicture", s3Url, { shouldDirty: true });
-            setShowMediaPicker(false);
-          }}
+          onSelect={handleMediaSelect}
         />
       )}
     </div>

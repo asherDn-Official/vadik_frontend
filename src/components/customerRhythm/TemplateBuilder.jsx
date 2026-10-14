@@ -279,6 +279,53 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
     return [...new Set(matches)].sort();
   };
 
+  const handleMediaSelect = (selectedItem) => {
+    const s3Url = typeof selectedItem === "object" ? selectedItem.s3Url : selectedItem;
+    if (!s3Url) return;
+
+    const headerComp = template.components.find((c) => c.type === "HEADER");
+    const format = headerComp?.format || "IMAGE";
+
+    const validation = validateMediaUrl(s3Url, format);
+    if (!validation.valid) {
+      toast.error(validation.error);
+      return;
+    }
+
+    const headerIdx = template.components.findIndex((c) => c.type === "HEADER");
+    if (headerIdx !== -1) {
+      updateComponent(headerIdx, { mediaUrl: s3Url });
+    }
+    setShowMediaPicker(false);
+  };
+
+
+
+ const validateMediaUrl = (url, format) => {
+    if (!url || !url.trim()) return { valid: true };
+    const cleanUrl = url.trim().split("?")[0].toLowerCase();
+
+    // Check for explicit file extensions at the end of the URL path
+    const hasExplicitVideoExt = /\.(mp4|3gp|webm|mov|avi|mkv)$/i.test(cleanUrl);
+    const hasExplicitDocExt = /\.(pdf|doc|docx|txt|xls|xlsx|csv|ppt|pptx)$/i.test(cleanUrl);
+    const hasExplicitImageExt = /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(cleanUrl);
+
+    if (format === "IMAGE") {
+      if (hasExplicitVideoExt || hasExplicitDocExt) {
+        return { valid: false, error: "Unsupported file format for Image header. Allowed image types: JPG, PNG, WEBP." };
+      }
+    } else if (format === "VIDEO") {
+      if (hasExplicitImageExt || hasExplicitDocExt) {
+        return { valid: false, error: "Unsupported file format for Video header. Allowed video types: MP4, 3GP, WEBM, MOV, AVI." };
+      }
+    } else if (format === "DOCUMENT") {
+      if (hasExplicitImageExt || hasExplicitVideoExt) {
+        return { valid: false, error: "Unsupported file format for Document header. Allowed document types: PDF, DOC, DOCX, TXT, XLS." };
+      }
+    }
+    return { valid: true };
+  };
+
   const handleSubmit = async () => {
     if (!template.name || nameAvailable === false) {
       toast.error("Please provide a valid, unique name");
@@ -434,31 +481,24 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl overflow-hidden">
       {/* Builder Header */}
+      {/* Builder Header */}
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-20">
         <div className="flex items-center gap-4">
           <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <ArrowLeft size={20} className="text-gray-600" />
           </button>
-          <h2 className="text-lg font-bold text-gray-900">Create New Template</h2>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={onCancel} className="px-6 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-all">
-            Cancel
-          </button>
-          <button 
-            onClick={handleSubmit}
-            disabled={loading || !template.name || nameAvailable === false}
-            className="px-8 py-2 bg-[#313166] text-white font-medium rounded-xl hover:bg-[#3d3b83] transition-all shadow-md disabled:opacity-50"
-          >
-            {loading ? "Submitting..." : "Submit to Meta"}
-          </button>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Create New Template</h2>
+            <p className="text-xs text-gray-500">Build and submit your Meta WhatsApp template</p>
+          </div>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden lg:flex-row">
         {/* Editor Side */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-          {/* Basic Info Section */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white">
+          <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+            {/* Basic Info Section */}
           <section className="space-y-4">
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
               <HelpCircle size={14} /> Basic Configuration
@@ -698,7 +738,7 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
 
 
                       {/* WITH THIS UPDATED MEDIA LIBRARY PICKER: */}
-{(comp.format === "IMAGE" || comp.format === "VIDEO" || comp.format === "DOCUMENT") && (
+{/* {(comp.format === "IMAGE" || comp.format === "VIDEO" || comp.format === "DOCUMENT") && (
   <div className="space-y-4">
     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Header {comp.format}</label>
     
@@ -748,6 +788,90 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
             {comp.format === "VIDEO" && <p>• Types: MP4, 3GP. Max 16MB.</p>}
             {comp.format === "DOCUMENT" && <p>• Types: PDF. Max 100MB.</p>}
             <p className="mt-1">Meta requires a sample file to approve your template.</p>
+         </div>
+      </div>
+    </div>
+  </div>
+)} */}
+
+{(comp.format === "IMAGE" || comp.format === "VIDEO" || comp.format === "DOCUMENT") && (
+  <div className="space-y-4">
+    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Header {comp.format}</label>
+    
+    <div className="flex gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-blue-900">
+      <Info size={18} className="mt-0.5 shrink-0 text-blue-600" />
+      <div className="space-y-1">
+        <p className="font-semibold">Reusable media guidance</p>
+        <p className="text-xs leading-5 text-blue-800">
+          Paste a public URL below or choose an existing file from your Media Library.
+        </p>
+      </div>
+    </div>
+
+    <div className="flex flex-col gap-3">
+      {/* Public URL Input & Media Library Selector */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            placeholder={`Paste public ${comp.format.toLowerCase()} URL (https://...)...`}
+            value={comp.mediaUrl || ""}
+            onChange={(e) => {
+              const url = e.target.value;
+              updateComponent(idx, { mediaUrl: url });
+            }}
+            onBlur={(e) => {
+              const url = e.target.value;
+              if (url) {
+                const validation = validateMediaUrl(url, comp.format);
+                if (!validation.valid) {
+                  toast.error(validation.error);
+                }
+              }
+            }}
+            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#313166]/20 font-medium"
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowMediaPicker(true)}
+          className="px-5 py-2.5 bg-[#313166] text-white rounded-xl text-sm font-bold hover:bg-[#3d3b83] transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap cursor-pointer"
+        >
+          <Plus size={16} />
+          Media Library
+        </button>
+
+        {comp.mediaUrl && (
+          <button
+            type="button"
+            onClick={() => updateComponent(idx, { mediaUrl: "" })}
+            className="px-4 py-2.5 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50 font-semibold transition-colors whitespace-nowrap cursor-pointer"
+          >
+            Remove
+          </button>
+        )}
+      </div>
+
+      {comp.mediaUrl && (
+        <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100 flex items-center justify-between text-xs text-emerald-800">
+          <span className="truncate font-medium">
+            <span className="font-bold">Selected Media:</span> {comp.mediaUrl}
+          </span>
+          <span className="ml-2 text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full shrink-0">
+            Attached
+          </span>
+        </div>
+      )}
+
+      <div className="bg-blue-50 p-3 rounded-xl flex items-start gap-2 border border-blue-100">
+         <Info size={14} className="text-blue-500 mt-0.5 shrink-0" />
+         <div className="text-[10px] text-blue-700">
+            <p className="font-bold">File Specifications:</p>
+            {comp.format === "IMAGE" && <p>• Types: JPG, PNG, WEBP. Max 5MB.</p>}
+            {comp.format === "VIDEO" && <p>• Types: MP4, 3GP, WEBM, MOV, AVI. Max 16MB.</p>}
+            {comp.format === "DOCUMENT" && <p>• Types: PDF, DOC, DOCX, TXT, XLS. Max 100MB.</p>}
+            <p className="mt-1">Meta requires a valid sample URL to approve your template.</p>
          </div>
       </div>
     </div>
@@ -981,6 +1105,28 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
           )}
         </div>
 
+        {/* Sticky Bottom Action Navigation Bar */}
+          <div className="px-8 py-4 border-t border-gray-100 bg-white/95 backdrop-blur-sm flex items-center justify-between gap-4 z-10 shadow-lg">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-6 py-2.5 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-gray-50 transition-all text-sm"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading || !template.name || nameAvailable === false}
+              className="px-8 py-2.5 bg-[#313166] text-white font-bold rounded-xl hover:bg-[#3d3b83] transition-all shadow-lg shadow-[#313166]/20 disabled:opacity-50 text-sm flex items-center gap-2 cursor-pointer"
+            >
+              {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full" />}
+              {loading ? "Submitting..." : "Submit to Meta"}
+            </button>
+          </div>
+        </div>
+
         {/* Preview Side */}
         <div className="hidden border-t border-gray-200 bg-gray-50 p-6 overflow-y-auto md:flex md:flex-col md:items-center lg:w-[450px] lg:border-l lg:border-t-0 lg:p-12 custom-scrollbar">
           <div className="w-full lg:sticky lg:top-12">
@@ -999,13 +1145,7 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
               ? "file"
               : (template.components.find((c) => c.type === "HEADER")?.format || "IMAGE").toLowerCase()
           }
-          onSelect={(s3Url) => {
-            const headerIdx = template.components.findIndex((c) => c.type === "HEADER");
-            if (headerIdx !== -1) {
-              updateComponent(headerIdx, { mediaUrl: s3Url });
-            }
-            setShowMediaPicker(false);
-          }}
+          onSelect={handleMediaSelect}
         />
       )}
     </div>
