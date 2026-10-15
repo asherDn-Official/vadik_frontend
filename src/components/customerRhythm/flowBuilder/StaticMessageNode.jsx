@@ -17,7 +17,10 @@ const StaticMessageNode = ({ data, selected }) => {
   const bodyText = data.bodyText || "";
   const footerText = data.footerText || "";
   const headerText = data.headerText || "";
-  const headerMediaType = (data.headerMediaType || data.headerFormat || "IMAGE").toUpperCase();
+  const rawFormat = (data.headerMediaType || data.headerFormat || data.mediaType || "").toUpperCase();
+  const headerMediaType = ["IMAGE", "VIDEO", "DOCUMENT"].includes(rawFormat)
+    ? rawFormat
+    : (data.mediaUrl ? "IMAGE" : "NONE");
   const mediaUrl = data.mediaUrl || "";
 
   const buttons = (data.buttons || []).map((b, idx) => ({
@@ -81,7 +84,7 @@ const StaticMessageNode = ({ data, selected }) => {
       </div>
 
       {/* Media Header Preview (Optional) */}
-      {mediaUrl && (
+      {mediaUrl && headerMediaType !== "NONE" && (
         <div className="px-3.5 pt-3">
           <div className="rounded-xl overflow-hidden border border-cyan-100 bg-slate-50 relative group">
             {headerMediaType === "VIDEO" ? (
@@ -91,11 +94,14 @@ const StaticMessageNode = ({ data, selected }) => {
               </div>
             ) : headerMediaType === "DOCUMENT" && !mediaUrl.match(/\.(jpg|jpeg|png|webp|gif)/i) ? (
               <div className="w-full p-2.5 bg-cyan-50 flex items-center text-cyan-900 text-[10px] font-bold gap-1.5">
-                <FileText size={16} className="text-cyan-600" />
-                <span className="truncate">Document Header Attached</span>
+                <FileText size={16} className="text-cyan-600 shrink-0" />
+                <span className="truncate">
+                  {decodeURIComponent(mediaUrl?.split("?")?.[0]?.split("/")?.pop() || "Document Header Attached")}
+                </span>
               </div>
             ) : (
               <img
+                key={mediaUrl}
                 src={mediaUrl}
                 alt="Header"
                 className="w-full h-24 object-cover"
@@ -105,7 +111,7 @@ const StaticMessageNode = ({ data, selected }) => {
               />
             )}
             <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-xs text-white text-[8px] font-bold rounded-md uppercase">
-              {headerMediaType || "IMAGE"}
+              {headerMediaType}
             </div>
           </div>
         </div>

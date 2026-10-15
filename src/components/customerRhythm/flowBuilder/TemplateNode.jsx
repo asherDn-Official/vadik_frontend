@@ -12,11 +12,10 @@ import {
   UploadCloud,
   PauseCircle,
   FileQuestion,
-  Image,
   Video,
-  File,
 } from "lucide-react";
 import { renderWhatsAppFormattedText } from "../../../utils/whatsappTextFormatter";
+import { isUrlCompatibleWithMediaType } from "../../../utils/flowMediaValidation";
 
 const TemplateNode = ({ data, selected }) => {
   const template = data.template || {};
@@ -254,38 +253,60 @@ const TemplateNode = ({ data, selected }) => {
       {/* Media Header Preview or Alert */}
       {isMediaHeader && (
         <div className="px-3.5 pt-3">
-          {mediaUrl ? (
-            <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 relative group">
-              {headerFormat === "VIDEO" ? (
-                <div className="w-full h-16 bg-slate-800 flex items-center justify-center text-white text-[10px] font-bold gap-1.5">
-                  <Video size={16} className="text-pink-400" />
-                  <span>Video Header Attached</span>
-                </div>
-              ) : headerFormat === "DOCUMENT" && !mediaUrl.match(/\.(jpg|jpeg|png|webp|gif)/i) ? (
-                <div className="w-full p-2.5 bg-purple-50 flex items-center text-[#313166] text-[10px] font-bold gap-1.5">
-                  <FileText size={16} className="text-[#CB376D]" />
-                  <span className="truncate">Document Header Attached</span>
-                </div>
-              ) : (
-                <img
-                  src={mediaUrl}
-                  alt="Header"
-                  className="w-full h-24 object-cover"
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                  }}
-                />
-              )}
-              <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-xs text-white text-[8px] font-bold rounded-md uppercase">
-                {headerFormat || "IMAGE"}
-              </div>
-            </div>
-          ) : (
-            <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[10px] font-bold flex items-center gap-1.5">
-              <AlertCircle size={13} className="text-amber-600 shrink-0" />
-              <span>Media Required for {headerFormat} Header</span>
-            </div>
-          )}
+          {(() => {
+            const isMismatch = mediaUrl && !isUrlCompatibleWithMediaType(mediaUrl, headerFormat);
+
+            return (
+              <>
+                {mediaUrl ? (
+                  <div className={`rounded-xl overflow-hidden border bg-gray-50 relative group ${
+                    isMismatch ? "border-red-400 ring-2 ring-red-300" : "border-gray-200"
+                  }`}>
+                    {headerFormat === "VIDEO" ? (
+                      <div className="w-full h-16 bg-slate-800 flex items-center justify-center text-white text-[10px] font-bold gap-1.5">
+                        <Video size={16} className="text-pink-400" />
+                        <span>Video Header Attached</span>
+                      </div>
+                    ) : headerFormat === "DOCUMENT" && !mediaUrl.match(/\.(jpg|jpeg|png|webp|gif)/i) ? (
+                      <div className="w-full p-2.5 bg-purple-50 flex items-center text-[#313166] text-[10px] font-bold gap-1.5">
+                        <FileText size={16} className="text-[#CB376D]" />
+                        <span className="truncate">Document Header Attached</span>
+                      </div>
+                    ) : (
+                      <img
+                        src={mediaUrl}
+                        alt="Header"
+                        className="w-full h-24 object-cover"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    )}
+                    <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-xs text-white text-[8px] font-bold rounded-md uppercase">
+                      {headerFormat || "IMAGE"} (Locked)
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[10px] font-bold flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <AlertCircle size={13} className="text-amber-600 shrink-0" />
+                      <span>Media Required for {headerFormat} Header</span>
+                    </div>
+                    <span className="text-[8px] px-1 py-0.2 bg-purple-100 text-purple-700 rounded font-bold">
+                      {headerFormat} only
+                    </span>
+                  </div>
+                )}
+
+                {isMismatch && (
+                  <div className="mt-1.5 p-1.5 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[9px] font-bold flex items-center gap-1">
+                    <AlertCircle size={11} className="text-red-500 shrink-0" />
+                    <span>Type Mismatch: Template requires a {headerFormat}</span>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
 
