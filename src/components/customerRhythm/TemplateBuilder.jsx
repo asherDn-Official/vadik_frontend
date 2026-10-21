@@ -1167,6 +1167,7 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
 
       {showAiModal && (
   <AiImageGeneratorModal
+  source="template_builder"
     onClose={() => setShowAiModal(false)}
     onSelect={(s3Url) => {
       const headerIdx = template.components.findIndex((c) => c.type === "HEADER");

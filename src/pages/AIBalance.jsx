@@ -145,6 +145,22 @@ const emptyUsageSummary = {
   totalChargedPaise: 0,
 };
 
+
+const formatFeatureLabel = (feature) => {
+  if (!feature) return "AI Service Request";
+
+  if (feature.includes("template_builder")) return "AI Image Generation (Template Builder)";
+  if (feature.includes("send_campaign")) return "AI Image Generation (Campaign Broadcast)";
+  if (feature.includes("live_chat")) return "AI Image Generation (Live Chat)";
+  if (feature.includes("qr")) return "AI Image Generation (QR Code)";
+  if (feature === "image_generation") return "AI Image Generation";
+
+  return feature
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 export default function AIBalance() {
 
 
@@ -952,7 +968,7 @@ const handleTransactionFilter = async (
                             )}
                           </div>
 
-                          <div className="min-w-0 flex-1">
+                          {/* <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-gray-800">
                               {getTransactionLabel(
                                 transaction.transactionType,
@@ -977,6 +993,45 @@ const handleTransactionFilter = async (
 
                             {transaction.description && (
                               <p className="mt-1 truncate text-xs text-gray-400">
+                                {transaction.description}
+                              </p>
+                            )}
+                          </div> */}
+
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-gray-800">
+                              {getTransactionLabel(
+                                transaction.transactionType,
+                              )}
+                            </p>
+
+                            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400">
+                              <span>
+                                {formatDate(
+                                  transaction.createdAt,
+                                )}
+                              </span>
+
+                              <span>•</span>
+
+                              <span>
+                                {
+                                  transaction.balanceBucket
+                                }
+                              </span>
+
+                              {(transaction.operationId || transaction.referenceId) && (
+                                <>
+                                  <span>•</span>
+                                  <span className="font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">
+                                    Ref: #{String(transaction.operationId || transaction.referenceId).slice(-8)}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+
+                            {transaction.description && (
+                              <p className="mt-1 truncate text-xs text-gray-400 font-medium">
                                 {transaction.description}
                               </p>
                             )}
@@ -1213,7 +1268,7 @@ const handleTransactionFilter = async (
 
                         {/* MAIN DETAILS */}
 
-                        <div className="min-w-0 flex-1">
+                        {/* <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="text-sm font-semibold text-gray-800">
                               {record.feature ||
@@ -1229,6 +1284,29 @@ const handleTransactionFilter = async (
                                 record.status,
                               )}
                             </span>
+                          </div> */}
+
+                          <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold text-gray-800">
+                              {formatFeatureLabel(record.feature)}
+                            </p>
+
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${getUsageStatusClass(
+                                record.status,
+                              )}`}
+                            >
+                              {formatUsageStatus(
+                                record.status,
+                              )}
+                            </span>
+
+                            {record.aiRequestId && (
+                              <span className="text-[10px] font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                                ID: #{record.aiRequestId.slice(-10)}
+                              </span>
+                            )}
                           </div>
 
                           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">

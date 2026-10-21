@@ -2395,6 +2395,7 @@ const SendCampaign = () => {
 
       {showAiModal && (
   <AiImageGeneratorModal
+  source="send_campaign"
     onClose={() => setShowAiModal(false)}
     onSelect={(s3Url) => {
       setCampaignData((prev) => ({

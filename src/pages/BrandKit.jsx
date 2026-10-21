@@ -15,6 +15,11 @@ import {
 } from "lucide-react";
 import api from "../api/apiconfig";
 
+// 1. Add import at top
+import MediaPickerModal from "../components/common/MediaPickerModal";
+
+
+
 const EMPTY_FORM = {
   businessName: "",
   logoUrl: "",
@@ -48,6 +53,10 @@ function BrandKit() {
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  // 2. Add state inside BrandKit component
+const [mediaPickerTarget, setMediaPickerTarget] = useState(null); 
+// mediaPickerTarget can be: null | "logo" | { type: "reference", index: number }
 
   const loadBrandKits = useCallback(async () => {
     setLoading(true);
@@ -96,6 +105,39 @@ function BrandKit() {
       },
     }));
   };
+
+
+ const handleMediaSelect = (selectedItem) => {
+    const s3Url = typeof selectedItem === "object" ? selectedItem.s3Url : selectedItem;
+    if (!s3Url) return;
+
+    // Detect non-image file extensions (videos, documents, audio)
+    const cleanUrl = s3Url.split("?")[0].toLowerCase();
+    const isInvalidFormat = cleanUrl.match(/\.(mp4|3gp|webm|mov|avi|pdf|doc|docx|txt|xls|xlsx|mp3|wav|ogg)$/i);
+
+    if (isInvalidFormat) {
+      const fieldName = mediaPickerTarget === "logo" ? "Primary Logo" : "Reference Image";
+      setError(`Unsupported file format for ${fieldName}. Please select an image asset (JPG, PNG, WebP, SVG).`);
+      setMediaPickerTarget(null);
+      return;
+    }
+
+    // Format is valid -> clear error and update field
+    setError("");
+    if (mediaPickerTarget === "logo") {
+      updateField("logoUrl", s3Url);
+    } else if (
+      mediaPickerTarget &&
+      typeof mediaPickerTarget === "object" &&
+      mediaPickerTarget.type === "reference"
+    ) {
+      const updated = [...form.referenceImages];
+      updated[mediaPickerTarget.index] = s3Url;
+      updateField("referenceImages", updated);
+    }
+    setMediaPickerTarget(null);
+  };
+
 
   const openCreateForm = () => {
     setEditingId(null);
@@ -330,7 +372,7 @@ function BrandKit() {
                     />
                   </div>
 
-                  <div className="md:col-span-2">
+                  {/* <div className="md:col-span-2">
                     <label className={labelClass}>Primary Logo URL</label>
                     <input
                       type="url"
@@ -354,13 +396,66 @@ function BrandKit() {
       }}
     />
   </div>
-)}
+)} */}
 
-                    <p className="mt-2 text-xs text-[#9097B4]">
-                      Enter a publicly accessible image URL. File uploads are
-                      not enabled in this version.
-                    </p>
-                  </div>
+<div className="md:col-span-2">
+  <label className={labelClass}>Primary Logo URL</label>
+  <div className="flex items-center gap-2">
+    <div className="relative flex-1">
+      <input
+        type="url"
+        value={form.logoUrl}
+        disabled={Boolean(form.logoUrl)}
+        onChange={(e) => updateField("logoUrl", e.target.value)}
+        placeholder="Paste image URL (e.g. https://...)"
+        className={`${inputClass} ${form.logoUrl ? "pr-10 opacity-80 bg-[#F1F3FB] font-mono text-xs cursor-not-allowed" : ""}`}
+      />
+      {form.logoUrl && (
+        <button
+          type="button"
+          onClick={() => updateField("logoUrl", "")}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-[#737B9B] hover:bg-[#E2E5F5] hover:text-rose-600 transition"
+          title="Clear & Change Logo"
+        >
+          <X size={16} />
+        </button>
+      )}
+    </div>
+
+    {!form.logoUrl && (
+      <button
+        type="button"
+        onClick={() => setMediaPickerTarget("logo")}
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#DDE0F1] bg-white px-4 py-3 text-sm font-semibold text-[#313166] transition hover:bg-[#F5F5FC]"
+      >
+        <ImageIcon size={16} />
+        Choose from Library
+      </button>
+    )}
+  </div>
+
+  {form.logoUrl && (
+    <div className="mt-3 flex min-h-28 items-center justify-center rounded-xl border border-dashed border-[#DDE1F0] bg-[#F8F9FE] p-3 shadow-inner">
+      <img
+        src={form.logoUrl}
+        alt="Brand logo preview"
+        className="max-h-24 max-w-full object-contain"
+        onError={(e) => {
+          e.currentTarget.style.display = "none";
+        }}
+        onLoad={(e) => {
+          e.currentTarget.style.display = "block";
+        }}
+      />
+    </div>
+  )}
+
+  <p className="mt-2 text-xs text-[#9097B4]">
+    {form.logoUrl
+      ? "Logo locked. Click the ✖ button above to clear and re-select."
+      : "Paste a public image URL or select an image asset from your media library."}
+  </p>
+</div>
                 </div>
               </section>
 
@@ -508,7 +603,7 @@ function BrandKit() {
                   style.
                 </p>
 
-                <div className="space-y-3">
+                {/* <div className="space-y-3">
                   {form.referenceImages.map((url, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <input
@@ -537,7 +632,87 @@ function BrandKit() {
                       </button>
                     </div>
                   ))}
-                </div>
+                </div> */}
+
+                <div className="space-y-4">
+  {form.referenceImages.map((url, index) => (
+    <div key={index} className="rounded-2xl border border-[#E7EAF5] bg-[#FAFAFE] p-3.5 space-y-3">
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <input
+            type="url"
+            value={url}
+            disabled={Boolean(url)}
+            onChange={(e) => {
+              const images = [...form.referenceImages];
+              images[index] = e.target.value;
+              updateField("referenceImages", images);
+            }}
+            placeholder="Paste reference image URL (e.g. https://...)"
+            className={`${inputClass} ${url ? "pr-10 opacity-80 bg-[#F1F3FB] font-mono text-xs cursor-not-allowed" : ""}`}
+          />
+          {url && (
+            <button
+              type="button"
+              onClick={() => {
+                const images = [...form.referenceImages];
+                images[index] = "";
+                updateField("referenceImages", images);
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-[#737B9B] hover:bg-[#E2E5F5] hover:text-rose-600 transition"
+              title="Clear & Change Reference Image"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
+        {!url && (
+          <button
+            type="button"
+            onClick={() => setMediaPickerTarget({ type: "reference", index })}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#DDE0F1] bg-white px-3.5 py-3 text-xs font-semibold text-[#313166] transition hover:bg-[#F5F5FC]"
+          >
+            <ImageIcon size={15} />
+            Library
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() =>
+            updateField(
+              "referenceImages",
+              form.referenceImages.filter((_, i) => i !== index)
+            )
+          }
+          className="rounded-xl p-3 text-rose-500 hover:bg-rose-50 transition shrink-0"
+          aria-label="Remove reference image row"
+          title="Remove row"
+        >
+          <Trash2 size={18} />
+        </button>
+      </div>
+
+      {/* Live Preview Box for Reference Image */}
+      {url && (
+        <div className="flex h-24 items-center justify-center rounded-xl border border-dashed border-[#DDE1F0] bg-white p-2">
+          <img
+            src={url}
+            alt={`Reference image ${index + 1} preview`}
+            className="max-h-20 max-w-full object-contain rounded-lg"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+            onLoad={(e) => {
+              e.currentTarget.style.display = "block";
+            }}
+          />
+        </div>
+      )}
+    </div>
+  ))}
+</div>
 
                 {form.referenceImages.length < 10 && (
                   <button
@@ -774,6 +949,16 @@ className="inline-flex items-center justify-center gap-2 rounded-md bg-[#C52D68]
           )}
         </section>
       </div>
+
+      {mediaPickerTarget && (
+        <MediaPickerModal
+          mediaType="image"
+          lockMediaType={true}
+          lockType={true}
+          onClose={() => setMediaPickerTarget(null)}
+          onSelect={handleMediaSelect}
+        />
+      )}
     </div>
   );
 }

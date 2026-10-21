@@ -533,7 +533,7 @@ const MiniSnakeGame = () => {
   );
 };
 
-const AiImageGeneratorModal = ({ onClose, onSelect }) => {
+const AiImageGeneratorModal = ({ onClose, onSelect, source = "template_builder" }) => {
   const [prompt, setPrompt] = useState("");
   const [aspectRatio, setAspectRatio] = useState("1:1");
   const [useBrandKit, setUseBrandKit] = useState(true);
@@ -565,7 +565,8 @@ const AiImageGeneratorModal = ({ onClose, onSelect }) => {
         aspectRatio,
         useBrandKit,
         model: qualityMode === "mini" ? "gpt-image-1-mini" : "gpt-image-1",
-        saveToLibrary: false
+        saveToLibrary: false,
+        source
       });
 
       if (response.data?.status === "success") {
@@ -651,6 +652,19 @@ const handleSaveToLibrary = async () => {
           {/* Form Inputs */}
           {!generatedResult && !loading && (
             <div className="space-y-4">
+              {/* <div>
+                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">
+                  Describe Your Visual
+                </label>
+                <textarea
+                  rows="3"
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-[#CB376D]/20 focus:border-[#CB376D] outline-none transition-all font-medium"
+                  placeholder="e.g. Grand Diwali festive discount banner with glowing diyas, modern gift boxes, and gold sparkles..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                />
+              </div> */}
+
               <div>
                 <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">
                   Describe Your Visual
@@ -662,6 +676,25 @@ const handleSaveToLibrary = async () => {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                 />
+
+                {/* Quick Retail Sale Suggestions */}
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  <span className="text-[10px] font-bold text-gray-400 self-center mr-1">Quick Ideas:</span>
+                  {[
+                    "Diwali Mega Sale 50% Off retail discount poster with gift hampers and brass diyas",
+                    "Exclusive Festive Clearance Offer banner with gold sparkles and festive lighting",
+                    "New Seasonal Arrival poster with luxury gift packaging and festive background"
+                  ].map((idea, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setPrompt(idea)}
+                      className="text-[10px] bg-gray-100 hover:bg-[#CB376D]/10 hover:text-[#CB376D] text-gray-600 px-2.5 py-1 rounded-lg font-medium transition-all"
+                    >
+                      + {idea.slice(0, 28)}...
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Aspect Ratio Picker */}

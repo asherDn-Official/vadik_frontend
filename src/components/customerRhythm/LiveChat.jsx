@@ -1131,6 +1131,7 @@ await fetchCustomers(false);
 
       {showAiModal && (
   <AiImageGeneratorModal
+  source="live_chat"
     onClose={() => setShowAiModal(false)}
     onSelect={(s3Url) => {
       setSelectedMedia({
