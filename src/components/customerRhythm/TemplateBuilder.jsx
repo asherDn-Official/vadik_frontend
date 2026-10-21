@@ -17,13 +17,16 @@ import {
   AlertCircle,
   HelpCircle,
   Smartphone,
-  Info
+  Info,
+  Sparkles,
+  X
 } from "lucide-react";
 import api from "../../api/apiconfig";
 import Loader from "../../utils/Loader";
 import { toast } from "react-toastify";
 import { renderWhatsAppFormattedText } from "../../utils/whatsappTextFormatter";
 import MediaPickerModal from "../common/MediaPickerModal";
+import AiImageGeneratorModal from "../common/AiImageGeneratorModal";
 
 const buildCopyName = (name) => {
   if (!name) return "";
@@ -134,6 +137,7 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
   const [activeEmojiCategory, setActiveEmojiCategory] = useState("Smileys");
   const bodyInputRefs = useRef({});
   const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);
 
   // Character limits
   const LIMITS = {
@@ -809,30 +813,29 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
     </div>
 
     <div className="flex flex-col gap-3">
-      {/* Public URL Input & Media Library Selector */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            placeholder={`Paste public ${comp.format.toLowerCase()} URL (https://...)...`}
-            value={comp.mediaUrl || ""}
-            onChange={(e) => {
-              const url = e.target.value;
-              updateComponent(idx, { mediaUrl: url });
-            }}
-            onBlur={(e) => {
-              const url = e.target.value;
-              if (url) {
-                const validation = validateMediaUrl(url, comp.format);
-                if (!validation.valid) {
-                  toast.error(validation.error);
-                }
-              }
-            }}
-            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#313166]/20 font-medium"
-          />
-        </div>
+      {/* Full-Width Public URL Input */}
+      <input
+        type="text"
+        placeholder={`Paste public ${comp.format.toLowerCase()} URL (https://...)...`}
+        value={comp.mediaUrl || ""}
+        onChange={(e) => {
+          const url = e.target.value;
+          updateComponent(idx, { mediaUrl: url });
+        }}
+        onBlur={(e) => {
+          const url = e.target.value;
+          if (url) {
+            const validation = validateMediaUrl(url, comp.format);
+            if (!validation.valid) {
+              toast.error(validation.error);
+            }
+          }
+        }}
+        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#313166]/20 font-medium"
+      />
 
+      {/* Action Buttons Row */}
+      <div className="flex flex-wrap items-center gap-2.5">
         <button
           type="button"
           onClick={() => setShowMediaPicker(true)}
@@ -842,15 +845,28 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
           Media Library
         </button>
 
-        {comp.mediaUrl && (
+        {/* Generate with AI Button (Only shown for IMAGE headers) */}
+        {comp.format === "IMAGE" && (
           <button
             type="button"
-            onClick={() => updateComponent(idx, { mediaUrl: "" })}
-            className="px-4 py-2.5 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50 font-semibold transition-colors whitespace-nowrap cursor-pointer"
+            onClick={() => setShowAiModal(true)}
+            className="px-5 py-2.5 bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-xl text-sm font-bold hover:opacity-95 transition-all flex items-center justify-center gap-2 shadow-sm whitespace-nowrap cursor-pointer"
           >
-            Remove
+            <Sparkles size={16} />
+            Generate with AI
           </button>
         )}
+
+        {comp.mediaUrl && (
+  <button
+    type="button"
+    title="Clear Media URL"
+    onClick={() => updateComponent(idx, { mediaUrl: "" })}
+    className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl border border-gray-200 hover:border-red-200 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+  >
+    <X size={18} />
+  </button>
+)}
       </div>
 
       {comp.mediaUrl && (
@@ -1148,6 +1164,19 @@ const TemplateBuilder = ({ onCancel, onSuccess, initialTemplate }) => {
           onSelect={handleMediaSelect}
         />
       )}
+
+      {showAiModal && (
+  <AiImageGeneratorModal
+    onClose={() => setShowAiModal(false)}
+    onSelect={(s3Url) => {
+      const headerIdx = template.components.findIndex((c) => c.type === "HEADER");
+      if (headerIdx !== -1) {
+        updateComponent(headerIdx, { mediaUrl: s3Url });
+      }
+      setShowAiModal(false);
+    }}
+  />
+)}
     </div>
   );
 };

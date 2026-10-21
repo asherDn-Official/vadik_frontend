@@ -18,12 +18,14 @@ import {
   Info,
   UploadCloud,
   Trash2,
-  X
+  X,
+  Sparkles
 } from "lucide-react";
 import api from "../../api/apiconfig";
 import Loader from "../../utils/Loader";
 import { toast } from "react-toastify";
 import { format, isToday } from "date-fns";
+import AiImageGeneratorModal from "../common/AiImageGeneratorModal";
 
 const LiveChat = ({ onUnreadCountChange }) => {
   const [customers, setCustomers] = useState([]);
@@ -37,6 +39,7 @@ const LiveChat = ({ onUnreadCountChange }) => {
   const [isWindowOpen, setIsWindowOpen] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showMediaModal, setShowMediaModal] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);
   const [activeTab, setActiveTab] = useState("requesting");
   const [isIntervening, setIsIntervening] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -816,6 +819,17 @@ await fetchCustomers(false);
                    >
                      <Paperclip size={20} />
                    </button>
+
+                   {/* NEW: AI Generation Button */}
+  <button 
+    className="p-2 text-gray-400 hover:text-[#CB376D] transition-colors"
+    onClick={() => setShowAiModal(true)}
+    disabled={isUploading}
+    title="Generate Image with AI"
+  >
+    <Sparkles size={20} />
+  </button>
+
                    <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
                      <Smile size={20} />
                    </button>
@@ -1114,6 +1128,22 @@ await fetchCustomers(false);
           </div>
         </div>
       )}
+
+      {showAiModal && (
+  <AiImageGeneratorModal
+    onClose={() => setShowAiModal(false)}
+    onSelect={(s3Url) => {
+      setSelectedMedia({
+        _id: `ai-${Date.now()}`,
+        s3Url,
+        mimeType: "image/png",
+        fileName: "AI_Generated_Image.png"
+      });
+      setShowMediaModal(true);
+      setShowAiModal(false);
+    }}
+  />
+)}
     </div>
   );
 };

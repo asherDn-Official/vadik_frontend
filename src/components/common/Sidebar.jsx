@@ -139,13 +139,7 @@ function Sidebar() {
   lucideIcon: Wallet,
   label: "AI Balance",
 },
-{
-    path: "/media-library",
-    module: "Media Library",
-    icon: null,
-    lucideIcon: FiImage,
-    label: "Media Library",
-  },
+
 
   ];
 

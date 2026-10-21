@@ -24,12 +24,14 @@ import {
   Calendar,
   Layers,
   ExternalLink,
-  Phone
+  Phone,
+  Sparkles
 } from "lucide-react";
 import api from "../../api/apiconfig";
 import { toast } from "react-toastify";
 import FilterPanel from "../customerInsigth/FilterPanel";
 import CustomerList from "../customerInsigth/CustomerList";
+import AiImageGeneratorModal from "../common/AiImageGeneratorModal";
 import * as XLSX from "xlsx";
 
 import Loader from "../../utils/Loader";
@@ -201,6 +203,7 @@ const SendCampaign = () => {
   const paginatedCampaigns = filteredCampaigns.slice(campaignStartIndex, campaignEndIndex);
 
   const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);  
 
   const openCampaignAnalytics = (campaign) => {
     if (!campaign?._id) return;
@@ -553,7 +556,7 @@ const SendCampaign = () => {
       ...campaignData,
       template,
       variables: initialVariables,
-      media: { url: templateMediaUrl, type: mediaType }
+      media: { url: templateMediaUrl, type: mediaType, isAutoLoaded: !!templateMediaUrl }
     });
     setCurrentStep(3); // Auto-advance to audience after template selection
   };
@@ -1035,7 +1038,7 @@ const SendCampaign = () => {
                       <div className="w-8 h-8 rounded-lg bg-[#313166]/5 flex items-center justify-center text-[#313166]">
                         <Megaphone size={14} />
                       </div>
-                      <span className="text-sm font-bold text-gray-700">{camp.name}</span>
+                      <span className="text-sm font-bold text-gray-700  truncate max-w-[200px]">{camp.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -1233,7 +1236,7 @@ const SendCampaign = () => {
                     <h3 className="text-xl font-bold text-gray-900">Let&apos;s name your campaign</h3>
                     <p className="text-sm text-gray-500">This is for your internal reference to track performance.</p>
                   </div>
-                  <div className="space-y-1.5">
+                  {/* <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Campaign Name</label>
                     <input 
                       type="text"
@@ -1242,7 +1245,26 @@ const SendCampaign = () => {
                       value={campaignData.name}
                       onChange={(e) => setCampaignData({ ...campaignData, name: e.target.value })}
                     />
-                  </div>
+                  </div> */}
+
+                  <div className="space-y-1.5">
+  <div className="flex items-center justify-between">
+    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+      Campaign Name
+    </label>
+    <span className="text-[10px] font-semibold text-gray-400">
+      {campaignData.name.length}/50
+    </span>
+  </div>
+  <input 
+    type="text"
+    maxLength={50}
+    placeholder="e.g., Seasonal Promotion - March 2024"
+    className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-[#313166]/10 transition-all font-medium text-gray-900"
+    value={campaignData.name}
+    onChange={(e) => setCampaignData({ ...campaignData, name: e.target.value })}
+  />
+</div>
                   <div className="pt-4 flex flex-col gap-4">
                     <div className="flex gap-4">
                       <button 
@@ -1757,7 +1779,7 @@ const SendCampaign = () => {
 )} */}
 
 
-{campaignData.media.type && (
+{/* {campaignData.media.type && (
   <div className="p-6 bg-[#313166]/5 rounded-2xl border border-[#313166]/10 space-y-4">
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2 text-[#313166]">
@@ -1773,16 +1795,7 @@ const SendCampaign = () => {
 
     <div className="flex flex-col gap-3">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        {/* <input
-          type="text"
-          placeholder={`Media URL...`}
-          value={campaignData.media.url || ""}
-          onChange={(e) => setCampaignData({
-            ...campaignData,
-            media: { ...campaignData.media, url: e.target.value }
-          })}
-          className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-1 focus:ring-[#313166]/20"
-        /> */}
+        
 
         <input
           type="text"
@@ -1811,6 +1824,95 @@ const SendCampaign = () => {
             className="px-4 py-2.5 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50 font-semibold transition-colors whitespace-nowrap"
           >
             Clear
+          </button>
+        )}
+      </div>
+
+      {campaignData.media.url && (
+        <div className="text-xs text-emerald-800 bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-100 flex items-center justify-between">
+          <span className="truncate font-medium">
+            <span className="font-bold">Active Preview URL:</span> {campaignData.media.url}
+          </span>
+        </div>
+      )}
+    </div>
+  </div>
+)} */}
+
+
+
+
+{campaignData.media.type && (
+  <div className="p-6 bg-[#313166]/5 rounded-2xl border border-[#313166]/10 space-y-4">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 text-[#313166]">
+         <Upload size={18} />
+         <h4 className="font-bold text-sm">Header {campaignData.media.type} Media</h4>
+      </div>
+      {campaignData.media.url && campaignData.media.isAutoLoaded && (
+        <span className="text-xs font-semibold text-emerald-700 bg-emerald-100/80 px-3 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
+          ✓ Auto-loaded from Template
+        </span>
+      )}
+    </div>
+
+    <div className="space-y-3">
+      {/* Media URL Input Box */}
+      <input
+        type="text"
+        placeholder={
+          campaignData.media.isAutoLoaded
+            ? "Auto-loaded URL (click X to clear & paste custom link)..."
+            : "Paste media URL or select from library..."
+        }
+        value={campaignData.media.url || ""}
+        readOnly={campaignData.media.isAutoLoaded}
+        onChange={(e) =>
+          setCampaignData({
+            ...campaignData,
+            media: { ...campaignData.media, url: e.target.value, isAutoLoaded: false }
+          })
+        }
+        className={`w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          campaignData.media.isAutoLoaded
+            ? "bg-gray-100 border border-gray-200 text-gray-500 cursor-not-allowed select-all focus:outline-none"
+            : "bg-white border border-gray-200 text-gray-800 focus:ring-1 focus:ring-[#313166]/20"
+        }`}
+      />
+
+      {/* Action Buttons Container (Wrapping neatly inside card) */}
+      <div className="flex flex-wrap items-center gap-2.5 pt-1">
+        <button
+          type="button"
+          onClick={() => setShowMediaPicker(true)}
+          className="px-4 py-2.5 bg-[#313166] text-white rounded-xl text-xs font-bold hover:bg-[#3d3b83] transition-all flex items-center gap-2 shadow-sm"
+        >
+          <Plus size={15} />
+          Change Media
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowAiModal(true)}
+          className="px-4 py-2.5 bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-xl text-xs font-bold hover:opacity-95 transition-all flex items-center gap-2 shadow-sm"
+        >
+          <Sparkles size={15} />
+          Generate with AI
+        </button>
+
+        {campaignData.media.url && (
+          <button
+            type="button"
+            title="Clear Media URL"
+            onClick={() =>
+              setCampaignData({
+                ...campaignData,
+                media: { ...campaignData.media, url: "", isAutoLoaded: false }
+              })
+            }
+            className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl border border-gray-200 hover:border-red-200 transition-colors flex items-center justify-center"
+          >
+            <X size={16} />
           </button>
         )}
       </div>
@@ -2284,12 +2386,25 @@ const SendCampaign = () => {
           onSelect={(s3Url) => {
             setCampaignData((prev) => ({
               ...prev,
-              media: { ...prev.media, url: s3Url }
+              media: { ...prev.media, url: s3Url, isAutoLoaded: true }
             }));
             setShowMediaPicker(false);
           }}
         />
       )}
+
+      {showAiModal && (
+  <AiImageGeneratorModal
+    onClose={() => setShowAiModal(false)}
+    onSelect={(s3Url) => {
+      setCampaignData((prev) => ({
+        ...prev,
+        media: { ...prev.media, url: s3Url, isAutoLoaded: false }
+      }));
+      setShowAiModal(false);
+    }}
+  />
+)}
     </div>
   );
 };

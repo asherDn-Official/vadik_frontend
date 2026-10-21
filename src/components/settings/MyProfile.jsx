@@ -84,14 +84,14 @@ const MyProfile = () => {
   // Watch the automatedCustomersGreeting value for the toggle
   const automatedGreeting = watch("automatedCustomersGreeting");
 
-  // const fetchImportHistory = async (id) => {
-  //   try {
-  //     const response = await api.get(`/api/customers/import-history/${id || retailerId}`);
-  //     setImportHistory(response.data);
-  //   } catch (err) {
-  //     console.error("Failed to fetch import history:", err);
-  //   }
-  // };
+  const fetchImportHistory = async (id) => {
+    try {
+      const response = await api.get(`/api/customers/import-history/${id || retailerId}`);
+      setImportHistory(response.data);
+    } catch (err) {
+      console.error("Failed to fetch import history:", err);
+    }
+  };
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -818,21 +818,22 @@ const MyProfile = () => {
     </div>
     
     <div 
-      className="relative group cursor-pointer" 
+      className="relative group cursor-pointer mb-6" 
       onClick={() => setShowMediaPicker(true)}
     >
-      <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden mb-6 border-4 border-white shadow-md transition-transform group-hover:scale-105">
+      <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-md transition-transform group-hover:scale-105">
         <img
           src={watch("profilePicture")}
           alt="Profile"
           className="w-full h-full object-cover"
         />
-      </div>
-      <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
+        {/* Camera overlay nested directly inside rounded container */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </div>
       </div>
     </div>
 
@@ -840,9 +841,7 @@ const MyProfile = () => {
       <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">
         Choose from Media Library
       </p>
-      <p className="text-[#EC396F] text-[10px] font-medium">
-        Select your stored S3 logo
-      </p>
+      
     </div>
 
    <button

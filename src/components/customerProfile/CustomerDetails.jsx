@@ -884,33 +884,101 @@ const CustomerDetails = ({
     setShowMediaPicker(false);
   };
 
+//   const onSubmit = async (e) => {
+//     e.preventDefault();
+//     console.log("CustomerDetails onSubmit called");
+//     console.log("Current formData:", formData);
+//     console.log("Current profileFile:", profileFile);
+
+//     try {
+//       // Validate basic fields
+//       await basicSchema.validate(formData.basic, { abortEarly: false });
+
+//       // Transform the form data back to API format
+//       const formattedData = transformFormDataToAPI(formData, customer);
+//       console.log("Formatted data for API:", formattedData);
+
+//       // Call the parent save handler with formatted data
+//       // onSave({
+//       //   ...formattedData,
+//       //   profilePicture: profileFile,
+//       //   removeProfilePicture,
+//       // });
+
+//       // Update inside onSubmit handler:
+// onSave({
+//   ...formattedData,
+//   profilePicture: profileFile || (typeof profilePreview === "string" && profilePreview.startsWith("http") ? profilePreview : null),
+//   removeProfilePicture,
+// });
+//     } catch (err) {
+//       console.error("Validation error in onSubmit:", err);
+//       if (err instanceof yup.ValidationError) {
+//         const newErrors = {};
+//         err.inner.forEach((error) => {
+//           newErrors[error.path] = error.message;
+//         });
+//         setErrors((prev) => ({
+//           ...prev,
+//           basic: {
+//             ...prev.basic,
+//             ...newErrors,
+//           },
+//         }));
+//       }
+//     }
+//   };
+
+
+// Helper to extract clean primitive values and remove raw SVG/icon objects
+  const sanitizeFieldValue = (val) => {
+    if (val && typeof val === "object" && !Array.isArray(val) && !(val instanceof Date)) {
+      return val.value !== undefined ? sanitizeFieldValue(val.value) : val;
+    }
+    return val;
+  };
+
+  const cleanSectionData = (sectionObj) => {
+    if (!sectionObj || typeof sectionObj !== "object") return sectionObj;
+    const cleaned = {};
+    for (const [key, val] of Object.entries(sectionObj)) {
+      cleaned[key] = sanitizeFieldValue(val);
+    }
+    return cleaned;
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
     console.log("CustomerDetails onSubmit called");
-    console.log("Current formData:", formData);
-    console.log("Current profileFile:", profileFile);
 
     try {
-      // Validate basic fields
+      // 1. Validate basic fields
       await basicSchema.validate(formData.basic, { abortEarly: false });
 
-      // Transform the form data back to API format
-      const formattedData = transformFormDataToAPI(formData, customer);
-      console.log("Formatted data for API:", formattedData);
+      // 2. Transform the form data back to API format
+      const rawFormattedData = transformFormDataToAPI(formData, customer);
 
-      // Call the parent save handler with formatted data
-      // onSave({
-      //   ...formattedData,
-      //   profilePicture: profileFile,
-      //   removeProfilePicture,
-      // });
+      // 3. Clean raw icon objects from all sections to fix "Invalid customer preference values"
+      const formattedData = {
+        ...rawFormattedData,
+        basic: cleanSectionData(rawFormattedData.basic),
+        additionalData: cleanSectionData(rawFormattedData.additionalData),
+        advancedDetails: cleanSectionData(rawFormattedData.advancedDetails),
+        advancedPrivacyDetails: cleanSectionData(rawFormattedData.advancedPrivacyDetails),
+      };
 
-      // Update inside onSubmit handler:
-onSave({
-  ...formattedData,
-  profilePicture: profileFile || (typeof profilePreview === "string" && profilePreview.startsWith("http") ? profilePreview : null),
-  removeProfilePicture,
-});
+      // 4. Properly separate local binary File from S3 URL string
+      const isLocalFile = profileFile instanceof File;
+      const isS3Url = typeof profilePreview === "string" && profilePreview.startsWith("http");
+
+      onSave({
+        ...formattedData,
+        // Only pass binary File to profilePicture (triggers multipart upload)
+        profilePicture: isLocalFile ? profileFile : null,
+        // Pass S3 link directly in profilePictureUrl if picked from Media Library
+        profilePictureUrl: isS3Url ? profilePreview : formattedData.profilePictureUrl,
+        removeProfilePicture,
+      });
     } catch (err) {
       console.error("Validation error in onSubmit:", err);
       if (err instanceof yup.ValidationError) {

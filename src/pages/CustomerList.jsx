@@ -529,7 +529,7 @@ const CustomerList = () => {
                     <table className="min-w-full">
                       <thead className="border-b border-[#EEF1FF] bg-[#F8F9FF]">
                         <tr className="">
-                          <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
+                          <th className="px-6 py-2.5 text-left text-sm font-medium uppercase tracking-wider text-gray-600">
                             Name
                           </th>
                           {/* <th className="px-4 py-2.5 text-center text-sm font-medium text-gray-600 uppercase tracking-wider">
@@ -561,7 +561,7 @@ const CustomerList = () => {
                             "
                             onClick={() => handleCustomerClick(customer._id)}
                           >
-                            <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C]">
+                            {/* <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C]">
                               <div className="flex items-center justify-center gap-3">
                                 {customer.profilePictureUrl && (
                                   <img
@@ -575,7 +575,27 @@ const CustomerList = () => {
                                 )}
                                 <span>{getCustomerName(customer)}</span>
                               </div>
-                            </td>
+                            </td> */}
+
+                            <td className="whitespace-nowrap px-6 py-3 text-sm font-medium text-[#1F1C5C]">
+  <div className="flex items-center justify-start gap-3">
+    {customer.profilePictureUrl ? (
+      <img
+        src={getCustomerProfilePictureSrc(
+          customer.profilePictureUrl,
+          customer.updatedAt,
+        )}
+        alt=""
+        className="h-8 w-8 shrink-0 rounded-full object-cover"
+      />
+    ) : (
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#313166]/10 text-xs font-semibold uppercase text-[#313166]">
+        {getCustomerName(customer).charAt(0).toUpperCase()}
+      </div>
+    )}
+    <span className="truncate">{getCustomerName(customer)}</span>
+  </div>
+</td>
                             {/* <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-[#1F1C5C] text-center">
                               {getCustomerLastName(customer)}
                             </td> */}

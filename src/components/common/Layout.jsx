@@ -10,7 +10,7 @@ import SubscriptionPopup from "../settings/subscription/SubscriptionPopup.jsx";
 import { usePlan } from "../../context/PlanContext.jsx";
 import WhatsAppAlertPopup from "./WhatsAppAlertPopup.jsx";
 import CustomerImportNavbarProgress from "./CustomerImportNavbarProgress.jsx";
-import { FiUser, FiUsers } from "react-icons/fi";
+import { FiUser, FiUsers, FiImage } from "react-icons/fi";
 import { FiSearch } from "react-icons/fi";
 import { useLocation } from "react-router-dom";
 import { ChatNotificationProvider } from "../../context/ChatNotificationContext";
@@ -398,6 +398,18 @@ function Layout() {
                           <FiUser className="h-4 w-4 text-[#313166]" />
                           My Profile
                         </button>
+
+                        {/* ADD MEDIA LIBRARY BUTTON */}
+  <button
+    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-100"
+    onClick={() => {
+      navigate("/media-library");
+      setShowDropdown(false);
+    }}
+  >
+    <FiImage className="h-4 w-4 text-[#313166]" />
+    Media Library
+  </button>
 
                         <button
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-100"
