@@ -7,6 +7,7 @@ import {
   Calendar,
   CheckCircle2,
   Copy,
+  Search,
   ExternalLink,
   FileText,
   Image as ImageIcon,
@@ -858,10 +859,26 @@ function AutomationDashboardView({
   loading,
   onViewLogs,
 }) {
-  const filteredAutomations =
-    selectedView === "all"
-      ? automations
-      : automations.filter((automation) => automation.status === selectedView);
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // const filteredAutomations =
+  //   selectedView === "all"
+  //     ? automations
+  //     : automations.filter((automation) => automation.status === selectedView);
+
+  const filteredAutomations = automations.filter((automation) => {
+    const matchesStatus =
+      selectedView === "all" || automation.status === selectedView;
+
+    const term = searchTerm.trim().toLowerCase();
+    const matchesSearch =
+      !term ||
+      automation.name?.toLowerCase().includes(term) ||
+      automation.triggerType?.replaceAll("_", " ").toLowerCase().includes(term);
+
+    return matchesStatus && matchesSearch;
+  });
 
   const summary = {
     total: automations.length,
@@ -983,7 +1000,40 @@ function AutomationDashboardView({
               These flows are now backed by the retention automation APIs.
             </p>
           </div>
+          {/* <div className="flex flex-wrap items-center gap-2">
+            {["all", "active", "paused", "draft"].map((view) => (
+              <button
+                key={view}
+                type="button"
+                onClick={() => onSelectView(view)}
+                className="rounded-full px-3 py-1.5 text-xs font-medium transition-all"
+                style={{
+                  backgroundColor:
+                    selectedView === view ? "#313166" : "#F4F5F9",
+                  color: selectedView === view ? "white" : "#313166",
+                }}
+              >
+                {view === "all"
+                  ? "All"
+                  : view.charAt(0).toUpperCase() + view.slice(1)}
+              </button>
+            ))}
+          </div> */}
+
           <div className="flex flex-wrap items-center gap-2">
+            {/* SEARCH INPUT */}
+            <div className="relative min-w-[220px]">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search automations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full rounded-full border border-gray-200 bg-[#F4F5F9] py-1.5 pl-9 pr-4 text-xs text-[#313166] outline-none transition-all focus:border-[#313166] focus:bg-white"
+              />
+            </div>
+
+            {/* STATUS FILTER PILLS */}
             {["all", "active", "paused", "draft"].map((view) => (
               <button
                 key={view}

@@ -38,6 +38,57 @@ function Layout() {
     profilePicture: "",
   });
   const [profileCompletion, setProfileCompletion] = useState(100);
+  const [imgError, setImgError] = useState(false);
+
+  // async function getProfileData() {
+  //   try {
+  //     const response = await api.get("/api/retailer/profile");
+
+  //     if (response.data.status === "success") {
+  //       const retailerData = response.data.data;
+
+  //       setProfileData({
+  //         fullName: retailerData.fullName || "",
+  //         profilePicture: retailerData.storeImage || "",
+  //       });
+
+  //       const requiredFields = [
+  //         retailerData.fullName,
+  //         retailerData.email,
+  //         retailerData.phone,
+  //         retailerData.storeName,
+  //         retailerData.storeType,
+  //         retailerData.storeAddress,
+  //         retailerData.storeOwnerName,
+  //         retailerData.storeContactNumber,
+  //         retailerData.storeCity,
+  //         retailerData.storePincode,
+  //         retailerData.GSTNumber,
+  //         retailerData.storeImage,
+  //       ];
+
+  //       const completedFields =
+  //         requiredFields.filter(
+  //           field =>
+  //             field !== null &&
+  //             field !== undefined &&
+  //             field !== ""
+  //         ).length;
+
+  //       const percentage = Math.round(
+  //         (completedFields / requiredFields.length) * 100
+  //       );
+
+  //       setProfileCompletion(
+  //         percentage
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.error("Profile fetch error:", error);
+  //   }
+  // }
+
+
 
   async function getProfileData() {
     try {
@@ -47,9 +98,16 @@ function Layout() {
         const retailerData = response.data.data;
 
         setProfileData({
-          fullName: retailerData.fullName || "",
-          profilePicture: retailerData.storeImage || "",
+          fullName: retailerData.fullName || retailerData.storeOwnerName || "",
+          profilePicture:
+            retailerData.storeImage ||
+            retailerData.profilePicture ||
+            retailerData.logoUrl ||
+            retailerData.storeLogo ||
+            retailerData.logo ||
+            "",
         });
+        setImgError(false); // Reset error state on fetch
 
         const requiredFields = [
           retailerData.fullName,
@@ -66,27 +124,20 @@ function Layout() {
           retailerData.storeImage,
         ];
 
-        const completedFields =
-          requiredFields.filter(
-            field =>
-              field !== null &&
-              field !== undefined &&
-              field !== ""
-          ).length;
+        const completedFields = requiredFields.filter(
+          (field) => field !== null && field !== undefined && field !== ""
+        ).length;
 
         const percentage = Math.round(
           (completedFields / requiredFields.length) * 100
         );
 
-        setProfileCompletion(
-          percentage
-        );
+        setProfileCompletion(percentage);
       }
     } catch (error) {
       console.error("Profile fetch error:", error);
     }
   }
-
 
 
   const handleSearchSubmit = (e) => {
@@ -318,75 +369,72 @@ function Layout() {
                   )}
                 </button> */}
 
-                {/* PROFILE */}
-                <div className="relative" ref={dropdownRef}>
+                <div className="relative shrink-0" ref={dropdownRef}>
+                  {/* Circle Logo Button */}
                   <div
                     className="
-                      flex min-w-0 cursor-pointer items-center gap-2
+                      flex h-11 w-11 cursor-pointer items-center justify-center
                       rounded-full border border-[#E7EBF5] bg-white
-                      py-1.5 pl-1.5 pr-2
-                      transition-all
+                      p-0.5 transition-all
                       hover:bg-[#F8F9FD]
                       hover:shadow-sm
                     "
                     onClick={() => setShowDropdown((prev) => !prev)}
                   >
-                    <div className="relative">
-
-                      {profileData?.profilePicture ? (
+                    <div className="relative h-full w-full">
+                      {profileData?.profilePicture && !imgError ? (
                         <img
                           src={profileData.profilePicture}
                           alt={profileName}
-                          className="h-10 w-10 rounded-full object-cover border border-white shadow-sm"
+                          onError={() => setImgError(true)}
+                          className="h-full w-full rounded-full border border-white object-cover shadow-sm"
                         />
                       ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-sm font-semibold uppercase text-white shadow-sm">
+                        <div className="flex h-full w-full items-center justify-center rounded-full bg-[#313166] text-sm font-semibold uppercase text-white shadow-sm">
                           {profileInitial}
                         </div>
                       )}
 
                       {profileCompletion < 100 && (
                         <span
-                          className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white"
+                          className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500"
                         />
                       )}
-
-                    </div>
-
-                    <div className="hidden min-w-0 pr-1 xl:block xl:max-w-[148px]">
-                      <p className="truncate text-sm font-medium text-[#313166]">
-                        {profileName}
-                      </p>
-
-                      <p className="truncate text-xs text-gray-500">Admin</p>
                     </div>
                   </div>
 
+                  {/* Dropdown Menu */}
                   {showDropdown && (
                     <div className="layer-dropdown absolute right-0 mt-3 w-72 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl">
+                      {/* Header: Logo, Name, Email, Role */}
                       <div className="flex items-center gap-3 border-b border-gray-100 bg-[#F8F9FD] p-4">
-                        {profileData?.profilePicture ? (
+                        {profileData?.profilePicture && !imgError ? (
                           <img
                             src={profileData.profilePicture}
                             alt={profileName}
+                            onError={() => setImgError(true)}
                             className="h-12 w-12 rounded-full border border-white object-cover shadow-sm"
                           />
                         ) : (
-                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-base font-semibold uppercase text-white shadow-sm">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#313166] text-base font-semibold uppercase text-white shadow-sm">
                             {profileInitial}
                           </div>
                         )}
 
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-[#313166]">
                             {profileName}
                           </p>
                           <p className="truncate text-xs text-gray-500">
-                            {email || "Admin"}
+                            {email || "User"}
                           </p>
+                          <span className="mt-1 inline-block rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                            Admin
+                          </span>
                         </div>
                       </div>
 
+                      {/* Dropdown Action Links */}
                       <div className="p-2">
                         <button
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-100"
@@ -399,17 +447,16 @@ function Layout() {
                           My Profile
                         </button>
 
-                        {/* ADD MEDIA LIBRARY BUTTON */}
-  <button
-    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-100"
-    onClick={() => {
-      navigate("/media-library");
-      setShowDropdown(false);
-    }}
-  >
-    <FiImage className="h-4 w-4 text-[#313166]" />
-    Media Library
-  </button>
+                        <button
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-100"
+                          onClick={() => {
+                            navigate("/media-library");
+                            setShowDropdown(false);
+                          }}
+                        >
+                          <FiImage className="h-4 w-4 text-[#313166]" />
+                          Media Library
+                        </button>
 
                         <button
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-100"

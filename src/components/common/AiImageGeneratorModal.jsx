@@ -611,7 +611,12 @@ const handleSaveToLibrary = async () => {
       const res = await api.post("/api/media-library/upload", {
         s3Url: generatedResult.s3Url,
         fileName: generatedResult.fileName || `ai-${Date.now()}.png`,
-        mimeType: "image/png"
+        mimeType: "image/png",
+        dimensions: generatedResult.dimensions || "1024x1024",
+        aiRequestId: generatedResult.aiRequestId || null,
+        usedBrandKit: generatedResult.usedBrandKit ?? useBrandKit,
+        isAiGenerated: true,
+        sizeBytes: generatedResult.sizeBytes || 0
       });
 
       if (res.data?.success || res.data?.status === "success" || res.status === 200 || res.status === 201) {

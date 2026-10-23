@@ -998,7 +998,7 @@ const handleTransactionFilter = async (
                             )}
                           </div> */}
 
-                          <div className="min-w-0 flex-1">
+                          {/* <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-gray-800">
                               {getTransactionLabel(
                                 transaction.transactionType,
@@ -1020,11 +1020,11 @@ const handleTransactionFilter = async (
                                 }
                               </span>
 
-                              {(transaction.operationId || transaction.referenceId) && (
+                              {(transaction.operationId || transaction.referenceId || transaction._id) && (
                                 <>
                                   <span>•</span>
                                   <span className="font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">
-                                    Ref: #{String(transaction.operationId || transaction.referenceId).slice(-8)}
+                                    Ref: #{String(transaction.operationId || transaction.referenceId || transaction._id).slice(-8).toUpperCase()}
                                   </span>
                                 </>
                               )}
@@ -1035,7 +1035,37 @@ const handleTransactionFilter = async (
                                 {transaction.description}
                               </p>
                             )}
-                          </div>
+                          </div> */}
+
+                          <div className="min-w-0 flex-1">
+  {/* Displays custom description as title when available */}
+  <p className="truncate text-sm font-semibold text-gray-800">
+    {transaction.description && transaction.description !== "AI usage"
+      ? transaction.description
+      : getTransactionLabel(transaction.transactionType)}
+  </p>
+
+  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400">
+    <span>
+      {formatDate(transaction.createdAt)}
+    </span>
+
+    <span>•</span>
+
+    <span>
+      {transaction.balanceBucket}
+    </span>
+
+    {(transaction.operationId || transaction.referenceId || transaction.aiRequestId || transaction._id) && (
+      <>
+        <span>•</span>
+        <span className="font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">
+          Ref: #{String(transaction.operationId || transaction.referenceId || transaction.aiRequestId || transaction._id).slice(-8).toUpperCase()}
+        </span>
+      </>
+    )}
+  </div>
+</div>
 
                           <div className="shrink-0 text-right">
                             <p
@@ -1302,9 +1332,9 @@ const handleTransactionFilter = async (
                               )}
                             </span>
 
-                            {record.aiRequestId && (
+                            {(record.aiRequestId || record.requestId || record.idempotencyKey || record._id) && (
                               <span className="text-[10px] font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                                ID: #{record.aiRequestId.slice(-10)}
+                                ID: #{String(record.aiRequestId || record.requestId || record.idempotencyKey || record._id).slice(-10)}
                               </span>
                             )}
                           </div>

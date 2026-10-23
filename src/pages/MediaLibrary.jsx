@@ -369,24 +369,57 @@ export default function MediaLibrary() {
     }
   };
 
+  // // Handle Asset Delete
+  // const handleDelete = async (id, e) => {
+  //   if (e) e.stopPropagation(); // Prevent opening preview on card click
+
+  //   if (!window.confirm("Are you sure you want to delete this media asset?")) return;
+
+  //   try {
+  //     const res = await api.delete(`/api/media-library/${id}`);
+  //     if (res.data.success) {
+  //       if (selectedMedia?._id === id) setSelectedMedia(null);
+  //       if (previewMedia?._id === id) setPreviewMedia(null);
+  //       fetchMedia();
+  //       fetchStorage();
+  //     }
+  //   } catch (err) {
+  //     alert(err.response?.data?.message || "Delete failed.");
+  //   }
+  // };
+
+
+
   // Handle Asset Delete
-  const handleDelete = async (id, e) => {
-    if (e) e.stopPropagation(); // Prevent opening preview on card click
+const handleDelete = async (id, e) => {
+  if (e) e.stopPropagation(); // Prevent opening preview on card click
 
-    if (!window.confirm("Are you sure you want to delete this media asset?")) return;
+  if (!window.confirm("Are you sure you want to delete this media asset?")) return;
 
-    try {
-      const res = await api.delete(`/api/media-library/${id}`);
-      if (res.data.success) {
-        if (selectedMedia?._id === id) setSelectedMedia(null);
-        if (previewMedia?._id === id) setPreviewMedia(null);
-        fetchMedia();
-        fetchStorage();
-      }
-    } catch (err) {
+  try {
+    const res = await api.delete(`/api/media-library/${id}`);
+    if (res.data.success) {
+      if (selectedMedia?._id === id) setSelectedMedia(null);
+      if (previewMedia?._id === id) setPreviewMedia(null);
+      fetchMedia();
+      fetchStorage();
+    }
+  } catch (err) {
+    if (err.response?.status === 409) {
+      const usage = err.response.data?.usageSummary || [];
+      const usageList = usage.length > 0 
+        ? usage.map((item) => `• ${item.module}: ${item.name}`).join("\n")
+        : "• Referenced in active features";
+
+      alert(
+        `Cannot delete this media asset because it is currently in active use:\n\n${usageList}`
+      );
+    } else {
       alert(err.response?.data?.message || "Delete failed.");
     }
-  };
+  }
+};
+
 
   return (
     <div className="w-full min-h-screen bg-[#F8FAFC] p-4 sm:p-6 font-['Poppins',sans-serif]">
