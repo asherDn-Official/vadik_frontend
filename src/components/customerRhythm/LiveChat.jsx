@@ -109,11 +109,26 @@ fetchMediaUsage();
     }
   };
 
+  // const fetchMediaLibrary = async () => {
+  //   try {
+  //     setMediaLibraryLoading(true);
+  //     const res = await api.get("/api/integrationManagement/whatsapp/media?limit=200");
+  //     if (res.data?.status) {
+  //       setMediaLibrary(res.data.data || []);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching media library:", error);
+  //     toast.error("Failed to load media library");
+  //   } finally {
+  //     setMediaLibraryLoading(false);
+  //   }
+  // };
+
   const fetchMediaLibrary = async () => {
     try {
       setMediaLibraryLoading(true);
-      const res = await api.get("/api/integrationManagement/whatsapp/media?limit=200");
-      if (res.data?.status) {
+      const res = await api.get("/api/media-library?limit=200");
+      if (res.data?.status || res.data?.success) {
         setMediaLibrary(res.data.data || []);
       }
     } catch (error) {
@@ -376,7 +391,10 @@ await fetchCustomers(false);
       setMediaLibraryLoading(true);
       const formData = new FormData();
       formData.append("file", file);
-      const res = await api.post("/api/integrationManagement/whatsapp/media/upload", formData, {
+      // const res = await api.post("/api/integrationManagement/whatsapp/media/upload", formData, {
+      //   headers: { "Content-Type": "multipart/form-data" }
+      // });
+      const res = await api.post("/api/media-library/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       if (res.data?.status) {
@@ -395,9 +413,20 @@ await fetchCustomers(false);
     }
   };
 
+  // const handleDeleteMedia = async (mediaId) => {
+  //   try {
+  //     await api.delete(`/api/integrationManagement/whatsapp/media/${mediaId}`);
+  //     toast.success("Media deleted");
+  //     await fetchMediaLibrary();
+  //     await fetchMediaUsage();
+  //   } catch (error) {
+  //     toast.error(error.response?.data?.message || "Failed to delete media");
+  //   }
+  // };
+
   const handleDeleteMedia = async (mediaId) => {
     try {
-      await api.delete(`/api/integrationManagement/whatsapp/media/${mediaId}`);
+      await api.delete(`/api/media-library/${mediaId}`);
       toast.success("Media deleted");
       await fetchMediaLibrary();
       await fetchMediaUsage();
@@ -732,50 +761,163 @@ await fetchCustomers(false);
             {loadingMessages ? (
               <Loader text="Loading messages..." fullHeight={false} />
             ) : (
+              // [...messages, ...pendingMediaMessages].map((msg, idx) => {
+              //   const isMine = msg.status !== 'received';
+              //   return (
+              //     <div key={msg._id || msg.id || idx} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+              //       <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm relative ${isMine ? 'bg-[#313166] text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'}`}>
+              //         {msg.mediaUrl && String(msg.mediaUrl).startsWith("http") && (
+              //           <div className="mb-2">
+              //             {msg.messageType === "image" && (
+              //               <img src={msg.mediaUrl} alt="media" className="max-w-full rounded-xl" />
+              //             )}
+              //             {msg.messageType === "video" && (
+              //               <video src={msg.mediaUrl} controls className="max-w-full rounded-xl" />
+              //             )}
+              //             {msg.messageType === "audio" && (
+              //               <audio src={msg.mediaUrl} controls className="w-full" />
+              //             )}
+              //             {msg.messageType === "document" && (
+              //               <a href={msg.mediaUrl} target="_blank" rel="noreferrer" className={`text-xs underline ${isMine ? 'text-white' : 'text-[#313166]'}`}>
+              //                 View document
+              //               </a>
+              //             )}
+              //           </div>
+              //         )}
+              //         {msg.messageContent && (
+              //           <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.messageContent}</p>
+              //         )}
+              //         <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? 'text-[#ffffff90]' : 'text-gray-400'}`}>
+              //           {msg.status === "sending" ? "Sending..." : (() => {
+              //             const msgDate = new Date(msg.timestamp);
+              //             return isToday(msgDate)
+              //               ? format(msgDate, "HH:mm")
+              //               : format(msgDate, "dd MMM, HH:mm");
+              //           })()}
+              //           {isMine && getStatusIcon(msg.status)}
+              //         </div>
+              //         {msg.status === "failed" && (
+              //           <div className="mt-1 text-[10px] text-red-200">
+              //             Failed to send
+              //           </div>
+              //         )}
+              //       </div>
+              //     </div>
+              //   );
+              // })
+
               [...messages, ...pendingMediaMessages].map((msg, idx) => {
-                const isMine = msg.status !== 'received';
-                return (
-                  <div key={msg._id || msg.id || idx} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm relative ${isMine ? 'bg-[#313166] text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'}`}>
-                      {msg.mediaUrl && String(msg.mediaUrl).startsWith("http") && (
-                        <div className="mb-2">
-                          {msg.messageType === "image" && (
-                            <img src={msg.mediaUrl} alt="media" className="max-w-full rounded-xl" />
-                          )}
-                          {msg.messageType === "video" && (
-                            <video src={msg.mediaUrl} controls className="max-w-full rounded-xl" />
-                          )}
-                          {msg.messageType === "audio" && (
-                            <audio src={msg.mediaUrl} controls className="w-full" />
-                          )}
-                          {msg.messageType === "document" && (
-                            <a href={msg.mediaUrl} target="_blank" rel="noreferrer" className={`text-xs underline ${isMine ? 'text-white' : 'text-[#313166]'}`}>
-                              View document
-                            </a>
-                          )}
-                        </div>
-                      )}
-                      {msg.messageContent && (
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.messageContent}</p>
-                      )}
-                      <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? 'text-[#ffffff90]' : 'text-gray-400'}`}>
-                        {msg.status === "sending" ? "Sending..." : (() => {
-                          const msgDate = new Date(msg.timestamp);
-                          return isToday(msgDate)
-                            ? format(msgDate, "HH:mm")
-                            : format(msgDate, "dd MMM, HH:mm");
-                        })()}
-                        {isMine && getStatusIcon(msg.status)}
-                      </div>
-                      {msg.status === "failed" && (
-                        <div className="mt-1 text-[10px] text-red-200">
-                          Failed to send
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
+  const isMine = msg.status !== 'received';
+
+  // 1. Safely extract media header URL (supports new mediaUrl and legacy mediaInfo.url)
+  const mediaHeaderUrl = msg.mediaUrl 
+    || msg.mediaInfo?.url 
+    || msg.templateData?.mediaUrl 
+    || msg.headerUrl;
+
+  // 2. Extract text header (for templates with text headers)
+  const headerText = msg.headerText || msg.header || msg.templateData?.headerText;
+
+  // 3. Extract footer text if present
+  const footerText = msg.footerText || msg.footer || msg.templateData?.footer;
+
+  // 4. Extract buttons array from template/automation structure
+  const buttons = msg.buttons 
+    || msg.templateData?.buttons 
+    || msg.components?.find(c => c.type === 'BUTTONS')?.buttons 
+    || [];
+
+  // Determine media type (supports messageType and legacy mediaInfo.type)
+  const msgType = msg.messageType || msg.mediaInfo?.type || "text";
+
+  return (
+    <div key={msg._id || msg.id || idx} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+      <div className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm relative ${
+        isMine ? 'bg-[#313166] text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
+      }`}>
+
+        {/* 1. MEDIA HEADER (IMAGE / VIDEO / AUDIO / DOC) */}
+        {mediaHeaderUrl && String(mediaHeaderUrl).startsWith("http") && (
+          <div className="mb-2 overflow-hidden rounded-xl">
+            {msgType === "image" || /\.(jpg|jpeg|png|webp|gif)$/i.test(mediaHeaderUrl) ? (
+              <img src={mediaHeaderUrl} alt="Header Media" className="max-w-full rounded-xl object-cover max-h-60" />
+            ) : msgType === "video" || /\.(mp4|3gp|mov|webm)$/i.test(mediaHeaderUrl) ? (
+              <video src={mediaHeaderUrl} controls className="max-w-full rounded-xl max-h-60" />
+            ) : msgType === "audio" ? (
+              <audio src={mediaHeaderUrl} controls className="w-full" />
+            ) : (
+              <a 
+                href={mediaHeaderUrl} 
+                target="_blank" 
+                rel="noreferrer" 
+                className={`text-xs font-semibold underline ${isMine ? 'text-white' : 'text-[#313166]'}`}
+              >
+                📄 View Document
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* 2. TEXT HEADER (If template uses a bold text header) */}
+        {headerText && (
+          <h5 className="font-bold text-xs mb-1 opacity-90">{headerText}</h5>
+        )}
+
+        {/* 3. BODY TEXT */}
+        {msg.messageContent && (
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.messageContent}</p>
+        )}
+
+        {/* 4. FOOTER TEXT */}
+        {footerText && (
+          <p className={`text-[11px] italic mt-1.5 ${isMine ? 'text-gray-300' : 'text-gray-400'}`}>
+            {footerText}
+          </p>
+        )}
+
+        {/* 5. AUTOMATION / TEMPLATE BUTTONS */}
+        {Array.isArray(buttons) && buttons.length > 0 && (
+          <div className="flex flex-col gap-1.5 pt-2 mt-2 border-t border-black/10">
+            {buttons.map((btn, bIdx) => {
+              const btnText = typeof btn === 'string' ? btn : (btn.text || btn.title || btn.label);
+              return (
+                <div
+                  key={bIdx}
+                  className={`w-full py-1.5 px-3 text-center text-xs font-bold rounded-lg transition-all shadow-sm ${
+                    isMine
+                      ? "bg-white/15 text-white border border-white/20"
+                      : "bg-gray-50 text-[#313166] border border-gray-200"
+                  }`}
+                >
+                  {btnText}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* 6. TIMESTAMP & STATUS */}
+        <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMine ? 'text-[#ffffff90]' : 'text-gray-400'}`}>
+          {msg.status === "sending" ? "Sending..." : (() => {
+            const msgDate = new Date(msg.timestamp);
+            return isToday(msgDate)
+              ? format(msgDate, "HH:mm")
+              : format(msgDate, "dd MMM, HH:mm");
+          })()}
+          {isMine && getStatusIcon(msg.status)}
+        </div>
+
+        {/* 7. FAILURE STATUS */}
+        {msg.status === "failed" && (
+          <div className="mt-1 text-[10px] text-red-200">
+            Failed to send
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+})
             )}
             <div ref={messagesEndRef} />
           </div>

@@ -218,7 +218,8 @@ const CampaignAnalytics = () => {
     
     try {
       setUploadingMedia(true);
-      const res = await api.post("/api/integrationManagement/whatsapp/media/upload", formData);
+      // const res = await api.post("/api/integrationManagement/whatsapp/media/upload", formData);
+      const res = await api.post("/api/media-library/upload", formData);
       if (res.data.status) {
         setMedia(prev => ({ ...prev, url: res.data.url }));
       }

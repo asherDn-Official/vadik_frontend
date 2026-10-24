@@ -22,11 +22,15 @@ import MediaPickerModal from "../components/common/MediaPickerModal";
 
 const EMPTY_FORM = {
   businessName: "",
+  primaryLogoAssetId: null,
   logoUrl: "",
+  referenceAssetIds: [],
   brandColors: {
     primary: "#313166",
     secondary: "#FFFFFF",
     accent: "#FF3B93",
+    background: "#FFFFFF", // 👈 Added
+    text: "#111827",
   },
   businessCategory: "",
   visualStyle: "",
@@ -107,11 +111,63 @@ const [mediaPickerTarget, setMediaPickerTarget] = useState(null);
   };
 
 
- const handleMediaSelect = (selectedItem) => {
-    const s3Url = typeof selectedItem === "object" ? selectedItem.s3Url : selectedItem;
-    if (!s3Url) return;
+//  const handleMediaSelect = (selectedItem) => {
+//     const s3Url = typeof selectedItem === "object" ? selectedItem.s3Url : selectedItem;
+//     if (!s3Url) return;
 
-    // Detect non-image file extensions (videos, documents, audio)
+//     // Detect non-image file extensions (videos, documents, audio)
+//     const cleanUrl = s3Url.split("?")[0].toLowerCase();
+//     const isInvalidFormat = cleanUrl.match(/\.(mp4|3gp|webm|mov|avi|pdf|doc|docx|txt|xls|xlsx|mp3|wav|ogg)$/i);
+
+//     if (isInvalidFormat) {
+//       const fieldName = mediaPickerTarget === "logo" ? "Primary Logo" : "Reference Image";
+//       setError(`Unsupported file format for ${fieldName}. Please select an image asset (JPG, PNG, WebP, SVG).`);
+//       setMediaPickerTarget(null);
+//       return;
+//     }
+
+//     // Format is valid -> clear error and update field
+//     setError("");
+//     if (mediaPickerTarget === "logo") {
+//       updateField("logoUrl", s3Url);
+//     } else if (
+//       mediaPickerTarget &&
+//       typeof mediaPickerTarget === "object" &&
+//       mediaPickerTarget.type === "reference"
+//     ) {
+//       const updated = [...form.referenceImages];
+//       updated[mediaPickerTarget.index] = s3Url;
+//       updateField("referenceImages", updated);
+//     }
+//     setMediaPickerTarget(null);
+//   };
+
+
+const handleMediaSelect = (selectedItem) => {
+    if (!selectedItem) {
+      setError("Please select a valid image from your Media Library.");
+      setMediaPickerTarget(null);
+      return;
+    }
+
+    // Safely extract URL and Asset ID regardless of payload format
+    let s3Url = "";
+    let assetId = null;
+
+    if (typeof selectedItem === "string") {
+      s3Url = selectedItem;
+    } else if (typeof selectedItem === "object") {
+      s3Url = selectedItem.s3Url || selectedItem.url || selectedItem.location || "";
+      assetId = selectedItem._id || selectedItem.id || selectedItem.mediaId || null;
+    }
+
+    if (!s3Url) {
+      setError("Selected asset is missing a valid image URL.");
+      setMediaPickerTarget(null);
+      return;
+    }
+
+    // Detect non-image file formats
     const cleanUrl = s3Url.split("?")[0].toLowerCase();
     const isInvalidFormat = cleanUrl.match(/\.(mp4|3gp|webm|mov|avi|pdf|doc|docx|txt|xls|xlsx|mp3|wav|ogg)$/i);
 
@@ -122,20 +178,37 @@ const [mediaPickerTarget, setMediaPickerTarget] = useState(null);
       return;
     }
 
-    // Format is valid -> clear error and update field
     setError("");
+
     if (mediaPickerTarget === "logo") {
-      updateField("logoUrl", s3Url);
-    } else if (
-      mediaPickerTarget &&
-      typeof mediaPickerTarget === "object" &&
-      mediaPickerTarget.type === "reference"
-    ) {
-      const updated = [...form.referenceImages];
-      updated[mediaPickerTarget.index] = s3Url;
-      updateField("referenceImages", updated);
+      setForm((prev) => ({
+        ...prev,
+        primaryLogoAssetId: assetId,
+        logoUrl: s3Url,
+      }));
+    } else if (mediaPickerTarget === "reference") {
+      if (form.referenceAssetIds.length >= 10) {
+        setError("A maximum of 10 reference images is allowed.");
+        setMediaPickerTarget(null);
+        return;
+      }
+      setForm((prev) => ({
+        ...prev,
+        referenceAssetIds: assetId ? [...prev.referenceAssetIds, assetId] : prev.referenceAssetIds,
+        referenceImages: [...prev.referenceImages, s3Url],
+      }));
     }
     setMediaPickerTarget(null);
+  };
+
+
+
+  const removeReferenceImage = (indexToRemove) => {
+    setForm((prev) => ({
+      ...prev,
+      referenceAssetIds: prev.referenceAssetIds.filter((_, i) => i !== indexToRemove),
+      referenceImages: prev.referenceImages.filter((_, i) => i !== indexToRemove),
+    }));
   };
 
 
@@ -151,18 +224,54 @@ const [mediaPickerTarget, setMediaPickerTarget] = useState(null);
     setShowForm(true);
   };
 
+  // const openEditForm = (kit) => {
+  //   setEditingId(kit._id);
+  //   setForm({
+  //     ...EMPTY_FORM,
+  //     ...kit,
+  //     brandColors: {
+  //       ...EMPTY_FORM.brandColors,
+  //       ...(kit.brandColors || {}),
+  //     },
+  //     referenceImages: Array.isArray(kit.referenceImages)
+  //       ? kit.referenceImages
+  //       : [],
+  //   });
+  //   setError("");
+  //   setNotice("");
+  //   setShowForm(true);
+  //   window.scrollTo({ top: 0, behavior: "smooth" });
+  // };
+
+
   const openEditForm = (kit) => {
     setEditingId(kit._id);
+
+    const logoAssetId = kit.primaryLogoAssetId
+      ? typeof kit.primaryLogoAssetId === "object"
+        ? kit.primaryLogoAssetId._id
+        : kit.primaryLogoAssetId
+      : null;
+
+    const refAssetIds = Array.isArray(kit.referenceAssetIds)
+      ? kit.referenceAssetIds.map((item) =>
+          typeof item === "object" ? item._id : item
+        )
+      : [];
+
     setForm({
       ...EMPTY_FORM,
       ...kit,
+      primaryLogoAssetId: logoAssetId,
+      referenceAssetIds: refAssetIds,
+      logoUrl: kit.logoUrl || "",
+      referenceImages: Array.isArray(kit.referenceImages)
+        ? kit.referenceImages
+        : [],
       brandColors: {
         ...EMPTY_FORM.brandColors,
         ...(kit.brandColors || {}),
       },
-      referenceImages: Array.isArray(kit.referenceImages)
-        ? kit.referenceImages
-        : [],
     });
     setError("");
     setNotice("");
@@ -181,7 +290,50 @@ const [mediaPickerTarget, setMediaPickerTarget] = useState(null);
     setError("");
   };
 
-  const saveBrandKit = async (event) => {
+//   const saveBrandKit = async (event) => {
+//     event.preventDefault();
+//     setSaving(true);
+//     setError("");
+//     setNotice("");
+
+//     const payload = {
+//       ...form,
+//       businessName: form.businessName.trim(),
+//       referenceImages: form.referenceImages
+//         .map((url) => url.trim())
+//         .filter(Boolean),
+//     };
+
+//     try {
+//       if (editingId) {
+//   await api.put(`/api/brand-kits/${editingId}`, payload);
+//   setNotice("Brand kit updated successfully.");
+// } else {
+//   if (brandKits.length > 0) {
+//     setError("Only one Brand Kit is allowed per business.");
+//     setSaving(false);
+//     return;
+//   }
+
+//   await api.post("/api/brand-kits", payload);
+//   setNotice("Brand kit created successfully.");
+// }
+
+//       setShowForm(false);
+//       setEditingId(null);
+//       await loadBrandKits();
+//     } catch (err) {
+//       setError(
+//         err.response?.data?.message ||
+//           "Unable to save your brand kit. Please try again."
+//       );
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+
+const saveBrandKit = async (event) => {
     event.preventDefault();
     setSaving(true);
     setError("");
@@ -190,25 +342,25 @@ const [mediaPickerTarget, setMediaPickerTarget] = useState(null);
     const payload = {
       ...form,
       businessName: form.businessName.trim(),
-      referenceImages: form.referenceImages
-        .map((url) => url.trim())
+      logoUrl: form.logoUrl || "",
+      referenceImages: (form.referenceImages || [])
+        .map((url) => (typeof url === "string" ? url.trim() : ""))
         .filter(Boolean),
     };
 
     try {
       if (editingId) {
-  await api.put(`/api/brand-kits/${editingId}`, payload);
-  setNotice("Brand kit updated successfully.");
-} else {
-  if (brandKits.length > 0) {
-    setError("Only one Brand Kit is allowed per business.");
-    setSaving(false);
-    return;
-  }
-
-  await api.post("/api/brand-kits", payload);
-  setNotice("Brand kit created successfully.");
-}
+        await api.put(`/api/brand-kits/${editingId}`, payload);
+        setNotice("Brand kit updated successfully.");
+      } else {
+        if (brandKits.length > 0) {
+          setError("Only one Brand Kit is allowed per business.");
+          setSaving(false);
+          return;
+        }
+        await api.post("/api/brand-kits", payload);
+        setNotice("Brand kit created successfully.");
+      }
 
       setShowForm(false);
       setEditingId(null);
@@ -222,6 +374,8 @@ const [mediaPickerTarget, setMediaPickerTarget] = useState(null);
       setSaving(false);
     }
   };
+
+
 
   const deleteBrandKit = async (kit) => {
     const confirmed = window.confirm(
@@ -399,67 +553,45 @@ const [mediaPickerTarget, setMediaPickerTarget] = useState(null);
 )} */}
 
 <div className="md:col-span-2">
-  <label className={labelClass}>Primary Logo URL</label>
-  <div className="flex items-center gap-2">
-    <div className="relative flex-1">
-      <input
-        type="url"
-        value={form.logoUrl}
-        disabled={Boolean(form.logoUrl)}
-        onChange={(e) => updateField("logoUrl", e.target.value)}
-        placeholder="Paste image URL (e.g. https://...)"
-        className={`${inputClass} ${form.logoUrl ? "pr-10 opacity-80 bg-[#F1F3FB] font-mono text-xs cursor-not-allowed" : ""}`}
-      />
-      {form.logoUrl && (
-        <button
-          type="button"
-          onClick={() => updateField("logoUrl", "")}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-[#737B9B] hover:bg-[#E2E5F5] hover:text-rose-600 transition"
-          title="Clear & Change Logo"
-        >
-          <X size={16} />
-        </button>
-      )}
-    </div>
+  <label className={labelClass}>Primary Brand Logo</label>
 
-    {!form.logoUrl && (
-      <button
-        type="button"
-        onClick={() => setMediaPickerTarget("logo")}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#DDE0F1] bg-white px-4 py-3 text-sm font-semibold text-[#313166] transition hover:bg-[#F5F5FC]"
-      >
-        <ImageIcon size={16} />
-        Choose from Library
-      </button>
-    )}
-  </div>
-
-  {form.logoUrl && (
-    <div className="mt-3 flex min-h-28 items-center justify-center rounded-xl border border-dashed border-[#DDE1F0] bg-[#F8F9FE] p-3 shadow-inner">
+  {form.logoUrl ? (
+    <div className="relative flex flex-col items-center justify-center rounded-xl border border-dashed border-[#DDE1F0] bg-[#F8F9FE] p-4 shadow-inner">
       <img
         src={form.logoUrl}
         alt="Brand logo preview"
-        className="max-h-24 max-w-full object-contain"
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-        }}
-        onLoad={(e) => {
-          e.currentTarget.style.display = "block";
-        }}
+        className="max-h-28 max-w-full object-contain"
       />
+      <button
+        type="button"
+        onClick={() =>
+          setForm((prev) => ({
+            ...prev,
+            primaryLogoAssetId: null,
+            logoUrl: "",
+          }))
+        }
+        className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 shadow-sm transition hover:bg-rose-50"
+      >
+        <Trash2 size={14} />
+        Remove / Replace Logo
+      </button>
     </div>
+  ) : (
+    <button
+      type="button"
+      onClick={() => setMediaPickerTarget("logo")}
+      className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#DDE0F1] bg-[#F8F9FE] py-8 text-sm font-semibold text-[#313166] transition hover:border-[#7777C8] hover:bg-white"
+    >
+      <ImageIcon size={20} />
+      Select Primary Logo from Media Library
+    </button>
   )}
-
-  <p className="mt-2 text-xs text-[#9097B4]">
-    {form.logoUrl
-      ? "Logo locked. Click the ✖ button above to clear and re-select."
-      : "Paste a public image URL or select an image asset from your media library."}
-  </p>
 </div>
                 </div>
               </section>
 
-              <section className="border-t border-[#ECEEF7] pt-6">
+              {/* <section className="border-t border-[#ECEEF7] pt-6">
                 <h3 className="mb-4 flex items-center gap-2 font-semibold text-[#313166]">
                   <Palette size={18} />
                   Brand Colours
@@ -510,6 +642,77 @@ const [mediaPickerTarget, setMediaPickerTarget] = useState(null);
                   <div
                     className="flex-1"
                     style={{ backgroundColor: form.brandColors.accent }}
+                  />
+                </div>
+              </section> */}
+
+              <section className="border-t border-[#ECEEF7] pt-6">
+                <h3 className="mb-4 flex items-center gap-2 font-semibold text-[#313166]">
+                  <Palette size={18} />
+                  Brand Colours
+                </h3>
+
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+                  {[
+                    ["primary", "Primary Colour"],
+                    ["secondary", "Secondary Colour"],
+                    ["accent", "Accent Colour"],
+                    ["background", "Background Colour"],
+                    ["text", "Text Colour"],
+                  ].map(([key, title]) => (
+                    <div
+                      key={key}
+                      className="rounded-xl border border-[#EAECF6] bg-[#FAFAFE] p-3"
+                    >
+                      <label className="mb-1 block text-xs font-semibold text-[#343466]">
+                        {title}
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={form.brandColors[key] || "#FFFFFF"}
+                          onChange={(e) => updateColor(key, e.target.value)}
+                          className="h-9 w-9 cursor-pointer rounded-lg border-0 bg-transparent"
+                          aria-label={title}
+                        />
+                        <input
+                          value={form.brandColors[key] || ""}
+                          onChange={(e) => updateColor(key, e.target.value)}
+                          pattern="^#[0-9A-Fa-f]{3,6}$"
+                          title="Enter a valid hex colour, e.g. #313166"
+                          className="w-full text-xs font-mono font-semibold uppercase rounded-lg border border-[#E7EAF5] bg-white p-2 text-[#313166] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 5-Color Preview Bar */}
+                <div className="mt-4 flex h-10 overflow-hidden rounded-xl border border-[#EAECF6] shadow-sm">
+                  <div
+                    className="flex-1"
+                    title="Primary"
+                    style={{ backgroundColor: form.brandColors.primary || "#313166" }}
+                  />
+                  <div
+                    className="flex-1 border-r border-l border-black/5"
+                    title="Secondary"
+                    style={{ backgroundColor: form.brandColors.secondary || "#FFFFFF" }}
+                  />
+                  <div
+                    className="flex-1"
+                    title="Accent"
+                    style={{ backgroundColor: form.brandColors.accent || "#FF3B93" }}
+                  />
+                  <div
+                    className="flex-1 border-r border-l border-black/5"
+                    title="Background"
+                    style={{ backgroundColor: form.brandColors.background || "#FFFFFF" }}
+                  />
+                  <div
+                    className="flex-1"
+                    title="Text"
+                    style={{ backgroundColor: form.brandColors.text || "#111827" }}
                   />
                 </div>
               </section>
@@ -592,7 +795,7 @@ const [mediaPickerTarget, setMediaPickerTarget] = useState(null);
                 </div>
               </section>
 
-              <section className="border-t border-[#ECEEF7] pt-6">
+              {/* <section className="border-t border-[#ECEEF7] pt-6">
                 <h3 className="mb-2 flex items-center gap-2 font-semibold text-[#313166]">
                   <ImageIcon size={18} />
                   Reference Images
@@ -602,37 +805,6 @@ const [mediaPickerTarget, setMediaPickerTarget] = useState(null);
                   Add up to 10 image URLs that represent your preferred brand
                   style.
                 </p>
-
-                {/* <div className="space-y-3">
-                  {form.referenceImages.map((url, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <input
-                        type="url"
-                        value={url}
-                        onChange={(e) => {
-                          const images = [...form.referenceImages];
-                          images[index] = e.target.value;
-                          updateField("referenceImages", images);
-                        }}
-                        placeholder="https://example.com/reference-image.png"
-                        className={inputClass}
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateField(
-                            "referenceImages",
-                            form.referenceImages.filter((_, i) => i !== index)
-                          )
-                        }
-                        className="rounded-xl p-3 text-rose-500 hover:bg-rose-50"
-                        aria-label="Remove reference image"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  ))}
-                </div> */}
 
                 <div className="space-y-4">
   {form.referenceImages.map((url, index) => (
@@ -694,7 +866,7 @@ const [mediaPickerTarget, setMediaPickerTarget] = useState(null);
         </button>
       </div>
 
-      {/* Live Preview Box for Reference Image */}
+  
       {url && (
         <div className="flex h-24 items-center justify-center rounded-xl border border-dashed border-[#DDE1F0] bg-white p-2">
           <img
@@ -729,7 +901,53 @@ const [mediaPickerTarget, setMediaPickerTarget] = useState(null);
                     Add Reference Image
                   </button>
                 )}
-              </section>
+              </section> */}
+
+
+              <section className="border-t border-[#ECEEF7] pt-6">
+  <h3 className="mb-2 flex items-center gap-2 font-semibold text-[#313166]">
+    <ImageIcon size={18} />
+    Reference Images
+  </h3>
+
+  <p className="mb-4 text-sm text-[#8991B1]">
+    Select up to 10 verified image assets from your Media Library that represent your brand style.
+  </p>
+
+  <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+    {form.referenceImages.map((url, index) => (
+      <div
+        key={index}
+        className="group relative flex flex-col items-center justify-center rounded-2xl border border-[#E7EAF5] bg-[#FAFAFE] p-3 shadow-sm"
+      >
+        <img
+          src={url}
+          alt={`Reference image ${index + 1}`}
+          className="h-28 w-full rounded-xl object-cover"
+        />
+        <button
+          type="button"
+          onClick={() => removeReferenceImage(index)}
+          className="absolute right-2 top-2 rounded-lg bg-white/90 p-1.5 text-rose-600 shadow transition hover:bg-rose-50"
+          title="Remove image"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    ))}
+
+    {form.referenceImages.length < 10 && (
+      <button
+        type="button"
+        onClick={() => setMediaPickerTarget("reference")}
+        className="flex h-36 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#DDE0F1] bg-[#FAFAFE] text-xs font-semibold text-[#313166] transition hover:border-[#7777C8] hover:bg-white"
+      >
+        <Plus size={20} />
+        Add Reference Asset
+      </button>
+    )}
+  </div>
+</section>
             </div>
 
             <div className="flex flex-col-reverse justify-end gap-3 border-t border-[#ECEEF7] bg-[#FAFAFE] px-5 py-4 sm:flex-row sm:px-7">
@@ -879,7 +1097,7 @@ className="inline-flex items-center justify-center gap-2 rounded-md bg-[#C52D68]
                         : "No business description added."}
                     </p>
 
-                    <div className="mt-4">
+                    {/* <div className="mt-4">
                       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#8991B1]">
                         Brand Palette
                       </p>
@@ -893,6 +1111,28 @@ className="inline-flex items-center justify-center gap-2 rounded-md bg-[#C52D68]
                             key={`${color}-${index}`}
                             title={color}
                             className="h-8 flex-1 rounded-lg border border-black/5"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                    </div> */}
+
+                    <div className="mt-4">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#8991B1]">
+                        Brand Palette
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        {[
+                          kit.brandColors?.primary || "#313166",
+                          kit.brandColors?.secondary || "#FFFFFF",
+                          kit.brandColors?.accent || "#FF3B93",
+                          kit.brandColors?.background || "#FFFFFF",
+                          kit.brandColors?.text || "#111827",
+                        ].map((color, index) => (
+                          <div
+                            key={`${color}-${index}`}
+                            title={color}
+                            className="h-7 flex-1 rounded-md border border-black/10"
                             style={{ backgroundColor: color }}
                           />
                         ))}

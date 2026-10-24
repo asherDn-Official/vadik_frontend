@@ -1796,8 +1796,12 @@ function RetentionBuilderView({
 
     try {
       setUploadingMedia(true);
+      // const response = await api.post(
+      //   "/api/integrationManagement/whatsapp/media/upload",
+      //   formData,
+      // );
       const response = await api.post(
-        "/api/integrationManagement/whatsapp/media/upload",
+        "/api/media-library/upload",
         formData,
       );
       if (response.data?.status) {

@@ -38,10 +38,27 @@ export default function MediaPickerModal({
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const fetchMedia = async () => {
+  // const fetchMedia = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const res = await api.get(`/api/media-library?type=${activeTab}&search=${searchTerm}`);
+  //     if (res.data?.success) {
+  //       setMediaList(res.data.data);
+  //     }
+  //   } catch (err) {
+  //     console.error("Failed to load media assets:", err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const fetchMedia = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await api.get(`/api/media-library?type=${activeTab}&search=${searchTerm}`);
+      const encodedSearch = encodeURIComponent(searchTerm.trim());
+      const res = await api.get(
+        `/api/media-library?type=${activeTab}&search=${encodedSearch}&page=${page}&limit=20`
+      );
       if (res.data?.success) {
         setMediaList(res.data.data);
       }
@@ -60,18 +77,32 @@ export default function MediaPickerModal({
     const file = e.target.files[0];
     if (!file) return;
 
-    if (activeTab === "video" && !file.type.startsWith("video/")) {
-      alert("Invalid file format. Only video files (.mp4, .mov, etc.) are allowed.");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-    if (activeTab === "image" && !file.type.startsWith("image/")) {
-      alert("Invalid file format. Only image files (.jpg, .png, etc.) are allowed.");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-    if (activeTab === "file" && (file.type.startsWith("image/") || file.type.startsWith("video/"))) {
-      alert("Invalid file format. Only document files (.pdf, .docx, etc.) are allowed.");
+    // if (activeTab === "video" && !file.type.startsWith("video/")) {
+    //   alert("Invalid file format. Only video files (.mp4, .mov, etc.) are allowed.");
+    //   if (fileInputRef.current) fileInputRef.current.value = "";
+    //   return;
+    // }
+    // if (activeTab === "image" && !file.type.startsWith("image/")) {
+    //   alert("Invalid file format. Only image files (.jpg, .png, etc.) are allowed.");
+    //   if (fileInputRef.current) fileInputRef.current.value = "";
+    //   return;
+    // }
+    // if (activeTab === "file" && (file.type.startsWith("image/") || file.type.startsWith("video/"))) {
+    //   alert("Invalid file format. Only document files (.pdf, .docx, etc.) are allowed.");
+    //   if (fileInputRef.current) fileInputRef.current.value = "";
+    //   return;
+    // }
+
+    const ALLOWED_MIME_TYPES = {
+      image: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"],
+      video: ["video/mp4"],
+      audio: ["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg"],
+      file: ["application/pdf"],
+    };
+
+    const allowedForTab = ALLOWED_MIME_TYPES[activeTab] || [];
+    if (allowedForTab.length > 0 && !allowedForTab.includes(file.type.toLowerCase())) {
+      alert(`Invalid file format for ${activeTab}. Allowed formats: ${allowedForTab.join(", ")}`);
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
@@ -98,7 +129,7 @@ export default function MediaPickerModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-      <input
+      {/* <input
         type="file"
         ref={fileInputRef}
         accept={
@@ -107,6 +138,22 @@ export default function MediaPickerModal({
             : activeTab === "file"
             ? ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
             : "image/*"
+        }
+        onChange={handleFileUpload}
+        className="hidden"
+      /> */}
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept={
+          activeTab === "video"
+            ? "video/mp4"
+            : activeTab === "file"
+            ? "application/pdf"
+            : activeTab === "audio"
+            ? "audio/mpeg,audio/mp3,audio/wav,audio/ogg"
+            : "image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
         }
         onChange={handleFileUpload}
         className="hidden"
@@ -309,7 +356,7 @@ export default function MediaPickerModal({
                 alert(`Selected media is not a valid ${activeTab} file.`);
                 return;
               }
-              onSelect(selectedAsset.s3Url);
+              onSelect(selectedAsset);
             }}
             disabled={!selectedAsset}
             className="px-5 py-2 bg-gradient-to-r from-[#CB376D] to-[#A72962] text-white rounded-xl text-sm font-medium hover:opacity-95 disabled:opacity-50"
