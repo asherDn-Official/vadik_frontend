@@ -351,6 +351,7 @@ export default function MediaLibrary() {
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("type", activeTab);
 
     setUploading(true);
     try {

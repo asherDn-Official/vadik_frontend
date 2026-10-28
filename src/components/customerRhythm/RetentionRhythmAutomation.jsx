@@ -10,6 +10,7 @@ import {
   Search,
   ExternalLink,
   FileText,
+  FolderOpen,
   Image as ImageIcon,
   LayoutGrid,
   MessageCircle,
@@ -33,6 +34,7 @@ import api from "../../api/apiconfig";
 import ConfirmationDialog from "../common/ConfirmationDialog";
 import showToast from "../../utils/ToastNotification";
 import { renderWhatsAppFormattedText } from "../../utils/whatsappTextFormatter";
+import MediaPickerModal from "../common/MediaPickerModal";
 
 const dashboardStats = [
   {
@@ -329,6 +331,7 @@ const createEmptyAutomation = () => ({
     languageCode: "en_US",
     variableMappings: [],
     mediaUrl: "",
+    thumbnailUrl: "",
     mediaType: "",
     flowId: "",
     flowName: "",
@@ -502,6 +505,167 @@ const getTemplatePreviewText = (
   return previewText;
 };
 
+// function WhatsAppTemplatePreviewCard({
+//   template,
+//   headerComponent,
+//   headerText = "",
+//   bodyText,
+//   footerText = "",
+//   buttons = [],
+//   mediaType = "",
+//   mediaUrl = "",
+// }) {
+//   const headerFormat = headerComponent?.format || mediaType || "";
+//   const resolvedMediaUrl =
+//     mediaUrl?.trim() ||
+//     headerComponent?.mediaUrl ||
+//     headerComponent?.example?.header_handle?.[0] ||
+//     "";
+
+//   return (
+//     <div className="rounded-3xl bg-[#313166] p-5 text-white shadow-lg">
+//       <div className="flex items-center justify-between gap-3">
+//         <div>
+//           <div className="text-xs uppercase tracking-[0.25em] text-white/60">
+//             Live Preview
+//           </div>
+//           <h3 className="mt-2 text-lg font-semibold">
+//             {template?.name || "WhatsApp Template"}
+//           </h3>
+//         </div>
+//         <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
+//           Template
+//         </div>
+//       </div>
+
+//       <div className="mt-5 rounded-[28px] bg-[#171717] p-3 shadow-2xl">
+//         <div className="overflow-hidden rounded-[22px] bg-[#0a0a0a]">
+//           <div className="flex items-center gap-3 bg-[#075e54] px-4 py-3">
+//             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+//               <Smartphone className="h-5 w-5 text-white" />
+//             </div>
+//             <div className="flex-1">
+//               <div className="font-semibold">Vadik Business</div>
+//               <div className="text-xs text-white/75">template preview</div>
+//             </div>
+//           </div>
+
+//           <div
+//             className="min-h-[320px] space-y-3 px-4 py-4"
+//             style={{
+//               backgroundImage:
+//                 "repeating-linear-gradient(45deg, #0d1418 0px, #0d1418 10px, #0e1519 10px, #0e1519 20px)",
+//             }}
+//           >
+//             <div className="flex justify-end">
+//               <div className="max-w-[85%] overflow-hidden rounded-2xl rounded-tr-md bg-white shadow-sm">
+//                 {headerComponent ? (
+//                   headerFormat === "TEXT" ? (
+//                     <div
+//                       className="border-b border-gray-100 px-3 pb-2 pt-3 text-sm font-semibold text-gray-800"
+//                       dangerouslySetInnerHTML={{
+//                         __html: renderWhatsAppFormattedText(headerText || ""),
+//                       }}
+//                     />
+//                   ) : (
+//                     <div className="border-b border-gray-100 bg-[#111827]">
+//                       {resolvedMediaUrl ? (
+//                         headerFormat === "IMAGE" ? (
+//                           <img
+//                             src={resolvedMediaUrl}
+//                             alt="Template header preview"
+//                             className="max-h-64 w-full object-cover"
+//                           />
+//                         ) : headerFormat === "VIDEO" ? (
+//                           <video
+//                             src={resolvedMediaUrl}
+//                             controls
+//                             className="max-h-64 w-full bg-black object-contain"
+//                           />
+//                         ) : (
+//                           <div className="flex items-center gap-3 px-3 py-4 text-white">
+//                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
+//                               <FileText className="h-5 w-5" />
+//                             </div>
+//                             <div className="min-w-0">
+//                               <div className="text-sm font-medium">
+//                                 Document attachment
+//                               </div>
+//                               <div className="truncate text-xs text-white/70">
+//                                 {resolvedMediaUrl}
+//                               </div>
+//                             </div>
+//                           </div>
+//                         )
+//                       ) : (
+//                         <div className="flex min-h-[148px] flex-col items-center justify-center gap-2 px-4 py-6 text-center text-white/70">
+//                           {headerFormat === "IMAGE" && (
+//                             <ImageIcon className="h-7 w-7" />
+//                           )}
+//                           {headerFormat === "VIDEO" && (
+//                             <Play className="h-7 w-7" />
+//                           )}
+//                           {headerFormat === "DOCUMENT" && (
+//                             <FileText className="h-7 w-7" />
+//                           )}
+//                           <div className="text-xs font-medium">
+//                             {headerFormat
+//                               ? `${headerFormat.toLowerCase()} header will appear here`
+//                               : "Template header will appear here"}
+//                           </div>
+//                         </div>
+//                       )}
+//                     </div>
+//                   )
+//                 ) : null}
+
+//                 <div className="p-3">
+//                   <div
+//                     className="whitespace-pre-wrap text-sm text-gray-800"
+//                     dangerouslySetInnerHTML={{
+//                       __html: renderWhatsAppFormattedText(bodyText || ""),
+//                     }}
+//                   />
+//                   {footerText ? (
+//                     <div
+//                       className="mt-2 text-[11px] text-gray-500"
+//                       dangerouslySetInnerHTML={{
+//                         __html: renderWhatsAppFormattedText(footerText),
+//                       }}
+//                     />
+//                   ) : null}
+//                   {buttons.length > 0 ? (
+//                     <div className="mt-3 border-t border-gray-100">
+//                       {buttons.map((button, index) => (
+//                         <div
+//                           key={`${button.text || "button"}-${index}`}
+//                           className="flex items-center justify-center gap-2 border-b border-gray-50 py-2.5 text-center text-sm font-medium text-[#00a884] last:border-b-0"
+//                         >
+//                           {button.type === "URL" ? (
+//                             <ExternalLink className="h-4 w-4" />
+//                           ) : null}
+//                           {button.type === "PHONE_NUMBER" ? (
+//                             <Phone className="h-4 w-4" />
+//                           ) : null}
+//                           <span>{button.text}</span>
+//                         </div>
+//                       ))}
+//                     </div>
+//                   ) : null}
+//                   <div className="mt-1 text-right text-xs text-gray-400">
+//                     12:00 PM
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+
 function WhatsAppTemplatePreviewCard({
   template,
   headerComponent,
@@ -511,61 +675,72 @@ function WhatsAppTemplatePreviewCard({
   buttons = [],
   mediaType = "",
   mediaUrl = "",
+  thumbnailUrl = "", // 1. Accept thumbnailUrl prop
 }) {
   const headerFormat = headerComponent?.format || mediaType || "";
   const resolvedMediaUrl =
-    mediaUrl?.trim() ||
+    String(mediaUrl || "").trim() ||
     headerComponent?.mediaUrl ||
     headerComponent?.example?.header_handle?.[0] ||
     "";
 
+  // Resolve thumbnail URL safely
+  const resolvedThumbnailUrl =
+    String(thumbnailUrl || "").trim() ||
+    headerComponent?.thumbnailUrl ||
+    "";
+
+  const docFileName = resolvedMediaUrl
+    ? resolvedMediaUrl.split("/").pop()?.split("?")[0] || "Document.pdf"
+    : "Document.pdf";
+
   return (
-    <div className="rounded-3xl bg-[#313166] p-5 text-white shadow-lg">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+    <div className="rounded-3xl bg-[#313166] p-5 text-white shadow-lg min-w-0 overflow-hidden">
+      <div className="flex items-center justify-between gap-3 min-w-0">
+        <div className="min-w-0">
           <div className="text-xs uppercase tracking-[0.25em] text-white/60">
             Live Preview
           </div>
-          <h3 className="mt-2 text-lg font-semibold">
+          <h3 className="mt-2 text-lg font-semibold truncate">
             {template?.name || "WhatsApp Template"}
           </h3>
         </div>
-        <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
+        <div className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
           Template
         </div>
       </div>
 
-      <div className="mt-5 rounded-[28px] bg-[#171717] p-3 shadow-2xl">
-        <div className="overflow-hidden rounded-[22px] bg-[#0a0a0a]">
-          <div className="flex items-center gap-3 bg-[#075e54] px-4 py-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+      <div className="mt-5 rounded-[28px] bg-[#171717] p-3 shadow-2xl min-w-0 overflow-hidden">
+        <div className="overflow-hidden rounded-[22px] bg-[#0a0a0a] min-w-0">
+          <div className="flex items-center gap-3 bg-[#075e54] px-4 py-3 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
               <Smartphone className="h-5 w-5 text-white" />
             </div>
-            <div className="flex-1">
-              <div className="font-semibold">Vadik Business</div>
-              <div className="text-xs text-white/75">template preview</div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold truncate">Vadik Business</div>
+              <div className="text-xs text-white/75 truncate">template preview</div>
             </div>
           </div>
 
           <div
-            className="min-h-[320px] space-y-3 px-4 py-4"
+            className="min-h-[320px] space-y-3 px-4 py-4 min-w-0 overflow-hidden"
             style={{
               backgroundImage:
                 "repeating-linear-gradient(45deg, #0d1418 0px, #0d1418 10px, #0e1519 10px, #0e1519 20px)",
             }}
           >
-            <div className="flex justify-end">
-              <div className="max-w-[85%] overflow-hidden rounded-2xl rounded-tr-md bg-white shadow-sm">
+            <div className="flex justify-end min-w-0">
+              <div className="w-full max-w-[85%] overflow-hidden rounded-2xl rounded-tr-md bg-white shadow-sm min-w-0">
                 {headerComponent ? (
                   headerFormat === "TEXT" ? (
                     <div
-                      className="border-b border-gray-100 px-3 pb-2 pt-3 text-sm font-semibold text-gray-800"
+                      className="border-b border-gray-100 px-3 pb-2 pt-3 text-sm font-semibold text-gray-800 break-words"
                       dangerouslySetInnerHTML={{
                         __html: renderWhatsAppFormattedText(headerText || ""),
                       }}
                     />
                   ) : (
-                    <div className="border-b border-gray-100 bg-[#111827]">
+                    <div className="border-b border-gray-100 bg-[#111827] min-w-0 overflow-hidden">
                       {resolvedMediaUrl ? (
                         headerFormat === "IMAGE" ? (
                           <img
@@ -576,35 +751,51 @@ function WhatsAppTemplatePreviewCard({
                         ) : headerFormat === "VIDEO" ? (
                           <video
                             src={resolvedMediaUrl}
+                            poster={resolvedThumbnailUrl || undefined} // 2. Video poster thumbnail
                             controls
                             className="max-h-64 w-full bg-black object-contain"
                           />
                         ) : (
-                          <div className="flex items-center gap-3 px-3 py-4 text-white">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-                              <FileText className="h-5 w-5" />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-sm font-medium">
-                                Document attachment
+                          /* DOCUMENT PREVIEW WITH THUMBNAIL */
+                          <a
+                            href={resolvedMediaUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block bg-[#1f2937] transition-all hover:bg-[#374151] min-w-0 overflow-hidden"
+                          >
+                            {/* Render visual document thumbnail if present */}
+                            {resolvedThumbnailUrl && (
+                              <div className="relative h-36 w-full overflow-hidden bg-black/40">
+                                <img
+                                  src={resolvedThumbnailUrl}
+                                  alt="Document thumbnail"
+                                  className="h-full w-full object-cover opacity-90"
+                                />
+                                <span className="absolute bottom-2 right-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-mono text-white">
+                                  PDF
+                                </span>
                               </div>
-                              <div className="truncate text-xs text-white/70">
-                                {resolvedMediaUrl}
+                            )}
+                            <div className="flex items-center gap-3 p-3 text-white min-w-0">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
+                                <FileText className="h-5 w-5" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-xs font-semibold text-white">
+                                  {docFileName}
+                                </div>
+                                <div className="text-[10px] uppercase tracking-wider text-white/70">
+                                  PDF Document
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          </a>
                         )
                       ) : (
                         <div className="flex min-h-[148px] flex-col items-center justify-center gap-2 px-4 py-6 text-center text-white/70">
-                          {headerFormat === "IMAGE" && (
-                            <ImageIcon className="h-7 w-7" />
-                          )}
-                          {headerFormat === "VIDEO" && (
-                            <Play className="h-7 w-7" />
-                          )}
-                          {headerFormat === "DOCUMENT" && (
-                            <FileText className="h-7 w-7" />
-                          )}
+                          {headerFormat === "IMAGE" && <ImageIcon className="h-7 w-7" />}
+                          {headerFormat === "VIDEO" && <Play className="h-7 w-7" />}
+                          {headerFormat === "DOCUMENT" && <FileText className="h-7 w-7" />}
                           <div className="text-xs font-medium">
                             {headerFormat
                               ? `${headerFormat.toLowerCase()} header will appear here`
@@ -616,16 +807,16 @@ function WhatsAppTemplatePreviewCard({
                   )
                 ) : null}
 
-                <div className="p-3">
+                <div className="p-3 min-w-0">
                   <div
-                    className="whitespace-pre-wrap text-sm text-gray-800"
+                    className="whitespace-pre-wrap text-sm text-gray-800 break-words"
                     dangerouslySetInnerHTML={{
                       __html: renderWhatsAppFormattedText(bodyText || ""),
                     }}
                   />
                   {footerText ? (
                     <div
-                      className="mt-2 text-[11px] text-gray-500"
+                      className="mt-2 text-[11px] text-gray-500 break-words"
                       dangerouslySetInnerHTML={{
                         __html: renderWhatsAppFormattedText(footerText),
                       }}
@@ -639,12 +830,12 @@ function WhatsAppTemplatePreviewCard({
                           className="flex items-center justify-center gap-2 border-b border-gray-50 py-2.5 text-center text-sm font-medium text-[#00a884] last:border-b-0"
                         >
                           {button.type === "URL" ? (
-                            <ExternalLink className="h-4 w-4" />
+                            <ExternalLink className="h-4 w-4 shrink-0" />
                           ) : null}
                           {button.type === "PHONE_NUMBER" ? (
-                            <Phone className="h-4 w-4" />
+                            <Phone className="h-4 w-4 shrink-0" />
                           ) : null}
-                          <span>{button.text}</span>
+                          <span className="truncate">{button.text}</span>
                         </div>
                       ))}
                     </div>
@@ -1534,6 +1725,34 @@ function RetentionBuilderView({
     Boolean(String(value || "").trim()),
   );
 
+  const [showMediaLibraryModal, setShowMediaLibraryModal] = useState(false);
+  const [mediaLibraryItems, setMediaLibraryItems] = useState([]);
+  const [loadingMediaLibrary, setLoadingMediaLibrary] = useState(false);
+  const [mediaSearchTerm, setMediaSearchTerm] = useState("");
+  const [mediaTab, setMediaTab] = useState("IMAGE");
+  const [selectedMediaUrl, setSelectedMediaUrl] = useState("");
+
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+
+  const openMediaLibrary = async () => {
+    setShowMediaLibraryModal(true);
+    setLoadingMediaLibrary(true);
+    setMediaSearchTerm("");
+    const defaultTab = templateHeaderMediaType || "IMAGE";
+    setMediaTab(defaultTab);
+    setSelectedMediaUrl(form.actionConfig.mediaUrl || "");
+    try {
+      const res = await api.get("/api/media-library");
+      const items = res.data?.data || res.data?.files || res.data || [];
+      setMediaLibraryItems(Array.isArray(items) ? items : []);
+    } catch (err) {
+      console.error("Failed to fetch media library:", err);
+      showToast("Failed to load Media Library items", "error");
+    } finally {
+      setLoadingMediaLibrary(false);
+    }
+  };
+
   // Debounced auto-save to localStorage
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1720,6 +1939,39 @@ function RetentionBuilderView({
     return () => clearTimeout(timer);
   }, [step, audienceStep, form.audienceRules, form.triggerType, form.triggerConfig]);
 
+  // const updateTemplate = (templateId) => {
+  //   const template = templates.find((item) => item._id === templateId);
+  //   const nextVariables = extractTemplateVariables(template);
+  //   const nextMappings = nextVariables.map(
+  //     (descriptor) =>
+  //       findVariableMapping(form.actionConfig.variableMappings, descriptor) || {
+  //         componentType: descriptor.componentType,
+  //         variable: descriptor.variable,
+  //         sourceType: "customer_field",
+  //         value: "firstname",
+  //       },
+  //   );
+  //   const mediaType = getTemplateHeaderMediaType(template);
+
+  //   setForm({
+  //     ...form,
+  //     actionConfig: {
+  //       ...form.actionConfig,
+  //       templateId,
+  //       templateName: template?.name || "",
+  //       languageCode: template?.language || "en_US",
+  //       variableMappings: nextMappings,
+  //       mediaType,
+  //       mediaUrl:
+  //         mediaType === form.actionConfig.mediaType
+  //           ? form.actionConfig.mediaUrl
+  //           : "",
+  //     },
+  //   });
+  // };
+
+
+
   const updateTemplate = (templateId) => {
     const template = templates.find((item) => item._id === templateId);
     const nextVariables = extractTemplateVariables(template);
@@ -1734,6 +1986,15 @@ function RetentionBuilderView({
     );
     const mediaType = getTemplateHeaderMediaType(template);
 
+    // Auto-extract template header media URL (if configured in Meta Template details)
+    const headerComp = getTemplateHeaderComponent(template);
+    const autoLoadedMediaUrl =
+      headerComp?.mediaUrl ||
+      (Array.isArray(headerComp?.example?.header_handle)
+        ? headerComp.example.header_handle[0]
+        : "") ||
+      "";
+
     setForm({
       ...form,
       actionConfig: {
@@ -1743,10 +2004,8 @@ function RetentionBuilderView({
         languageCode: template?.language || "en_US",
         variableMappings: nextMappings,
         mediaType,
-        mediaUrl:
-          mediaType === form.actionConfig.mediaType
-            ? form.actionConfig.mediaUrl
-            : "",
+        mediaUrl: autoLoadedMediaUrl || (mediaType === form.actionConfig.mediaType ? form.actionConfig.mediaUrl : ""),
+        thumbnailUrl: mediaType === form.actionConfig.mediaType ? form.actionConfig.thumbnailUrl : "", // 👈 Preserve thumbnailUrl
       },
     });
   };
@@ -1794,22 +2053,27 @@ function RetentionBuilderView({
     const formData = new FormData();
     formData.append("file", file);
 
+  
+
     try {
       setUploadingMedia(true);
-      // const response = await api.post(
-      //   "/api/integrationManagement/whatsapp/media/upload",
-      //   formData,
-      // );
       const response = await api.post(
         "/api/media-library/upload",
         formData,
       );
-      if (response.data?.status) {
+      const uploadedUrl =
+        response.data?.url ||
+        response.data?.data?.url ||
+        response.data?.fileUrl ||
+        response.data?.file?.url ||
+        "";
+
+      if (uploadedUrl || response.data?.status) {
         setForm((previous) => ({
           ...previous,
           actionConfig: {
             ...previous.actionConfig,
-            mediaUrl: response.data.url || "",
+            mediaUrl: uploadedUrl || previous.actionConfig.mediaUrl,
             mediaType: templateHeaderMediaType,
           },
         }));
@@ -1819,7 +2083,7 @@ function RetentionBuilderView({
       console.error("Error uploading template media:", error);
       const errorMsg =
         error.response?.data?.message ||
-        "Image upload failed. Please verify the file and try again.";
+        "Media upload failed. Please verify the file and try again.";
       showToast(errorMsg, "error");
     } finally {
       setUploadingMedia(false);
@@ -1940,7 +2204,7 @@ function RetentionBuilderView({
         return;
       }
 
-      if (templateHeaderMediaType && !form.actionConfig.mediaUrl?.trim()) {
+      if (templateHeaderMediaType && !String(form.actionConfig.mediaUrl || "").trim()) {
         showToast(
           `Add a ${templateHeaderMediaType.toLowerCase()} header URL or upload media before saving`,
           "warning",
@@ -2117,9 +2381,13 @@ function RetentionBuilderView({
             )}
     
             <div
-              className={`grid gap-6 ${step === actionStep || step === reviewStep ? "xl:grid-cols-[1.05fr_0.95fr]" : "grid-cols-1"}`}
-            >
-              <div className="space-y-6">
+  className={`grid gap-6 min-w-0 ${
+    step === actionStep || step === reviewStep
+      ? "xl:grid-cols-[1.05fr_0.95fr]"
+      : "grid-cols-1"
+  }`}
+>
+  <div className="space-y-6 min-w-0">
                 <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
                   <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -2985,7 +3253,7 @@ function RetentionBuilderView({
                     ))}
                   </select>
 
-                  {templateHeaderMediaType && (
+                  {/* {templateHeaderMediaType && (
                     <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
                       <div className="text-sm font-semibold text-[#313166]">
                         {templateHeaderMediaType} header media
@@ -3037,7 +3305,109 @@ function RetentionBuilderView({
                         ) : null}
                       </div>
                     </div>
-                  )}
+                  )} */}
+
+{templateHeaderMediaType && (
+  <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4 min-w-0 overflow-hidden">
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2 text-sm font-semibold text-[#313166]">
+        <FolderOpen className="h-4 w-4 text-[#313166] shrink-0" />
+        Header {templateHeaderMediaType} Media
+      </div>
+      {form.actionConfig.mediaUrl && (
+        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 shrink-0">
+          ✓ Media Attached
+        </span>
+      )}
+    </div>
+
+    <p className="text-xs text-gray-500">
+      This template uses a media header. Auto-loaded from template details or pick media from your library.
+    </p>
+
+    {/* URL Input */}
+    {/* URL Input (Read-only / Disabled for manual edits) */}
+    <input
+      type="text"
+      readOnly
+      value={
+        typeof form.actionConfig.mediaUrl === "string"
+          ? form.actionConfig.mediaUrl
+          : form.actionConfig.mediaUrl?.url || ""
+      }
+      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm font-medium text-gray-500 cursor-not-allowed min-w-0 select-all"
+      placeholder={`Select ${templateHeaderMediaType.toLowerCase()} from media library...`}
+    />
+
+    {/* Actions */}
+    <div className="flex flex-wrap items-center gap-2.5 pt-1">
+      <button
+        type="button"
+        onClick={() => setShowMediaPicker(true)}
+        className="px-4 py-2.5 bg-[#313166] text-white rounded-xl text-xs font-bold hover:bg-[#3d3b83] transition-all flex items-center gap-2 shadow-sm"
+      >
+        <Plus className="h-4 w-4" />
+        Choose from Media Library
+      </button>
+
+      {form.actionConfig.mediaUrl && (
+        <button
+          type="button"
+          title="Clear Media URL"
+          onClick={() =>
+            setForm((prev) => ({
+              ...prev,
+              actionConfig: {
+                ...prev.actionConfig,
+                mediaUrl: "",
+                thumbnailUrl: "",
+              },
+            }))
+          }
+          className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl border border-gray-200 hover:border-red-200 transition-colors flex items-center justify-center"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+
+    {/* Active Preview Badges */}
+    {form.actionConfig.mediaUrl ? (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/80 p-2.5 min-w-0 overflow-hidden">
+          <span className="font-bold text-xs text-emerald-800 shrink-0">
+            Media URL:
+          </span>
+          <span
+            className="text-xs text-emerald-700 truncate min-w-0 flex-1 font-mono"
+            title={String(form.actionConfig.mediaUrl)}
+          >
+            {String(form.actionConfig.mediaUrl)}
+          </span>
+        </div>
+
+        {form.actionConfig.thumbnailUrl ? (
+          <div className="flex items-center gap-2.5 rounded-xl border border-blue-200 bg-blue-50/80 p-2.5 min-w-0 overflow-hidden">
+            <img
+              src={form.actionConfig.thumbnailUrl}
+              alt="Thumbnail preview"
+              className="h-8 w-8 rounded-lg object-cover shrink-0 border border-blue-200"
+            />
+            <span className="font-bold text-xs text-blue-800 shrink-0">
+              Thumbnail Attached:
+            </span>
+            <span
+              className="text-xs text-blue-700 truncate min-w-0 flex-1 font-mono"
+              title={String(form.actionConfig.thumbnailUrl)}
+            >
+              {String(form.actionConfig.thumbnailUrl)}
+            </span>
+          </div>
+        ) : null}
+      </div>
+    ) : null}
+  </div>
+)}
 
                   {form.triggerType !== "scheduled_recurring" && form.triggerType !== "customer_field_date" && (
                   <div className="space-y-3 rounded-2xl border border-gray-100 bg-[#F4F5F9] p-4">
@@ -3631,6 +4001,7 @@ function RetentionBuilderView({
                 buttons={templateButtons}
                 mediaType={templateHeaderMediaType}
                 mediaUrl={form.actionConfig.mediaUrl}
+                thumbnailUrl={form.actionConfig.thumbnailUrl}
               />
 
               <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -3668,15 +4039,15 @@ function RetentionBuilderView({
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#F4F5F9] px-4 py-3">
-                    <span>Media status</span>
-                    <span className="font-semibold text-[#313166]">
-                      {templateHeaderMediaType
-                        ? form.actionConfig.mediaUrl?.trim()
-                          ? "Ready"
-                          : "Missing media"
-                        : "Not required"}
-                    </span>
-                  </div>
+  <span>Media status</span>
+  <span className="font-semibold text-[#313166]">
+    {templateHeaderMediaType
+      ? String(form.actionConfig.mediaUrl || "").trim()
+        ? "Ready"
+        : "Missing media"
+      : "Not required"}
+  </span>
+</div>
                 </div>
               </div>
               </>
@@ -3776,7 +4147,7 @@ function RetentionBuilderView({
                             />
                           ) : null}
 
-                          {templateHeaderMediaType ? (
+                          {/* {templateHeaderMediaType ? (
                             <div className="border-b border-white/10 bg-black/10">
                               {form.actionConfig.mediaUrl ? (
                                 templateHeaderMediaType === "IMAGE" ? (
@@ -3805,6 +4176,80 @@ function RetentionBuilderView({
                                       </div>
                                     </div>
                                   </div>
+                                )
+                              ) : (
+                                <div className="flex min-h-[148px] flex-col items-center justify-center gap-2 px-4 py-6 text-center text-white/70">
+                                  {templateHeaderMediaType === "IMAGE" && (
+                                    <ImageIcon className="h-7 w-7" />
+                                  )}
+                                  {templateHeaderMediaType === "VIDEO" && (
+                                    <Play className="h-7 w-7" />
+                                  )}
+                                  {templateHeaderMediaType === "DOCUMENT" && (
+                                    <FileText className="h-7 w-7" />
+                                  )}
+                                  <div className="text-xs font-medium">
+                                    {templateHeaderMediaType.toLowerCase()}{" "}
+                                    header will appear here
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : null} */}
+
+
+                          {templateHeaderMediaType ? (
+                            <div className="border-b border-white/10 bg-black/10 min-w-0 overflow-hidden">
+                              {form.actionConfig.mediaUrl ? (
+                                templateHeaderMediaType === "IMAGE" ? (
+                                  <img
+                                    src={form.actionConfig.mediaUrl}
+                                    alt="Template header preview"
+                                    className="max-h-64 w-full object-cover"
+                                  />
+                                ) : templateHeaderMediaType === "VIDEO" ? (
+                                  <video
+                                    src={form.actionConfig.mediaUrl}
+                                    poster={form.actionConfig.thumbnailUrl || undefined}
+                                    controls
+                                    className="max-h-64 w-full bg-black object-contain"
+                                  />
+                                ) : (
+                                  /* REAL WHATSAPP DOCUMENT CARD FOR REVIEW STEP WITH THUMBNAIL */
+                                  <a
+                                    href={form.actionConfig.mediaUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="block bg-black/30 transition-all hover:bg-black/50 min-w-0 overflow-hidden"
+                                  >
+                                    {/* Render PDF Thumbnail Image if present */}
+                                    {form.actionConfig.thumbnailUrl && (
+                                      <div className="relative h-36 w-full overflow-hidden bg-black/40">
+                                        <img
+                                          src={form.actionConfig.thumbnailUrl}
+                                          alt="Document thumbnail"
+                                          className="h-full w-full object-cover opacity-90"
+                                        />
+                                        <span className="absolute bottom-2 right-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-mono text-white">
+                                          PDF
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    <div className="flex items-center gap-3 p-3 text-white min-w-0">
+                                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
+                                        <FileText className="h-5 w-5" />
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="truncate text-xs font-semibold text-white">
+                                          {form.actionConfig.mediaUrl.split("/").pop()?.split("?")[0] || "Document.pdf"}
+                                        </div>
+                                        <div className="text-[10px] uppercase tracking-wider text-white/70">
+                                          PDF Document
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </a>
                                 )
                               ) : (
                                 <div className="flex min-h-[148px] flex-col items-center justify-center gap-2 px-4 py-6 text-center text-white/70">
@@ -3917,6 +4362,49 @@ function RetentionBuilderView({
           </div>
         </div>
       )}
+
+
+      {/* Choose from Media Library Modal */}
+{showMediaPicker && (
+  <MediaPickerModal
+    onClose={() => setShowMediaPicker(false)}
+    mediaType={
+      templateHeaderMediaType === "DOCUMENT"
+        ? "file"
+        : (templateHeaderMediaType || "IMAGE").toLowerCase()
+    }
+    onSelect={(selectedItem) => {
+      // Safely resolve main media URL
+      const urlString =
+        typeof selectedItem === "string"
+          ? selectedItem
+          : selectedItem?.url || selectedItem?.fileUrl || selectedItem?.s3Url || "";
+
+      // Safely resolve thumbnail URL
+      const thumbString =
+        typeof selectedItem === "object"
+          ? selectedItem?.thumbnailUrl ||
+            selectedItem?.thumbnail ||
+            selectedItem?.thumbUrl ||
+            selectedItem?.previewUrl ||
+            ""
+          : "";
+
+      setForm((prev) => ({
+        ...prev,
+        actionConfig: {
+          ...prev.actionConfig,
+          mediaUrl: urlString,
+          thumbnailUrl: thumbString,
+          mediaType: templateHeaderMediaType || "IMAGE",
+        },
+      }));
+
+      setShowMediaPicker(false);
+      showToast("Selected media from library", "success");
+    }}
+  />
+)}
       {/* ... rest of your JSX remains the same ... */}
     </>
   );

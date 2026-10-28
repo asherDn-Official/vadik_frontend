@@ -431,6 +431,68 @@ const TemplateFlowCanvasContent = ({
   }, [computeConflictsForKeyword, currentTriggerKeyword]);
 
   // Synchronize node status and header media with Meta templates list
+  // const syncNodeStatusWithMeta = useCallback(
+  //   (nodeList) => {
+  //     return nodeList.map((n) => {
+  //       if (n.type !== "template") return n;
+  //       const tName = n.data?.templateName;
+  //       if (!tName || tName.trim() === "" || n.data?.status === "NOT_SELECTED" || n.data?.templateSelected === false) {
+  //         return {
+  //           ...n,
+  //           data: {
+  //             ...n.data,
+  //             status: "NOT_SELECTED",
+  //             templateSelected: false,
+  //           },
+  //         };
+  //       }
+  //       const metaT = findMetaTemplate(tName);
+  //       if (metaT) {
+  //         const headerComp = metaT.components?.find((c) => c.type === "HEADER");
+  //         const headerFormat = headerComp?.format?.toUpperCase() || (headerComp?.text ? "TEXT" : null);
+  //         const isMediaHeader = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerFormat);
+  //         const templateMediaUrl = headerComp?.mediaUrl || (Array.isArray(headerComp?.example?.header_handle) ? headerComp.example.header_handle[0] : null) || "";
+
+  //         let validMediaUrl = "";
+  //         if (isMediaHeader) {
+  //           const currentUrl = n.data?.mediaUrl;
+  //           if (currentUrl && isUrlCompatibleWithMediaType(currentUrl, headerFormat)) {
+  //             validMediaUrl = currentUrl;
+  //           } else if (templateMediaUrl && isUrlCompatibleWithMediaType(templateMediaUrl, headerFormat)) {
+  //             validMediaUrl = templateMediaUrl;
+  //           }
+  //         }
+
+  //         return {
+  //           ...n,
+  //           data: {
+  //             ...n.data,
+  //             status: metaT.status || "APPROVED",
+  //             headerFormat: headerFormat,
+  //             headerMediaType: isMediaHeader ? headerFormat : null,
+  //             mediaUrl: validMediaUrl,
+  //             headerText: n.data?.headerText || headerComp?.text || "",
+  //             templateSelected: true,
+  //           },
+  //         };
+  //       }
+  //       // Named template but not found in Meta account
+  //       return {
+  //         ...n,
+  //         data: {
+  //           ...n.data,
+  //           status: n.data?.status === "APPROVED" ? "NOT_IN_ACCOUNT" : (n.data?.status || "NOT_IN_ACCOUNT"),
+  //           templateSelected: true,
+  //         },
+  //       };
+  //     });
+  //   },
+  //   [findMetaTemplate]
+  // );
+
+
+
+  // Synchronize node status and header media with Meta templates list
   const syncNodeStatusWithMeta = useCallback(
     (nodeList) => {
       return nodeList.map((n) => {
@@ -451,15 +513,23 @@ const TemplateFlowCanvasContent = ({
           const headerComp = metaT.components?.find((c) => c.type === "HEADER");
           const headerFormat = headerComp?.format?.toUpperCase() || (headerComp?.text ? "TEXT" : null);
           const isMediaHeader = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerFormat);
+          
           const templateMediaUrl = headerComp?.mediaUrl || (Array.isArray(headerComp?.example?.header_handle) ? headerComp.example.header_handle[0] : null) || "";
+
+          const currentUrl = typeof n.data?.mediaUrl === "string" 
+            ? n.data.mediaUrl 
+            : (n.data?.mediaUrl?.s3Url || n.data?.mediaUrl?.url || "");
+
+          const cleanTemplateMediaUrl = typeof templateMediaUrl === "string"
+            ? templateMediaUrl
+            : (templateMediaUrl?.s3Url || templateMediaUrl?.url || "");
 
           let validMediaUrl = "";
           if (isMediaHeader) {
-            const currentUrl = n.data?.mediaUrl;
             if (currentUrl && isUrlCompatibleWithMediaType(currentUrl, headerFormat)) {
               validMediaUrl = currentUrl;
-            } else if (templateMediaUrl && isUrlCompatibleWithMediaType(templateMediaUrl, headerFormat)) {
-              validMediaUrl = templateMediaUrl;
+            } else if (cleanTemplateMediaUrl && isUrlCompatibleWithMediaType(cleanTemplateMediaUrl, headerFormat)) {
+              validMediaUrl = cleanTemplateMediaUrl;
             }
           }
 
@@ -548,7 +618,10 @@ const TemplateFlowCanvasContent = ({
     setShowMediaPicker(true);
   };
 
-  const handleMediaPickerSelect = (s3Url) => {
+  const handleMediaPickerSelect = (media) => {
+    const cleanUrl = typeof media === 'string' ? media : (media?.s3Url || media?.url || '');
+    const cleanThumbnailUrl = typeof media === 'object' && media?.thumbnailUrl ? media.thumbnailUrl : '';
+
     if (selectedNode) {
       const isTemplate = selectedNode.type === "template";
       const reqFormat = (
@@ -558,7 +631,7 @@ const TemplateFlowCanvasContent = ({
       ).toUpperCase();
 
       if (isTemplate && ["IMAGE", "VIDEO", "DOCUMENT"].includes(reqFormat)) {
-        if (!isUrlCompatibleWithMediaType(s3Url, reqFormat)) {
+        if (!isUrlCompatibleWithMediaType(cleanUrl, reqFormat)) {
           toast.error(
             `Incompatible media selected. This template requires a ${reqFormat} (${reqFormat === "VIDEO" ? "Video only" : reqFormat === "IMAGE" ? "Image only" : "Document only"}).`
           );
@@ -566,7 +639,10 @@ const TemplateFlowCanvasContent = ({
         }
       }
 
-      updateSelectedNodeData({ mediaUrl: s3Url });
+      updateSelectedNodeData({
+        mediaUrl: cleanUrl,
+        ...(cleanThumbnailUrl ? { thumbnailUrl: cleanThumbnailUrl } : {}),
+      });
       toast.success("Media selected from library!");
     }
     setShowMediaPicker(false);
@@ -887,30 +963,63 @@ const TemplateFlowCanvasContent = ({
     toast.info("Node deleted from canvas");
   };
 
-  // Update selected node data
-  const updateSelectedNodeData = (updates) => {
-    if (!selectedNode) return;
-    setSelectedNode((prev) => {
-      if (!prev || prev.id !== selectedNode.id) return prev;
-      const updatedData = { ...prev.data, ...updates };
-      if (prev.type === "trigger" && updates.keyword !== undefined) {
-        updatedData.conflicts = computeConflictsForKeyword(updates.keyword);
-      }
-      return { ...prev, data: updatedData };
-    });
-    setNodes((nds) =>
-      nds.map((n) => {
-        if (n.id === selectedNode.id) {
-          const updatedData = { ...n.data, ...updates };
-          if (n.type === "trigger" && updates.keyword !== undefined) {
-            updatedData.conflicts = computeConflictsForKeyword(updates.keyword);
-          }
-          return { ...n, data: updatedData };
+  // // Update selected node data
+  // const updateSelectedNodeData = (updates) => {
+  //   if (!selectedNode) return;
+  //   setSelectedNode((prev) => {
+  //     if (!prev || prev.id !== selectedNode.id) return prev;
+  //     const updatedData = { ...prev.data, ...updates };
+  //     if (prev.type === "trigger" && updates.keyword !== undefined) {
+  //       updatedData.conflicts = computeConflictsForKeyword(updates.keyword);
+  //     }
+  //     return { ...prev, data: updatedData };
+  //   });
+  //   setNodes((nds) =>
+  //     nds.map((n) => {
+  //       if (n.id === selectedNode.id) {
+  //         const updatedData = { ...n.data, ...updates };
+  //         if (n.type === "trigger" && updates.keyword !== undefined) {
+  //           updatedData.conflicts = computeConflictsForKeyword(updates.keyword);
+  //         }
+  //         return { ...n, data: updatedData };
+  //       }
+  //       return n;
+  //     })
+  //   );
+  // };
+
+
+  // ✅ Replace updateSelectedNodeData with this sanitized version:
+const updateSelectedNodeData = (updates) => {
+  if (!selectedNode) return;
+
+  // Sanitize mediaUrl if an object was passed by mistake
+  if (updates.mediaUrl && typeof updates.mediaUrl === "object") {
+    updates.mediaUrl = updates.mediaUrl.s3Url || updates.mediaUrl.url || "";
+  }
+
+  setSelectedNode((prev) => {
+    if (!prev || prev.id !== selectedNode.id) return prev;
+    const updatedData = { ...prev.data, ...updates };
+    if (prev.type === "trigger" && updates.keyword !== undefined) {
+      updatedData.conflicts = computeConflictsForKeyword(updates.keyword);
+    }
+    return { ...prev, data: updatedData };
+  });
+
+  setNodes((nds) =>
+    nds.map((n) => {
+      if (n.id === selectedNode.id) {
+        const updatedData = { ...n.data, ...updates };
+        if (n.type === "trigger" && updates.keyword !== undefined) {
+          updatedData.conflicts = computeConflictsForKeyword(updates.keyword);
         }
-        return n;
-      })
-    );
-  };
+        return { ...n, data: updatedData };
+      }
+      return n;
+    })
+  );
+};
 
   // Deploy / Create this specific node's template to Meta
   const handleDeployNodeTemplateToMeta = (node) => {
@@ -1058,7 +1167,8 @@ const TemplateFlowCanvasContent = ({
           templateName: rootNode.data?.title || "Static Interactive Step",
           headerText: rootNode.data?.headerText || null,
           headerMediaType: rootNode.data?.headerMediaType || rootNode.data?.headerFormat || null,
-          mediaUrl: rootNode.data?.mediaUrl || null,
+          mediaUrl: typeof rootNode.data?.mediaUrl === "string" ? rootNode.data.mediaUrl : (rootNode.data?.mediaUrl?.s3Url || rootNode.data?.mediaUrl?.url || null),
+          thumbnailUrl: rootNode.data?.thumbnailUrl || null,
           bodyText: rootNode.data?.bodyText || "Hello 👋 How can we help you today?",
           footerText: rootNode.data?.footerText || null,
           buttons: rootNode.data?.buttons || [],
@@ -1075,7 +1185,8 @@ const TemplateFlowCanvasContent = ({
           templateName: rootNode.data?.templateName || "Step 1 Template",
           headerText: rootNode.data?.headerText || null,
           headerMediaType: rootNode.data?.headerMediaType || rootNode.data?.headerFormat || null,
-          mediaUrl: rootNode.data?.mediaUrl || null,
+          mediaUrl: typeof rootNode.data?.mediaUrl === "string" ? rootNode.data.mediaUrl : (rootNode.data?.mediaUrl?.s3Url || rootNode.data?.mediaUrl?.url || null),
+          thumbnailUrl: rootNode.data?.thumbnailUrl || null,
           bodyText: isUnselected
             ? "⚠️ No template selected for this step yet. Click the template node to attach one."
             : rootNode.data?.bodyText || "Welcome! Please choose an option:",
@@ -1136,7 +1247,8 @@ const TemplateFlowCanvasContent = ({
           templateName: targetNode.data?.title || "Static Interactive Step",
           headerText: targetNode.data?.headerText || null,
           headerMediaType: targetNode.data?.headerMediaType || targetNode.data?.headerFormat || null,
-          mediaUrl: targetNode.data?.mediaUrl || null,
+          mediaUrl: typeof targetNode.data?.mediaUrl === "string" ? targetNode.data.mediaUrl : (targetNode.data?.mediaUrl?.s3Url || targetNode.data?.mediaUrl?.url || null),
+          thumbnailUrl: targetNode.data?.thumbnailUrl || null,
           bodyText: targetNode.data?.bodyText || "Hello 👋 How can we help you today?",
           footerText: targetNode.data?.footerText || null,
           buttons: targetNode.data?.buttons || [],
@@ -1153,7 +1265,8 @@ const TemplateFlowCanvasContent = ({
           templateName: targetNode.data?.templateName || "Follow-up Template",
           headerText: targetNode.data?.headerText || null,
           headerMediaType: targetNode.data?.headerMediaType || targetNode.data?.headerFormat || null,
-          mediaUrl: targetNode.data?.mediaUrl || null,
+          mediaUrl: typeof targetNode.data?.mediaUrl === "string" ? targetNode.data.mediaUrl : (targetNode.data?.mediaUrl?.s3Url || targetNode.data?.mediaUrl?.url || null),
+          thumbnailUrl: targetNode.data?.thumbnailUrl || null,
           bodyText: isUnselected
             ? "⚠️ No template message attached to this step."
             : targetNode.data?.bodyText || "Proceeding...",
@@ -1919,48 +2032,58 @@ const TemplateFlowCanvasContent = ({
                         )}
 
                         {/* Media Preview if URL exists */}
-                        {selectedNode.data?.mediaUrl ? (
-                          <div className={`relative group rounded-xl overflow-hidden border bg-white shadow-xs ${
-                            !isCurrentUrlCompatible ? "border-red-400 ring-2 ring-red-200" : "border-purple-200"
-                          }`}>
-                            {headerFormat === "IMAGE" ? (
-                              <img
-                                src={selectedNode.data.mediaUrl}
-                                alt="Header Preview"
-                                className="w-full h-28 object-cover rounded-xl"
-                                onError={(e) => {
-                                  e.target.style.display = "none";
-                                }}
-                              />
-                            ) : headerFormat === "VIDEO" ? (
-                              <video
-                                src={selectedNode.data.mediaUrl}
-                                controls
-                                className="w-full h-28 object-cover rounded-xl bg-black"
-                              />
-                            ) : (
-                              <div className="p-3 flex items-center gap-2 text-xs text-gray-700 bg-purple-50/50">
-                                <FileText size={20} className="text-purple-600 shrink-0" />
-                                <span className="truncate flex-1 font-mono text-[10px]">{selectedNode.data.mediaUrl}</span>
+                        {(() => {
+                          const rawNodeMedia = selectedNode.data?.mediaUrl;
+                          const cleanNodeMedia = typeof rawNodeMedia === 'string' ? rawNodeMedia : (rawNodeMedia?.s3Url || rawNodeMedia?.url || '');
+                          if (!cleanNodeMedia) {
+                            return (
+                              <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[10px] flex items-start gap-1.5">
+                                <AlertCircle size={13} className="text-amber-600 shrink-0 mt-0.5" />
+                                <div>
+                                  <strong className="block font-bold">Media Required for Meta API</strong>
+                                  This template requires a {headerFormat.toLowerCase()} in its header. Upload a {headerFormat.toLowerCase()} file or paste a public URL below to prevent Meta error #132012.
+                                </div>
                               </div>
-                            )}
-                            <button
-                              onClick={() => updateSelectedNodeData({ mediaUrl: "" })}
-                              className="absolute top-1.5 right-1.5 p-1 bg-black/60 hover:bg-red-600 text-white rounded-lg opacity-80 group-hover:opacity-100 transition-all shadow-xs"
-                              title="Remove Media"
-                            >
-                              <X size={12} />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[10px] flex items-start gap-1.5">
-                            <AlertCircle size={13} className="text-amber-600 shrink-0 mt-0.5" />
-                            <div>
-                              <strong className="block font-bold">Media Required for Meta API</strong>
-                              This template requires a {headerFormat.toLowerCase()} in its header. Upload a {headerFormat.toLowerCase()} file or paste a public URL below to prevent Meta error #132012.
+                            );
+                          }
+
+                          const docFileName = decodeURIComponent(cleanNodeMedia.split("?")[0].split("/").pop() || cleanNodeMedia);
+
+                          return (
+                            <div className={`relative group rounded-xl overflow-hidden border bg-white shadow-xs ${
+                              !isCurrentUrlCompatible ? "border-red-400 ring-2 ring-red-200" : "border-purple-200"
+                            }`}>
+                              {headerFormat === "IMAGE" ? (
+                                <img
+                                  src={cleanNodeMedia}
+                                  alt="Header Preview"
+                                  className="w-full h-28 object-cover rounded-xl"
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                  }}
+                                />
+                              ) : headerFormat === "VIDEO" ? (
+                                <video
+                                  src={cleanNodeMedia}
+                                  controls
+                                  className="w-full h-28 object-cover rounded-xl bg-black"
+                                />
+                              ) : (
+                                <div className="p-3 flex items-center gap-2 text-xs text-gray-700 bg-purple-50/50">
+                                  <FileText size={20} className="text-purple-600 shrink-0" />
+                                  <span className="truncate flex-1 font-mono text-[10px]">{docFileName}</span>
+                                </div>
+                              )}
+                              <button
+                                onClick={() => updateSelectedNodeData({ mediaUrl: "" })}
+                                className="absolute top-1.5 right-1.5 p-1 bg-black/60 hover:bg-red-600 text-white rounded-lg opacity-80 group-hover:opacity-100 transition-all shadow-xs"
+                                title="Remove Media"
+                              >
+                                <X size={12} />
+                              </button>
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {/* Upload & URL Input Controls */}
                         <div className="space-y-1.5">
@@ -1998,7 +2121,7 @@ const TemplateFlowCanvasContent = ({
                           <div className="space-y-1">
                             <input
                               type="url"
-                              value={selectedNode.data?.mediaUrl || ""}
+                              value={typeof selectedNode.data?.mediaUrl === "string" ? selectedNode.data.mediaUrl : (selectedNode.data?.mediaUrl?.s3Url || selectedNode.data?.mediaUrl?.url || "")}
                               onChange={(e) => updateSelectedNodeData({ mediaUrl: e.target.value })}
                               onBlur={(e) => {
                                 const val = (e.target.value || "").trim();
@@ -2399,47 +2522,57 @@ const TemplateFlowCanvasContent = ({
                         {["IMAGE", "VIDEO", "DOCUMENT"].includes(activeHeaderType) && (
                           <div className="space-y-2 p-2.5 bg-cyan-50/50 rounded-xl border border-cyan-100">
                             {/* Media Header Preview */}
-                            {selectedNode.data?.mediaUrl ? (
-                              <div className="relative group rounded-xl overflow-hidden border border-cyan-200 bg-white shadow-xs">
-                                {activeHeaderType === "IMAGE" ? (
-                                  <img
-                                    key={selectedNode.data.mediaUrl}
-                                    src={selectedNode.data.mediaUrl}
-                                    alt="Header Preview"
-                                    className="w-full h-24 object-cover rounded-xl"
-                                    onError={(e) => {
-                                      e.target.style.display = "none";
-                                    }}
-                                  />
-                                ) : activeHeaderType === "VIDEO" ? (
-                                  <video
-                                    key={selectedNode.data.mediaUrl}
-                                    src={selectedNode.data.mediaUrl}
-                                    controls
-                                    className="w-full h-24 object-cover rounded-xl bg-black"
-                                  />
-                                ) : (
-                                  <div className="p-3 flex items-center gap-2 text-xs text-cyan-900 bg-cyan-50/80">
-                                    <FileText size={18} className="text-cyan-700 shrink-0" />
-                                    <span className="truncate flex-1 font-mono text-[10px]">
-                                      {decodeURIComponent(selectedNode.data.mediaUrl?.split("?")?.[0]?.split("/")?.pop() || selectedNode.data.mediaUrl)}
-                                    </span>
-                                  </div>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => updateSelectedNodeData({ mediaUrl: "" })}
-                                  className="absolute top-1.5 right-1.5 p-1 bg-black/60 hover:bg-red-600 text-white rounded-lg opacity-80 group-hover:opacity-100 transition-all shadow-xs cursor-pointer"
-                                  title="Remove Media"
-                                >
-                                  <X size={12} />
-                                </button>
-                              </div>
-                            ) : (
-                              <p className="text-[10px] text-gray-500 italic">
-                                Attach {activeHeaderType.toLowerCase()} header to this interactive message.
-                              </p>
-                            )}
+                            {(() => {
+                              const rawStaticMedia = selectedNode.data?.mediaUrl;
+                              const cleanStaticMedia = typeof rawStaticMedia === 'string' ? rawStaticMedia : (rawStaticMedia?.s3Url || rawStaticMedia?.url || '');
+                              if (!cleanStaticMedia) {
+                                return (
+                                  <p className="text-[10px] text-gray-500 italic">
+                                    Attach {activeHeaderType.toLowerCase()} header to this interactive message.
+                                  </p>
+                                );
+                              }
+
+                              const staticDocName = decodeURIComponent(cleanStaticMedia.split("?")[0].split("/").pop() || "Document Attached");
+
+                              return (
+                                <div className="relative group rounded-xl overflow-hidden border border-cyan-200 bg-white shadow-xs">
+                                  {activeHeaderType === "IMAGE" ? (
+                                    <img
+                                      key={cleanStaticMedia}
+                                      src={cleanStaticMedia}
+                                      alt="Header Preview"
+                                      className="w-full h-24 object-cover rounded-xl"
+                                      onError={(e) => {
+                                        e.target.style.display = "none";
+                                      }}
+                                    />
+                                  ) : activeHeaderType === "VIDEO" ? (
+                                    <video
+                                      key={cleanStaticMedia}
+                                      src={cleanStaticMedia}
+                                      controls
+                                      className="w-full h-24 object-cover rounded-xl bg-black"
+                                    />
+                                  ) : (
+                                    <div className="p-3 flex items-center gap-2 text-xs text-cyan-900 bg-cyan-50/80">
+                                      <FileText size={18} className="text-cyan-700 shrink-0" />
+                                      <span className="truncate flex-1 font-mono text-[10px]">
+                                        {staticDocName}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => updateSelectedNodeData({ mediaUrl: "" })}
+                                    className="absolute top-1.5 right-1.5 p-1 bg-black/60 hover:bg-red-600 text-white rounded-lg opacity-80 group-hover:opacity-100 transition-all shadow-xs cursor-pointer"
+                                    title="Remove Media"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                              );
+                            })()}
 
                             {/* Media Action Buttons: Media Library & Direct Upload */}
                             <div className="grid grid-cols-2 gap-1.5">
@@ -2485,7 +2618,7 @@ const TemplateFlowCanvasContent = ({
                             <div className="relative">
                               <input
                                 type="text"
-                                value={selectedNode.data?.mediaUrl || ""}
+                                value={typeof selectedNode.data?.mediaUrl === "string" ? selectedNode.data.mediaUrl : (selectedNode.data?.mediaUrl?.s3Url || selectedNode.data?.mediaUrl?.url || "")}
                                 onChange={(e) => updateSelectedNodeData({ mediaUrl: e.target.value })}
                                 placeholder={`Or paste public ${activeHeaderType.toLowerCase()} URL...`}
                                 className="w-full px-2.5 py-1.5 text-[11px] bg-white border border-gray-200 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-cyan-600"
@@ -2806,29 +2939,79 @@ const TemplateFlowCanvasContent = ({
                     ) : (
                       /* Bot Template Message */
                       <div className="bg-white text-gray-800 text-xs rounded-2xl rounded-tl-xs shadow-xs max-w-[90%] overflow-hidden border border-gray-100">
-                        {msg.mediaUrl && (
-                          <div className="border-b border-gray-100 bg-gray-50 overflow-hidden">
-                            {msg.headerMediaType === "VIDEO" ? (
-                              <video src={msg.mediaUrl} controls className="w-full max-h-36 object-cover" />
-                            ) : msg.headerMediaType === "DOCUMENT" && !msg.mediaUrl?.match(/\.(jpg|jpeg|png|webp|gif)/i) ? (
-                              <div className="p-2.5 flex items-center gap-2 bg-purple-50 text-[#313166] text-[10px] font-bold">
-                                <FileText size={16} className="text-[#CB376D] shrink-0" />
-                                <span className="truncate">
-                                  {decodeURIComponent(msg.mediaUrl?.split("?")?.[0]?.split("/")?.pop() || "Document Attached")}
-                                </span>
-                              </div>
-                            ) : (
-                              <img
-                                src={msg.mediaUrl}
-                                alt="Header"
-                                className="w-full max-h-36 object-cover"
-                                onError={(e) => {
-                                  e.target.style.display = "none";
-                                }}
-                              />
-                            )}
-                          </div>
-                        )}
+                        {(() => {
+                          const rawSimMedia = msg.mediaUrl;
+                          const cleanSimMedia = typeof rawSimMedia === 'string' ? rawSimMedia : (rawSimMedia?.s3Url || rawSimMedia?.url || '');
+                          if (!cleanSimMedia) return null;
+
+                          const isDoc = msg.headerMediaType === "DOCUMENT" && !cleanSimMedia.match(/\.(jpg|jpeg|png|webp|gif)/i);
+                          const docName = decodeURIComponent(cleanSimMedia.split("?")[0].split("/").pop() || "Document Attached");
+
+                          return (
+                            <div className="border-b border-gray-100 bg-gray-50 overflow-hidden">
+                              {msg.headerMediaType === "VIDEO" ? (
+                                <video src={cleanSimMedia} controls className="w-full max-h-36 object-cover" />
+                              ) : isDoc ? (
+  msg.thumbnailUrl ? (
+    /* Rich Document Card with Thumbnail Preview */
+    <div className="bg-[#2a2b4a] p-2 rounded-t-xl overflow-hidden">
+      <div className="relative rounded-lg overflow-hidden border border-white/10 bg-slate-900">
+        <img
+          src={msg.thumbnailUrl}
+          alt="Document Thumbnail"
+          className="w-full h-32 object-cover"
+          onError={(e) => {
+            e.target.style.display = "none";
+          }}
+        />
+        <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur-xs text-white text-[9px] font-black rounded uppercase tracking-wider">
+          PDF
+        </span>
+      </div>
+      <a
+        href={cleanSimMedia}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-2 p-2 bg-white/10 hover:bg-white/20 rounded-xl flex items-center gap-2 text-white transition-colors block group"
+      >
+        <div className="p-1.5 bg-cyan-500/20 rounded-lg shrink-0">
+          <FileText size={16} className="text-cyan-300" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold truncate leading-tight text-white" title={docName}>
+            {docName}
+          </p>
+          <p className="text-[8px] text-cyan-200 uppercase tracking-wide font-semibold mt-0.5 group-hover:underline">
+            CLICK TO OPEN IN NEW TAB ↗
+          </p>
+        </div>
+      </a>
+    </div>
+  ) : (
+    /* Fallback Standard Document Strip */
+    <a
+      href={cleanSimMedia}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="p-2.5 flex items-center gap-2 bg-purple-50 hover:bg-purple-100 text-[#313166] text-[10px] font-bold transition-colors block"
+    >
+      <FileText size={16} className="text-[#CB376D] shrink-0" />
+      <span className="truncate flex-1">{docName}</span>
+    </a>
+  )
+) : (
+                                <img
+                                  src={cleanSimMedia}
+                                  alt="Header"
+                                  className="w-full max-h-36 object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                  }}
+                                />
+                              )}
+                            </div>
+                          );
+                        })()}
                         <div className="p-3 space-y-1.5">
                           {msg.nodeType === "static_message" ? (
                             <div className="flex items-center justify-between border-b border-gray-100 pb-1">

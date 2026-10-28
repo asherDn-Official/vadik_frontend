@@ -19,13 +19,16 @@ import {
   UploadCloud,
   Trash2,
   X,
-  Sparkles
+  Sparkles,
+  ExternalLink,
+  FileText
 } from "lucide-react";
 import api from "../../api/apiconfig";
 import Loader from "../../utils/Loader";
 import { toast } from "react-toastify";
 import { format, isToday } from "date-fns";
 import AiImageGeneratorModal from "../common/AiImageGeneratorModal";
+import MediaPickerModal from "../common/MediaPickerModal";
 
 const LiveChat = ({ onUnreadCountChange }) => {
   const [customers, setCustomers] = useState([]);
@@ -45,8 +48,7 @@ const LiveChat = ({ onUnreadCountChange }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [mediaLibrary, setMediaLibrary] = useState([]);
   const [mediaLibraryLoading, setMediaLibraryLoading] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState(null);
-  const [mediaCaption, setMediaCaption] = useState("");
+  
   const [mediaUsage, setMediaUsage] = useState(null);
   const [mediaSearch, setMediaSearch] = useState("");
   const [mediaTypeFilter, setMediaTypeFilter] = useState("all");
@@ -62,6 +64,11 @@ const LiveChat = ({ onUnreadCountChange }) => {
   const sendMessageLockRef = useRef(false);
   const enterSubmitPendingRef = useRef(false);
   const isMountedRef = useRef(true);
+
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+const [showCaptionModal, setShowCaptionModal] = useState(false);
+const [selectedMedia, setSelectedMedia] = useState(null);
+const [mediaCaption, setMediaCaption] = useState("");
 
   useEffect(() => {
     return () => {
@@ -123,6 +130,25 @@ fetchMediaUsage();
   //     setMediaLibraryLoading(false);
   //   }
   // };
+
+  // Called when user selects a file inside MediaPickerModal
+const handleMediaSelectFromPicker = (mediaItem) => {
+  const s3Url = mediaItem?.s3Url || mediaItem?.url || (typeof mediaItem === "string" ? mediaItem : "");
+  const mimeType = mediaItem?.mimeType || mediaItem?.mimetype || mediaItem?.type || "";
+  const fileName = mediaItem?.fileName || mediaItem?.filename || s3Url.split("/").pop()?.split("?")[0] || "File";
+  const thumbnailUrl = mediaItem?.thumbnailUrl || "";
+
+  setSelectedMedia({
+    ...mediaItem,
+    s3Url,
+    mimeType,
+    fileName,
+    thumbnailUrl,
+  });
+  setMediaCaption("");
+  setShowMediaPicker(false);
+  setShowCaptionModal(true); // Opens preview & caption popup
+};
 
   const fetchMediaLibrary = async () => {
     try {
@@ -378,7 +404,6 @@ await fetchCustomers(false);
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Client-side size check
     const isVideo = file.type.startsWith('video/');
     const maxSize = isVideo ? 16 * 1024 * 1024 : 10 * 1024 * 1024;
     if (file.size > maxSize) {
@@ -387,17 +412,25 @@ await fetchCustomers(false);
       return;
     }
 
+    // 👈 Determine category from file MIME type
+    const uploadCategory = file.type.startsWith("image/")
+      ? "image"
+      : file.type.startsWith("video/")
+      ? "video"
+      : file.type.startsWith("audio/")
+      ? "audio"
+      : "document";
+
     try {
       setMediaLibraryLoading(true);
       const formData = new FormData();
       formData.append("file", file);
-      // const res = await api.post("/api/integrationManagement/whatsapp/media/upload", formData, {
-      //   headers: { "Content-Type": "multipart/form-data" }
-      // });
+      formData.append("type", uploadCategory); // 👈 Fixed variable
+
       const res = await api.post("/api/media-library/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
-      if (res.data?.status) {
+      if (res.data?.status || res.data?.success) {
         toast.success("Media uploaded");
         await fetchMediaLibrary();
         await fetchMediaUsage();
@@ -436,54 +469,63 @@ await fetchCustomers(false);
   };
 
   const handleSendSelectedMedia = async () => {
-    if (!selectedMedia || !selectedCustomer) return;
+  if (!selectedMedia || !selectedCustomer) return;
 
-    const toNumber = selectedCustomer.mobileNumber.startsWith('+')
-      ? selectedCustomer.mobileNumber
-      : `+${selectedCustomer.countryCode || ''}${selectedCustomer.mobileNumber}`.replace('++', '+');
+  const mediaUrl = selectedMedia.s3Url || selectedMedia.url || "";
+  const rawMime = String(selectedMedia.mimeType || selectedMedia.type || "").toLowerCase();
+  const cleanUrl = String(mediaUrl).split("?")[0].toLowerCase();
 
-    const tempId = `pending-${Date.now()}`;
-    const pendingItem = {
-      id: tempId,
-      mediaUrl: selectedMedia.s3Url,
-      messageType: selectedMedia.mimeType?.startsWith("image/")
-        ? "image"
-        : selectedMedia.mimeType?.startsWith("video/")
-        ? "video"
-        : selectedMedia.mimeType?.startsWith("audio/")
-        ? "audio"
-        : "document",
-      messageContent: mediaCaption.trim(),
-      status: "sending",
-      timestamp: new Date()
-    };
+  let messageType = "document";
+  if (rawMime.startsWith("image/") || /\.(jpg|jpeg|png|webp|gif|bmp|svg)$/i.test(cleanUrl)) {
+    messageType = "image";
+  } else if (rawMime.startsWith("video/") || /\.(mp4|3gp|mov|webm|m4v)$/i.test(cleanUrl)) {
+    messageType = "video";
+  } else if (rawMime.startsWith("audio/") || /\.(mp3|wav|ogg|m4a)$/i.test(cleanUrl)) {
+    messageType = "audio";
+  }
 
-    setPendingMediaMessages((prev) => [...prev, pendingItem]);
-    setShowMediaModal(false);
-    setSelectedMedia(null);
-    setMediaCaption("");
+  const toNumber = selectedCustomer.mobileNumber.startsWith("+")
+    ? selectedCustomer.mobileNumber
+    : `+${selectedCustomer.countryCode || ""}${selectedCustomer.mobileNumber}`.replace("++", "+");
 
-    try {
-      setIsUploading(true);
-      await api.post("/api/whatsappMessage/media-url", {
-        to: toNumber,
-        caption: pendingItem.messageContent,
-        mediaUrl: selectedMedia.s3Url,
-        mimeType: selectedMedia.mimeType,
-        fileName: selectedMedia.fileName,
-        mediaSizeBytes: selectedMedia.sizeBytes || 0
-      });
-      setPendingMediaMessages((prev) => prev.filter((p) => p.id !== tempId));
-      syncMessages(selectedCustomer.mobileNumber, false);
-    } catch (error) {
-      setPendingMediaMessages((prev) =>
-        prev.map((p) => (p.id === tempId ? { ...p, status: "failed" } : p))
-      );
-      toast.error(error.response?.data?.error || "Failed to send media");
-    } finally {
-      setIsUploading(false);
-    }
+  const tempId = `pending-${Date.now()}`;
+  const pendingItem = {
+    id: tempId,
+    mediaUrl: mediaUrl,
+    thumbnailUrl: selectedMedia.thumbnailUrl || "",
+    messageType: messageType,
+    messageContent: mediaCaption.trim(),
+    status: "sending",
+    timestamp: new Date()
   };
+
+  setPendingMediaMessages((prev) => [...prev, pendingItem]);
+  setShowCaptionModal(false);
+  setSelectedMedia(null);
+  setMediaCaption("");
+
+  try {
+    setIsUploading(true);
+    await api.post("/api/whatsappMessage/media-url", {
+      to: toNumber,
+      caption: pendingItem.messageContent,
+      mediaUrl: mediaUrl,
+      thumbnailUrl: selectedMedia.thumbnailUrl || "",
+      mimeType: selectedMedia.mimeType || "",
+      fileName: selectedMedia.fileName || "",
+      mediaSizeBytes: selectedMedia.sizeBytes || 0
+    });
+    setPendingMediaMessages((prev) => prev.filter((p) => p.id !== tempId));
+    syncMessages(selectedCustomer.mobileNumber, false);
+  } catch (error) {
+    setPendingMediaMessages((prev) =>
+      prev.map((p) => (p.id === tempId ? { ...p, status: "failed" } : p))
+    );
+    toast.error(error.response?.data?.error || "Failed to send media");
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   const handleSendTemplate = async (template) => {
     try {
@@ -530,40 +572,89 @@ await fetchCustomers(false);
   const mediaRemaining = Math.max(0, mediaLimit - mediaUsed);
   const isNearMediaLimit = mediaLimit > 0 && mediaRemaining / mediaLimit <= 0.1;
 
-  const matchesMediaType = (media) => {
-    if (mediaTypeFilter === "all") return true;
-    const mime = String(media?.mimeType || "").toLowerCase();
-    if (mediaTypeFilter === "image") return mime.startsWith("image/");
-    if (mediaTypeFilter === "video") return mime.startsWith("video/");
-    if (mediaTypeFilter === "audio") return mime.startsWith("audio/");
-    if (mediaTypeFilter === "document") {
-      return (
-        mime.includes("pdf") ||
-        mime.includes("msword") ||
-        mime.includes("officedocument") ||
-        mime.startsWith("application/")
-      );
-    }
-    return true;
-  };
 
-  const matchesMediaDate = (media) => {
-    if (!mediaDateFrom && !mediaDateTo) return true;
-    const rawDate = media?.createdAt || media?.uploadedAt || media?.updatedAt;
-    if (!rawDate) return false;
-    const mediaTime = new Date(rawDate).getTime();
-    if (Number.isNaN(mediaTime)) return false;
+// Robust normalizer checking MIME types, categories, URL folder paths, and file extensions
+const getNormalizedMediaType = (media) => {
+  if (!media) return "document";
 
-    if (mediaDateFrom) {
-      const fromTime = new Date(`${mediaDateFrom}T00:00:00`).getTime();
-      if (mediaTime < fromTime) return false;
-    }
-    if (mediaDateTo) {
-      const toTime = new Date(`${mediaDateTo}T23:59:59`).getTime();
-      if (mediaTime > toTime) return false;
-    }
-    return true;
-  };
+  const mime = String(
+    media?.mimeType || media?.mimetype || media?.mime || media?.contentType || ""
+  ).toLowerCase();
+  
+  const type = String(
+    media?.type || media?.mediaType || media?.category || media?.fileType || media?.kind || ""
+  ).toLowerCase();
+  
+  const rawUrl = String(
+    media?.s3Url || media?.url || media?.fileUrl || media?.mediaUrl || media?.key || ""
+  ).toLowerCase();
+  
+  const name = String(
+    media?.fileName || media?.filename || media?.name || media?.originalName || ""
+  ).toLowerCase();
+
+  const combinedStr = `${mime} ${type} ${rawUrl} ${name}`;
+
+  // 1. IMAGE CHECK
+  if (
+    mime.startsWith("image/") ||
+    type === "image" ||
+    combinedStr.includes("/images/") ||
+    /\.(jpg|jpeg|png|webp|gif|bmp|svg|heic|tiff)(\?|$)/i.test(rawUrl) ||
+    /\.(jpg|jpeg|png|webp|gif|bmp|svg|heic|tiff)$/i.test(name)
+  ) {
+    return "image";
+  }
+
+  // 2. VIDEO CHECK
+  if (
+    mime.startsWith("video/") ||
+    type === "video" ||
+    combinedStr.includes("/videos/") ||
+    /\.(mp4|3gp|mov|webm|m4v|avi|mkv|flv|wmv)(\?|$)/i.test(rawUrl) ||
+    /\.(mp4|3gp|mov|webm|m4v|avi|mkv|flv|wmv)$/i.test(name)
+  ) {
+    return "video";
+  }
+
+  // 3. AUDIO CHECK
+  if (
+    mime.startsWith("audio/") ||
+    type === "audio" ||
+    combinedStr.includes("/audios/") ||
+    /\.(mp3|wav|ogg|m4a|aac|amr|opus|wma)(\?|$)/i.test(rawUrl) ||
+    /\.(mp3|wav|ogg|m4a|aac|amr|opus|wma)$/i.test(name)
+  ) {
+    return "audio";
+  }
+
+  // 4. DOCUMENT CHECK (DEFAULT)
+  return "document";
+};
+
+const matchesMediaType = (media) => {
+  if (mediaTypeFilter === "all") return true;
+  return getNormalizedMediaType(media) === mediaTypeFilter;
+};
+
+const matchesMediaDate = (media) => {
+  if (!mediaDateFrom && !mediaDateTo) return true;
+  const rawDate = media?.createdAt || media?.uploadedAt || media?.updatedAt || media?.timestamp;
+  if (!rawDate) return true;
+  
+  const mediaTime = new Date(rawDate).getTime();
+  if (Number.isNaN(mediaTime)) return true;
+
+  if (mediaDateFrom) {
+    const fromTime = new Date(`${mediaDateFrom}T00:00:00`).getTime();
+    if (mediaTime < fromTime) return false;
+  }
+  if (mediaDateTo) {
+    const toTime = new Date(`${mediaDateTo}T23:59:59`).getTime();
+    if (mediaTime > toTime) return false;
+  }
+  return true;
+};
 
   const filteredMediaLibrary = mediaLibrary.filter((media) => {
     const name = String(media?.fileName || "").toLowerCase();
@@ -811,9 +902,27 @@ await fetchCustomers(false);
 
   // 1. Safely extract media header URL (supports new mediaUrl and legacy mediaInfo.url)
   const mediaHeaderUrl = msg.mediaUrl 
-    || msg.mediaInfo?.url 
-    || msg.templateData?.mediaUrl 
-    || msg.headerUrl;
+  || msg.mediaInfo?.url 
+  || msg.templateData?.mediaUrl 
+  || msg.headerUrl;
+
+const rawType = String(
+  (mediaHeaderUrl && (msg.headerFormat || msg.mediaType || msg.mediaInfo?.type)) ||
+  msg.messageType || 
+  msg.mediaType || 
+  msg.mimeType || 
+  msg.mediaInfo?.type || 
+  msg.headerFormat || 
+  msg.templateData?.headerFormat || 
+  ""
+).toLowerCase();
+
+// Clean URL path (remove query params like ?ccb=1-7 for accurate extension matching)
+const cleanUrlPath = String(mediaHeaderUrl || "").split('?')[0].toLowerCase();
+
+const isImage = rawType.includes("image") || /\.(jpg|jpeg|png|webp|gif|bmp)$/i.test(cleanUrlPath);
+const isVideo = rawType.includes("video") || /\.(mp4|3gp|mov|webm|m4v)$/i.test(cleanUrlPath);
+const isAudio = rawType.includes("audio") || /\.(mp3|wav|ogg|m4a)$/i.test(cleanUrlPath);
 
   // 2. Extract text header (for templates with text headers)
   const headerText = msg.headerText || msg.header || msg.templateData?.headerText;
@@ -836,27 +945,91 @@ await fetchCustomers(false);
         isMine ? 'bg-[#313166] text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
       }`}>
 
-        {/* 1. MEDIA HEADER (IMAGE / VIDEO / AUDIO / DOC) */}
-        {mediaHeaderUrl && String(mediaHeaderUrl).startsWith("http") && (
-          <div className="mb-2 overflow-hidden rounded-xl">
-            {msgType === "image" || /\.(jpg|jpeg|png|webp|gif)$/i.test(mediaHeaderUrl) ? (
-              <img src={mediaHeaderUrl} alt="Header Media" className="max-w-full rounded-xl object-cover max-h-60" />
-            ) : msgType === "video" || /\.(mp4|3gp|mov|webm)$/i.test(mediaHeaderUrl) ? (
-              <video src={mediaHeaderUrl} controls className="max-w-full rounded-xl max-h-60" />
-            ) : msgType === "audio" ? (
-              <audio src={mediaHeaderUrl} controls className="w-full" />
-            ) : (
+        {/* MEDIA HEADER PREVIEW (IMAGE / VIDEO / AUDIO / DOCUMENT) */}
+      {mediaHeaderUrl && String(mediaHeaderUrl).startsWith("http") && (
+        <div className="relative mb-2 overflow-hidden rounded-xl border border-black/10 bg-black/20">
+          {isImage ? (
+            <a href={mediaHeaderUrl} target="_blank" rel="noreferrer" className="block group">
+              <img 
+                src={mediaHeaderUrl} 
+                alt="Header Media" 
+                className="max-h-64 w-full object-cover transition-opacity group-hover:opacity-95" 
+              />
+            </a>
+          ) : isVideo ? (
+            <div className="relative group">
+              <video 
+                src={mediaHeaderUrl} 
+                controls 
+                playsInline 
+                className="max-h-64 w-full rounded-xl bg-black object-contain" 
+              />
               <a 
                 href={mediaHeaderUrl} 
                 target="_blank" 
-                rel="noreferrer" 
-                className={`text-xs font-semibold underline ${isMine ? 'text-white' : 'text-[#313166]'}`}
+                rel="noreferrer"
+                title="Open video in new tab"
+                className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-lg bg-black/60 text-white opacity-80 hover:opacity-100 hover:bg-black/90 transition-all"
               >
-                📄 View Document
+                <ExternalLink size={14} />
               </a>
-            )}
-          </div>
-        )}
+            </div>
+          ) : isAudio ? (
+            <audio src={mediaHeaderUrl} controls className="w-full p-2" />
+          ) : (
+            /* DOCUMENT PREVIEW CARD WITH NEW TAB LINK */
+            /* DOCUMENT PREVIEW CARD WITH THUMBNAIL & NEW TAB LINK */
+            <a 
+              href={mediaHeaderUrl} 
+              target="_blank" 
+              rel="noreferrer" 
+              onClick={(e) => {
+  e.preventDefault();
+  // Force Google Docs Viewer so Chrome opens it as an inline web document
+  const openUrl = `https://docs.google.com/gview?url=${encodeURIComponent(mediaHeaderUrl)}&embedded=false`;
+  window.open(openUrl, "_blank", "noopener,noreferrer");
+}}
+              className={`block overflow-hidden transition-all ${
+                isMine 
+                  ? 'bg-white/10 hover:bg-white/20 text-white' 
+                  : 'bg-gray-50 hover:bg-gray-100 text-gray-800'
+              }`}
+            >
+              {/* Render PDF Thumbnail preview image if available */}
+              {(msg.thumbnailUrl || msg.mediaInfo?.thumbnailUrl || msg.templateData?.thumbnailUrl) && (
+                <div className="relative h-32 w-full overflow-hidden bg-black/30">
+                  <img
+                    src={msg.thumbnailUrl || msg.mediaInfo?.thumbnailUrl || msg.templateData?.thumbnailUrl}
+                    alt="Document thumbnail"
+                    className="h-full w-full object-cover opacity-90"
+                  />
+                  <span className="absolute bottom-2 right-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-mono text-white">
+                    PDF
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 p-3">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+                  isMine ? 'bg-white/20 text-white' : 'bg-[#313166]/10 text-[#313166]'
+                }`}>
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs font-semibold">
+                    {msg.fileName || mediaHeaderUrl.split('/').pop()?.split('?')[0] || "Document.pdf"}
+                  </div>
+                  <div className={`text-[10px] font-medium uppercase tracking-wider ${
+                    isMine ? 'text-white/70' : 'text-gray-500'
+                  }`}>
+                    Click to open in new tab ↗
+                  </div>
+                </div>
+              </div>
+            </a>
+          )}
+        </div>
+      )}
 
         {/* 2. TEXT HEADER (If template uses a bold text header) */}
         {headerText && (
@@ -954,13 +1127,13 @@ await fetchCustomers(false);
               <div className="flex items-end gap-3">
                 <div className="flex gap-2 mb-2">
                    <button 
-                     className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                     onClick={openMediaLibrary}
-                     disabled={isUploading}
-                     title="Attach media"
-                   >
-                     <Paperclip size={20} />
-                   </button>
+  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+  onClick={() => setShowMediaPicker(true)}
+  disabled={isUploading}
+  title="Attach media"
+>
+  <Paperclip size={20} />
+</button>
 
                    {/* NEW: AI Generation Button */}
   <button 
@@ -1162,114 +1335,250 @@ await fetchCustomers(false);
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 max-h-[65vh] overflow-y-auto">
-              <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {mediaLibraryLoading ? (
-                  <div className="md:col-span-2">
-                    <Loader text="Loading media..." fullHeight={false} />
-                  </div>
-                ) : filteredMediaLibrary.length === 0 ? (
-                  <div className="text-sm text-gray-400">No media matches the current filters.</div>
-                ) : (
-                  filteredMediaLibrary.map((media) => {
-                    const isSelected = selectedMedia?._id === media._id;
-                    const isImage = media.mimeType?.startsWith("image/");
-                    return (
-                      <div
-                        key={media._id}
-                        onClick={() => setSelectedMedia(media)}
-                        className={`border rounded-2xl p-3 cursor-pointer transition-all ${isSelected ? "border-[#313166] bg-[#313166]/5" : "border-gray-100 hover:border-[#313166]/40"}`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="text-[10px] font-bold text-[#313166] uppercase">
-                            {media.mimeType?.split("/")[0] || "file"}
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteMedia(media._id);
-                            }}
-                            className="text-gray-400 hover:text-red-500"
-                            title="Delete"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                        <div className="mt-2 h-28 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden">
-                          {isImage ? (
-                            <img src={media.s3Url} alt="media" className="h-full w-full object-cover" />
-                          ) : (
-                            <span className="text-xs text-gray-400">{media.fileName || "Media file"}</span>
-                          )}
-                        </div>
-                        <div className="mt-2 text-xs text-gray-600 truncate">
-                          {media.fileName || "Untitled"}
-                        </div>
-                        <div className="text-[10px] text-gray-400">
-                          {media.sizeBytes ? `${(media.sizeBytes / (1024 * 1024)).toFixed(2)}MB` : "—"}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+  <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    {mediaLibraryLoading ? (
+      <div className="md:col-span-2">
+        <Loader text="Loading media..." fullHeight={false} />
+      </div>
+    ) : filteredMediaLibrary.length === 0 ? (
+      <div className="text-sm text-gray-400">No media matches the current filters.</div>
+    ) : (
+      filteredMediaLibrary.map((media) => {
+        const isSelected = selectedMedia?._id === media._id;
+        const mediaKind = getNormalizedMediaType(media);
 
-              <div className="border border-gray-100 rounded-2xl p-4 h-fit">
-                <h4 className="text-sm font-bold text-gray-900 mb-2">Selected Media</h4>
-                {!selectedMedia ? (
-                  <div className="text-xs text-gray-400">Select a media file to preview and send.</div>
-                ) : (
-                  <>
-                    <div className="rounded-xl bg-gray-50 p-3 mb-3">
-                      {selectedMedia.mimeType?.startsWith("image/") && (
-                        <img src={selectedMedia.s3Url} alt="selected" className="rounded-lg w-full object-cover" />
-                      )}
-                      {selectedMedia.mimeType?.startsWith("video/") && (
-                        <video src={selectedMedia.s3Url} controls className="w-full rounded-lg" />
-                      )}
-                      {selectedMedia.mimeType?.startsWith("audio/") && (
-                        <audio src={selectedMedia.s3Url} controls className="w-full" />
-                      )}
-                      {!selectedMedia.mimeType?.startsWith("image/") &&
-                        !selectedMedia.mimeType?.startsWith("video/") &&
-                        !selectedMedia.mimeType?.startsWith("audio/") && (
-                          <a href={selectedMedia.s3Url} target="_blank" rel="noreferrer" className="text-xs underline text-[#313166]">
-                            View document
-                          </a>
-                        )}
-                    </div>
-                    <label className="text-xs text-gray-500">Caption (optional)</label>
-                    <textarea
-                      rows="3"
-                      className="w-full mt-1 text-sm p-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#313166]/20"
-                      value={mediaCaption}
-                      onChange={(e) => setMediaCaption(e.target.value)}
-                      placeholder="Type a caption..."
-                    />
-                    <div className="mt-3 flex items-center gap-2">
-                      <button
-                        onClick={handleSendSelectedMedia}
-                        disabled={!selectedCustomer || isUploading}
-                        className="flex-1 px-4 py-2 bg-[#313166] text-white rounded-xl text-xs font-bold hover:bg-[#3d3b83] transition-all disabled:opacity-50"
-                      >
-                        Send Media
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedMedia(null);
-                          setMediaCaption("");
-                        }}
-                        className="px-3 py-2 text-xs font-bold text-gray-500 hover:text-gray-700"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                  </>
-                )}
+        return (
+          <div
+            key={media._id}
+            onClick={() => setSelectedMedia(media)}
+            className={`border rounded-2xl p-3 cursor-pointer transition-all ${
+              isSelected ? "border-[#313166] bg-[#313166]/5" : "border-gray-100 hover:border-[#313166]/40"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="text-[10px] font-bold text-[#313166] uppercase">
+                {mediaKind}
               </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteMedia(media._id);
+                }}
+                className="text-gray-400 hover:text-red-500"
+                title="Delete"
+              >
+                <Trash2 size={14} />
+              </button>
             </div>
+
+            {/* CARD THUMBNAIL RENDERER */}
+            <div className="mt-2 h-28 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden relative border border-gray-100">
+              {mediaKind === "image" ? (
+                <img src={media.s3Url} alt="media" className="h-full w-full object-cover" />
+              ) : mediaKind === "video" ? (
+                <div className="flex flex-col items-center gap-1 text-gray-400">
+                  <span className="rounded-full bg-black/10 p-2 text-gray-700">▶</span>
+                  <span className="text-[10px] font-semibold">Video</span>
+                </div>
+              ) : mediaKind === "audio" ? (
+                <div className="flex flex-col items-center gap-1 text-gray-400">
+                  <span className="rounded-full bg-black/10 p-2 text-gray-700">🎵</span>
+                  <span className="text-[10px] font-semibold">Audio</span>
+                </div>
+              ) : (
+                /* Document/PDF Card */
+                media.thumbnailUrl ? (
+                  <img src={media.thumbnailUrl} alt="PDF Thumbnail" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-gray-400">
+                    <FileText size={24} className="text-[#313166]" />
+                    <span className="text-[10px] font-semibold">Document</span>
+                  </div>
+                )
+              )}
+            </div>
+
+            <div className="mt-2 text-xs text-gray-600 truncate font-medium">
+              {media.fileName || "Untitled"}
+            </div>
+            <div className="text-[10px] text-gray-400">
+              {media.sizeBytes ? `${(media.sizeBytes / (1024 * 1024)).toFixed(2)}MB` : "—"}
+            </div>
+          </div>
+        );
+      })
+    )}
+  </div>
+
+  {/* RIGHT SIDEBAR PREVIEW */}
+  <div className="border border-gray-100 rounded-2xl p-4 h-fit">
+    <h4 className="text-sm font-bold text-gray-900 mb-2">Selected Media</h4>
+    {!selectedMedia ? (
+      <div className="text-xs text-gray-400">Select a media file to preview and send.</div>
+    ) : (
+      <>
+        <div className="rounded-xl bg-gray-50 p-3 mb-3 border border-gray-100">
+          {(() => {
+            const kind = getNormalizedMediaType(selectedMedia);
+            if (kind === "image") {
+              return <img src={selectedMedia.s3Url} alt="selected" className="rounded-lg w-full max-h-48 object-cover" />;
+            }
+            if (kind === "video") {
+              return <video src={selectedMedia.s3Url} controls className="w-full rounded-lg max-h-48 bg-black" />;
+            }
+            if (kind === "audio") {
+              return <audio src={selectedMedia.s3Url} controls className="w-full p-2" />;
+            }
+            return (
+              <div className="flex flex-col gap-2">
+                {selectedMedia.thumbnailUrl && (
+                  <img src={selectedMedia.thumbnailUrl} alt="PDF Preview" className="h-32 w-full object-cover rounded-lg" />
+                )}
+                <a
+                  href={`https://docs.google.com/gview?url=${encodeURIComponent(selectedMedia.s3Url)}&embedded=false`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-semibold underline text-[#313166] flex items-center gap-1"
+                >
+                  <FileText size={14} /> View Document ↗
+                </a>
+              </div>
+            );
+          })()}
+        </div>
+        <label className="text-xs text-gray-500 font-medium">Caption (optional)</label>
+        <textarea
+          rows="3"
+          className="w-full mt-1 text-sm p-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#313166]/20"
+          value={mediaCaption}
+          onChange={(e) => setMediaCaption(e.target.value)}
+          placeholder="Type a caption..."
+        />
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            onClick={handleSendSelectedMedia}
+            disabled={!selectedCustomer || isUploading}
+            className="flex-1 px-4 py-2 bg-[#313166] text-white rounded-xl text-xs font-bold hover:bg-[#3d3b83] transition-all disabled:opacity-50"
+          >
+            Send Media
+          </button>
+          <button
+            onClick={() => {
+              setSelectedMedia(null);
+              setMediaCaption("");
+            }}
+            className="px-3 py-2 text-xs font-bold text-gray-500 hover:text-gray-700"
+          >
+            Clear
+          </button>
+        </div>
+      </>
+    )}
+  </div>
+</div>
           </div>
         </div>
       )}
+
+
+
+      {/* 1. Media Picker Modal imported from Common */}
+{showMediaPicker && (
+  <MediaPickerModal
+    onClose={() => setShowMediaPicker(false)}
+    mediaType="all"
+    onSelect={handleMediaSelectFromPicker}
+  />
+)}
+
+{/* 2. Media Preview & Caption Popup */}
+{showCaptionModal && selectedMedia && (
+  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-200 p-6 space-y-4">
+      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+        <h3 className="text-lg font-bold text-gray-900">Send Media</h3>
+        <button
+          onClick={() => {
+            setShowCaptionModal(false);
+            setSelectedMedia(null);
+          }}
+          className="p-1 hover:bg-gray-100 rounded-lg text-gray-400"
+        >
+          <X size={20} />
+        </button>
+      </div>
+
+      {/* Selected Media Preview Box */}
+      <div className="rounded-2xl bg-gray-50 p-3 border border-gray-100 flex flex-col items-center justify-center min-h-[160px] max-h-[260px] overflow-hidden">
+        {(() => {
+          const mediaUrl = selectedMedia.s3Url || selectedMedia.url || "";
+          const rawMime = String(selectedMedia.mimeType || selectedMedia.type || "").toLowerCase();
+          const cleanUrl = String(mediaUrl).split("?")[0].toLowerCase();
+
+          const isImage = rawMime.startsWith("image/") || /\.(jpg|jpeg|png|webp|gif|bmp|svg)$/i.test(cleanUrl);
+          const isVideo = rawMime.startsWith("video/") || /\.(mp4|3gp|mov|webm|m4v)$/i.test(cleanUrl);
+          const isAudio = rawMime.startsWith("audio/") || /\.(mp3|wav|ogg|m4a)$/i.test(cleanUrl);
+
+          if (isImage) {
+            return <img src={mediaUrl} alt="Preview" className="max-h-52 w-full object-contain rounded-xl" />;
+          }
+          if (isVideo) {
+            return <video src={mediaUrl} controls className="max-h-52 w-full rounded-xl bg-black" />;
+          }
+          if (isAudio) {
+            return <audio src={mediaUrl} controls className="w-full p-2" />;
+          }
+          return (
+            <div className="flex flex-col items-center gap-2 p-4 text-center">
+              {selectedMedia.thumbnailUrl ? (
+                <img src={selectedMedia.thumbnailUrl} alt="Document thumbnail" className="h-32 w-full object-cover rounded-xl" />
+              ) : (
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#313166]/10 text-[#313166]">
+                  <FileText size={28} />
+                </div>
+              )}
+              <span className="text-xs font-semibold text-gray-700 truncate max-w-xs">
+                {selectedMedia.fileName || mediaUrl.split("/").pop()?.split("?")[0] || "Document"}
+              </span>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Caption Input */}
+      <div>
+        <label className="text-xs font-semibold text-gray-600 block mb-1">Caption (Optional)</label>
+        <textarea
+          rows="3"
+          className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#313166]/20 resize-none"
+          placeholder="Add a caption..."
+          value={mediaCaption}
+          onChange={(e) => setMediaCaption(e.target.value)}
+        />
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-2 pt-2">
+        <button
+          onClick={() => {
+            setShowCaptionModal(false);
+            setSelectedMedia(null);
+          }}
+          className="px-5 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSendSelectedMedia}
+          disabled={isUploading}
+          className="px-6 py-2.5 bg-[#313166] text-white text-xs font-bold rounded-xl hover:bg-[#3d3b83] transition-all shadow-md disabled:opacity-50"
+        >
+          {isUploading ? "Sending..." : "Send Media"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {showAiModal && (
   <AiImageGeneratorModal

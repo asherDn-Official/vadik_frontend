@@ -29,7 +29,8 @@ const TemplateNode = ({ data, selected }) => {
   const headerComp = template.components?.find((c) => c.type === "HEADER");
   const headerFormat = (data.headerMediaType || data.headerFormat || headerComp?.format || "").toUpperCase();
   const isMediaHeader = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerFormat);
-  const mediaUrl = data.mediaUrl || headerComp?.mediaUrl || (Array.isArray(headerComp?.example?.header_handle) ? headerComp.example.header_handle[0] : "") || "";
+  const rawMediaUrl = data.mediaUrl || headerComp?.mediaUrl || (Array.isArray(headerComp?.example?.header_handle) ? headerComp.example.header_handle[0] : "") || "";
+  const mediaUrl = typeof rawMediaUrl === "string" ? rawMediaUrl : (rawMediaUrl?.s3Url || rawMediaUrl?.url || "");
 
   const buttonsComp = template.components?.find((c) => c.type === "BUTTONS");
   const buttons = (buttonsComp?.buttons || data.buttons || []).map((b) => ({
@@ -448,4 +449,7 @@ const TemplateNode = ({ data, selected }) => {
   );
 };
 
-export default memo(TemplateNode);
+const MemoizedTemplateNode = memo(TemplateNode);
+MemoizedTemplateNode.displayName = "TemplateNode";
+
+export default MemoizedTemplateNode;

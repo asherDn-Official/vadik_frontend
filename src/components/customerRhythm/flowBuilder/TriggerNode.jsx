@@ -142,4 +142,7 @@ const TriggerNode = ({ data, selected }) => {
   );
 };
 
-export default memo(TriggerNode);
+const MemoizedTriggerNode = memo(TriggerNode);
+MemoizedTriggerNode.displayName = "TriggerNode";
+
+export default MemoizedTriggerNode;

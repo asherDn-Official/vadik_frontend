@@ -21,7 +21,8 @@ const StaticMessageNode = ({ data, selected }) => {
   const headerMediaType = ["IMAGE", "VIDEO", "DOCUMENT"].includes(rawFormat)
     ? rawFormat
     : (data.mediaUrl ? "IMAGE" : "NONE");
-  const mediaUrl = data.mediaUrl || "";
+  const rawMediaUrl = data.mediaUrl || "";
+  const mediaUrl = typeof rawMediaUrl === "string" ? rawMediaUrl : (rawMediaUrl?.s3Url || rawMediaUrl?.url || "");
 
   const buttons = (data.buttons || []).map((b, idx) => ({
     id: b.id || `btn_${idx}`,
@@ -259,4 +260,7 @@ const StaticMessageNode = ({ data, selected }) => {
   );
 };
 
-export default memo(StaticMessageNode);
+const MemoizedStaticMessageNode = memo(StaticMessageNode);
+MemoizedStaticMessageNode.displayName = "StaticMessageNode";
+
+export default MemoizedStaticMessageNode;
