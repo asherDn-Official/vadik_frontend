@@ -80,7 +80,7 @@ fetchMediaUsage();
     // Set up polling for new messages
    const interval = setInterval(async () => {
   if (selectedCustomer) {
-    await syncMessages(selectedCustomer.mobileNumber, false);
+    await syncMessages(selectedCustomer, false);
   }
 
   await fetchCustomers(false);
@@ -243,12 +243,22 @@ fetchMediaUsage();
     }
   };
 
-  const syncMessages = async (mobileNumber, showLoading = true) => {
+  const syncMessages = async (customerOrPhone, showLoading = true) => {
     try {
       if (showLoading) setLoadingMessages(true);
-      const res = await api.get(`/api/whatsappMessage/logs?search=${mobileNumber}&limit=50`);
-      if (res.data.status) {
-        const sortedMessages = res.data.data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      const targetCustomer = typeof customerOrPhone === "object" ? customerOrPhone : selectedCustomer;
+      const customerId = targetCustomer?._id;
+      const rawPhone = typeof customerOrPhone === "object" ? customerOrPhone?.mobileNumber : (customerOrPhone || selectedCustomer?.mobileNumber);
+      const cleanPhone = String(rawPhone || "").replace(/\D/g, "");
+
+      const params = new URLSearchParams();
+      if (customerId) params.append("customerId", customerId);
+      if (cleanPhone) params.append("search", cleanPhone);
+      params.append("limit", "100");
+
+      const res = await api.get(`/api/whatsappMessage/logs?${params.toString()}`);
+      if (res.data?.status || res.data?.data) {
+        const sortedMessages = (res.data.data || []).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setMessages(sortedMessages);
       }
     } catch (error) {
@@ -309,7 +319,7 @@ fetchMediaUsage();
 
     setSelectedCustomer(customer);
 
-    await syncMessages(customer.mobileNumber);
+    await syncMessages(customer);
    await fetchCustomers(false);
 
   } catch (error) {
@@ -334,7 +344,7 @@ fetchMediaUsage();
       const res = await api.post("/api/whatsappMessage/text", payload);
       if (res.data) {
         setNewMessage("");
-       await syncMessages(selectedCustomer.mobileNumber, false);
+       await syncMessages(selectedCustomer, false);
 await fetchCustomers(false);
       }
     } catch (error) {

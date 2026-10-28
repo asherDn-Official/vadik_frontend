@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  AlertTriangle,
   FileText,
   Tag,
   Zap,
@@ -1281,6 +1282,21 @@ const TemplateFlowCanvasContent = ({
         });
       const duplicateButtons = Object.keys(buttonCounts).filter((b) => buttonCounts[b] > 1);
 
+      const emptyBodyNodes = staticNodes.filter((n) => !(n.data?.bodyText || "").trim());
+      const overLimitBodyNodes = staticNodes.filter((n) => (n.data?.bodyText || "").length > 1024);
+      const overLimitHeaderNodes = staticNodes.filter((n) => (n.data?.headerText || "").length > 60);
+      const overLimitFooterNodes = staticNodes.filter((n) => (n.data?.footerText || "").length > 60);
+
+      const overLimitButtons = [];
+      staticNodes.forEach((n) => {
+        (n.data?.buttons || []).forEach((b) => {
+          const btnText = (b.text || b.label || b.title || (typeof b === "string" ? b : "")).trim();
+          if (btnText.length > 20) {
+            overLimitButtons.push(`"${btnText}" in "${n.data?.title || "Step"}"`);
+          }
+        });
+      });
+
       if (emptyTitleNodes.length > 0) {
         toast.warning(
           "Cannot publish as Active: One or more interactive message steps have an empty title. Saved as Draft."
@@ -1294,6 +1310,35 @@ const TemplateFlowCanvasContent = ({
       } else if (duplicateButtons.length > 0) {
         toast.warning(
           `Cannot publish as Active: All button texts in this flow must be unique. Duplicate button(s): "${duplicateButtons.join('", "')}". Saved as Draft.`
+        );
+        willBeActive = false;
+      } else if (emptyBodyNodes.length > 0) {
+        const names = emptyBodyNodes.map((n) => `"${n.data?.title || "Untitled"}"`).join(", ");
+        toast.warning(
+          `Cannot publish as Active: Step(s) ${names} have empty body text. WhatsApp requires body text for interactive messages. Saved as Draft.`
+        );
+        willBeActive = false;
+      } else if (overLimitBodyNodes.length > 0) {
+        const details = overLimitBodyNodes
+          .map((n) => `"${n.data?.title || "Untitled"}" (${(n.data?.bodyText || "").length}/1024 chars)`)
+          .join(", ");
+        toast.warning(
+          `Cannot publish as Active: WhatsApp limits interactive message body to 1024 characters. Over limit in step(s): ${details}. Saved as Draft. Please shorten the text or split across connected steps.`
+        );
+        willBeActive = false;
+      } else if (overLimitHeaderNodes.length > 0) {
+        toast.warning(
+          "Cannot publish as Active: WhatsApp limits header text to 60 characters. Saved as Draft."
+        );
+        willBeActive = false;
+      } else if (overLimitFooterNodes.length > 0) {
+        toast.warning(
+          "Cannot publish as Active: WhatsApp limits footer text to 60 characters. Saved as Draft."
+        );
+        willBeActive = false;
+      } else if (overLimitButtons.length > 0) {
+        toast.warning(
+          `Cannot publish as Active: Button text exceeds WhatsApp's 20-character limit: ${overLimitButtons.join(", ")}. Saved as Draft.`
         );
         willBeActive = false;
       } else if (templateAudit.notSelectedCount > 0) {
@@ -2500,7 +2545,13 @@ const TemplateFlowCanvasContent = ({
                   <div className="space-y-1.5 pt-2 border-t border-gray-100">
                     <div className="flex items-center justify-between">
                       <label className="text-[10px] font-bold text-gray-400 uppercase">Message Body Text</label>
-                      <span className="text-[9px] text-gray-400 font-mono">
+                      <span className={`text-[9px] font-mono font-bold ${
+                        (selectedNode.data?.bodyText || "").length > 1024
+                          ? "text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-200"
+                          : (selectedNode.data?.bodyText || "").length > 900
+                          ? "text-amber-600"
+                          : "text-gray-400"
+                      }`}>
                         {(selectedNode.data?.bodyText || "").length} / 1024
                       </span>
                     </div>
@@ -2510,8 +2561,34 @@ const TemplateFlowCanvasContent = ({
                       onChange={(e) => updateSelectedNodeData({ bodyText: e.target.value })}
                       placeholder="Type your WhatsApp message here... Use *bold*, _italics_, or {{firstname}} for customer variables."
                       rows={4}
-                      className="w-full p-2.5 border border-gray-200 rounded-xl text-xs text-slate-800 font-sans focus:outline-none focus:border-cyan-600 leading-relaxed"
+                      className={`w-full p-2.5 border rounded-xl text-xs text-slate-800 font-sans focus:outline-none leading-relaxed transition-colors ${
+                        (selectedNode.data?.bodyText || "").length > 1024
+                          ? "border-red-400 bg-red-50/20 focus:border-red-500 text-red-950"
+                          : "border-gray-200 focus:border-cyan-600"
+                      }`}
                     />
+
+                    {(selectedNode.data?.bodyText || "").length > 1024 && (
+                      <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl space-y-1.5 text-red-800">
+                        <div className="flex items-center gap-1.5 font-bold text-[11px] text-red-700">
+                          <AlertTriangle size={13} className="text-red-600 shrink-0" />
+                          <span>WhatsApp Limit Exceeded ({(selectedNode.data?.bodyText || "").length} / 1024 chars)</span>
+                        </div>
+                        <p className="text-[10px] text-red-600 leading-snug">
+                          Meta WhatsApp interactive buttons fail to send if body text exceeds 1024 characters. Shorten your text or click below to trim to 1024 characters.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const trimmed = (selectedNode.data?.bodyText || "").slice(0, 1024);
+                            updateSelectedNodeData({ bodyText: trimmed });
+                          }}
+                          className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold shadow-xs transition-colors cursor-pointer"
+                        >
+                          ✂️ Auto-Trim to 1024 Characters
+                        </button>
+                      </div>
+                    )}
 
                     {/* Variable Quick-Insert Chips */}
                     <div className="space-y-1">

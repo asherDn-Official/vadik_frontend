@@ -9,6 +9,7 @@ import {
   Video,
   FileText,
   Zap,
+  AlertTriangle,
 } from "lucide-react";
 import { renderWhatsAppFormattedText } from "../../../utils/whatsappTextFormatter";
 
@@ -28,9 +29,15 @@ const StaticMessageNode = ({ data, selected }) => {
     text: b.text || b.label || b.title || (typeof b === "string" ? b : `Option ${idx + 1}`),
   }));
 
+  const isOverLimit = bodyText.length > 1024 || (footerText && footerText.length > 60) || (headerText && headerText.length > 60);
+
   const borderClass = selected
-    ? "border-cyan-500 ring-4 ring-cyan-400/20 shadow-xl shadow-cyan-900/10"
-    : "border-cyan-200 hover:border-cyan-400 shadow-md";
+    ? (isOverLimit
+        ? "border-red-500 ring-4 ring-red-400/20 shadow-xl shadow-red-900/10"
+        : "border-cyan-500 ring-4 ring-cyan-400/20 shadow-xl shadow-cyan-900/10")
+    : (isOverLimit
+        ? "border-red-300 hover:border-red-500 shadow-md ring-1 ring-red-200"
+        : "border-cyan-200 hover:border-cyan-400 shadow-md");
 
   return (
     <div
@@ -76,10 +83,17 @@ const StaticMessageNode = ({ data, selected }) => {
         </div>
 
         <div className="shrink-0 ml-2">
-          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9px] font-bold rounded-full flex items-center gap-1 shadow-2xs">
-            <Zap size={10} className="text-emerald-600 fill-emerald-600" />
-            Instant Live
-          </span>
+          {isOverLimit ? (
+            <span className="px-2 py-0.5 bg-red-100 text-red-800 border border-red-300 text-[9px] font-bold rounded-full flex items-center gap-1 shadow-2xs">
+              <AlertTriangle size={10} className="text-red-600" />
+              Over Limit
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9px] font-bold rounded-full flex items-center gap-1 shadow-2xs">
+              <Zap size={10} className="text-emerald-600 fill-emerald-600" />
+              Instant Live
+            </span>
+          )}
         </div>
       </div>
 
@@ -144,6 +158,13 @@ const StaticMessageNode = ({ data, selected }) => {
                 }),
               }}
             />
+          </div>
+        )}
+
+        {bodyText && bodyText.length > 1024 && (
+          <div className="px-2.5 py-1.5 bg-red-50 border border-red-200 rounded-lg flex items-center gap-1.5 text-[10px] text-red-700 font-bold">
+            <AlertTriangle size={12} className="text-red-500 shrink-0" />
+            <span>Exceeds Meta limit ({bodyText.length}/1024)</span>
           </div>
         )}
 
