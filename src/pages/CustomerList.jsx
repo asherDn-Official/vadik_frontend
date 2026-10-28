@@ -54,6 +54,7 @@ const CustomerList = () => {
   const searchTerm = searchParams.get("search") || "";
   const [source, setSource] = useState("");
   const [sources, setSources] = useState([]);
+  const filterParam = searchParams.get("filter") || "";
   const [sourcesLoading, setSourcesLoading] = useState(false);
 
   const fetchCustomers = useCallback(async () => {
@@ -67,6 +68,7 @@ const CustomerList = () => {
         limit: itemsPerPage,
         ...(searchTerm && { search: searchTerm }),
         ...(source && { source: source }),
+        ...(filterParam && { filter: filterParam }),
       });
 
       const response = await api.get(`/api/customers?${queryParams}`);
@@ -84,7 +86,7 @@ const CustomerList = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.currentPage, retailerId, searchTerm, source]);
+  }, [pagination.currentPage, retailerId, searchTerm, source, filterParam]);
 
   useEffect(() => {
     fetchCustomers();
@@ -363,6 +365,21 @@ const CustomerList = () => {
                     "
                   />
                 </div>
+
+                {/* Responded Filter Active Badge */}
+{filterParam === "responded" && (
+  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 border border-pink-200 text-[#CB376D] rounded-xl text-xs font-bold shrink-0">
+    <span>Filter: Responded Customers</span>
+    <button
+      type="button"
+      onClick={() => setSearchParams({})}
+      className="p-0.5 hover:bg-pink-100 rounded-full cursor-pointer"
+      title="Clear filter"
+    >
+      ✕
+    </button>
+  </div>
+)}
 
                 {/* Source Filter */}
                 <div className="w-full min-w-0 xl:w-[240px]">

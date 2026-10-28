@@ -17,8 +17,11 @@ import {
   Layers,
   RefreshCw,
   Tag,
+  FolderPlus,   // ✅ Added for Media Library
+  UploadCloud,
 } from "lucide-react";
 import api from "../../api/apiconfig";
+import MediaPickerModal from "../common/MediaPickerModal";
 import { renderWhatsAppFormattedText } from "../../utils/whatsappTextFormatter";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -52,12 +55,111 @@ const getTemplateButtons = (template) => {
 
 // ─── Mini WhatsApp phone preview ────────────────────────────────────────────
 
-const TemplatePhonePreview = ({ template, variables = {} }) => {
+// const TemplatePhonePreview = ({ template, variables = {} }) => {
+//   if (!template) return null;
+//   const header = template.components?.find((c) => c.type === "HEADER");
+//   const body = template.components?.find((c) => c.type === "BODY");
+//   const footer = template.components?.find((c) => c.type === "FOOTER");
+//   const buttons = getTemplateButtons(template);
+
+//   const renderText = (text) => {
+//     const withVars = applyVariables(text || "", variables);
+//     return renderWhatsAppFormattedText
+//       ? renderWhatsAppFormattedText(withVars, { highlightVariables: true, variableClassName: "text-blue-600 font-bold" })
+//       : withVars;
+//   };
+
+//   return (
+//     <div className="mt-3 flex flex-col items-center">
+//       <div className="text-[8px] font-bold text-gray-400 uppercase mb-2 tracking-wider flex items-center gap-1">
+//         <Smartphone size={9} /> WhatsApp Preview
+//       </div>
+//       {/* Phone shell */}
+//       <div className="relative w-full max-w-[200px] bg-slate-900 rounded-[20px] border-[4px] border-slate-800 shadow-xl overflow-hidden">
+//         {/* Status bar */}
+//         <div className="bg-[#075e54] h-8 px-3 flex items-center gap-2">
+//           <div className="w-4 h-4 rounded-full bg-white/20 flex-shrink-0" />
+//           <span className="text-white text-[9px] font-medium truncate">{template.name}</span>
+//         </div>
+//         {/* Chat area */}
+//         <div className="bg-[#e5ddd5] p-2 min-h-[80px]">
+//           <div className="bg-white rounded-lg shadow-sm overflow-hidden text-[10px] text-gray-800">
+//             {/* Header */}
+//             {header && (
+//               <div className="p-2 pb-0">
+//                 {header.format === "TEXT" ? (
+//                   <div
+//                     className="font-bold text-gray-800 text-[11px]"
+//                     dangerouslySetInnerHTML={{ __html: renderText(header.text) }}
+//                   />
+//                 ) : (
+//                   <div className="bg-gray-100 h-14 rounded flex flex-col items-center justify-center text-gray-400 overflow-hidden">
+//                     {header.format === "IMAGE" ? (
+//                       header.mediaUrl || header.example?.header_handle?.[0] ? (
+//                         <img
+//                           src={header.mediaUrl || header.example?.header_handle?.[0]}
+//                           alt="Media"
+//                           className="w-full h-full object-cover"
+//                         />
+//                       ) : (
+//                         <ImageIcon size={14} />
+//                       )
+//                     ) : header.format === "VIDEO" ? (
+//                       <Video size={14} />
+//                     ) : (
+//                       <FileText size={14} />
+//                     )}
+//                     {!header.mediaUrl && !header.example?.header_handle?.[0] && (
+//                       <span className="text-[7px] mt-0.5">{header.format || "Media"}</span>
+//                     )}
+//                   </div>
+//                 )}
+//               </div>
+//             )}
+//             {/* Body */}
+//             <div className="p-2 leading-relaxed">
+//               <div dangerouslySetInnerHTML={{ __html: renderText(body?.text) }} />
+//             </div>
+//             {/* Footer */}
+//             {footer && (
+//               <div
+//                 className="px-2 pb-2 text-[8px] text-gray-400"
+//                 dangerouslySetInnerHTML={{ __html: renderText(footer.text) }}
+//               />
+//             )}
+//             {/* Buttons */}
+//             {buttons.length > 0 && (
+//               <div className="border-t border-gray-100">
+//                 {buttons.slice(0, 3).map((btn, i) => (
+//                   <div
+//                     key={i}
+//                     className="py-1.5 px-2 text-center border-b border-gray-50 last:border-0 text-[#00a884] font-medium text-[10px] flex items-center justify-center gap-1"
+//                   >
+//                     {btn.type === "URL" && <ExternalLink size={8} />}
+//                     {btn.type === "PHONE_NUMBER" && <Phone size={8} />}
+//                     {btn.type === "FLOW" && <Layers size={8} />}
+//                     <span>{btn.text || "Button"}</span>
+//                   </div>
+//                 ))}
+//               </div>
+//             )}
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+
+
+const TemplatePhonePreview = ({ template, variables = {}, overrideMediaUrl = "", overrideThumbnailUrl = "" }) => {
   if (!template) return null;
   const header = template.components?.find((c) => c.type === "HEADER");
   const body = template.components?.find((c) => c.type === "BODY");
   const footer = template.components?.find((c) => c.type === "FOOTER");
   const buttons = getTemplateButtons(template);
+
+  const activeMediaUrl = overrideMediaUrl || header?.mediaUrl || header?.example?.header_handle?.[0] || "";
 
   const renderText = (text) => {
     const withVars = applyVariables(text || "", variables);
@@ -71,14 +173,11 @@ const TemplatePhonePreview = ({ template, variables = {} }) => {
       <div className="text-[8px] font-bold text-gray-400 uppercase mb-2 tracking-wider flex items-center gap-1">
         <Smartphone size={9} /> WhatsApp Preview
       </div>
-      {/* Phone shell */}
       <div className="relative w-full max-w-[200px] bg-slate-900 rounded-[20px] border-[4px] border-slate-800 shadow-xl overflow-hidden">
-        {/* Status bar */}
         <div className="bg-[#075e54] h-8 px-3 flex items-center gap-2">
           <div className="w-4 h-4 rounded-full bg-white/20 flex-shrink-0" />
           <span className="text-white text-[9px] font-medium truncate">{template.name}</span>
         </div>
-        {/* Chat area */}
         <div className="bg-[#e5ddd5] p-2 min-h-[80px]">
           <div className="bg-white rounded-lg shadow-sm overflow-hidden text-[10px] text-gray-800">
             {/* Header */}
@@ -90,24 +189,48 @@ const TemplatePhonePreview = ({ template, variables = {} }) => {
                     dangerouslySetInnerHTML={{ __html: renderText(header.text) }}
                   />
                 ) : (
-                  <div className="bg-gray-100 h-14 rounded flex flex-col items-center justify-center text-gray-400 overflow-hidden">
+                  <div className="bg-gray-100 h-24 rounded flex flex-col items-center justify-center text-gray-400 overflow-hidden relative">
                     {header.format === "IMAGE" ? (
-                      header.mediaUrl || header.example?.header_handle?.[0] ? (
+                      activeMediaUrl ? (
                         <img
-                          src={header.mediaUrl || header.example?.header_handle?.[0]}
-                          alt="Media"
+                          src={activeMediaUrl}
+                          alt="Media Preview"
                           className="w-full h-full object-cover"
+                          onError={(e) => { e.target.style.display = "none"; }}
                         />
                       ) : (
-                        <ImageIcon size={14} />
+                        <ImageIcon size={20} />
                       )
                     ) : header.format === "VIDEO" ? (
-                      <Video size={14} />
+                      activeMediaUrl ? (
+                        <video src={activeMediaUrl} controls className="w-full h-full object-cover" />
+                      ) : (
+                        <Video size={20} />
+                      )
                     ) : (
-                      <FileText size={14} />
-                    )}
-                    {!header.mediaUrl && !header.example?.header_handle?.[0] && (
-                      <span className="text-[7px] mt-0.5">{header.format || "Media"}</span>
+                      /* DOCUMENT with Thumbnail Fallback */
+                      overrideThumbnailUrl ? (
+                        <div className="relative w-full h-full bg-slate-800 flex flex-col justify-between p-1.5 overflow-hidden">
+                          <img
+                            src={overrideThumbnailUrl}
+                            alt="Document Thumbnail"
+                            className="absolute inset-0 w-full h-full object-cover opacity-80"
+                            onError={(e) => { e.target.style.display = "none"; }}
+                          />
+                          <div className="relative z-10 flex justify-end">
+                            <span className="px-1 py-0.2 bg-black/70 text-white text-[7px] font-bold rounded">PDF</span>
+                          </div>
+                          <div className="relative z-10 bg-black/60 p-1 rounded backdrop-blur-xs flex items-center gap-1">
+                            <FileText size={10} className="text-cyan-300 shrink-0" />
+                            <span className="text-white text-[8px] truncate">{activeMediaUrl ? activeMediaUrl.split("/").pop() : "Document"}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-[9px] font-mono p-2 bg-purple-50/80 w-full h-full">
+                          <FileText size={16} className="text-[#CB376D] shrink-0" />
+                          <span className="truncate">{activeMediaUrl ? activeMediaUrl.split("/").pop() : "Document"}</span>
+                        </div>
+                      )
                     )}
                   </div>
                 )}
@@ -163,6 +286,66 @@ const AutoReplyRules = ({ node, templates = [], onUpdate }) => {
   const [fetchingTemplates, setFetchingTemplates] = useState(false);
 
   const autoReplies = node?.data?.autoReplies || [];
+
+
+  // ✅ Media Picker & File Upload State
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [activeRuleForMedia, setActiveRuleForMedia] = useState(null);
+  const [mediaPickerType, setMediaPickerType] = useState("image");
+  const [uploadingMediaRuleId, setUploadingMediaRuleId] = useState(null);
+
+  // ✅ Open Media Library Modal
+  const handleOpenMediaPicker = (ruleId, format = "IMAGE") => {
+    setActiveRuleForMedia(ruleId);
+    setMediaPickerType(format.toLowerCase());
+    setShowMediaPicker(true);
+  };
+
+  // ✅ Handle Media Selection from Library
+  // ✅ Handle Media Selection from Library (with Thumbnail Support)
+  const handleMediaPickerSelect = (media) => {
+    const cleanUrl = typeof media === "string" ? media : (media?.s3Url || media?.url || "");
+    const cleanThumbnailUrl = typeof media === "object" && media?.thumbnailUrl ? media.thumbnailUrl : "";
+    
+    if (activeRuleForMedia && cleanUrl) {
+      updateRule(activeRuleForMedia, { 
+        templateMediaUrl: cleanUrl,
+        templateThumbnailUrl: cleanThumbnailUrl 
+      });
+    }
+    setShowMediaPicker(false);
+    setActiveRuleForMedia(null);
+  };
+
+  // ✅ Direct File Upload Handler
+  const handleHeaderFileUpload = async (ruleId, file, reqFormat = "IMAGE") => {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("expectedType", reqFormat);
+
+    try {
+      setUploadingMediaRuleId(ruleId);
+      const res = await api.post("/api/media-library/upload", formData);
+      const url = res.data?.url || res.data?.s3Url;
+
+      if (res.data?.status && url) {
+        updateRule(ruleId, { templateMediaUrl: url });
+      } else {
+        // Fallback Base64 reader if needed
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          updateRule(ruleId, { templateMediaUrl: reader.result });
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+    } finally {
+      setUploadingMediaRuleId(null);
+    }
+  };
 
   // Choice fields for trigger dropdowns
   const choiceFields = (node?.data?.fields || []).filter((f) =>
@@ -228,13 +411,44 @@ const AutoReplyRules = ({ node, templates = [], onUpdate }) => {
 
   // ─── Template selection ──────────────────────────────────────────────────
 
+  // const handleTemplateSelect = (ruleId, templateName) => {
+  //   const tpl = approvedTemplates.find((t) => t.name === templateName);
+  //   if (!tpl) {
+  //     updateRule(ruleId, { templateName, templateLanguage: "en_US", templateVariables: {} });
+  //     return;
+  //   }
+  //   // Auto-initialise variable map from template body/header placeholders
+  //   const indices = extractVariableIndices(tpl);
+  //   const templateVariables = {};
+  //   indices.forEach((n) => { templateVariables[`{{${n}}}`] = ""; });
+
+  //   updateRule(ruleId, {
+  //     templateName,
+  //     templateLanguage: tpl.language || "en_US",
+  //     templateVariables,
+  //   });
+  // };
+
   const handleTemplateSelect = (ruleId, templateName) => {
     const tpl = approvedTemplates.find((t) => t.name === templateName);
     if (!tpl) {
-      updateRule(ruleId, { templateName, templateLanguage: "en_US", templateVariables: {} });
+      updateRule(ruleId, {
+        templateName,
+        templateLanguage: "en_US",
+        templateVariables: {},
+        headerFormat: null,
+        templateMediaUrl: "",
+        templateThumbnailUrl: "",
+      });
       return;
     }
-    // Auto-initialise variable map from template body/header placeholders
+
+    const headerComp = tpl.components?.find((c) => c.type === "HEADER");
+    const headerFormat = headerComp?.format?.toUpperCase() || null;
+    const isMedia = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerFormat);
+    const defaultMediaUrl = headerComp?.mediaUrl || (Array.isArray(headerComp?.example?.header_handle) ? headerComp.example.header_handle[0] : "") || "";
+    const defaultThumbnailUrl = headerComp?.thumbnailUrl || "";
+
     const indices = extractVariableIndices(tpl);
     const templateVariables = {};
     indices.forEach((n) => { templateVariables[`{{${n}}}`] = ""; });
@@ -243,8 +457,13 @@ const AutoReplyRules = ({ node, templates = [], onUpdate }) => {
       templateName,
       templateLanguage: tpl.language || "en_US",
       templateVariables,
+      headerFormat: isMedia ? headerFormat : null,
+      templateMediaUrl: defaultMediaUrl,
+      templateThumbnailUrl: defaultThumbnailUrl,
     });
   };
+
+
 
   const updateTemplateVariable = (ruleId, key, value) => {
     const rule = autoReplies.find((r) => r.id === ruleId);
@@ -566,6 +785,118 @@ const AutoReplyRules = ({ node, templates = [], onUpdate }) => {
                         </div>
                       )}
 
+
+                      {/* ⬇️ ADD YOUR SNIPPET RIGHT HERE ⬇️ */}
+                      {/* Header Media Picker Controls if Template has IMAGE / VIDEO / DOCUMENT */}
+{selectedTemplate && (() => {
+  const headerComp = selectedTemplate.components?.find((c) => c.type === "HEADER");
+  const headerFormat = (rule.headerFormat || headerComp?.format || "").toUpperCase();
+  const isMediaHeader = ["IMAGE", "VIDEO", "DOCUMENT"].includes(headerFormat);
+
+  if (!isMediaHeader) return null;
+
+  return (
+    <div className="p-2.5 bg-purple-50/70 border border-purple-200/80 rounded-lg space-y-2 mt-2">
+      <div className="flex items-center justify-between">
+        <label className="text-[9px] font-bold text-[#313166] uppercase tracking-wider flex items-center gap-1">
+          {headerFormat === "IMAGE" ? <ImageIcon size={12} /> : headerFormat === "VIDEO" ? <Video size={12} /> : <FileText size={12} />}
+          <span>Header {headerFormat}</span>
+        </label>
+        <span className="text-[8px] font-bold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded uppercase">
+          Locked to {headerFormat}
+        </span>
+      </div>
+
+      {/* Media Preview */}
+      {rule.templateMediaUrl ? (
+        <div className="relative rounded-lg overflow-hidden border border-purple-200 bg-white">
+          {headerFormat === "IMAGE" ? (
+            <img src={rule.templateMediaUrl} alt="Header" className="w-full h-20 object-cover" />
+          ) : headerFormat === "VIDEO" ? (
+            <video src={rule.templateMediaUrl} controls className="w-full h-20 object-cover bg-black" />
+          ) : (
+            /* Document Preview: Show Thumbnail if available, else default bar */
+            rule.templateThumbnailUrl ? (
+              <div className="relative h-20 w-full bg-slate-900 overflow-hidden">
+                <img src={rule.templateThumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover opacity-80" />
+                <div className="absolute inset-0 p-2 bg-gradient-to-t from-black/80 to-transparent flex items-end">
+                  <div className="flex items-center gap-1 text-[9px] text-white font-mono truncate">
+                    <FileText size={14} className="text-cyan-300 shrink-0" />
+                    <span className="truncate">{rule.templateMediaUrl.split("/").pop()}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-2 text-[10px] flex items-center gap-1.5 text-gray-700 font-mono">
+                <FileText size={16} className="text-[#CB376D] shrink-0" />
+                <span className="truncate flex-1">{rule.templateMediaUrl.split("/").pop()}</span>
+              </div>
+            )
+          )}
+          <button
+            type="button"
+            onClick={() => updateRule(rule.id, { templateMediaUrl: "", templateThumbnailUrl: "" })}
+            className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-600 text-white rounded-full transition-colors"
+            title="Remove Media"
+          >
+            <X size={10} />
+          </button>
+        </div>
+      ) : (
+        <p className="text-[9px] text-purple-700 italic">
+          No media attached. Select from library or upload below.
+        </p>
+      )}
+
+      {/* Media Action Buttons */}
+      <div className="grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          onClick={() => handleOpenMediaPicker(rule.id, headerFormat)}
+          className="px-2 py-1.5 bg-[#313166] hover:bg-[#252550] text-white rounded text-[9px] font-bold transition-all flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
+        >
+          <FolderPlus size={11} className="text-pink-300" />
+          <span>Media Library</span>
+        </button>
+
+        <label className="px-2 py-1.5 bg-white hover:bg-purple-100/50 border border-purple-200 rounded text-[9px] font-bold text-[#313166] cursor-pointer transition-colors flex items-center justify-center gap-1 shadow-2xs">
+          {uploadingMediaRuleId === rule.id ? (
+            <span className="animate-pulse text-[#CB376D]">Uploading...</span>
+          ) : (
+            <>
+              <UploadCloud size={11} className="text-[#CB376D]" />
+              <span>Upload File</span>
+            </>
+          )}
+          <input
+            type="file"
+            className="hidden"
+            accept={
+              headerFormat === "IMAGE" ? "image/*" : headerFormat === "VIDEO" ? "video/*" : ".pdf,.doc,.docx"
+            }
+            disabled={uploadingMediaRuleId === rule.id}
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                handleHeaderFileUpload(rule.id, e.target.files[0], headerFormat);
+              }
+            }}
+          />
+        </label>
+      </div>
+
+      {/* ✅ Disabled URL Input Display */}
+      <input
+        type="url"
+        disabled
+        value={rule.templateMediaUrl || ""}
+        placeholder={`No ${headerFormat.toLowerCase()} selected...`}
+        className="w-full text-[9px] bg-gray-100 border border-gray-200 px-2 py-1 rounded text-gray-500 cursor-not-allowed focus:outline-none"
+      />
+    </div>
+  );
+})()}
+                      {/* ⬆️ END OF SNIPPET ⬆️ */}
+
                       {/* Template variables — auto-extracted from body/header placeholders */}
                       {rule.templateName && varIndices.length > 0 && (
                         <div className="space-y-1.5 p-2.5 bg-white border border-gray-200 rounded-lg">
@@ -645,6 +976,8 @@ const AutoReplyRules = ({ node, templates = [], onUpdate }) => {
                         <TemplatePhonePreview
                           template={selectedTemplate}
                           variables={rule.templateVariables || {}}
+                          overrideMediaUrl={rule.templateMediaUrl} // ✅ Pass selected media override
+                          overrideThumbnailUrl={rule.templateThumbnailUrl}
                         />
                       )}
                     </div>
@@ -654,6 +987,18 @@ const AutoReplyRules = ({ node, templates = [], onUpdate }) => {
             );
           })}
         </div>
+      )}
+      {/* Media Picker Modal */}
+      {showMediaPicker && (
+        <MediaPickerModal
+          onClose={() => {
+            setShowMediaPicker(false);
+            setActiveRuleForMedia(null);
+          }}
+          mediaType={mediaPickerType}
+          lockType={true}
+          onSelect={handleMediaPickerSelect}
+        />
       )}
     </div>
   );

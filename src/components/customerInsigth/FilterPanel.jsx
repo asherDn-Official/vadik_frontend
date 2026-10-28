@@ -823,6 +823,96 @@ const FilterPanel = ({
     }
   };
 
+  // const renderDateRangeSection = () => {
+  //   const fromDate = filters.fromDate ? parseYMDToLocalDate(filters.fromDate) : null;
+  //   const toDate = filters.toDate ? parseYMDToLocalDate(filters.toDate) : null;
+
+  //   return (
+  //     <div className="border-b border-[#EEF1FF] px-4 py-4 sm:px-5">
+  //       <div className="mb-3 flex items-center gap-2">
+  //         <Calendar size={18} className="text-[#313166]" />
+  //         <h3 className="text-sm font-semibold text-[#313166]">Date Range</h3>
+  //       </div>
+
+  //       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+  //         <div>
+  //           <label className="mb-1 block text-xs font-medium uppercase tracking-[0.08em] text-[#8B90B2]">
+  //             From
+  //           </label>
+  //           <ReactDatePicker
+  //             selected={fromDate}
+  //             onChange={(date, event) => {
+  //               if (date instanceof Date && !isNaN(date)) {
+  //                 onFilterChange("fromDate", formatDateToYMD(date));
+  //               } else if (event?.target?.value === "") {
+  //                 onFilterChange("fromDate", "");
+  //               }
+  //             }}
+  //             readOnly
+  //             dateFormat="dd/MM/yyyy"
+  //             placeholderText="Select start date"
+  //             className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10 cursor-pointer"
+  //             wrapperClassName="modern-datepicker-field"
+  //             popperClassName="modern-datepicker-popper"
+  //             calendarClassName="modern-datepicker-calendar"
+  //             dayClassName={() => "modern-datepicker-day"}
+  //             showPopperArrow={false}
+  //             portalId="root"
+  //             popperPlacement="bottom-start"
+  //             renderCustomHeader={renderModernDateHeader}
+  //             maxDate={toDate || new Date()}
+  //             isClearable={false}
+  //           />
+  //         </div>
+
+  //         <div>
+  //           <label className="mb-1 block text-xs font-medium uppercase tracking-[0.08em] text-[#8B90B2]">
+  //             To
+  //           </label>
+  //           <ReactDatePicker
+  //             selected={toDate}
+  //             onChange={(date, event) => {
+  //               if (date instanceof Date && !isNaN(date)) {
+  //                 onFilterChange("toDate", formatDateToYMD(date));
+  //               } else if (event?.target?.value === "") {
+  //                 onFilterChange("toDate", "");
+  //               }
+  //             }}
+  //             readOnly
+  //             dateFormat="dd/MM/yyyy"
+  //             placeholderText="Select end date"
+  //             className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10 cursor-pointer"
+  //             wrapperClassName="modern-datepicker-field"
+  //             popperClassName="modern-datepicker-popper"
+  //             calendarClassName="modern-datepicker-calendar"
+  //             dayClassName={() => "modern-datepicker-day"}
+  //             showPopperArrow={false}
+  //             portalId="root"
+  //             popperPlacement="bottom-start"
+  //             renderCustomHeader={renderModernDateHeader}
+  //             minDate={fromDate || null}
+  //             maxDate={new Date()}
+  //             isClearable={false}
+  //           />
+  //         </div>
+  //       </div>
+
+  //       {(filters.fromDate || filters.toDate) && (
+  //         <button
+  //           className="mt-3 text-xs font-medium text-[#D64045] transition hover:underline"
+  //           onClick={() => {
+  //             onFilterChange("fromDate", "");
+  //             onFilterChange("toDate", "");
+  //           }}
+  //         >
+  //           Clear date range
+  //         </button>
+  //       )}
+  //     </div>
+  //   );
+  // };
+
+
   const renderDateRangeSection = () => {
     const fromDate = filters.fromDate ? parseYMDToLocalDate(filters.fromDate) : null;
     const toDate = filters.toDate ? parseYMDToLocalDate(filters.toDate) : null;
@@ -848,11 +938,10 @@ const FilterPanel = ({
                   onFilterChange("fromDate", "");
                 }
               }}
-              readOnly
               dateFormat="dd/MM/yyyy"
-              placeholderText="Select start date"
-              className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10 cursor-pointer"
-              wrapperClassName="modern-datepicker-field"
+              placeholderText="Select start"
+              className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] px-2.5 py-2 text-xs font-medium text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10 cursor-pointer placeholder:text-xs placeholder:text-[#9AA3C7]"
+              wrapperClassName="modern-datepicker-field w-full"
               popperClassName="modern-datepicker-popper"
               calendarClassName="modern-datepicker-calendar"
               dayClassName={() => "modern-datepicker-day"}
@@ -862,6 +951,7 @@ const FilterPanel = ({
               renderCustomHeader={renderModernDateHeader}
               maxDate={toDate || new Date()}
               isClearable={false}
+              onChangeRaw={(e) => e.preventDefault()}
             />
           </div>
 
@@ -878,11 +968,10 @@ const FilterPanel = ({
                   onFilterChange("toDate", "");
                 }
               }}
-              readOnly
               dateFormat="dd/MM/yyyy"
-              placeholderText="Select end date"
-              className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] p-2.5 pr-10 text-sm text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10 cursor-pointer"
-              wrapperClassName="modern-datepicker-field"
+              placeholderText="Select end"
+              className="w-full rounded-xl border border-[#E4E8F6] bg-[#FCFCFF] px-2.5 py-2 text-xs font-medium text-[#313166] outline-none transition focus:border-[#313166]/20 focus:ring-2 focus:ring-[#313166]/10 cursor-pointer placeholder:text-xs placeholder:text-[#9AA3C7]"
+              wrapperClassName="modern-datepicker-field w-full"
               popperClassName="modern-datepicker-popper"
               calendarClassName="modern-datepicker-calendar"
               dayClassName={() => "modern-datepicker-day"}
@@ -893,6 +982,7 @@ const FilterPanel = ({
               minDate={fromDate || null}
               maxDate={new Date()}
               isClearable={false}
+              onChangeRaw={(e) => e.preventDefault()}
             />
           </div>
         </div>

@@ -1,7 +1,8 @@
 // src/pages/CustomerOpportunities.jsx
 /* eslint-disable react/prop-types */
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import PersonalizationCampaign from "../components/customeroppertunites/PersonalizationCampaign";
 import EngagementActivities from "../components/customeroppertunites/EngagementActivities";
 import VideoPopupWithShare from "../components/common/VideoPopupWithShare";
@@ -16,8 +17,21 @@ import { Info, PlayCircle, Send, Sparkles } from "lucide-react";
 import PerformanceTracking from "./PerformanceTracking";
 
 const CustomerOpportunities = () => {
-  const [activeTab, setActiveTab] = useState("engagement");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") || "engagement";
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [showSubscriptionPopup, setShowSubscriptionPopup] = useState(false);
+
+  useEffect(() => {
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    setSearchParams({ tab: tabKey });
+  };
 
   const handleUpdatePlan = () => {
     setShowSubscriptionPopup((prev) => !prev);
@@ -63,7 +77,8 @@ const CustomerOpportunities = () => {
               <div className="flex max-w-full flex-wrap items-center justify-center gap-1 overflow-visible rounded-xl bg-gray-100 p-1 shadow-inner">
                 <TopTab
                   active={activeTab === "engagement"}
-                  onClick={() => setActiveTab("engagement")}
+                  // onClick={() => setActiveTab("engagement")}
+                  onClick={() => handleTabChange("engagement")}
                   icon={<Sparkles size={18} />}
                   title="Create Activity"
                   description="Build quizzes, scratch cards, and spin wheel campaigns to increase customer interaction."
@@ -72,7 +87,7 @@ const CustomerOpportunities = () => {
 
                 <TopTab
                   active={activeTab === "campaign"}
-                  onClick={() => setActiveTab("campaign")}
+                  onClick={() => handleTabChange("campaign")}
                   icon={<Send size={18} />}
                   title="Send Activity"
                   description="Launch WhatsApp campaigns and engagement workflows."
@@ -99,7 +114,7 @@ const CustomerOpportunities = () => {
 
                 <TopTab
                   active={activeTab === "coupon"}
-                  onClick={() => setActiveTab("coupon")}
+                  onClick={() => handleTabChange("coupon")}
                   icon={<LuTicketPercent size={18} />}
                   title="Coupons"
                   description="Create and manage promotional coupons to drive customer engagement."
@@ -108,7 +123,7 @@ const CustomerOpportunities = () => {
 
                 <TopTab
                   active={activeTab === "loyalty"}
-                  onClick={() => setActiveTab("loyalty")}
+                  onClick={() => handleTabChange("loyalty")}
                   icon={<FaCoins size={17} />}
                   title="Loyalty Points"
                   description="Manage loyalty points and rewards to increase customer retention."
@@ -117,7 +132,7 @@ const CustomerOpportunities = () => {
 
                 <TopTab
                   active={activeTab === "performanceTracking"}
-                  onClick={() => setActiveTab("performanceTracking")}
+                  onClick={() => handleTabChange("performanceTracking")}
                   icon={<FaCoins size={17} />}
                   title="Performance Tracking"
                   description="Monitor and analyze customer performance metrics."

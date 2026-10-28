@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { X, Plus, Gift } from "lucide-react";
+import { X, Plus, Gift, FolderPlus, UploadCloud, Image as ImageIcon } from "lucide-react";
+import MediaPickerModal from "../common/MediaPickerModal";
 import SpinWheelPreview from "./SpinWheelPreview";
 import api from "../../api/apiconfig";
 import showToast from "../../utils/ToastNotification";
@@ -20,6 +21,40 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   const [activeSegmentForCoupon, setActiveSegmentForCoupon] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isFullyRandom, setIsFullyRandom] = useState(true);
+
+
+
+  // ✅ Media Picker & Upload State
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [activeSegmentForMedia, setActiveSegmentForMedia] = useState(null);
+  const [uploadingImageSegmentId, setUploadingImageSegmentId] = useState(null);
+
+  // ✅ Open Media Library Picker
+  const handleOpenMediaPicker = (segmentId) => {
+    const segment = formData.segments.find((s) => s.id === segmentId);
+    if (segment && segment.couponType !== "product") {
+      showToast("Images can only be attached to product coupons.", "error");
+      return;
+    }
+    setActiveSegmentForMedia(segmentId);
+    setShowMediaPicker(true);
+  };
+
+  // ✅ Handle Media Library Selection
+  const handleMediaPickerSelect = (media) => {
+    const cleanUrl = typeof media === "string" ? media : (media?.s3Url || media?.url || "");
+    if (activeSegmentForMedia && cleanUrl) {
+      const updatedSegments = formData.segments.map((s) =>
+        s.id === activeSegmentForMedia ? { ...s, image: cleanUrl } : s
+      );
+      setValue("segments", updatedSegments);
+      showToast("Product image selected from Media Library!", "success");
+    }
+    setShowMediaPicker(false);
+    setActiveSegmentForMedia(null);
+  };
+
+ 
 
   const {
     register,
@@ -359,7 +394,41 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
   };
   
 
-  const handleImageUpload = (segmentId, file) => {
+  // const handleImageUpload = (segmentId, file) => {
+  //   if (!file) return;
+
+  //   const segment = formData.segments.find((s) => s.id === segmentId);
+  //   if (segment && segment.couponType !== "product") {
+  //     showToast("Images can only be uploaded for product coupons.", "error");
+  //     return;
+  //   }
+
+  //   const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  //   if (!allowedTypes.includes(file.type)) {
+  //     showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+  //     return;
+  //   }
+
+  //   if (file.size > 1 * 1024 * 1024) {
+  //     showToast("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.", "error");
+  //     return;
+  //   }
+
+  //   const reader = new FileReader();
+  //   reader.onloadend = () => {
+  //     const base64String = reader.result;
+  //     const updatedSegments = formData.segments.map((s) =>
+  //       s.id === segmentId ? { ...s, image: base64String } : s
+  //     );
+  //     setValue("segments", updatedSegments);
+  //   };
+  //   reader.readAsDataURL(file);
+  // };
+
+
+
+  // ✅ Enhanced Image Upload with Validations
+  const handleImageUpload = async (segmentId, file) => {
     if (!file) return;
 
     const segment = formData.segments.find((s) => s.id === segmentId);
@@ -368,26 +437,79 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
       return;
     }
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    // 1. Format Validation
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
     if (!allowedTypes.includes(file.type)) {
-      showToast("Unsupported image format. Please upload a JPG, JPEG, PNG, or WebP file.", "error");
+      showToast("Unsupported image format. Please upload JPG, PNG, or WebP.", "error");
       return;
     }
 
-    if (file.size > 1 * 1024 * 1024) {
-      showToast("Image size exceeds the maximum allowed limit. Please upload an image within the permitted size.", "error");
+    // 2. File Size Validation (Max 2MB)
+    const MAX_SIZE_MB = 2;
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      showToast(`Image size exceeds ${MAX_SIZE_MB}MB limit. Please upload a smaller image.`, "error");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result;
-      const updatedSegments = formData.segments.map((s) =>
-        s.id === segmentId ? { ...s, image: base64String } : s
-      );
-      setValue("segments", updatedSegments);
+    // 3. Image Dimension & Corruption Check
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = async () => {
+      URL.revokeObjectURL(objectUrl);
+      if (img.width < 50 || img.height < 50) {
+        showToast("Image resolution is too low. Minimum dimensions are 50x50px.", "error");
+        return;
+      }
+
+      try {
+        setUploadingImageSegmentId(segmentId);
+        const formDataUpload = new FormData();
+        formDataUpload.append("file", file);
+
+        const res = await api.post("/api/media-library/upload", formDataUpload);
+        const imageUrl = res.data?.url || res.data?.s3Url;
+
+        if (res.data?.status && imageUrl) {
+          const updatedSegments = formData.segments.map((s) =>
+            s.id === segmentId ? { ...s, image: imageUrl } : s
+          );
+          setValue("segments", updatedSegments);
+          showToast("Product image uploaded successfully!", "success");
+        } else {
+          // Fallback to Base64 reader if media library upload response lacks URL
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const updatedSegments = formData.segments.map((s) =>
+              s.id === segmentId ? { ...s, image: reader.result } : s
+            );
+            setValue("segments", updatedSegments);
+            showToast("Product image attached!", "success");
+          };
+          reader.readAsDataURL(file);
+        }
+      } catch (err) {
+        // Fallback to Base64 reader on error
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const updatedSegments = formData.segments.map((s) =>
+            s.id === segmentId ? { ...s, image: reader.result } : s
+          );
+          setValue("segments", updatedSegments);
+          showToast("Product image attached!", "success");
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setUploadingImageSegmentId(null);
+      }
     };
-    reader.readAsDataURL(file);
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      showToast("Corrupted or invalid image file.", "error");
+    };
+
+    img.src = objectUrl;
   };
 
   const onSubmit = async (data) => {
@@ -715,7 +837,7 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                         </div>
                       )}
                     </td>
-                    <td className="border border-gray-200 px-4 py-3">
+                    {/* <td className="border border-gray-200 px-4 py-3">
                       <div className="flex flex-col items-center gap-2">
                         {segment.couponType === "product" ? (
                           <>
@@ -768,7 +890,89 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
                           <div className="text-xs text-gray-400">N/A</div>
                         )}
                       </div>
-                    </td>
+                    </td> */}
+
+                    <td className="border border-gray-200 px-4 py-3">
+  <div className="flex flex-col items-center gap-2">
+    {segment.couponType === "product" ? (
+      <>
+        {segment.image ? (
+          <div className="relative w-14 h-14 group">
+            <img
+              src={typeof segment.image === "string" ? segment.image : (segment.image?.s3Url || segment.image?.url || "")}
+              alt="Product Preview"
+              className="w-14 h-14 object-cover rounded-lg border border-gray-200 shadow-xs"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/60?text=No+Image";
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const updatedSegments = formData.segments.map((s) =>
+                  s.id === segment.id ? { ...s, image: null } : s
+                );
+                setValue("segments", updatedSegments);
+              }}
+              className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-xs transition-colors"
+              title="Remove Image"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ) : (
+          <div className="w-14 h-14 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center bg-gray-50 text-gray-400">
+            <Gift className="w-6 h-6" />
+          </div>
+        )}
+
+        {segment.couponId ? (
+          <div className="flex flex-col gap-1 w-full max-w-[130px]">
+            {/* Option A: Select from Media Library */}
+            <button
+              type="button"
+              onClick={() => handleOpenMediaPicker(segment.id)}
+              className="px-2 py-1 bg-[#313166] hover:bg-[#252550] text-white rounded text-[10px] font-bold transition-all flex items-center justify-center gap-1 shadow-2xs"
+            >
+              <FolderPlus className="w-3 h-3 text-pink-300" />
+              <span>Media Library</span>
+            </button>
+
+            {/* Option B: Upload direct file */}
+            <label className="px-2 py-1 bg-white hover:bg-pink-50 border border-gray-300 rounded text-[10px] font-bold text-gray-700 cursor-pointer transition-all flex items-center justify-center gap-1 shadow-2xs">
+              {uploadingImageSegmentId === segment.id ? (
+                <span className="animate-pulse text-pink-600">Uploading...</span>
+              ) : (
+                <>
+                  <UploadCloud className="w-3 h-3 text-pink-600" />
+                  <span>Upload File</span>
+                </>
+              )}
+              <input
+                type="file"
+                className="hidden"
+                accept="image/jpeg,image/png,image/webp,image/jpg"
+                disabled={uploadingImageSegmentId === segment.id}
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    handleImageUpload(segment.id, e.target.files[0]);
+                  }
+                }}
+              />
+            </label>
+          </div>
+        ) : (
+          <span className="text-[10px] text-gray-400 italic">Select coupon first</span>
+        )}
+      </>
+    ) : (
+      <div className="text-xs text-gray-400">N/A</div>
+    )}
+  </div>
+</td>
+
+
                     <td className="border border-gray-200 px-4 py-3">
                       {segment.couponType === "product" ? (
                         <input
@@ -1019,6 +1223,19 @@ const SpinWheelForm = ({ campaign, onSave, onCancel }) => {
             />
           </div>
         </div>
+      )}
+
+      {/* Media Picker Modal for Product Coupon Image */}
+      {showMediaPicker && (
+        <MediaPickerModal
+          onClose={() => {
+            setShowMediaPicker(false);
+            setActiveSegmentForMedia(null);
+          }}
+          mediaType="image"
+          lockType={true}
+          onSelect={handleMediaPickerSelect}
+        />
       )}
     </div>
   );
