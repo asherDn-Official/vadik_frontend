@@ -482,6 +482,7 @@ const AdvancedTemplateAutomation = () => {
               onClick={() => handleCreateNew(preset.id)}
               className="group p-5 bg-gradient-to-b from-gray-50 to-white hover:from-pink-50/40 hover:to-white border border-gray-200 hover:border-[#CB376D]/40 rounded-2xl cursor-pointer transition-all shadow-sm hover:shadow-md flex flex-col justify-between"
             >
+
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="px-2.5 py-0.5 bg-[#313166]/10 text-[#313166] text-[10px] font-bold rounded-full uppercase tracking-wider">
@@ -489,16 +490,30 @@ const AdvancedTemplateAutomation = () => {
                   </span>
                   <span className="text-xs text-gray-400 font-medium">{preset.stepsCount} Templates</span>
                 </div>
-                <h4 className="font-bold text-[#313166] group-hover:text-[#CB376D] transition-colors">{preset.title}</h4>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">{preset.desc}</p>
+                
+                {/* Fixed-height container to align vertical sequence across all 3 cards */}
+                <div className="min-h-[85px]">
+                  <h4 className="font-bold text-[#313166] group-hover:text-[#CB376D] transition-colors">{preset.title}</h4>
+                  <p className="text-xs text-gray-500 mt-1 leading-relaxed line-clamp-3">{preset.desc}</p>
+                </div>
 
-                <div className="flex items-center gap-1.5 mt-3 overflow-x-auto py-1">
+                {/* Vertical Sequence Flow with clearly visible centered downward arrows */}
+                <div className="mt-3 flex flex-col items-stretch">
                   {preset.sampleJourney.map((step, sIdx) => (
                     <React.Fragment key={sIdx}>
-                      <span className="px-2 py-0.5 bg-white border border-gray-200 text-[10px] font-medium text-gray-600 rounded-md whitespace-nowrap shadow-2xs">
-                        {step}
-                      </span>
-                      {sIdx < preset.sampleJourney.length - 1 && <ArrowRight size={10} className="text-gray-400 shrink-0" />}
+                      <div className="flex items-center gap-2.5 px-3 py-2 bg-white border border-gray-200 rounded-xl shadow-xs">
+                        <span className="w-4 h-4 rounded-full bg-pink-100 text-[#CB376D] text-[10px] font-bold flex items-center justify-center shrink-0">
+                          {sIdx + 1}
+                        </span>
+                        <span className="text-[11px] font-semibold text-gray-700 truncate">
+                          {step}
+                        </span>
+                      </div>
+                      {sIdx < preset.sampleJourney.length - 1 && (
+                        <div className="flex items-center justify-center my-1">
+                          <ChevronDown size={16} className="text-[#CB376D] stroke-[2.5]" />
+                        </div>
+                      )}
                     </React.Fragment>
                   ))}
                 </div>
